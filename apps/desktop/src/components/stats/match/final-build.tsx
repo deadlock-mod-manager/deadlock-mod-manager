@@ -14,6 +14,7 @@ const SLOTS_PER_TYPE = 4;
 
 const EMPTY_KEYS = ["a", "b", "c", "d"] as const;
 
+/** What the player ended the match holding, one row per slot type. */
 export const FinalBuild = ({ bought }: { bought: Purchase[] }) => {
   const { t } = useTranslation();
   const held = bought.filter((purchase) => purchase.soldAt === null);

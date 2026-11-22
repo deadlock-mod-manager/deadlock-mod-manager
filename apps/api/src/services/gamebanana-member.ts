@@ -22,6 +22,7 @@ const memberProfileSchema = z
     _nSubscriberCount: z.number().int().nonnegative().optional(),
     _bIsPrivate: z.boolean().optional(),
     _bIsBanned: z.boolean().optional(),
+    // Only present when the member filled in their contact info.
     _aContactInfo: z
       .array(
         z
@@ -120,6 +121,7 @@ export const fetchGameBananaMember = async (
   };
 };
 
+/** The member's contact list, or null when the profile is gone or hidden. */
 export const fetchGameBananaContacts = async (
   remoteId: string,
   fetcher: typeof fetch = fetch,

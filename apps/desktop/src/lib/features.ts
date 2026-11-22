@@ -4,6 +4,11 @@ import type { ExperimentalFeature, UIState } from "@/lib/store/slices/ui";
 
 export type OptionalFeature = (typeof OPTIONAL_FEATURES)[number];
 
+/**
+ * The experimental flag an optional feature still sits behind. Such a feature
+ * stays hidden until the flag is on, and the user's own toggle is kept for
+ * when it is. Set the entry to null when its flag graduates.
+ */
 export const FEATURE_EXPERIMENTAL_FLAGS = {
   stats: null,
   "server-browser": null,
@@ -16,6 +21,7 @@ export const FEATURE_EXPERIMENTAL_FLAGS = {
   plugins: "plugins",
 } as const satisfies Record<OptionalFeature, ExperimentalFeature | null>;
 
+/** The optional feature an experimental flag gates, if any. */
 export const featureForFlag = (
   flag: ExperimentalFeature,
 ): OptionalFeature | null =>
@@ -28,6 +34,7 @@ export type FeatureState = Pick<
   "features" | "experimentalFeatures" | "minimalMode"
 >;
 
+/** Plugins also need a build that ships the plugin runtime. */
 export const isExperimentalFeatureOn = (
   state: Pick<UIState, "experimentalFeatures">,
   flag: ExperimentalFeature,

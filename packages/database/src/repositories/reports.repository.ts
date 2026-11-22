@@ -161,6 +161,11 @@ export class ReportRepository {
       .returning();
   }
 
+  /**
+   * Copies the GameBanana identity onto reports that only reference the
+   * catalog, mirroring migration 0055 for rows legacy writers add after it.
+   * Legacy desktop compatibility: remove with the catalog retirement (#715).
+   */
   async backfillLegacyIdentities(): Promise<number> {
     const result = await this.db.execute(sql`
       UPDATE "report" SET

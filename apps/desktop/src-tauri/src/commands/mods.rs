@@ -232,6 +232,7 @@ pub struct BatchUpdateMod {
   pub file_tree: Option<ModFileTree>,
   #[serde(default)]
   pub installed_vpks: Vec<String>,
+  /// The file tree of the installed version, kept with its update backup.
   #[serde(default)]
   pub installed_file_tree: Option<ModFileTree>,
   #[serde(default)]
@@ -247,6 +248,7 @@ pub struct BatchUpdateResult {
   pub installed_mods: Vec<InstalledModInfo>,
   #[serde(default)]
   pub vpk_mappings: Vec<(String, Vec<String>)>,
+  /// Mods left as they were until the user picks their VPKs from `file_tree`.
   #[serde(default)]
   pub selection_required: Vec<SelectionRequiredMod>,
 }
@@ -280,6 +282,7 @@ pub struct InstalledModInfo {
   pub file_tree: Option<ModFileTree>,
 }
 
+// Tauri commands take their IPC arguments flat.
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn batch_update_mods(
@@ -843,6 +846,8 @@ pub async fn fetch_missing_mod_variants(
     let archive_tree =
       FileTreeAnalyzer::new().get_file_tree_from_extracted(&extract_dir, &safe_archive_name)?;
 
+    // Whether a wanted name is qualified depends on the mod's other archives,
+    // so both forms resolve.
     let mut by_name: std::collections::HashMap<String, std::path::PathBuf> =
       std::collections::HashMap::new();
     for file in &archive_tree.files {
@@ -880,12 +885,14 @@ pub async fn fetch_missing_mod_variants(
 #[derive(Debug, Clone, Serialize)]
 pub struct StageDownloadArchiveResult {
   pub staged: Vec<StagedVpk>,
+  /// Every name was already parked: nothing was fetched and `staged` is empty.
   pub reused: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct StagedVpk {
   pub original: String,
+  /// Updates and imports find a variant by this path, not its name.
   pub path: String,
   pub size: u64,
 }
@@ -898,13 +905,20 @@ pub enum StageArchiveProgress {
   Copying,
 }
 
+/// Bytes between download progress messages, so a fast connection does not
+/// flood the webview.
 const STAGE_PROGRESS_STEP: u64 = 512 * 1024;
 
+/// In-flight `stage_download_archive` downloads, by mod ID. The number tells a
+/// staging run its own token from one a newer run of the same mod put there.
 static STAGE_CANCEL: std::sync::LazyLock<
   std::sync::Mutex<std::collections::HashMap<String, (u64, tokio_util::sync::CancellationToken)>>,
 > = std::sync::LazyLock::new(Default::default);
 static STAGE_RUN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
+/// Stops a mod's `stage_download_archive` download. Extraction and copying
+/// can't be interrupted, so a cancel that arrives after the download finishes
+/// does nothing.
 #[tauri::command]
 pub fn cancel_stage_download_archive(mod_id: String) {
   if let Some((_, cancel)) = STAGE_CANCEL.lock().unwrap().get(&mod_id) {
@@ -921,8 +935,12 @@ pub async fn stage_download_archive(
   profile_folder: Option<String>,
   archive_url: String,
   archive_name: String,
+  // Names the mod's file tree already gives this archive's files, so
+  // re-staging keeps them.
   known_originals: Vec<String>,
+  // Names the tree gives other archives' files.
   claimed_originals: Vec<String>,
+  // This archive's tree names; empty when its upload was replaced.
   reusable_originals: Vec<String>,
   fileserver_preference: FileserverPreference,
   on_progress: tauri::ipc::Channel<StageArchiveProgress>,
@@ -1038,6 +1056,8 @@ pub async fn stage_download_archive(
 
   let _ = on_progress.send(StageArchiveProgress::Copying);
   let known = lowercase(&known_originals);
+  // Names other variants of the mod already hold, enabled or not. Listed again
+  // because another staging run may have added some during the download.
   let mut taken: std::collections::HashSet<String> = VpkManager::new()
     .find_prefixed_vpks(&addons_path, &mod_id)?
     .iter()
@@ -1088,6 +1108,8 @@ pub async fn stage_download_archive(
   })
 }
 
+/// Parked files are the installed version's (updates move them aside). A name
+/// another entry shares or claims never qualifies: its bytes may not be ours.
 fn archive_is_parked(
   reusable_originals: &[String],
   owned: &[String],
@@ -1100,6 +1122,10 @@ fn archive_is_parked(
     })
 }
 
+/// A file already staged with identical contents is this one - a retry after
+/// a failed apply, or a tree too old to say which archive owns the name - so
+/// its name counts as free. A name another archive claims never is, even for
+/// a shared file: deselecting either archive would remove it for both.
 fn staging_name(
   file: &crate::mod_manager::file_tree::ModFile,
   source: &std::path::Path,
@@ -1325,6 +1351,8 @@ mod tests {
     stage_claimed(staged, &[])
   }
 
+  /// Stages the `blue` VPK next to files already staged under these names,
+  /// with other archives claiming the `claimed` names.
   fn stage_claimed(staged: &[(&str, &[u8])], claimed: &[&str]) -> String {
     let temp = tempfile::tempdir().unwrap();
     let source = temp.path().join("pak01_dir.vpk");
@@ -1367,6 +1395,7 @@ mod tests {
 
   #[test]
   fn another_archive_under_the_same_qualified_name_gets_a_numbered_one() {
+    // `Blue.rar` qualifies to the same name as `blue.zip`.
     let staged: &[(&str, &[u8])] = &[("pak01_dir.vpk", b"red!"), ("pak01-blue_dir.vpk", b"BLUE")];
     assert_eq!(stage(staged), "pak01-blue-2_dir.vpk");
   }
@@ -1414,6 +1443,7 @@ mod tests {
 
   #[test]
   fn a_name_the_archive_does_not_own_is_never_reused() {
+    // Another archive's entry in a legacy tree also lists pak01_dir.vpk.
     let archive = names(&["pak01_dir.vpk", "pak02_dir.vpk"]);
     let owned = names(&["pak02_dir.vpk"]);
     assert!(!archive_is_parked(

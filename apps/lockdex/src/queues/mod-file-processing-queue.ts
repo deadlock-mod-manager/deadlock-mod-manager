@@ -11,6 +11,10 @@ export class ModFileProcessingQueue extends BaseQueue<ModFileProcessingJobData> 
     });
   }
 
+  /**
+   * BullMQ runs jobs without a priority before prioritized ones, so live
+   * update events go ahead of anything queued with a priority.
+   */
   async processModFiles(
     mods: ModFileProcessingJobData[],
     options: { priority?: number } = {},

@@ -617,6 +617,8 @@ export class QuickAnswerCommand extends Command {
       return null;
     }
 
+    // Re-check editor authorization: roles may have been revoked between
+    // showing the modal and its (up to 15 minute) submission window.
     if (!hasQuickAnswerEditorPermission(submission.member)) {
       await submission
         .reply({

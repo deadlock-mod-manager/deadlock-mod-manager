@@ -16,6 +16,7 @@ const Section = ({
   className?: string;
   innerClassName?: string;
   action?: React.ReactNode;
+  /** Anchor that settings search scrolls to and highlights. Listed in `SETTINGS_SEARCH_INDEX`. */
   searchId?: string;
 }) => {
   return (

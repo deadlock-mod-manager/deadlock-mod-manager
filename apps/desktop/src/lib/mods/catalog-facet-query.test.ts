@@ -88,6 +88,7 @@ test("returning from a hydrated mod detail refreshes fresh cached category optio
   expect(initial.getCurrentResult().isStale).toBe(false);
   leaveCatalog();
 
+  // Opening a detail hydrates the local record while the list query is fresh.
   storedFacets = [
     {
       category: "Model Replacement",

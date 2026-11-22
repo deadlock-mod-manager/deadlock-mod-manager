@@ -172,6 +172,7 @@ const ExportContent = ({ request }: { request: PerfApplyRequest }) => {
   );
 };
 
+/** Share code and ConVars snippet for the config that is applied now. */
 export const ExportConfigButton = () => {
   const { t } = useTranslation();
   const { data: status } = usePerfStatus();

@@ -58,6 +58,10 @@ export const ServerBrowserEntrySchema = z.object({
   auth_prompt_url: z.string().optional(),
   source_relay: z.string(),
   source_region: z.string().optional(),
+  /**
+   * The server advertises its maps and addons itself (Deadworks A2S_RULES)
+   * rather than `required_mods`, so joining needs a staging pass either way.
+   */
   managed_content: z.boolean().default(false),
 });
 
@@ -82,7 +86,9 @@ export const ServerBrowserListResponseSchema = z.object({
   cursor: z.number().int().nullable(),
   relays_queried: z.number().int(),
   relays_failed: z.number().int(),
+  /** The Deadworks server list couldn't be refreshed; its servers may be stale. */
   registry_degraded: z.boolean().default(false),
+  /** Age of the stale registry snapshot in ms, if one is being served. */
   registry_snapshot_age_ms: z.number().nullable().default(null),
 });
 

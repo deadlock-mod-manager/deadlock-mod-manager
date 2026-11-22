@@ -20,11 +20,13 @@ export type RestoreDestination = "new" | "replace";
 
 interface RestoreProfileBackupInput {
   backup: ProfileBackup;
+  // The backup's profile with identities resolved against the catalog.
   profile: SharedProfile;
   modsData: ModDto[];
   destination: RestoreDestination;
 }
 
+// Mods that can't be downloaded again never reach a backup, so they stay.
 const removeModsMissingFromBackup = (
   profileId: ProfileId,
   backupProfile: SharedProfile,
@@ -33,6 +35,7 @@ const removeModsMissingFromBackup = (
   const profile = state.profiles[profileId];
   if (!profile) return null;
   const keep = new Set(backupProfile.payload.mods.map((mod) => mod.remoteId));
+  // The active profile's live mod list is localMods.
   const mods = [
     ...new Map(
       [
@@ -79,6 +82,8 @@ export const useRestoreProfileBackup = () => {
           : await addToCurrentProfile(profile, modsData);
       const { profileId } = outcome;
 
+      // Old mods go only once the backup's are in, so a restore where nothing
+      // installs leaves the profile as it was.
       if (destination === "replace" && outcome.importedCount > 0) {
         const report = await removeModsMissingFromBackup(profileId, profile);
         if (report && report.failures.length > 0) {
@@ -93,6 +98,7 @@ export const useRestoreProfileBackup = () => {
         }
       }
 
+      // Groups only point at mods, so drop the ones whose mods didn't install.
       const restored = usePersistedStore.getState().profiles[profileId];
       if (restored && backup.payload.modGroups.length > 0) {
         const installed = new Set(Object.keys(restored.enabledMods));
@@ -115,6 +121,7 @@ export const useRestoreProfileBackup = () => {
       return outcome;
     },
     onError: (error) => {
+      // The import flow already told the user what failed.
       logger.withError(error).error("Profile backup restore failed");
     },
     onSettled: () =>

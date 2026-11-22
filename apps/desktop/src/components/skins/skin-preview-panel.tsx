@@ -24,12 +24,23 @@ import type { LocalMod } from "@/types/mods";
 
 interface SkinPreviewPanelProps {
   hero: string;
+  /** The skin to show, or null for the hero's default look. */
   mod: LocalMod | null;
   status: SkinPreviewStatus;
+  /** Wears the skin on show. Offered while the status is notEquipped. */
   onWear: () => void;
   wearDisabled: boolean;
 }
 
+/**
+ * The 3D turntable beside the skin grid: the selected skin's hero model,
+ * decoded from its VPK and rendered with the Foundry's viewer.
+ *
+ * This is a look, not an editor — nothing here writes to the skin. The page
+ * only mounts the panel while the Foundry's preview setting is on (the 3D
+ * preview switch in the page header), because it is the same decode-and-render
+ * on the same GPU, and it fails in the same ways.
+ */
 export const SkinPreviewPanel = ({
   hero,
   mod,
@@ -43,6 +54,8 @@ export const SkinPreviewPanel = ({
   const title = mod?.name ?? t("skins.default");
 
   return (
+    // The panel scales with the window rather than holding one fixed width, so
+    // it keeps its share of the page from a small window up to a maximised one.
     <aside className='flex w-[clamp(320px,28vw,640px)] shrink-0 flex-col overflow-hidden rounded-xl border bg-card'>
       <div className='flex flex-col gap-1.5 border-b py-3 pr-2 pl-4'>
         <span className='font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]'>
@@ -101,6 +114,7 @@ export const PreviewSurface = ({
 }: PreviewSurfaceProps) => {
   const { t } = useTranslation();
 
+  // The empty stage stands in for the model so the panel never sits empty.
   if (preview.isPending) {
     return (
       <ModelLoadingStage hero={hero} status={t("skins.preview.loading")} />

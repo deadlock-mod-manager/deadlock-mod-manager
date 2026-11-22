@@ -106,6 +106,7 @@ export const ModHealthDialog = ({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profileFolder: string | null;
+  /** Narrows the list to these mods; every mod with a badge otherwise. */
   modIds?: readonly string[];
 }) => {
   const { t } = useTranslation();

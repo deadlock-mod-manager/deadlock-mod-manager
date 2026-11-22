@@ -12,6 +12,7 @@ export const contentMods = [
   { id: "920001", name: "E2E Safe Skin", nsfw: false },
   { id: "920002", name: "E2E Adult Skin", nsfw: true },
 ];
+/** GameBanana member who submitted both content mods. */
 export const contentAuthor = { remoteId: "930001", name: "E2E Author" };
 export const contentAuthorId = `gamebanana:${contentAuthor.remoteId}`;
 const heroNames = [
@@ -141,6 +142,7 @@ export const contentRoutes =
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
+      // GameBanana authors list their mods from the local catalog, not the API.
       json(`/api/v2/mod-authors/${encodeURIComponent(contentAuthorId)}`, {
         author: {
           id: contentAuthorId,

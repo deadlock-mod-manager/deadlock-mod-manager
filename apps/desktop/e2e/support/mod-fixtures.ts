@@ -34,6 +34,8 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   status: ModStatus.Installed,
   installedVpks: [`pak${String(index + 1).padStart(2, "0")}_dir.vpk`],
   installOrder: index,
+  // These synthetic script archives contain no hero assets. Model them as
+  // already indexed so unrelated background scans cannot race a test restart.
   detectedHero: null,
   usesCriticalPaths: false,
 });

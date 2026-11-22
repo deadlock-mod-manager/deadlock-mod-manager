@@ -3,12 +3,16 @@ import { ModsSyncProcessor } from "@/processors/mods-sync";
 import { OAuthTokenCleanupProcessor } from "@/processors/oauth-token-cleanup";
 import { RelayDiscoveryProcessor } from "@/processors/relay-discovery";
 
+/** Every job carried by the API cron queue. */
 export const cronJobDefinitions: CronJobDefinition[] = [
   {
     name: ModsSyncProcessor.name,
     pattern: ModsSyncProcessor.cronPattern,
     processor: ModsSyncProcessor.getInstance(),
     enabled: true,
+    // A retry would race the next scheduled run for the sync lock, and the
+    // first run after a fresh deploy sweeps every mod for over an hour. The
+    // schedule is the retry.
     jobOptions: { attempts: 1 },
   },
   {
@@ -21,6 +25,7 @@ export const cronJobDefinitions: CronJobDefinition[] = [
     name: RelayDiscoveryProcessor.name,
     pattern: RelayDiscoveryProcessor.cronPattern,
     processor: RelayDiscoveryProcessor.getInstance(),
+    // The server browser no longer queries relays, so their manifest goes unread.
     enabled: false,
   },
 ];

@@ -68,6 +68,7 @@ export const EditorToolbar = ({
   );
 };
 
+/** Shows each setting's convar name next to its label. */
 export const ConvarNamesToggle = ({
   showKeys,
   onShowKeysChange,

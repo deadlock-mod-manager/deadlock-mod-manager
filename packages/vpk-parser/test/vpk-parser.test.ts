@@ -16,6 +16,7 @@ describe("VPK Parser FFI", () => {
   let testBuffer: Buffer;
 
   beforeAll(() => {
+    // Check if native library is built
     const extension =
       process.platform === "win32"
         ? "dll"
@@ -33,6 +34,7 @@ describe("VPK Parser FFI", () => {
       );
     }
 
+    // Check if test VPK file exists
     if (!existsSync(testVpkPath)) {
       throw new Error(`Test VPK file not found at ${testVpkPath}`);
     }
@@ -59,9 +61,9 @@ describe("VPK Parser FFI", () => {
       });
 
       const fastHash = String(info.fastHash);
-      expect(fastHash.length).toBeGreaterThanOrEqual(16);
+      expect(fastHash.length).toBeGreaterThanOrEqual(16); // xxHash64 hex string (16 chars)
       const manifestSha256 = String(info.manifestSha256);
-      expect(manifestSha256.length).toBeGreaterThanOrEqual(16);
+      expect(manifestSha256.length).toBeGreaterThanOrEqual(16); // SHA256 hex string (64 chars, but may vary)
     });
 
     it("should get basic VPK info from file", () => {
@@ -89,11 +91,11 @@ describe("VPK Parser FFI", () => {
       });
 
       const fastHash = String(hashes.fastHash);
-      expect(fastHash.length).toBeGreaterThanOrEqual(16);
+      expect(fastHash.length).toBeGreaterThanOrEqual(16); // xxHash64 hex string (16 chars)
       const sha256 = String(hashes.sha256);
-      expect(sha256.length).toBeGreaterThanOrEqual(16);
+      expect(sha256.length).toBeGreaterThanOrEqual(16); // SHA256 hex string (64 chars, but may vary)
       const contentSignature = String(hashes.contentSignature);
-      expect(contentSignature.length).toBeGreaterThanOrEqual(16);
+      expect(contentSignature.length).toBeGreaterThanOrEqual(16); // SHA256 hex string (64 chars, but may vary)
     });
 
     it("should calculate VPK hashes from file", () => {

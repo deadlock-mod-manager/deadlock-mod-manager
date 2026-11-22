@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { RailScrollArea } from "./rail-scroll-area";
 
 const SCROLL_AMOUNT = 600;
+// Long enough to see where the roll landed, short enough not to feel like a wait.
 const ROLL_REVEAL_MS = 450;
 
 export const BrowseByHeroRail = () => {

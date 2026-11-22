@@ -19,6 +19,7 @@ export interface CronJobDefinition {
   jobData?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
   enabled?: boolean;
+  /** Overrides the queue defaults. Recurring jobs usually want `attempts: 1`. */
   jobOptions?: JobsOptions;
 }
 
@@ -34,6 +35,11 @@ export class CronService {
   private logger: Logger;
   private redis: Redis;
 
+  /**
+   * @param concurrency How many cron jobs this service may run at once. A long
+   * job holds a slot for its whole run, so this needs to be at least the number
+   * of jobs defined or a slow job will starve the rest.
+   */
   constructor(
     queueName: string,
     redis: Redis,
@@ -66,8 +72,10 @@ export class CronService {
       jobOptions,
     } = definition;
 
+    // Store the job definition
     this.jobs.set(name, definition);
 
+    // Schedule the job if enabled
     if (enabled) {
       await this.upsertJob(name, pattern, {
         timezone,
@@ -106,6 +114,11 @@ export class CronService {
     await Promise.all(promises);
   }
 
+  /**
+   * Begins consuming the queue. Call once every job is defined, since the
+   * worker dispatches on job name and can only resolve jobs it knows about.
+   * Defining jobs without calling this leaves the service a producer.
+   */
   start(): void {
     if (this.jobs.size === 0) {
       throw new NotFoundError("No cron jobs defined, nothing to start");
@@ -117,6 +130,7 @@ export class CronService {
       .info("Cron service started");
   }
 
+  /** False for a producer that never started, and once a run loop has exited. */
   isRunning(): boolean {
     return this.worker?.isRunning() ?? false;
   }
@@ -125,6 +139,11 @@ export class CronService {
     return this.worker?.getLastError() ?? null;
   }
 
+  /**
+   * A cron queue carries jobs for many processors, so a single worker consumes
+   * it and dispatches on job name. Giving each processor its own worker would
+   * let any worker claim any job and run it through the wrong processor.
+   */
   private ensureWorker(): CronWorker {
     if (!this.worker) {
       this.worker = new CronWorker(
@@ -169,6 +188,11 @@ export class CronService {
     await this.queue.scheduleRecurring(jobName, cronPattern, template);
   }
 
+  /**
+   * Queues a single immediate run of a scheduled job, bypassing its pattern.
+   * The caller does not have to own the worker, so this works from a CLI while
+   * the service that defined the job picks the run up.
+   */
   async triggerJob(
     jobName: string,
     jobData: Record<string, unknown> = {},
@@ -257,8 +281,10 @@ export class CronService {
 
   async pauseAll(): Promise<void> {
     try {
+      // Pause the queue itself
       await this.queue.pause();
 
+      // Store and pause all job schedulers
       this.pausedSchedulers = await this.queue.pauseJobSchedulers();
       this.logger.info(
         `Paused all cron jobs and ${this.pausedSchedulers.length} job schedulers`,
@@ -271,8 +297,10 @@ export class CronService {
 
   async resumeAll(): Promise<void> {
     try {
+      // Resume the queue itself
       await this.queue.resume();
 
+      // Resume all previously paused job schedulers
       if (this.pausedSchedulers.length > 0) {
         await this.queue.resumeJobSchedulers(this.pausedSchedulers);
         this.logger.info(
@@ -297,9 +325,11 @@ export class CronService {
       throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
+    // Merge the updates with the current definition
     const updatedDefinition = { ...currentDefinition, ...updates };
     this.jobs.set(jobName, updatedDefinition);
 
+    // If the job is enabled, update the scheduler
     if (updatedDefinition.enabled) {
       await this.upsertJob(jobName, updatedDefinition.pattern, {
         timezone: updatedDefinition.timezone,

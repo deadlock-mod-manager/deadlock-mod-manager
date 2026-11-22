@@ -1,3 +1,5 @@
+//! Reviewed migration v1: legacy candle wax -> live Amber/Sapphire head surfaces.
+//! Current unit/model paths and role names come from npc_units, never mod IDs.
 use super::*;
 use vpkmanager::source2::kv3::Value;
 
@@ -74,6 +76,7 @@ pub(super) fn build(resources: &ResourceSnapshot, paths: &[String]) -> Result<As
       .resolve(path)?
       .ok_or_else(|| invalid("Missing authored material"))?;
     let value = edit::decode(&bytes).map_err(invalid)?.0;
+    // Static emission is an explicit precondition, not an inferred blanket merge.
     let dynamic = edit::field(&value, "m_dynamicParams")
       .map_err(invalid)?
       .as_array()
@@ -99,6 +102,7 @@ pub(super) fn build(resources: &ResourceSnapshot, paths: &[String]) -> Result<As
     let mut current = baseline(resources, &format!("{}_c", target.material))?
       .as_ref()
       .clone();
+    // Every texture retained by the current shader must still resolve.
     for (_, path) in edit::references(&current).map_err(invalid)? {
       baseline(resources, &path)?;
     }
@@ -111,6 +115,8 @@ pub(super) fn build(resources: &ResourceSnapshot, paths: &[String]) -> Result<As
         format!("{path}_c"),
         edit::rename_material(&current, &path).map_err(invalid)?,
       );
+      // The old wax surface used an unrestricted emission mask. Sapphire now
+      // shares a body mask: restore glow only after isolating the head draw calls.
       baseline(resources, WHITE_MASK)?;
       current = edit::replace_texture_parameter(
         &current,
@@ -146,6 +152,7 @@ pub(super) fn build(resources: &ResourceSnapshot, paths: &[String]) -> Result<As
         ));
       }
       let (root, _, _) = edit::decode(&model).map_err(invalid)?;
+      // Additional live health groups need a new scope review after a game patch.
       let groups = edit::field(&root, "m_meshGroups")
         .map_err(invalid)?
         .as_array()

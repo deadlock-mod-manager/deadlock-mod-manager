@@ -16,6 +16,9 @@ use std::pin::Pin;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio_util::sync::CancellationToken;
 
+// An incremental run stops at the high-water mark, so with nothing new it costs one
+// index request per submission type. Kept under the app's jittered 25-35 minute timer
+// so every tick runs, while relaunches in between are throttled.
 const INCREMENTAL_INTERVAL: Duration = Duration::from_secs(20 * 60);
 const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
@@ -28,6 +31,7 @@ const CATEGORY_PATH_VERSION: &str = "category_path_v2";
 const CATEGORY_REFRESH_FAILURE: &str = "category_taxonomy_failure_v2";
 const CATEGORY_REFRESH_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 const CATEGORY_RETRY_INTERVAL: Duration = Duration::from_secs(60 * 60);
+// Bumping any of these forces one full resync to backfill existing catalogs.
 const BACKFILL_VERSIONS: [&str; 5] = [
   PREVIEW_IMAGES_VERSION,
   HYDRATION_VERSION,
@@ -36,13 +40,22 @@ const BACKFILL_VERSIONS: [&str; 5] = [
   CATEGORY_PATH_VERSION,
 ];
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+// Private or trashed submissions legitimately hydrate to nothing; more than this means
+// hydration itself is failing and the snapshot must not be trusted.
 const MAX_UNHYDRATED_PERCENT: u64 = 5;
 const UNHYDRATED_ALLOWANCE: u64 = 25;
+// Rows a crawl missed are re-checked before tombstoning; more misses than this mean the
+// crawl itself went wrong.
 const MAX_TOMBSTONE_CONFIRMATIONS: usize = 400;
+// Sync runs once per launch, so a rate limit that aborted it would stall the crawl until
+// the next launch. Wait it out a few times instead.
 const MAX_RATE_LIMIT_WAITS: u32 = 5;
 const MAX_RATE_LIMIT_WAIT: Duration = Duration::from_secs(5 * 60);
 const LAST_COLLECTION_SYNC_AT: &str = "last_collection_sync_at";
+// Collections are re-crawled in full every time, so they keep the slower cadence.
 const COLLECTION_SYNC_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+// Adding an item doesn't change a collection's modified date, so items are also
+// re-crawled once they are this old.
 const COLLECTION_ITEMS_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const COLLECTION_SYNC_PHASE: &str = "collections";
 
@@ -65,6 +78,8 @@ trait CatalogSource: Send + Sync {
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<Option<BulkHydration>>>;
 
+  /// Bulk hydration serves withheld submissions like live ones; only the profile says
+  /// whether GameBanana still shows a submission publicly.
   fn is_hidden<'a>(
     &'a self,
     _submission: &'a SubmissionRef,
@@ -271,6 +286,7 @@ impl CatalogSync {
     force_reconcile: bool,
     cancel: &CancellationToken,
   ) -> Result<SyncOutcome, Error> {
+    // An older build's retry delay must not defer this upgrade's first backfill.
     self.catalog.prepare_category_backfill().await?;
     let incomplete = self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some();
     let full_sync_due = force_reconcile
@@ -284,9 +300,11 @@ impl CatalogSync {
         self.full_sync(cancel).await?;
         SyncOutcome::Full
       } else {
+        // While an incomplete crawl waits to be retried, new uploads still arrive incrementally.
         self.incremental_sync(force_refresh, cancel).await?
       };
 
+    // Collections are extra; a failure here must not fail the mod sync that already landed.
     match self.sync_collections(force_refresh, cancel).await {
       Err(Error::ProviderCancelled) => return Err(Error::ProviderCancelled),
       Err(error) => log::warn!("GameBanana collection sync failed: {error}"),
@@ -328,6 +346,7 @@ impl CatalogSync {
       }
       page_number = page_number.saturating_add(1);
     }
+    // Only a crawl that reached the last page knows which collections are gone.
     self.catalog.prune_collections(seen_at).await?;
 
     let undescribed = self.catalog.collections_needing_descriptions().await?;
@@ -517,6 +536,7 @@ impl CatalogSync {
           .filter_map(|record| record.date_modified)
           .max()
           .unwrap_or_default();
+        // Hydrate before committing the cursor, so an aborted page is crawled again on resume.
         self
           .hydrate_records(
             &index_records,
@@ -616,6 +636,8 @@ impl CatalogSync {
     Ok(false)
   }
 
+  /// A crawl that saw fewer rows than GameBanana reports, or failed to hydrate them, must
+  /// not tombstone the rows it missed or record the backfill as done.
   async fn verify_snapshot_coverage(
     &self,
     submission_type: SubmissionType,
@@ -640,6 +662,8 @@ impl CatalogSync {
     Ok(())
   }
 
+  /// Paging shifts when a submission disappears mid-crawl, so a row the crawl missed may
+  /// still be live. Ask GameBanana about each one and keep those that still resolve.
   async fn confirm_unseen(
     &self,
     snapshot_id: &str,
@@ -851,6 +875,7 @@ impl CatalogSync {
         .await
       {
         Ok(hydrated) => hydrated,
+        // Stop instead of hammering GameBanana; the sync resumes on the next run.
         Err(
           error @ (Error::ProviderCancelled
           | Error::ProviderRateLimited { .. }
@@ -977,6 +1002,7 @@ impl CatalogSync {
       }
       Err(error @ Error::ProviderCancelled) => Err(error),
       Err(error) => {
+        // A canceled or interrupted startup must retry instead of cooling down.
         self
           .catalog
           .set_state(CATEGORY_REFRESH_FAILURE, now.to_string())
@@ -1123,6 +1149,7 @@ fn from_hydration(
       && category.name.trim() != hydration.root_category.trim()
   });
   if changed_leaf || changed_root {
+    // Core hydration may observe an assignment newer than the index page.
     record.category_path = if changed_root {
       Vec::new()
     } else {
@@ -1170,6 +1197,7 @@ fn submission_ref(id: u64, submission_type: SubmissionType) -> SubmissionRef {
   }
 }
 
+/// Resumes the in-progress snapshot only when every type that has one agrees on it.
 fn resumable_snapshot(cursor_snapshots: &[Option<String>]) -> Option<String> {
   let mut snapshots = cursor_snapshots.iter().flatten();
   let first = snapshots.next()?;
@@ -1259,6 +1287,7 @@ mod tests {
     assert!(changed_root.category_path.is_empty());
   }
 
+  /// Only submissions served by an index page are still live on the fake GameBanana.
   struct FakeSource {
     pages: Mutex<VecDeque<Result<IndexPage, Error>>>,
     served: Mutex<HashSet<String>>,
@@ -1269,6 +1298,7 @@ mod tests {
       Box::pin(async { Ok([800, 200, 0]) })
     }
 
+    // Mods and sounds pop the queued pages in order; WIP indexes are always empty.
     fn index<'a>(
       &'a self,
       submission_type: SubmissionType,
@@ -1320,6 +1350,7 @@ mod tests {
     }
   }
 
+  /// Serves the same index as `FakeSource` but every bulk request fails, like a broken endpoint.
   struct UnhydratedSource(FakeSource);
 
   impl CatalogSource for UnhydratedSource {
@@ -1351,6 +1382,8 @@ mod tests {
     }
   }
 
+  /// Serves `FakeSource`, but GameBanana staff withheld the listed submissions: bulk
+  /// hydration still answers for them, only their profile says they are hidden.
   struct WithheldSource {
     source: FakeSource,
     withheld: HashSet<String>,
@@ -1391,6 +1424,7 @@ mod tests {
     }
   }
 
+  /// Two index pages of collections; collection 1 has two pages of items.
   struct CollectionSource {
     item_requests: std::sync::Arc<Mutex<Vec<(u64, u32)>>>,
   }
@@ -1522,6 +1556,7 @@ mod tests {
       .collect::<Vec<_>>();
     assert_eq!(slugs, ["10", "snd-20"]);
 
+    // A second run within the interval does nothing; a forced one skips unchanged items.
     sync
       .sync_collections(false, &CancellationToken::new())
       .await
@@ -1533,6 +1568,8 @@ mod tests {
     assert_eq!(*item_requests.lock().unwrap(), [(1, 1), (1, 2)]);
   }
 
+  /// Files every submission under Skins > Nurse Harrow > Faithful/Vanilla+, which the
+  /// legacy hydration API reports only as "Faithful/Vanilla+".
   struct SkinSubcategorySource {
     category_requests: std::sync::Arc<Mutex<u32>>,
   }
@@ -1993,6 +2030,7 @@ mod tests {
         .is_none()
     );
 
+    // Older builds recorded in-flight attempts before they could be canceled.
     catalog
       .set_state(
         "category_taxonomy_attempt_v1",
@@ -2308,6 +2346,7 @@ mod tests {
     let mut short_page = page(3, true);
     short_page.metadata.record_count = 2;
 
+    // GameBanana reports two mods but the crawl only sees one, as when pages shift mid-crawl.
     CatalogSync::with_source(
       catalog.clone(),
       FakeSource {
@@ -2349,6 +2388,8 @@ mod tests {
     .await
     .unwrap();
 
+    // Mod 2 is still live on GameBanana but slipped between pages on this crawl;
+    // mod 1 was deleted.
     CatalogSync::with_source(
       catalog.clone(),
       FakeSource {
@@ -2396,6 +2437,7 @@ mod tests {
     .await
     .unwrap();
 
+    // Both mods dropped out of the index and still hydrate, but staff withheld mod 2.
     CatalogSync::with_source(
       catalog.clone(),
       WithheldSource {
@@ -2702,6 +2744,7 @@ mod tests {
         .unwrap(),
       super::SyncOutcome::Throttled
     );
+    // The full retry stays throttled, but new uploads still arrive incrementally.
     assert_eq!(
       throttled
         .synchronize(true, false, &CancellationToken::new())
@@ -2709,6 +2752,7 @@ mod tests {
         .unwrap(),
       super::SyncOutcome::Incremental
     );
+    // Expire only the retry timestamp, without waiting in the test.
     catalog
       .set_state(super::LAST_INCOMPLETE_SNAPSHOT_AT, "0".to_string())
       .await
@@ -2763,6 +2807,7 @@ mod tests {
         .is_none()
     );
     drop(sync);
+    // A fresh synchronizer reads the persisted backoff and only syncs incrementally.
     let restarted = CatalogSync::with_source(
       catalog.clone(),
       FakeSource {

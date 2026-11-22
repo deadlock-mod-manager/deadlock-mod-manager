@@ -17,6 +17,7 @@ mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
   invoke: async () => null,
 }));
+// The store loads plugin discovery, which relies on Vite's import.meta.glob.
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
 const { usePersistedStore } = await import("@/lib/store");
 const { getAdditionalArgs } = await import("./launch-options");

@@ -60,6 +60,8 @@ export const BatchUpdateDialog = ({
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
   const queryClient = useQueryClient();
   const [refreshingFiles, setRefreshingFiles] = useState(false);
+  // The refresh below writes the downloads query, which hands the mod page a
+  // new `updates` array; keying on mod ids keeps that from refetching forever.
   const updatesRef = useRef(updates);
   updatesRef.current = updates;
   const updateIds = updates.map((update) => update.mod.remoteId).join("|");
@@ -87,6 +89,7 @@ export const BatchUpdateDialog = ({
       const update = updatableMods.find(
         (candidate) => candidate.mod.remoteId === target.mod.remoteId,
       );
+      // A VPK pick only lives on the target it was sent with.
       return update
         ? { ...update, selectedFileTree: target.selectedFileTree }
         : target;
@@ -147,6 +150,8 @@ export const BatchUpdateDialog = ({
     }
     const pending = updatesRef.current;
     prepareUpdates(pending);
+    // Update checks reuse a cached file list; authors who replace files would
+    // leave it pointing at ids GameBanana no longer serves.
     let cancelled = false;
     setRefreshingFiles(true);
     void Promise.all(
@@ -221,6 +226,7 @@ export const BatchUpdateDialog = ({
           onClose={() => onOpenChange(false)}
         />
       )}
+      {/* Not tied to `open`: the update finishes even if the dialog was closed. */}
       <FileSelectorDialog
         isOpen={!!pendingSelection && !batchUpdateMutation.isPending}
         onOpenChange={(isOpen) => {
@@ -233,6 +239,8 @@ export const BatchUpdateDialog = ({
           onOpenChange(true);
           batchUpdateMutation.mutate([
             { ...pendingSelection.target, selectedFileTree: fileTree },
+            // This run replaces the last result, so the batch's failures retry
+            // with it instead of vanishing from the dialog.
             ...pendingUpdates.filter(
               (update) => update.mod.remoteId !== pendingSelection.modId,
             ),

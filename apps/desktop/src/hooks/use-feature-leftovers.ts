@@ -5,6 +5,10 @@ import { serverPickerStateQuery } from "@/hooks/use-server-picker";
 import type { OptionalFeature } from "@/lib/features";
 import { usePersistedStore } from "@/lib/store";
 
+/**
+ * Turning a feature off only hides it. This describes what a hidden feature
+ * still leaves applied to the game, which only its own page can undo.
+ */
 export const useFeatureLeftovers = (
   isOff: (feature: OptionalFeature) => boolean,
 ) => {

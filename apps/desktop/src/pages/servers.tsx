@@ -46,10 +46,12 @@ const Servers = () => {
     return servers.find((s) => s.id === selectedId) ?? null;
   }, [servers, selectedId]);
 
+  // Finding the page is what the sidebar hint is for.
   useEffect(() => {
     usePersistedStore.getState().markFeatureUsed("server-browser");
   }, []);
 
+  // Auto-clear selection if it no longer exists in the result set.
   useEffect(() => {
     if (selectedId && !selectedServer && servers.length > 0) {
       setSelectedId(null);

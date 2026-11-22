@@ -36,6 +36,9 @@ pub(in super::super) fn verify(source: &[u8], rebuilt: &[u8]) -> Option<()> {
   }
   let ow = worlds(&old)?;
   let nw = worlds(&new)?;
+  // NM supplies a named model-space pose independently of these bind frames.
+  // Equal rest-pose skin matrices are insufficient: authored and repaired rigs
+  // must skin identically under the SAME animated pose, for every old bone.
   for (a, b) in ow.iter().zip(&nw) {
     if a
       .inverse()

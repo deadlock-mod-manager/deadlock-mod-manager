@@ -1,3 +1,5 @@
+//! DMM host adapter for the external plugin runtime: profiles, installs,
+//! game detection and the network.
 use crate::{errors::Error, mod_manager::ModManager};
 use dmm_plugin_runtime::{
   Deployment, Error as RuntimeError, HostAdapter, HttpRequest, HttpResponse, ProfileMod,
@@ -107,6 +109,8 @@ pub struct DesktopAdapter {
 }
 
 impl DesktopAdapter {
+  /// Hash of the artifact that is actually enabled in the profile, read from
+  /// the profile's VPK manifest rather than trusted from our own records.
   fn read_installed_hash(
     &self,
     manager: &ModManager,
@@ -146,6 +150,8 @@ impl DesktopAdapter {
   }
 }
 
+/// The runtime names the default profile `"default"`; the mod manager names
+/// it with no folder.
 fn profile_arg(folder: &str) -> Option<&str> {
   (folder != DEFAULT_PROFILE).then_some(folder)
 }
@@ -153,6 +159,8 @@ fn profile_arg(folder: &str) -> Option<&str> {
 const DEFAULT_PROFILE: &str = "default";
 const MAX_METADATA_BYTES: u64 = 64 * 1024;
 
+/// The display name a local mod records in the mods store. Downloaded mods
+/// keep theirs in the frontend store, which the backend cannot read cheaply.
 fn stored_mod_name(mods_store: &Path, mod_id: &str) -> Option<String> {
   ModManager::ensure_safe_mod_id(mod_id).ok()?;
   let path = mods_store.join(mod_id).join("metadata.json");
@@ -190,6 +198,7 @@ fn profile_mods(
   )
 }
 
+/// `"default"` and every `profile_*` folder, like `list_profile_folders`.
 fn profile_folders(manager: &ModManager) -> Result<Vec<String>, Error> {
   let addons = manager.get_addons_path(None)?;
   let mut folders = vec![DEFAULT_PROFILE.to_owned()];

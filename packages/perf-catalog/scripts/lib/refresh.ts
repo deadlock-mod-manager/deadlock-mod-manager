@@ -33,6 +33,7 @@ const clientVersion = (steamInf: string): number | null => {
   return match ? Number(match[1]) : null;
 };
 
+/** GameTracking commit messages start with the build: `6711 | 7422 files | ...`. */
 const buildFromMessage = (message: string): number | null => {
   const match = /^(\d+)\s*\|/.exec(message);
   return match ? Number(match[1]) : null;
@@ -130,7 +131,9 @@ const refreshHistory = async (
             await fetchBytes(githubRawUrl(repo, commit.sha, steamInfPath)),
           ),
         );
-      } catch {}
+      } catch {
+        // Early GameTracking commits predate steam.inf; the message carries the build.
+      }
       build ??= buildFromMessage(commit.commit.message);
       if (build === null) return null;
       return {
@@ -186,6 +189,7 @@ const describePinChanges = (before: Sources, after: Sources): string[] => {
   return changes;
 };
 
+/** Moves every pin to the newest upstream state. Returns the new sources and what moved. */
 export const refreshSources = async (
   before: Sources,
 ): Promise<{ sources: Sources; changes: string[] }> => {
@@ -225,6 +229,8 @@ export const refreshSources = async (
     const id = String(definition.gamebananaId);
     const pin = await refreshCommunityPin(definition);
     const old = before.community[id];
+    // Download counts move every day; only carry a change that matters so the
+    // scheduled refresh doesn't open a pull request for noise.
     const samePin =
       old &&
       old.fileId === pin.fileId &&

@@ -419,6 +419,7 @@ fn video_settings_keep_every_setting_and_get_menu_labels() {
       .find(|setting| setting.key == key)
       .unwrap_or_else(|| panic!("{key}"))
   };
+  // Written as the author ships them, display settings included.
   assert_eq!(setting("defaultres").value, "-1");
   assert_eq!(setting("nowindowborder").value, "1");
   let shadows = setting("r_citadel_shadow_quality");
@@ -469,6 +470,7 @@ fn utf16_and_bom_text_decodes() {
   assert_eq!(decode_text(b"r_ssao \xFF0"), "r_ssao \u{fffd}0");
 }
 
+/// Small deterministic generator so the garbage below is the same on every run.
 struct Lcg(u64);
 
 impl Lcg {

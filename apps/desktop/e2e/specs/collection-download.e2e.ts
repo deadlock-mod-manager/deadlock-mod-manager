@@ -20,6 +20,7 @@ const enabledSwitch = (name: string) =>
   `[role="switch"][aria-label="Enable mod ${name}"]`;
 const inLibraryCount = () =>
   $('//span[normalize-space()="in library"]/preceding-sibling::span[1]');
+// Only mods still to download can be ticked for a partial download.
 const selectBox = (name: string) =>
   $(`[role="checkbox"][aria-label="${name}"]`);
 
@@ -58,6 +59,7 @@ describe("collection downloads", () => {
     await step("download the collection while one file fails", async () => {
       await confirmDownload("Download 2 mods");
       await waitForDisplayed(enabledSwitch(steady.name));
+      // The failed card offers its own retry, which this case leaves alone.
       await waitForDisplayed('button[aria-label="Retry"]');
       await screenshot("failed");
       await observeUntil(
@@ -95,6 +97,7 @@ describe("collection downloads", () => {
       (await readCatalogState(world)).localMods.map((mod) => mod.status),
       ["downloaded", "downloaded"],
     );
+    // Downloaded mods stay parked in addons until they are enabled.
     const { configuration } = await assertOwnedWorld(world);
     const addons = path.join(
       configuration.roots.game,

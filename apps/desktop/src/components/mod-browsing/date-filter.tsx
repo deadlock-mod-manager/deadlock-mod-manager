@@ -38,9 +38,11 @@ const DATE_PERIODS: DatePeriod[] = [
   "custom",
 ];
 
+// Label column + control column, shared by the rows in the filters menu.
 export const FILTER_ROW_CLASS =
   "grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2";
 
+// Deadlock mods on GameBanana start in 2024; no need to offer earlier years.
 const FIRST_MONTH = new Date(2024, 0);
 
 type DatePickerProps = {
@@ -120,6 +122,8 @@ const DateFilter = ({ id, label, value, onChange }: DateFilterProps) => {
   const to = parseFilterDate(value.to);
 
   return (
+    // Keep the dropdown menu's typeahead and arrow-key navigation away from
+    // the date pickers.
     <div className={FILTER_ROW_CLASS} onKeyDown={(e) => e.stopPropagation()}>
       <Label
         className='font-normal text-muted-foreground text-sm'

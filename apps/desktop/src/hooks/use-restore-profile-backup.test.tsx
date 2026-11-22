@@ -58,6 +58,7 @@ mock.module("@/hooks/use-profile-import", () => ({
   useProfileImport: () => ({
     importProgress: null,
     createProfileFromImport: async () => outcome,
+    // The user switches profile while the restore installs.
     addToCurrentProfile: async () => {
       usePersistedStore.setState({ activeProfileId: other });
       return outcome;

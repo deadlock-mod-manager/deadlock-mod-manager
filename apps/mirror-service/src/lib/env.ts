@@ -12,16 +12,13 @@ export const envSchema = z.object({
       "https://6a3fe299a5b74893055ba05145b62122@o84215.ingest.us.sentry.io/4510217497280512",
     ),
   POD_NAME: z.string().optional(),
-  CORS_ORIGIN: z
-    .array(z.string())
-    .optional()
-    .default([
-      "https://deadlockmods.com",
-      "https://deadlockmods.app",
-      "http://tauri.localhost",
-      "http://localhost:1420",
-      "http://localhost:3003",
-    ]),
+  CORS_ORIGIN: z.array(z.string()).optional().default([
+    "https://deadlockmods.com",
+    "https://deadlockmods.app",
+    "http://tauri.localhost", // Tauri production build
+    "http://localhost:1420", // Tauri dev server
+    "http://localhost:3003", // Local web server
+  ]),
   S3_ACCESS_KEY_ID: z.string(),
   S3_SECRET_ACCESS_KEY: z.string(),
   S3_BUCKET: z.string().default("deadlock-mod-manager-mirror"),

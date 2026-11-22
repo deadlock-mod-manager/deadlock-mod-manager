@@ -160,6 +160,7 @@ describe("parked files nothing records", () => {
   });
 
   it("ignores files identified any other way", () => {
+    // An enabled file the manifest assigns to a catalog mod.
     expect(
       isUnrecordedLeftover(
         { fileName: "pak01_dir.vpk", remoteId: "900001" },
@@ -174,6 +175,7 @@ describe("parked files nothing records", () => {
 
 describe("files the game doesn't load", () => {
   it("leaves a file the manifest records to DMM even when it hashes to another mod", () => {
+    // A disabled local mod's file whose contents match a catalog mod.
     expect(
       isIgnoredByGame({
         fileName: "local-1_pak05_dir.vpk",

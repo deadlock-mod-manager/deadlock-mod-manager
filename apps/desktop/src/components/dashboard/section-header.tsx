@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowRightIcon, type Icon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
+/** Ruled dashboard section header with an external "see more" link. */
 export const SectionHeader = ({
   icon: HeaderIcon,
   title,

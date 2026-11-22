@@ -39,6 +39,10 @@ export class CronQueue extends BaseQueue<CronJobData> {
     );
   }
 
+  /**
+   * Remove a job scheduler
+   * @param schedulerId - Unique identifier of the job scheduler to remove
+   */
   async removeJobScheduler(schedulerId: string) {
     const jobSchedulers = await this.queue.getJobSchedulers();
     const schedulerToRemove = jobSchedulers.find(
@@ -53,10 +57,16 @@ export class CronQueue extends BaseQueue<CronJobData> {
     return false;
   }
 
+  /**
+   * Get all job schedulers
+   */
   async getJobSchedulers() {
     return this.queue.getJobSchedulers();
   }
 
+  /**
+   * Pause all job schedulers
+   */
   async pauseJobSchedulers() {
     const jobSchedulers = await this.getJobSchedulers();
     const pausedSchedulers: Awaited<ReturnType<typeof this.getJobSchedulers>> =
@@ -74,6 +84,10 @@ export class CronQueue extends BaseQueue<CronJobData> {
     return pausedSchedulers;
   }
 
+  /**
+   * Resume job schedulers from a previous pause
+   * @param schedulers - Array of job schedulers to resume
+   */
   async resumeJobSchedulers(
     schedulers: Awaited<ReturnType<typeof this.getJobSchedulers>>,
   ) {

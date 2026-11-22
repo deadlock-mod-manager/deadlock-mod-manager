@@ -1,5 +1,9 @@
 import { type RefObject, useEffect } from "react";
 
+/**
+ * Sets `data-stuck` on a sticky element once it leaves its resting place,
+ * without re-rendering. `anchor` is a zero-height element right above it.
+ */
 export const useStuckAttribute = (
   scrollRef: RefObject<HTMLElement | null>,
   anchorRef: RefObject<HTMLElement | null>,

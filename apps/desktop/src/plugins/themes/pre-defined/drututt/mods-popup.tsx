@@ -17,6 +17,7 @@ const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLSelectElement ||
   (target instanceof HTMLElement && target.isContentEditable);
 
+// Easter egg: typing "mods" outside a text field summons drututMODS, the channel's chat call for moderators.
 export const ModsPopup = () => {
   const { t } = useTranslation();
   const [shownAt, setShownAt] = useState<number | null>(null);

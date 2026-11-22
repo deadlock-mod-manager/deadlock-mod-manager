@@ -37,6 +37,10 @@ const allEntries = (manifest: FoundryManifest): FoundryEntry[] => [
   ...manifest.other,
 ];
 
+/**
+ * Right-hand panel for the selected file: what it is, where it lives, and the
+ * edits that act on it.
+ */
 export const FoundryInspector = () => {
   const { t } = useTranslation();
   const {
@@ -54,6 +58,8 @@ export const FoundryInspector = () => {
     );
     if (known) return known;
 
+    // A base-game card the mod doesn't override isn't in the manifest, but the
+    // user can still replace it — the export then adds that card to the skin.
     const card = cardPreviews.defaultCards.find(
       (preview) => preview.path === selectedEntryPath,
     );

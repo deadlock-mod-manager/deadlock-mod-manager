@@ -138,6 +138,7 @@ const Mod = () => {
     isDownloadable: mod?.downloadable,
     enabled: isGameBananaMod || isNativeMod,
   });
+  // Retrying resets a failed query to pending, so keep the failure until it loads.
   const filesLoadFailed = !filesLoaded && filesErrorCount > 0;
 
   const developerMode = usePersistedStore((state) => state.developerMode);
@@ -185,6 +186,7 @@ const Mod = () => {
   const isInstalled = localMod?.status === ModStatus.Installed;
   const hasImages = images.length > 0;
   const hasHero = hasImages || !!(mod?.isAudio && mod.audioUrl);
+  // Cached and installed placeholders carry no GameBanana notice.
   const withheld = mod && "withheld" in mod ? mod.withheld : null;
   const obsolescenceNotice =
     mod && "obsolescenceNotice" in mod ? mod.obsolescenceNotice : null;

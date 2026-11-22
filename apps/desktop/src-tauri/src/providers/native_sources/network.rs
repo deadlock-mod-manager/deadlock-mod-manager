@@ -21,6 +21,8 @@ pub(super) fn invalid(message: impl Into<String>) -> Error {
   Error::InvalidInput(format!("Mod source: {}", message.into()))
 }
 
+/// Returns a credential-free HTTP URL. HTTP and non-public hosts need an
+/// explicit enrollment opt-in; every actual request also checks resolved IPs.
 pub fn validate_source_url(value: &str, allow_local_network: bool) -> Result<Url, Error> {
   if value.len() > 8192 {
     return Err(invalid("URL exceeds the 8192-character limit"));
@@ -92,6 +94,7 @@ fn is_public_v6(ip: Ipv6Addr) -> bool {
     return is_public_v4(v4);
   }
   let segments = ip.segments();
+  // Only global unicast; exclude documentation, transition and protocol ranges.
   (segments[0] & 0xe000) == 0x2000
     && segments[0] != 0x2002
     && !(segments[0] == 0x2001 && segments[1] < 0x0200)
@@ -106,6 +109,8 @@ fn is_public_ip(ip: IpAddr) -> bool {
   }
 }
 
+/// Pins the validated DNS result to the connection, avoiding a second lookup
+/// after the public-address check. Redirects and environment proxies are off.
 pub async fn source_request_client(url: &Url, allow_local_network: bool) -> Result<Client, Error> {
   request_client(url, allow_local_network, Duration::from_secs(30)).await
 }
@@ -159,6 +164,10 @@ async fn pinned_addresses(
   Ok((host.to_string(), addresses))
 }
 
+/// Artifact URLs often redirect to storage (a presigned bucket URL), so
+/// redirects are followed, but only to the source's declared download origins.
+/// Every one of those hosts is resolved and pinned up front, so a redirect gets
+/// the same public-address check as the first request.
 pub async fn artifact_download_client(artifact: &ResolvedNativeArtifact) -> Result<Client, Error> {
   let allow_local_network = artifact.allow_local_network;
   let url = validate_source_url(&artifact.url, allow_local_network)?;

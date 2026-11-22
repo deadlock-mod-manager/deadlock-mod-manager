@@ -8,6 +8,11 @@ import { usePersistedStore } from "@/lib/store";
 
 const IDLE_RESET_EVENTS = ["pointerdown", "keydown", "wheel"] as const;
 
+/**
+ * Picks at most one feature hint per session, once the page has been idle for
+ * a moment and nothing more important (a dialog, an open menu, a launch, or
+ * the game itself) has the user's attention.
+ */
 export const FeatureHintsRenderer = () => {
   const queryClient = useQueryClient();
   const hasCompletedOnboarding = usePersistedStore(

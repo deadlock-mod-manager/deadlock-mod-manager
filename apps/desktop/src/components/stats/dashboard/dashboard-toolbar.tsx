@@ -69,6 +69,7 @@ const ConfirmDialog = ({
   );
 };
 
+/** The confirmation an editing step is waiting for, worded for that step. */
 export const PendingConfirmDialog = ({
   pending,
   onConfirm,

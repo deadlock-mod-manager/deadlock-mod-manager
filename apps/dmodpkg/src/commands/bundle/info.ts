@@ -1,3 +1,7 @@
+/**
+ * Display bundle information
+ */
+
 export async function bundleInfoCommand(
   _bundlePath: string,
   _options?: {
@@ -5,5 +9,6 @@ export async function bundleInfoCommand(
     verbose?: boolean;
   },
 ) {
+  // TODO: Implement bundle info command
   console.log("Bundle info command implementation pending");
 }

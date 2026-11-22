@@ -32,6 +32,8 @@ export const PlayerAvatar = ({
 }) => (
   <Avatar className={cn("h-11 w-11", className)}>
     {profile?.avatarfull && <AvatarImage alt={name} src={profile.avatarfull} />}
+    {/* deadlock-api has no Steam profile for some accounts, so this is what
+        most new players see; the ring keeps it reading as an avatar. */}
     <AvatarFallback className='border border-border/60 bg-secondary text-muted-foreground'>
       <User className='h-1/2 w-1/2' />
     </AvatarFallback>
@@ -43,6 +45,7 @@ interface AccountSwitcherProps {
   onSelectAccount: (accountId: number) => void;
 }
 
+/** The chevron that switches between the Steam accounts on this machine. */
 export const AccountSwitcher = ({
   accounts,
   onSelectAccount,

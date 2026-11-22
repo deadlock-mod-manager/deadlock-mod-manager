@@ -69,6 +69,7 @@ fn writes_in_place_keeps_the_header_and_backs_up_the_original() {
     PLAYER
   );
 
+  // A second apply keeps the first backup: it is the player's file, not ours.
   setup.apply(&[("r_citadel_shadow_quality", "1")], ChangedKeys::Overwrite);
   assert_eq!(
     fs::read_to_string(cache_dir(setup.data.path()).join(BACKUP_FILE)).unwrap(),
@@ -116,6 +117,7 @@ fn launch_reapply_keeps_values_changed_in_game_and_apply_overwrites_them() {
 
   setup.apply(&[("r_citadel_shadow_quality", "0")], ChangedKeys::Overwrite);
   assert!(setup.text().contains("_quality\"\t\t\"0\""));
+  // Remove still restores the value from before the first write.
   revert(setup.data.path()).unwrap();
   assert_eq!(setup.text(), PLAYER);
 }
@@ -193,6 +195,7 @@ fn state_reports_values_changed_since_and_ignores_reformatted_numbers() {
     ],
     ChangedKeys::Overwrite,
   );
+  // The game rewrites the whole file when a setting changes in its menu.
   let rewritten = setup
     .text()
     .replace("_quality\"\t\t\"0\"", "_quality\"\t\t\"2\"")
@@ -213,6 +216,8 @@ fn state_reports_values_changed_since_and_ignores_reformatted_numbers() {
   );
 }
 
+/// Another Steam account's video.txt holds that account's own values: ours
+/// replace them, and restoring undoes both files.
 #[test]
 fn a_move_to_another_file_is_caught_and_restore_undoes_both() {
   let setup = Setup::new();
@@ -245,6 +250,8 @@ fn a_move_to_another_file_is_caught_and_restore_undoes_both() {
   assert_eq!(fs::read_to_string(&account).unwrap(), PLAYER);
 }
 
+/// The game builds the account's copy from the game folder's, ours included:
+/// Turn off still puts back the player's values from before the first write.
 #[test]
 fn a_move_keeps_the_players_original_values() {
   let setup = Setup::new();
@@ -291,9 +298,11 @@ fn an_adopted_file_is_the_new_base_for_the_next_config() {
   let liked = setup.text();
   adopt(setup.data.path(), Some(&setup.path())).unwrap();
 
+  // A config without video settings leaves the adopted values alone.
   setup.apply(&[], ChangedKeys::Overwrite);
   assert_eq!(setup.text(), liked);
 
+  // One with video settings goes back to them, not to the first file.
   setup.apply(&[("shaderquality", "2")], ChangedKeys::Overwrite);
   revert(setup.data.path()).unwrap();
   assert_eq!(setup.text(), liked);

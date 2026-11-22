@@ -1,3 +1,5 @@
+//! The tolerant lexer and key/value parser every gameinfo-like format goes through.
+
 use std::collections::HashSet;
 
 use super::{ParsedLeaf, truncate};
@@ -9,6 +11,7 @@ pub(super) enum TokenKind {
   Close,
   Word,
   Quoted,
+  /// `[$WIN64]`-style platform conditions; ignored.
   Condition,
 }
 
@@ -28,6 +31,7 @@ pub(super) struct Comment<'a> {
 pub(super) struct Lexed<'a> {
   pub(super) tokens: Vec<Token<'a>>,
   pub(super) comments: Vec<Comment<'a>>,
+  /// Lines with a quote that never closes; the string ends at the line end.
   pub(super) unterminated: Vec<u32>,
 }
 
@@ -139,8 +143,12 @@ fn ends_word(bytes: &[u8], i: usize) -> bool {
   ) || (bytes[i] == b'/' && bytes.get(i + 1) == Some(&b'/'))
 }
 
+/// Nesting deeper than this is never a real gameinfo; it is treated as stray
+/// braces so garbage input can't build unbounded paths.
 const MAX_DEPTH: usize = 32;
 
+/// At most this many unreadable lines are reported one by one; the rest only
+/// count towards [`ParsedConfig::unreadable_lines`].
 pub(super) const MAX_REPORTED_ERRORS: usize = 200;
 
 pub(super) struct KvDocument<'a> {
@@ -150,6 +158,11 @@ pub(super) struct KvDocument<'a> {
   pub(super) unreadable_lines: u32,
 }
 
+/// Pairs tokens into `key value` leaves. A value must sit on its key's line;
+/// a key whose value is on a later line is an orphan, which stops one broken
+/// line from shifting every pair after it. A line whose first unquoted word
+/// can't be a key (`---- END OF CONFIG ----`), or with another unquoted word
+/// after a pair, is prose that lost its `//`; the rest of it is skipped.
 pub(super) fn parse_kv(text: &str) -> KvDocument<'_> {
   let lexed = lex(text);
   let mut parser = KvParser {
@@ -183,9 +196,12 @@ pub(super) fn parse_kv(text: &str) -> KvDocument<'_> {
 struct KvParser<'a> {
   lines: Vec<&'a str>,
   path: Vec<String>,
+  /// Open blocks: whether the block has a key (anonymous `{` adds no path
+  /// segment) and the line it opened on.
   frames: Vec<(bool, u32)>,
   pending: Option<Token<'a>>,
   last_pair_line: Option<u32>,
+  /// Every pair on `last_pair_line` had an unquoted key and value.
   line_pairs_unquoted: bool,
   junk_line: Option<u32>,
   leaves: Vec<ParsedLeaf>,
@@ -262,6 +278,8 @@ impl<'a> KvParser<'a> {
     }
     let follows_pair = self.last_pair_line == Some(token.line);
     if token.kind == TokenKind::Word && (follows_pair || !plausible_key(token.text)) {
+      // Unquoted words all the way are prose; a quoted pair followed by an
+      // uncommented note (`ai_disabled "0" Turns off AI`) keeps its pair.
       if follows_pair && self.line_pairs_unquoted {
         while self
           .leaves

@@ -11,10 +11,16 @@ import {
   resyncProfileShards,
 } from "@/lib/tauri-commands";
 
+// Steam only changes the build while it updates, so a slow poll plus the
+// window-focus refetch catches it. The gameinfo check is a single file read.
 const BUILD_POLL_MS = 5 * 60_000;
 const MOD_PATHS_POLL_MS = 15_000;
 export const MOD_PATHS_KEY = ["gameinfo-mod-paths"];
 
+/**
+ * Watches for the two ways a Steam update breaks mods: a new build id in the
+ * app manifest, and gameinfo.gi losing the search paths DMM wrote.
+ */
 export const useGameConfigAlert = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -42,6 +48,7 @@ export const useGameConfigAlert = () => {
     meta: { skipGlobalErrorHandler: true },
   });
 
+  // First run on this install: remember the build without announcing it.
   useEffect(() => {
     if (buildId != null && knownBuildId == null) setKnownBuildId(buildId);
   }, [buildId, knownBuildId, setKnownBuildId]);

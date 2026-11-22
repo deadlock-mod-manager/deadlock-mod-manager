@@ -7,13 +7,20 @@ import {
 } from "@/lib/analytics/schema";
 import type { DownloadableMod } from "@/types/mods";
 
+/**
+ * The rejection a second request for an in-flight mod gets. The first download
+ * is still running and owns the mod's status, so a caller must not mark the mod
+ * failed over it.
+ */
 export class DownloadAlreadyQueuedError extends Error {}
 
 interface PendingDownload {
   mod: DownloadableMod;
+  /** Names this request in the backend's events. */
   attemptId: string;
   attempt: AnalyticsAttempt<"mod_download">;
   quietCancels: number;
+  /** False while the download waits in the backend's queue. */
   started: boolean;
 }
 interface DownloadQueueDependencies {
@@ -24,9 +31,12 @@ interface DownloadQueueDependencies {
   cancel: (modId: string) => Promise<void>;
   duplicateMessage: () => string;
   onQueueError: (error: Error) => void;
+  /** Unique across reloads: a reloaded window must not reuse an earlier attempt's id. */
   createAttemptId: () => string;
 }
 
+// One record per mod owns its callbacks and attempt. Backend events that settle
+// a download also name the attempt, and only that attempt's record takes them.
 export class DownloadQueue {
   private pending = new Map<string, PendingDownload>();
   constructor(private readonly dependencies: DownloadQueueDependencies) {}
@@ -34,6 +44,7 @@ export class DownloadQueue {
   getMod(modId: string) {
     return this.pending.get(modId)?.mod;
   }
+  /** The mod's pending download, if it is the attempt the event names. */
   getAttempt(modId: string, attemptId: string | null) {
     return this.attempt(modId, attemptId)?.mod;
   }
@@ -42,6 +53,10 @@ export class DownloadQueue {
     if (entry) entry.started = true;
     return entry?.mod;
   }
+  /**
+   * A resumed download goes back to the backend's queue, where it may wait
+   * behind the download that started while it was paused.
+   */
   requeue(modId: string) {
     const entry = this.pending.get(modId);
     if (entry) entry.started = false;
@@ -99,6 +114,7 @@ export class DownloadQueue {
     )?.onError(new Error(error));
   }
 
+  /** Quiet cancels skip completion/error callbacks. Returns false if untracked. */
   async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
     if (entry && !notify) entry.quietCancels++;
@@ -109,6 +125,7 @@ export class DownloadQueue {
       throw error;
     }
     if (!entry) return false;
+    // Completion may enqueue another request while the cancellation IPC is pending.
     this.settle(modId, "cancelled", entry)?.onError(
       new Error("Download cancelled"),
     );

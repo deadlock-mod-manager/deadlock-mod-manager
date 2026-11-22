@@ -8,6 +8,9 @@ import {
   withLegacyVpkMods,
 } from "./legacy-client-compat";
 
+// Mirrors `HashAnalysisResponse` in released desktop builds
+// (apps/desktop/src-tauri/src/mod_manager/addon_analyzer.rs before v2), whose
+// serde structs reject a response missing any of these fields.
 const legacyMatchedVpkSchema = z.object({
   id: z.string(),
   mod: z.object({

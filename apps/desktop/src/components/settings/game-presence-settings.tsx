@@ -211,6 +211,7 @@ export const GamePresenceSettings = () => {
     sampleValues,
   );
 
+  // Discord shows the party count beside the timer only while in a party.
   const previewShowsPartySize =
     !gamePresenceHidePartySize &&
     (selectedRow.key === "partyHideout" || selectedRow.key === "partyMatch");

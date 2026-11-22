@@ -33,8 +33,10 @@ type SlotFilter = SlotType | "all";
 const isSlotFilter = (value: string): value is SlotFilter =>
   value === "all" || isSlotType(value);
 
+/** The ruler spans this winrate range; items outside it pin to the edge. */
 const RULER_LOW = 0.3;
 const RULER_HIGH = 0.8;
+/** A buy time gap below this is noise, not "late". */
 const LATE_BUY_S = 90;
 
 const at = (winrate: number) =>
@@ -235,6 +237,7 @@ interface ItemsTabProps {
   onRetry: () => void;
 }
 
+/** The player's items next to everyone else's, with the extremes called out. */
 export const ItemsTab = ({
   items,
   itemsById,

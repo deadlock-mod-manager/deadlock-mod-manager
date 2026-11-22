@@ -7,6 +7,11 @@ export type CollectionFreshness = {
   total: number;
 };
 
+/**
+ * How many of an collection's mods predate the current game patch, by the same
+ * rule the mod store uses. Null when the catalog knows none of the collection's
+ * mods, since there is nothing to judge.
+ */
 export const getCollectionFreshness = (
   mods: ModDto[],
 ): CollectionFreshness | null => {

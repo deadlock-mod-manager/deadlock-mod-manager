@@ -8,6 +8,11 @@ import { useTranslation } from "react-i18next";
 
 const DROP_DIR = "foundry-drops";
 
+/**
+ * The window has native file drops off (so in-app drag and drop works), which
+ * means a dropped file arrives without a path. Stage its bytes under app data so
+ * the backend can read it like a picked file.
+ */
 export const stageDroppedFile = async (file: File): Promise<string> => {
   await mkdir(DROP_DIR, {
     baseDir: BaseDirectory.AppLocalData,
@@ -24,6 +29,10 @@ export const stageDroppedFile = async (file: File): Promise<string> => {
 export const extensionOf = (name: string) =>
   name.split(".").pop()?.toLowerCase() ?? "";
 
+/**
+ * Drop a file here or click to pick one. Hands the file's path to `onFile`,
+ * either straight from the picker or staged from a drop.
+ */
 export const FoundryDropZone = ({
   title,
   extensions,

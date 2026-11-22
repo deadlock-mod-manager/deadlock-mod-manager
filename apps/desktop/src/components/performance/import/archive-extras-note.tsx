@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { describeArchiveExtras } from "@/lib/performance/import/review";
 import type { ImportVariant } from "@/types/generated/ImportVariant";
 
+/** What else an archive holds besides the versions offered for import. */
 export const ArchiveExtrasNote = ({
   variants,
 }: {

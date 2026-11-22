@@ -142,6 +142,8 @@ pub async fn get_gamebanana_collection(
   }))
 }
 
+/// GameBanana hid the submission, so the catalog stops listing it until a crawl sees it
+/// again.
 pub(crate) async fn drop_hidden_submission(catalog: &Catalog, submission: SubmissionRef) {
   if let Err(error) = catalog.tombstone(submission.clone()).await {
     log::warn!("Could not drop hidden submission {submission:?} from the catalog: {error}");
@@ -166,6 +168,7 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
+      // Withheld submissions still render with their notice; the rest are gone for good.
       if profile.is_private || profile.is_trashed {
         drop_hidden_submission(&backend.catalog, submission).await;
         return Err(Error::ProviderSubmissionUnavailable);
@@ -215,6 +218,8 @@ pub async fn get_gamebanana_submission_detail(
       }
       normalized.is_map = submission.submission_type == crate::providers::SubmissionType::Mod
         && normalized.category == "Maps";
+      // Caching the profile is incidental; a busy catalog must not hide a page we already
+      // have. A withheld submission stays out of the catalog's listings.
       if profile.is_hidden() {
         drop_hidden_submission(&backend.catalog, submission).await;
       } else if let Err(error) = backend
@@ -304,6 +309,9 @@ pub async fn resolve_gamebanana_download_candidates(
   submission_files(&state, &policy, &remote_id).await
 }
 
+/// Returns the timestamp of the newest change that counts as an update, if any.
+/// Installs that recorded their file ids only react to changes in those files,
+/// so optional files added to the same submission don't flag an update.
 fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) -> Option<i64> {
   let newest_file = snapshot
     .files
@@ -322,6 +330,7 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
     return (latest > installed.installed_at).then_some(latest);
   }
 
+  // Page edits bump remote_updated_at, so a skipped update keys off file dates.
   let changed_at = snapshot
     .files
     .iter()
@@ -338,6 +347,11 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
   changed_at.max(replacement_added_at(snapshot, installed, &selected))
 }
 
+/// Archived files drop out of the snapshot and GameBanana doesn't link a file
+/// to its newer version, so a missing selected file only counts as replaced
+/// when a newer upload clearly takes its place. A single-file mod whose only
+/// file was swapped counts whatever the new name, since authors often version
+/// it (`mod_6860.zip` to `mod_6861.zip`). Matches `selectUpdateDownloads`.
 fn replacement_added_at(
   snapshot: &UpdateSnapshot,
   installed: &InstalledSubmissionDto,
@@ -364,6 +378,9 @@ fn replacement_added_at(
     .max()
 }
 
+// GameBanana tells uploads that share a file name apart with a random `_xxxxx`
+// suffix, so a re-uploaded pack keeps its name up to that suffix. Matches
+// `uploadBaseName` in update-download-selection.ts.
 fn upload_base_name(name: &str) -> String {
   let name = name.to_lowercase();
   if let Some((stem, extension)) = name.rsplit_once('.')
@@ -386,6 +403,8 @@ pub async fn check_gamebanana_catalog_updates(
   submissions: Vec<InstalledSubmissionDto>,
 ) -> Result<CatalogUpdatesDto, Error> {
   let backend = state.backend()?;
+  // Observers can overlap while installation changes the query key. Recheck
+  // the cache after the preceding caller has finished populating it.
   let _update_check = backend.update_check.lock().await;
   let now = unix_timestamp();
   let mut resolved = Vec::new();
@@ -712,6 +731,8 @@ fn retain_cached_category(
     normalized.category_path = cached.category_path.clone();
     return;
   }
+  // A shared parent proves the missing prefix even when the leaf changed.
+  // Descendants after that parent come entirely from the new profile.
   if let Some(position) = cached
     .category_path
     .iter()
@@ -789,6 +810,7 @@ mod tests {
       expected
     );
 
+    // Index and bulk hydration responses don't fetch embedded media.
     for hydrated in [false, true] {
       let mut sparse = saved.clone();
       sparse.is_hydrated = hydrated;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DeadlockHeroes } from "../constants";
 
+// Helper for date fields that may come as strings from cache (JSON serialization)
 const coercedDate = z.coerce.date();
 
 export const crosshairConfigSchema = z.object({

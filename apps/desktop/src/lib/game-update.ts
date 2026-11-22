@@ -1,5 +1,7 @@
 export type GameConfigAlert = {
+  /** gameinfo.gi lost our search paths, so enabled mods won't load. */
   modsDetached: boolean;
+  /** Steam installed a build the user hasn't been told about yet. */
   gameUpdated: boolean;
 };
 
@@ -21,6 +23,8 @@ export const deriveGameConfigAlert = ({
   const gameUpdated =
     buildId != null && knownBuildId != null && buildId !== knownBuildId;
 
+  // A vanilla launch strips the search paths on purpose, so on its own that is
+  // not breakage. After an update, Steam has rewritten the file either way.
   const modsDetached =
     hasModPaths === false &&
     enabledModsCount > 0 &&

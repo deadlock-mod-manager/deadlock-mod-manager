@@ -8,6 +8,7 @@ const SkeletonBar = ({ className }: { className: string }) => (
 const SKELETON_CARD =
   "flex w-full flex-col gap-3 rounded-[12px] bg-card p-5 ring-1 ring-border ring-inset";
 
+/** Shown over the frame until the plugin's page says it is ready. */
 export const StartingArea = () => {
   const { t } = useTranslation();
   return (

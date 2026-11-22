@@ -33,6 +33,11 @@ const fetchParsed = async <S extends z.ZodType>(
   }
 };
 
+/**
+ * Steam's server list is the source of truth for which Deadworks servers are
+ * up. The registry only enriches it, so losing the registry costs region flags
+ * and versions rather than servers.
+ */
 export const fetchDeadworksServers = async (
   registryUrl: string,
 ): Promise<ServerBrowserEntry[]> => {

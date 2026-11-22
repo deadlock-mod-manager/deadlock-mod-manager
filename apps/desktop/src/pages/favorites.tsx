@@ -33,10 +33,13 @@ import { usePersistedStore } from "@/lib/store";
 const FavoritesData = () => {
   const { t } = useTranslation();
   const favorites = usePersistedStore((state) => state.favorites);
+  // Unfavoriting re-keys the query; deferring keeps the current cards up (the
+  // filter below drops the removed one at once) instead of suspending.
   const queriedFavorites = useDeferredValue(favorites);
   const { data, error } = useSuspenseQuery({
     queryKey: [...MODS_LIST_QUERY_KEY, "favorites", queriedFavorites],
     queryFn: async () => {
+      // An empty favorites filter means "no filter" to the catalog.
       if (queriedFavorites.length === 0) return [];
       const page = await queryGameBananaCatalog({
         ...CATALOG_QUERY_DEFAULTS,

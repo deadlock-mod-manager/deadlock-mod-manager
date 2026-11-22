@@ -1,3 +1,6 @@
+//! VPKs a profile manifest claims but the disk no longer has, because the
+//! user deleted them outside DMM.
+
 use std::path::Path;
 
 use serde::Serialize;
@@ -10,10 +13,14 @@ use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
 #[serde(rename_all = "camelCase")]
 pub struct MissingModFiles {
   pub mod_id: String,
+  /// Original names of the claimed VPKs that are gone, as the user knows them.
   pub missing_vpks: Vec<String>,
+  /// Every claimed VPK is gone and nothing can bring the mod back, so it no
+  /// longer belongs in the library. Otherwise the mod is only broken.
   pub orphaned: bool,
 }
 
+/// What `entry` lost from disk, or `None` while every file it claims exists.
 pub fn missing_mod_files(
   mod_id: &str,
   entry: &ProfileVpkManifestEntry,
@@ -39,6 +46,8 @@ pub fn missing_mod_files(
   })
 }
 
+/// Enabled files are renamed to `pakNN_dir.vpk`, so their original name comes
+/// from the manifest; parked files keep it behind the `<mod>_` prefix.
 fn original_name(
   mod_id: &str,
   entry: &ProfileVpkManifestEntry,
@@ -63,6 +72,8 @@ fn original_name(
     .unwrap_or(file_name)
 }
 
+/// Local and interchange imports keep VPKs in the mods store, and enabling
+/// them copies the files back into the profile (see `ModManager::install_mod`).
 fn restorable(mods_store: &Path, mod_id: &str) -> bool {
   if ModManager::ensure_safe_mod_id(mod_id).is_err() {
     return false;

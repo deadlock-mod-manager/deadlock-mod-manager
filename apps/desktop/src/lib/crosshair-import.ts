@@ -7,6 +7,10 @@ export interface ParseResult {
   error?: string;
 }
 
+/**
+ * Parses a citadel crosshair format string into a CrosshairConfig
+ * Format: "key1 value1; key2 value2; ..."
+ */
 export function parseCitadelCrosshairFormat(input: string): ParseResult {
   try {
     const config: Partial<CrosshairConfig> = {
@@ -130,6 +134,9 @@ export function parseCitadelCrosshairFormat(input: string): ParseResult {
   }
 }
 
+/**
+ * Merges imported config with default config to create a complete CrosshairConfig
+ */
 export function mergeCrosshairConfig(
   imported: Partial<CrosshairConfig>,
 ): CrosshairConfig {

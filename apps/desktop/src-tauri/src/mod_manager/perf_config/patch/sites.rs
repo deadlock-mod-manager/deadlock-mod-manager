@@ -1,3 +1,5 @@
+//! Performance-specific views of the shared GameInfo source document.
+
 use std::collections::HashMap;
 
 use super::fail;
@@ -11,6 +13,7 @@ pub(crate) fn parse_sites(text: &str) -> Result<Vec<Site>, Error> {
     .map(|document| document.sites)
     .map_err(|error| fail(error.to_string()))
 }
+/// Values by path; the last occurrence of a key wins, as in the engine.
 pub(crate) fn scalar_values(sites: &[Site]) -> HashMap<String, String> {
   let mut values = HashMap::new();
   for site in sites {

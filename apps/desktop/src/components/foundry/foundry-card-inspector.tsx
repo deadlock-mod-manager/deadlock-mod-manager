@@ -11,6 +11,7 @@ import { FoundryDropZone } from "./foundry-drop-zone";
 import { groupOf, variantLabel } from "./foundry-card-utils";
 import { HeroSelectStage } from "./foundry-card-hero-select-stage";
 
+/** Image formats the backend can re-encode into a `.vtex_c` container. */
 export const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
 
 export const CardInspector = ({

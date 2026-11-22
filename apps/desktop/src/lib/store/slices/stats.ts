@@ -4,10 +4,20 @@ import type { RankRange } from "@/lib/stats/party";
 import type { State } from "..";
 
 export type StatsState = {
+  /**
+   * Steam3 account id the Stats page shows. `null` follows whichever account
+   * Steam is currently signed in with; a value pins an explicit choice, which is
+   * also how a manually entered id survives a restart.
+   */
   statsAccountId: number | null;
   setStatsAccountId: (accountId: number | null) => void;
+  /** The user's Stats dashboard; `null` is the built-in default. */
   statsDashboard: DashboardLayout | null;
   setStatsDashboard: (layout: DashboardLayout | null) => void;
+  /**
+   * The Party tab's players, each with the heroes they offer in queue. Kept
+   * because a party tends to queue together again.
+   */
   partyMembers: number[][];
   setPartyMembers: (members: number[][]) => void;
   partyRankRange: RankRange;

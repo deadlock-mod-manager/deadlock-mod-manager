@@ -224,6 +224,7 @@ export const BisectSetupDialog = () => {
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && close()} open={open}>
       <DialogContent className='flex max-h-[85vh] flex-col gap-5 sm:max-w-xl'>
+        {/* Mounted per opening, so each run starts with every mod checked. */}
         {open && <SetupContent />}
       </DialogContent>
     </Dialog>

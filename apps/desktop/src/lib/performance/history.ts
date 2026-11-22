@@ -8,6 +8,10 @@ import type { PerfConfigSource } from "@/types/generated/PerfConfigSource";
 import type { VideoChange } from "@/types/generated/VideoChange";
 import { userConfigApplyRequest } from "./request";
 
+/**
+ * An applied request as History stores it. A user config's entries (often
+ * hundreds) are left out; re-applying reads them from the config again.
+ */
 export type PerfHistoryRequest = Omit<PerfApplyRequest, "source"> & {
   source: Extract<PerfConfigSource, { kind: "preset" }> | { kind: "inline" };
 };
@@ -25,6 +29,7 @@ export const compactHistoryRequest = (
   videoVariant: request.videoVariant,
 });
 
+/** The request that re-applies a History entry, or `null` once its config was deleted. */
 export const historyApplyRequest = (
   request: PerfHistoryRequest,
   userConfigs: Record<string, UserPerfConfig>,
@@ -40,6 +45,13 @@ type UndoTarget =
   | { kind: "apply"; request: PerfApplyRequest }
   | { kind: "remove" };
 
+/**
+ * What "Undo last change" goes back to: the state before the newest config
+ * entry in History (video.txt-only entries don't count). Nothing to undo when
+ * History doesn't describe the current state (the config changed outside it),
+ * when the only entry is a removal, or when the config to go back to was
+ * deleted.
+ */
 export const undoTarget = (
   history: PerfHistoryEntry[],
   currentConfigId: string | null,
@@ -54,6 +66,11 @@ export const undoTarget = (
   return latest.action === "applied" ? { kind: "remove" } : null;
 };
 
+/**
+ * Video.txt changes made outside the app that History doesn't show yet: ones
+ * not logged since the last apply, removal or restore, or since the player
+ * kept or reverted that setting. A setting changed back and forth logs again.
+ */
 export const unloggedVideoChanges = (
   history: PerfHistoryEntry[],
   changes: VideoChange[],

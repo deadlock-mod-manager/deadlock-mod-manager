@@ -12,6 +12,7 @@ import { GameBananaIcon } from "@/components/shared/gamebanana-logo";
 import { useGameBananaMember } from "@/hooks/use-remote-install";
 import { cn } from "@/lib/utils";
 
+/** Avatar, name and profile link for a GameBanana member. */
 export const GameBananaMemberIdentity = ({
   memberId,
   detail,

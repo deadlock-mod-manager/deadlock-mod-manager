@@ -60,6 +60,7 @@ export const useDeleteMods = () => {
         hintFor: (error) =>
           error.kind === "vpkInUse" ? t("mods.deleteErrorVpkInUse") : undefined,
       });
+      // A failed purge may already have removed some of the mod's files.
       queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
       return result;
     },

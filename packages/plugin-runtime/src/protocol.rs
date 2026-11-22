@@ -1,7 +1,17 @@
+//! Supervisor <-> worker framing over the worker's stdin/stdout.
+//!
+//! The worker writes [`MAGIC`] first. Every frame after that is a
+//! little-endian `u32` length followed by that many bytes. The first frame
+//! the supervisor sends is the raw backend module; all later frames are JSON
+//! [`ToWorker`] / [`FromWorker`] messages.
+
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 
 pub const MAGIC: &[u8] = b"\0DMM-PLUGIN-WORKER/1\n";
+/// Largest JSON frame: a 6 MiB hostcall escaped inside a JSON string. Larger
+/// hostcalls are answered with `request_too_large` / `response_too_large`
+/// instead of being framed.
 pub const MAX_MESSAGE_FRAME_BYTES: usize = 16 * 1024 * 1024;
 pub const MAX_LOAD_FRAME_BYTES: usize = super::abi::MAX_BACKEND_BYTES;
 
@@ -41,6 +51,7 @@ pub fn write_frame(writer: &mut impl Write, bytes: &[u8]) -> io::Result<()> {
   writer.flush()
 }
 
+/// Serializes a message, or `None` when it would exceed the frame limit.
 pub fn encode_message<T: Serialize>(message: &T) -> io::Result<Option<Vec<u8>>> {
   let bytes = serde_json::to_vec(message).map_err(io::Error::other)?;
   Ok((bytes.len() <= MAX_MESSAGE_FRAME_BYTES).then_some(bytes))
@@ -52,6 +63,7 @@ pub fn write_message<T: Serialize>(writer: &mut impl Write, message: &T) -> io::
   write_frame(writer, &bytes)
 }
 
+/// Reads one frame; `Ok(None)` is a clean end of stream between frames.
 pub fn read_frame(reader: &mut impl Read, max: usize) -> io::Result<Option<Vec<u8>>> {
   let mut len = [0u8; 4];
   let mut filled = 0;
@@ -79,6 +91,9 @@ pub fn read_message<T: for<'de> Deserialize<'de>>(reader: &mut impl Read) -> io:
     .transpose()
 }
 
+/// Skips anything before the worker's magic. Only the test harness prints
+/// before it; production workers write the magic first. Bounded so a worker
+/// that never sends it cannot make the supervisor read forever.
 pub fn expect_magic(reader: &mut impl Read) -> io::Result<()> {
   let mut window = Vec::with_capacity(MAGIC.len());
   let mut byte = [0u8; 1];

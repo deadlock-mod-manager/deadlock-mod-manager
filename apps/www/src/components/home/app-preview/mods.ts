@@ -1,3 +1,7 @@
+/**
+ * A snapshot of real, popular mods from the Mods Store (taken October 2026),
+ * used by the landing page's app preview. Thumbnails live in /home/mods.
+ */
 export type PreviewMod = {
   id: string;
   name: string;
@@ -172,6 +176,7 @@ export const PREVIEW_MODS: PreviewMod[] = [
   },
 ];
 
+/** preview.json keys for the store categories (categories.<key>). */
 export const CATEGORY_KEYS = {
   Skins: "skins",
   "Quality of Life": "qualityOfLife",

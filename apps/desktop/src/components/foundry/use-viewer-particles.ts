@@ -40,9 +40,11 @@ interface Options {
   onRestart: () => void;
 }
 
+/** A clip where the ability lets loose, which starts its beam or shot. */
 const RELEASE_CLIP =
   /_(fire|shoot|attack|slam|throw|toss|release|launch)(_|\.|$)/;
 
+/** Owns particle discovery, dependency assets and inspection on the viewer clock. */
 export function useViewerParticles({
   source,
   heroName,

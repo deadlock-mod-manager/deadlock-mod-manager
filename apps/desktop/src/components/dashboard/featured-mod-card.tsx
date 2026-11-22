@@ -186,6 +186,7 @@ const Stat = ({ icon, value }: { icon: React.ReactNode; value: string }) => (
   </span>
 );
 
+/** Sound submissions ship no screenshots, so the tagged hero's art stands in. */
 const AudioCover = ({ hero }: { hero: string | null }) => {
   const { heroByName } = useHeroCatalog();
   const images = hero ? heroByName(hero)?.images : undefined;

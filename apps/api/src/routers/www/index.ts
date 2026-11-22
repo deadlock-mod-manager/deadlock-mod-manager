@@ -48,6 +48,7 @@ export const publicRouter = {
         const data = (await response.json()) as { version: string };
         return { version: data.version };
       } catch {
+        // Fallback to hardcoded version if GitHub fetch fails
         return { version };
       }
     }),

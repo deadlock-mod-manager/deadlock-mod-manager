@@ -35,6 +35,8 @@ const { usePersistedStore } = await import("@/lib/store");
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("useCheckModHealth", () => {
+  // A library change in another profile, such as a download that lands there
+  // after a profile switch, must not drop the check queued for this one.
   it("keeps a queued check for each profile while another check runs", async () => {
     usePersistedStore.setState({ gamePath: "/game" });
     const callbacks: ReturnType<typeof useCheckModHealth>[] = [];

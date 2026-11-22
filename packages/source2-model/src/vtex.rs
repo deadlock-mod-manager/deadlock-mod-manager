@@ -1,6 +1,7 @@
 use crate::error::{Result, Source2Error};
 use crate::resource::Resource;
 
+/// Source 2 texture pixel formats (`VTexFormat`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum VtexFormat {
@@ -25,13 +26,13 @@ pub enum VtexFormat {
     PngDxt5 = 18,
     Bc6h = 19,
     Bc7 = 20,
-    Ati2n = 21,
+    Ati2n = 21, // BC5
     Ia88 = 22,
     Etc2 = 23,
     Etc2Eac = 24,
     R11Eac = 25,
     Rg11Eac = 26,
-    Ati1n = 27,
+    Ati1n = 27, // BC4
     Bgra8888 = 28,
 }
 
@@ -71,11 +72,16 @@ impl VtexFormat {
         }
     }
 
+    /// Formats whose on-disk mip data is a self-contained PNG or JPEG file
+    /// rather than raw/block-compressed pixels. Source 2 uses these for card and
+    /// portrait art (e.g. `panorama/images/heroes/<hero>_card_psd.vtex_c`); the
+    /// blob decodes straight to RGBA with an image codec.
     fn is_embedded_image(self) -> bool {
         use VtexFormat::*;
         matches!(self, PngRgba8888 | JpegRgba8888 | PngDxt5 | JpegDxt5)
     }
 
+    /// Bytes occupied by a single mip level of the given dimensions.
     pub(crate) fn mip_byte_size(self, width: u32, height: u32) -> Result<usize> {
         use VtexFormat::*;
         let blocks = |w: u32, h: u32| (w as usize).div_ceil(4) * (h as usize).div_ceil(4);
@@ -126,16 +132,21 @@ pub struct VtexHeader {
     pub format: VtexFormat,
     pub num_mip_levels: u8,
     pub extra: Vec<ExtraData>,
+    /// Absolute offset (into the resource data buffer) where pixel data begins.
     pub data_offset: usize,
+    /// Absolute offset of the DATA block start.
     pub block_offset: usize,
 }
 
+// VTexExtraData kinds used by Source 2.
 const EXTRA_SHEET: u32 = 2;
 const EXTRA_COMPRESSED_MIP_SIZE: u32 = 4;
 
+/// A fully decoded texture, RGBA8, top mip only.
 pub struct DecodedTexture {
     pub width: u32,
     pub height: u32,
+    /// RGBA8, row-major, `width * height * 4` bytes.
     pub rgba: Vec<u8>,
 }
 
@@ -157,6 +168,7 @@ fn rd_f32(d: &[u8], p: usize) -> Result<f32> {
 }
 
 impl VtexHeader {
+    /// Parse the DATA block of a `.vtex_c` resource.
     pub fn parse(res: &Resource) -> Result<VtexHeader> {
         let block = res
             .block("DATA")
@@ -170,14 +182,19 @@ impl VtexHeader {
 
         let version = rd_u16(d, base)?;
         let flags = rd_u16(d, base + 2)?;
+        // reflectivity: 4 x f32 at base+4 .. base+20
         let width = rd_u16(d, base + 20)?;
         let height = rd_u16(d, base + 22)?;
         let depth = rd_u16(d, base + 24)?;
         let format = VtexFormat::from_u8(d[base + 26]);
         let num_mip_levels = d[base + 27];
+        // picmip0res u32 at base+28
         let extra_data_offset = rd_u32(d, base + 32)? as usize;
         let extra_data_count = rd_u32(d, base + 36)? as usize;
+        // position now conceptually at base+40 (after both u32 fields)
 
+        // The extra-data table starts relative to the extra_data_offset field
+        // (base+32): table_start = (base+32) + extra_data_offset.
         let table_start = base + 32 + extra_data_offset;
         if table_start > d.len() || extra_data_count > d.len().saturating_sub(table_start) / 12 {
             return Err(Source2Error::Resource(
@@ -199,6 +216,8 @@ impl VtexHeader {
             entry_pos += 12;
         }
 
+        // Pixel data begins after the fixed header (40 bytes) plus the extra-data
+        // table and any inline extra-data payloads.
         let header_end = base + 40;
         let extra_end = extra
             .iter()
@@ -313,11 +332,16 @@ impl VtexHeader {
         Ok(sequences)
     }
 
+    /// Compressed mip sizes if the COMPRESSED_MIP_SIZE extra-data block is
+    /// present, with where the mip data starts: right after the size array,
+    /// which sits between the extra-data headers and the pixels.
     fn compressed_mip_sizes(&self, data: &[u8]) -> Option<(Vec<usize>, usize)> {
         let e = self
             .extra
             .iter()
             .find(|e| e.kind == EXTRA_COMPRESSED_MIP_SIZE)?;
+        // layout (as ValveResourceFormat reads it): u32 compressed flag, u32
+        // offset to the size array relative to this field, u32 mip count.
         if rd_u32(data, e.offset).ok()? != 1 {
             return None;
         }
@@ -335,6 +359,10 @@ impl VtexHeader {
         Some((sizes, self.data_offset.max(sizes_at + count * 4)))
     }
 
+    /// Stored bytes of one mip for an embedded-image format (PNG/JPEG). Each mip
+    /// is a standalone image blob. When the COMPRESSED_MIP_SIZE table is present
+    /// it gives each mip's stored length (mips are laid out smallest-first);
+    /// otherwise the texture is single-mip and the blob spans the rest of DATA.
     fn embedded_mip_bytes<'a>(&self, data: &'a [u8], target_level: u32) -> Result<&'a [u8]> {
         let mips = self.num_mip_levels.max(1) as u32;
         let target_level = target_level.min(mips - 1);
@@ -359,6 +387,7 @@ impl VtexHeader {
         }
     }
 
+    /// Extract and (if needed) LZ4-decompress one mip level.
     fn mip_bytes(&self, data: &[u8], target_level: u32) -> Result<Vec<u8>> {
         let mips = self.num_mip_levels.max(1) as u32;
         let target_level = target_level.min(mips - 1);
@@ -370,7 +399,9 @@ impl VtexHeader {
             None => (None, self.data_offset),
         };
 
-        let mut on_disk: Vec<(usize , usize )> =
+        // Mips are stored smallest first. Compute the on-disk size of every mip,
+        // then seek to the requested level.
+        let mut on_disk: Vec<(usize /*uncompressed*/, usize /*stored*/)> =
             Vec::with_capacity(mips as usize);
         for level in 0..mips {
             let w = (self.width as u32 >> level).max(1);
@@ -383,6 +414,7 @@ impl VtexHeader {
             on_disk.push((unc, stored));
         }
 
+        // Stored order: level = mips-1 (smallest) .. 0 (largest).
         let mut cursor = start;
         let mut target: Option<Vec<u8>> = None;
         for level in (0..mips).rev() {
@@ -414,10 +446,12 @@ impl VtexHeader {
         Ok(bytes)
     }
 
+    /// Decode the top mip to RGBA8.
     pub fn decode(&self, data: &[u8]) -> Result<DecodedTexture> {
         self.decode_mip(data, 0)
     }
 
+    /// Decode a mip no larger than `max_side` to RGBA8.
     pub fn decode_preview(&self, data: &[u8], max_side: u32) -> Result<DecodedTexture> {
         let mut level = 0;
         let mut width = self.width as u32;
@@ -433,6 +467,9 @@ impl VtexHeader {
     fn decode_mip(&self, data: &[u8], level: u32) -> Result<DecodedTexture> {
         use VtexFormat::*;
 
+        // Card / portrait art ships as an embedded PNG or JPEG; decode the blob
+        // directly rather than treating it as raw pixels (which would fail the
+        // mip-size math and drop the card entirely).
         if self.format.is_embedded_image() {
             let blob = self.embedded_mip_bytes(data, level)?;
             let img = image::load_from_memory(blob)
@@ -479,6 +516,7 @@ impl VtexHeader {
         };
         ok.map_err(|e| Source2Error::Decode(format!("{e:?}")))?;
 
+        // texture2ddecoder emits ARGB packed as u32 (0xAARRGGBB). Convert to RGBA8.
         let mut rgba = vec![0u8; w * h * 4];
         for (i, &argb) in out.iter().enumerate() {
             let a = (argb >> 24) & 0xff;

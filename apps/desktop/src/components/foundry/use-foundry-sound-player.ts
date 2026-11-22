@@ -14,6 +14,7 @@ type PlayerState =
 
 const IDLE: PlayerState = { status: "idle" };
 
+/** The tab's single audio element, with play-in-order and an A/B flip. */
 export const useSoundPlayer = () => {
   const { playSound } = useFoundry();
   const volume = usePersistedStore((state) => state.foundrySoundVolume);
@@ -103,6 +104,7 @@ export const useSoundPlayer = () => {
     [play],
   );
 
+  /** Swap between the edit and the original without losing the place. */
   const flip = useCallback(() => {
     const current = stateRef.current;
     if (current.status !== "playing") return;

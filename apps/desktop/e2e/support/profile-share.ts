@@ -1,3 +1,4 @@
+// Importing a share code through the profile manager, and reading the result.
 import { $, browser } from "@wdio/globals";
 import { setTimeout } from "node:timers/promises";
 import { z } from "zod";
@@ -31,8 +32,11 @@ export const toastTexts = () =>
     ),
   );
 
+/** Closes every open dialog through its own Close button. */
 const closeDialogs = async () => {
   for (let attempt = 0; attempt < 10; attempt += 1) {
+    // Look the button up fresh each time: WebKitGTK reports a re-rendered
+    // dialog's button as stale.
     const open = await browser.execute(() => {
       const buttons = [
         ...document.querySelectorAll<HTMLButtonElement>(
@@ -61,6 +65,7 @@ const openProfileManager = () =>
 const importDialog =
   '//*[@role="dialog"][.//*[normalize-space()="Import Profile Preview"]]';
 
+/** Enters a share code and returns the preview's Create New Profile button. */
 export const previewShareCode = async (code: string) => {
   await openProfileManager();
   await $("button=Import Profile").click();
@@ -75,6 +80,7 @@ export const previewShareCode = async (code: string) => {
   return create;
 };
 
+/** Imports a share code into a new profile and returns that profile. */
 export const importShareCode = (world: string, code: string) =>
   step(`import share code ${code}`, async () => {
     const before = new Set(Object.keys((await readShareState(world)).profiles));

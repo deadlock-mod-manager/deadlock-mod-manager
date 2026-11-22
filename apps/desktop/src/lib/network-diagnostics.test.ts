@@ -45,6 +45,7 @@ const catalog = (
   ...overrides,
 });
 
+/** Answers by URL prefix; anything unmatched gets a 200. */
 const fakeFetch = (replies: Record<string, Reply> = {}) => {
   const calls: string[] = [];
   const fetch: NetworkDiagnosticsDeps["fetch"] = (url, init) => {
@@ -121,6 +122,7 @@ describe("runNetworkDiagnostics", () => {
       const done = snapshots[index * 2 + 1];
       expect(byId(running, id).status).toBe("running");
       expect(byId(done, id).status).toBe("ok");
+      // Nothing below the current check has started yet.
       for (const later of NETWORK_CHECK_IDS.slice(index + 1)) {
         expect(byId(running, later).status).toBe("pending");
       }
@@ -218,6 +220,8 @@ describe("runNetworkDiagnostics", () => {
     const { fetch } = fakeFetch({ [DNS_PROBE_URL]: "fail" });
     const results = await runNetworkDiagnostics(deps({ fetch }));
 
+    // The bare IP still answers, so the internet is up and this is a
+    // reachability problem rather than a resolver one.
     expect(byId(results, "internet").status).toBe("ok");
     expect(byId(results, "dns")).toMatchObject({
       status: "error",
@@ -240,12 +244,14 @@ describe("runNetworkDiagnostics", () => {
     const { fetch } = fakeFetch({ "https://": "fail" });
     const results = await runNetworkDiagnostics(deps({ fetch }));
 
+    // The bare service address, not the endpoint that happened to be probed.
     expect(byId(results, "dmmApi")).toMatchObject({
       url: "https://dmm.test",
       host: "dmm.test",
     });
     expect(byId(results, "internet").url).toBe(ORIGINS.dns);
     expect(byId(results, "dns").url).toBe(ORIGINS.dns);
+    // A local catalog has no address to show.
     expect(byId(results, "catalog").url).toBeUndefined();
   });
 
@@ -272,6 +278,7 @@ describe("runNetworkDiagnostics", () => {
     expect(byId(results, "deadlockAssets").fixes).not.toContain(
       "allowFirewall",
     );
+    // Other hosts resolve, so the shared DNS check still passes.
     expect(byId(results, "dns").status).toBe("ok");
   });
 
@@ -350,6 +357,7 @@ describe("runNetworkDiagnostics", () => {
         latencyMs: 4000,
       });
     }
+    // The slow threshold is about services, not the raw internet probe.
     expect(byId(results, "internet").status).toBe("ok");
   });
 

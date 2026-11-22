@@ -1,3 +1,12 @@
+//! The editable working copy of a skin, and the VPK it is packed back into.
+//!
+//! Editing a compiled VPK in place is not practical: entries are length-prefixed
+//! into one contiguous data section, so replacing a single file rewrites the
+//! whole archive anyway. Instead the Foundry unpacks the skin into a plain file
+//! tree under `<app_local_data>/foundry/<id>/files`, every edit is a normal file
+//! write into that tree, and Export packs the tree into a fresh VPK. The source
+//! VPK is only ever read.
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
@@ -19,6 +28,8 @@ use super::types::{
   FoundryReplacementResult, FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
 };
 
+/// A JSON journal beside `files/`, or its empty value when it is missing or
+/// unreadable: a lost journal only forgets edits, it never blocks the workspace.
 pub(super) fn read_journal<T: DeserializeOwned + Default>(workspace_root: &Path, name: &str) -> T {
   std::fs::read(workspace_root.join(name))
     .ok()
@@ -37,12 +48,17 @@ pub(super) fn write_journal<T: Serialize + ?Sized>(
   Ok(())
 }
 
+/// Beside `files/`, the entries this workspace has edited. The tree itself
+/// cannot say which files differ from the source, and edits outlive the session
+/// that made them, so the journal is what lets a reopened skin know its edits.
 const EDIT_JOURNAL: &str = "edits.json";
 
+/// The entries the workspace's journal lists as edited, sorted.
 pub(crate) fn read_edit_journal(workspace_root: &Path) -> Vec<String> {
   read_journal(workspace_root, EDIT_JOURNAL)
 }
 
+/// Mark `entries` as edited, or as back to their original when `edited` is false.
 pub(crate) fn record_edits(
   workspace_root: &Path,
   entries: &[String],
@@ -59,6 +75,8 @@ pub(crate) fn record_edits(
   write_journal(workspace_root, EDIT_JOURNAL, &journal)
 }
 
+/// Beside `files/`, the paint each painted color map wears, so a reopened skin
+/// still shows what its sections were painted.
 const PAINT_JOURNAL: &str = "paint.json";
 
 fn read_paint_journal(workspace_root: &Path) -> BTreeMap<String, FoundryAppliedPaint> {
@@ -68,6 +86,7 @@ fn read_paint_journal(workspace_root: &Path) -> BTreeMap<String, FoundryAppliedP
     .collect()
 }
 
+/// Record `paint` on `entries`, or forget their paint when it is `None`.
 pub(crate) fn record_paint(
   workspace_root: &Path,
   entries: &[String],
@@ -97,7 +116,10 @@ pub(crate) fn record_paint(
   )
 }
 
+/// Beside `files/`, each reworked sound's volume edits and replacement.
 const SOUND_SETTINGS: &str = "sound-settings.json";
+/// Replacement audio as the user gave it, so a later volume change rebuilds from
+/// the source instead of from audio that was already processed once.
 const SOUND_SOURCES: &str = "sound-sources";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -106,6 +128,7 @@ struct StoredSound {
   gain_db: f32,
   normalize: bool,
   mute: bool,
+  /// The replacement's file name under [`SOUND_SOURCES`], if any.
   source: Option<String>,
 }
 
@@ -143,6 +166,8 @@ pub(crate) fn sound_settings_list(workspace_root: &Path) -> Vec<FoundrySoundSett
     .collect()
 }
 
+/// Mint the clip `stored` describes: the replacement or the original, with its
+/// volume edits. A plain MP3/WAV/compiled swap keeps the existing lossless path.
 fn build_sound(
   workspace_root: &Path,
   donor: &[u8],
@@ -179,6 +204,8 @@ fn build_sound(
   built.map_err(|e| Error::InvalidInput(format!("failed to write sound: {e}")))
 }
 
+/// Change one sound's volume edits and rebuild it. With no edits left and no
+/// replacement, the clip goes back to the packed original.
 pub(crate) fn adjust_workspace_sound(
   workspace_root: PathBuf,
   entry_path: String,
@@ -215,6 +242,8 @@ pub(crate) fn adjust_workspace_sound(
   })
 }
 
+/// Sanitize a human name (hero / mod name) into a folder-safe workspace id
+/// component. Non-alphanumerics collapse to `_`; empty input becomes `skin`.
 pub(crate) fn sanitize_workspace_name(name: &str) -> String {
   let cleaned: String = name
     .trim()
@@ -235,6 +264,8 @@ pub(crate) fn sanitize_workspace_name(name: &str) -> String {
   }
 }
 
+/// Stable 8-hex FNV-1a hash of the source path, appended to the workspace id so
+/// two skins that share a name don't collide on the same folder.
 pub(crate) fn short_path_hash(path: &str) -> String {
   let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
   for byte in path.as_bytes() {
@@ -244,6 +275,8 @@ pub(crate) fn short_path_hash(path: &str) -> String {
   format!("{:08x}", (hash & 0xffff_ffff) as u32)
 }
 
+/// Copy a `_dir.vpk`'s companion `_NNN.vpk` archives next to a copied dir file
+/// so the copied VPK set stays self-contained (read-only on the source).
 pub(crate) fn copy_companion_archives(source_vpk: &Path, dest_dir: &Path) -> Result<(), Error> {
   let stem = source_vpk
     .file_stem()
@@ -290,11 +323,15 @@ fn count_files(dir: &Path) -> usize {
   total
 }
 
+/// Map a VPK entry path onto a relative filesystem path, rejecting anything that
+/// could escape the workspace (`..`, absolute paths, drive prefixes).
 pub(crate) fn safe_entry_relative(entry_path: &str) -> Result<PathBuf, Error> {
   let normalized = entry_path.replace('\\', "/");
   let mut out = PathBuf::new();
   for component in Path::new(&normalized).components() {
     match component {
+      // `C:` only parses as a prefix in leading position, and pushing it would discard
+      // everything already in the buffer, so reject a drive letter wherever it appears.
       Component::Normal(part) if starts_with_drive_letter(&part.to_string_lossy()) => {
         return Err(Error::InvalidInput(format!(
           "invalid Foundry entry path: {entry_path}"
@@ -330,6 +367,8 @@ pub(crate) fn entry_extension(path: &str) -> String {
     .to_ascii_lowercase()
 }
 
+/// Image formats the texture replacer accepts as a card / texture source. These
+/// are exactly the decoders the `image` crate is compiled with.
 pub(crate) fn is_supported_image(ext: &str) -> bool {
   matches!(
     ext,
@@ -370,6 +409,9 @@ pub(crate) fn parse_hex_color(value: &str) -> Result<[u8; 3], Error> {
   Ok([red, green, blue])
 }
 
+/// The hue of a picked color, in degrees. The UI picks a target color; the hue
+/// recolor only needs the hue out of it, since saturation and brightness come
+/// from their own sliders.
 pub(crate) fn hue_of([red, green, blue]: [u8; 3]) -> f32 {
   let red = f32::from(red) / 255.0;
   let green = f32::from(green) / 255.0;
@@ -390,6 +432,11 @@ pub(crate) fn hue_of([red, green, blue]: [u8; 3]) -> f32 {
   hue.rem_euclid(360.0)
 }
 
+/// The `.vtex_c` container an edit is written into. A texture the workspace has
+/// already edited is reused so repeated edits stack on the same container;
+/// otherwise the original comes from the skin VPK, or from the base game when
+/// the skin doesn't ship that texture (a mod may only override some of a hero's
+/// cards, but the user can still replace the rest).
 fn texture_template_bytes(
   target_path: &Path,
   template_vpk_path: Option<&Path>,
@@ -433,6 +480,8 @@ fn original_entry(
     .map_err(extraction_error)
 }
 
+/// An entry's bytes as originally packed: from the skin VPK, or from the base
+/// game when the skin doesn't ship it. Ignores any workspace edit.
 fn packed_entry_bytes(vpk_path: Option<&Path>, entry_path: &str) -> Result<Vec<u8>, Error> {
   match original_entry(vpk_path, entry_path, staged_base_game_vpk)? {
     OriginalEntry::Skin(bytes) | OriginalEntry::BaseGame(bytes) => Ok(bytes),
@@ -454,6 +503,8 @@ fn workspace_entry_bytes(
   Ok(None)
 }
 
+/// Read an entry's current bytes, preferring the user's edited copy, then the
+/// skin VPK, then the base game and core. A corrupt override never falls through.
 pub(crate) fn entry_bytes_from_sources(
   workspace_root: Option<&Path>,
   vpk_path: &Path,
@@ -486,6 +537,9 @@ pub(crate) fn workspace_files_dir(workspace_root: &Path) -> Result<PathBuf, Erro
   Ok(files_dir)
 }
 
+/// Read an entry from the skin, falling back to the base game: a skin often
+/// ships only the textures it changes, while the model and materials it
+/// paints over stay in `pak01`.
 pub(crate) fn extract_either(
   skin: &source2_model::vpk_extract::VpkArchive,
   base: Option<&source2_model::vpk_extract::VpkArchive>,
@@ -550,6 +604,15 @@ fn replacement_result(
   })
 }
 
+/// Replace one file inside the editable workspace.
+///
+/// The compiled formats are not written through verbatim; each is rebuilt around
+/// the entry it replaces, so the game still gets a valid resource:
+/// - an image on a `.vtex_c` is re-encoded into that texture's container,
+///   keeping its dimensions, format and mip chain,
+/// - an MP3 or WAV on a `.vsnd_c` is minted into a new sound container that
+///   inherits the original's loop flag and dependency info,
+/// - anything already in the entry's compiled format is copied as-is.
 pub(crate) fn replace_workspace_file(
   workspace_root: PathBuf,
   entry_path: String,
@@ -562,6 +625,8 @@ pub(crate) fn replace_workspace_file(
       source_file_path.display()
     )));
   }
+  // The next removal toggle rebuilds this file from the packed original, which
+  // would silently drop the replacement.
   if let Some(model) = removal_owner(&workspace_root, &entry_path) {
     return Err(Error::InvalidInput(format!(
       "{entry_path} has sections of {model} removed; put them back before replacing it"
@@ -597,6 +662,7 @@ pub(crate) fn replace_workspace_file(
         "a sound replacement must be .mp3, .wav, .ogg, .flac or .vsnd_c, not .{source_ext}"
       )));
     }
+    // Always rebuild from the packed container, before changing replacement sources.
     let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
     let mut settings = read_sound_settings(&workspace_root);
     let mut stored = settings.remove(&entry_path).unwrap_or_default();
@@ -633,11 +699,14 @@ pub(crate) fn replace_workspace_file(
     source_file_path.display(),
   );
   record_edits(&workspace_root, std::slice::from_ref(&entry_path), true)?;
+  // A replaced image no longer wears the paint the texture had.
   record_paint(&workspace_root, std::slice::from_ref(&entry_path), None)?;
 
   replacement_result(entry_path, &target_path, target_ext, texture)
 }
 
+/// Restore one entry to the state it had when the workspace was unpacked, by
+/// replacing it with its packed original or removing a base-game-only override.
 pub(crate) fn revert_workspace_file(
   workspace_root: PathBuf,
   entry_path: String,
@@ -673,6 +742,8 @@ fn revert_workspace_file_with_base(
         .map_err(|error| Error::Io(error.error))?;
     }
     OriginalEntry::BaseGame(_) => {
+      // The skin never shipped this entry. Removing its override restores the
+      // validated base-game asset without adding it to the exported skin.
       match std::fs::remove_file(&target_path) {
         Ok(()) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -692,6 +763,10 @@ fn revert_workspace_file_with_base(
   Ok(())
 }
 
+/// Pack the editable `files/` tree into a standalone VPK.
+///
+/// The result is parsed back once before it is reported as usable, so a writer
+/// bug surfaces here instead of as a silently broken addon in the game.
 pub(crate) fn build_workspace_vpk(
   workspace_root: PathBuf,
   output_path: Option<PathBuf>,
@@ -733,6 +808,17 @@ pub(crate) fn build_workspace_vpk(
   })
 }
 
+/// Materialize an editable, unpacked working copy of the loaded skin under
+/// `<app_local_data>/foundry/<id>/`.
+///
+/// Two modes, both COPY-only (the source is never moved):
+/// - Full mod VPK (`entries = None`): unpack everything and keep a copy of the
+///   VPK (+ companions) alongside.
+/// - Default hero (`entries = Some(paths)`): the source is the shared multi-GB
+///   base-game pak, so unpack only that hero's listed assets and skip the copy.
+///
+/// Existing unpacked files are reused unless `force` is set, so edits survive a
+/// reload of the same skin.
 pub(crate) fn prepare_workspace(
   file_path: PathBuf,
   name: String,
@@ -757,6 +843,8 @@ pub(crate) fn prepare_workspace(
   let root = root_dir.join(&id);
   let files_dir = root.join("files");
   std::fs::create_dir_all(&root)?;
+  // Opening the same skin twice must not unpack into one workspace at once:
+  // the second call would delete the first one's staging tree mid-unpack.
   let lock = stage_lock(&format!("workspace:{id}"));
   let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
@@ -783,6 +871,7 @@ pub(crate) fn prepare_workspace(
     if files_dir.exists() {
       std::fs::remove_dir_all(&files_dir)?;
     }
+    // A fresh unpack holds no edits, so neither does its journal.
     for state in [EDIT_JOURNAL, PAINT_JOURNAL, SOUND_SETTINGS, REMOVED_JOURNAL] {
       let path = root.join(state);
       if path.exists() {
@@ -793,6 +882,8 @@ pub(crate) fn prepare_workspace(
     if sources.exists() {
       std::fs::remove_dir_all(sources)?;
     }
+    // Unpack beside `files` and move it into place only once complete: a
+    // non-empty `files` is reused as-is, so a partial unpack must never get there.
     let staging_dir = root.join("files.unpacking");
     if staging_dir.exists() {
       std::fs::remove_dir_all(&staging_dir)?;

@@ -7,10 +7,13 @@ import type { VpkParsed } from "@deadlock-mods/vpk-parser";
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
 import type { NativeSourceInstallation } from "@/types/generated/NativeSourceInstallation";
 
+// Individual download item type extracted from ModDownloadDto schema
 export type ModDownloadItem = z.infer<typeof ModDownloadDtoSchema>;
 
+/** Who is serving a download's bytes; mirrors the backend's `DownloadSource`. */
 export type DownloadSource = "gameBanana" | "other";
 
+/** A failure on the download server's side; mirrors `DownloadFailureReason`. */
 export type DownloadFailureReason = "sourceBusy" | "stalled";
 
 export type DownloadFailure = {
@@ -43,6 +46,7 @@ export enum ModStatus {
 }
 
 export interface LocalMod extends ModDto {
+  /** Accepted source and exact installed content, retained after source removal. */
   source?: NativeSourceProvenance;
   metadataPending?: boolean;
   status: ModStatus;
@@ -54,12 +58,17 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
+  /** What the mod's VPKs change, from the same scan as `detectedHero`. */
   detectedContent?: HeroContent | null;
   heroOverride?: string | null;
   usesCriticalPaths?: boolean;
+  // Unix seconds of the update the user chose to skip.
   skippedUpdateAt?: number;
   skippedSourceRevision?: string;
+  // Original names of VPKs the manifest claims but the user deleted. A mod
+  // with any is broken until it is reinstalled or removed.
   missingVpks?: string[];
+  // `<source>/<mod id>` for a mod installed from an allowlisted mod site.
   installSource?: string;
 }
 
@@ -103,13 +112,17 @@ export interface LocalModWithFiles extends LocalMod {
   file_tree?: ModFileTree;
 }
 
+// Types for local addon analysis
 export interface LocalAddonInfo {
   filePath: string;
   fileName: string;
+  /** The file's place in the profile: `pak01_dir.vpk` or `addons2/pak01_dir.vpk`. */
   locator: string;
   vpkParsed: VpkParsed;
-  remoteId?: string;
+  remoteId?: string; // Will be populated by API call
+  /** The mod the profile's manifest assigns this exact file to. */
   manifestModId?: string;
+  /** Named `pak##_dir.vpk`, the only files the game loads. */
   hasEnabledVpkName: boolean;
   matchInfo?: {
     fileId?: string;
@@ -132,13 +145,14 @@ export interface AnalyzeAddonsResult {
   errors: string[];
 }
 
+// Progress reporting for addon analysis
 export interface AddonAnalysisProgress {
   step: "scanning" | "parsing" | "analyzing_hashes" | "complete";
   stepDescription: string;
   filesFound?: number;
   currentFile?: number;
   currentFileName?: string;
-  totalProgress: number;
+  totalProgress: number; // 0-100
 }
 
 export interface ProfileImportMod {
@@ -154,16 +168,17 @@ export interface ProfileImportMod {
   }>;
   fileTree?: ModFileTree;
   installedVpks?: string[];
+  /** The installed version's file tree, kept with its update backup. */
   installedFileTree?: ModFileTree;
   isMap?: boolean;
 }
 
 export interface ProfileImportProgressEvent {
-  currentStep: string;
+  currentStep: string; // "downloading" | "installing" | "complete"
   currentModIndex: number;
   totalMods: number;
   currentModName: string;
-  overallProgress: number;
+  overallProgress: number; // 0-100
 }
 
 export interface InstalledModInfo {
@@ -186,9 +201,11 @@ export interface BatchUpdateResult {
   failed: Array<[string, string]>;
   installedMods: InstalledModInfo[];
   vpkMappings?: Array<[string, string[]]>;
+  /** Mods left untouched until the user picks their VPKs from `fileTree`. */
   selectionRequired: PendingSelection[];
 }
 
+/** A mod whose saved VPK choice fits none of its new archives. */
 export interface PendingSelection {
   modId: string;
   modName: string;
@@ -223,6 +240,7 @@ export interface UpdatableMod {
   mod: ModDto & { source?: NativeSourceProvenance };
   nativeInstallation?: NativeSourceInstallation;
   nativeSelectionRequired?: boolean;
+  // Unix seconds of the detected update; absent for forced updates.
   updatedAt?: number;
   downloads: ModDownloadItem[];
   selectedDownloads: ModDownloadItem[];

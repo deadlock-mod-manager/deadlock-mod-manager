@@ -38,6 +38,7 @@ export function isClosedStatus(
   return status !== null && config.closedStatuses.includes(status);
 }
 
+/** Replaces any status tag with `status`, keeping the author's topic tags. */
 export function withStatus(
   config: ForumLifecycleConfig,
   appliedTags: string[],

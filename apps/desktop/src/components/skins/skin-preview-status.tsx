@@ -3,6 +3,11 @@ import { Check, Shuffle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
+/**
+ * How the skin in the 3D panel relates to what the hero wears. While the
+ * randomizer owns the hero, what is on stays a surprise, so the panel only
+ * says whether the skin can come up.
+ */
 export type SkinPreviewStatus =
   | "equipped"
   | "notEquipped"

@@ -1,5 +1,7 @@
 use super::*;
 
+/// Resolve every mounted archive in engine order, including files without an
+/// enabled manifest owner. Unmanaged archives participate as opted-out inputs.
 pub(super) fn mounted_inputs(
   base: &ProfileBase,
   inputs: Vec<LocalizationModInput>,

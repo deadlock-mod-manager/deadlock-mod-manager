@@ -1,6 +1,27 @@
+/**
+ * DMM Clean is derived, not hand-written. For every ConVar, each lineage of
+ * the pinned upstream configs (see `UPSTREAM_FILES`) votes with the value its
+ * configs set relative to their own base build (majority within the lineage).
+ * A value makes it in when:
+ *
+ * 1. at least `MIN_LINEAGES` lineages vote for it, and they are at least
+ *    `MIN_AGREEMENT` of the lineages that change the key at all;
+ * 2. the convar is in the current dump and not blocked (`gameinfo_cannot_override`);
+ * 3. it isn't denied, has no gameplay class (camera, visibility, devtools) and
+ *    isn't in the Camera & visibility category;
+ * 4. the in-game video menu doesn't control it (`curated/video.ts`): the
+ *    player's menu choice is saved in video.txt and wins over gameinfo.gi;
+ * 5. it doesn't match `HIDES_THINGS` below;
+ * 6. the value is inside the convar's min/max and differs from the latest stock
+ *    value (or the code default when stock doesn't set it).
+ */
 export const MIN_LINEAGES = 3;
 export const MIN_AGREEMENT = 0.75;
 
+/**
+ * Settings that make things disappear or change what a player can see, rather
+ * than render the same thing cheaper. DMM Clean leaves all of these at stock.
+ */
 export const HIDES_THINGS: { pattern: RegExp; reason: string }[] = [
   {
     pattern: /^r_farz$|^r_mapextents$/,

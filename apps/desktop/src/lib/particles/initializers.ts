@@ -38,6 +38,7 @@ const scratchB: [number, number, number] = [0, 0, 0];
 const vecA = new THREE.Vector3();
 const vecB = new THREE.Vector3();
 
+/** A seeded point between `scratch` and `scratchB`, one salt per axis. */
 const randomInScratchBox = (seed: number, salt: number, out: THREE.Vector3) =>
   out.set(
     scratch[0] + (scratchB[0] - scratch[0]) * hash01(seed, salt),
@@ -75,6 +76,8 @@ export const compileInitializer = (
     }
     case "C_INIT_CreateSequentialPath":
     case "C_INIT_CreateSequentialPathV2": {
+      // Each new particle takes the next of `m_flNumToAssign` evenly spaced
+      // stops between the path's control points, wrapping after the last.
       const stops = parseFloatInput(operator.m_flNumToAssign, 100);
       const path = parsePathParams(operator.m_PathParams);
       return (system, index) => {

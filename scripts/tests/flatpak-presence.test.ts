@@ -16,6 +16,7 @@ for (const variant of ["", ".cef"]) {
       .split("\n")
       .map((line) => line.trim().replace(/^- /, ""));
 
+    // discord-rich-presence searches slots 0–9 and Discord's Flatpak directory.
     for (let slot = 0; slot < 10; slot++) {
       expect(finishArgs).toContain(`--filesystem=xdg-run/discord-ipc-${slot}`);
     }

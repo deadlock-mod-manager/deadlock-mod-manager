@@ -23,6 +23,7 @@ type PickerSource = "installed" | "heroes";
 const heroOf = (mod: LocalMod): string | null =>
   mod.heroOverride ?? mod.detectedHero ?? null;
 
+/** A hero skin has a resolved hero and is neither a map nor a sound mod. */
 const isHeroSkin = (mod: LocalMod): boolean =>
   !mod.isMap &&
   !mod.isAudio &&
@@ -196,6 +197,11 @@ const SourceToggle = ({
   );
 };
 
+/**
+ * Picks the skin the Foundry opens: one of the user's installed hero skins, a
+ * base hero, or a VPK from disk. Used as the Foundry's start page and again in
+ * the "Change skin" dialog.
+ */
 export const FoundrySkinPicker = ({
   onOpened,
   className,

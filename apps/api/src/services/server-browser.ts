@@ -13,6 +13,11 @@ const logger = mainLogger.child().withContext({
   service: "server-browser",
 });
 
+/**
+ * Most registry servers report the game's default name, so surfacing the ones
+ * that bothered to set a name keeps community servers from being buried under
+ * an anonymous wall of "Deadlock".
+ */
 const DEFAULT_SERVER_NAME = "deadlock";
 
 const hasCustomName = (name: string): boolean =>
@@ -39,7 +44,9 @@ export interface ServerBrowserListResult {
   cursor: number | null;
   relays_queried: number;
   relays_failed: number;
+  /** The Deadworks server list couldn't be refreshed; its servers may be stale. */
   registry_degraded: boolean;
+  /** Age of the stale registry snapshot in ms, if one is being served. */
   registry_snapshot_age_ms: number | null;
 }
 
@@ -153,6 +160,8 @@ export class ServerBrowserService {
     await cache.del(`server-browser:v3:detail:${id}`);
   }
 
+  // Relays are no longer queried: every listed server comes from Deadworks.
+  // The relay counts stay in the response for clients that still read them.
   private async fetchAggregated(): Promise<{
     servers: AggregatedServer[];
     relaysQueried: number;
@@ -168,6 +177,10 @@ export class ServerBrowserService {
     };
   }
 
+  /**
+   * A failed refresh must not blank the browser: the last good snapshot is
+   * served instead, flagged so clients can say why it may be stale.
+   */
   private async fetchRegistryServers(): Promise<RegistryResult> {
     const registryUrl = normalize(env.DEADWORKS_REGISTRY_URL);
     const listKey = `server-browser:v3:registry:${registryUrl}`;

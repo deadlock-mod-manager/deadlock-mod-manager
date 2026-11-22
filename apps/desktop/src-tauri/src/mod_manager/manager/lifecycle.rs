@@ -10,6 +10,8 @@ impl ModManager {
     self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[], None)
   }
 
+  /// `kept_choices` are what purging the mod returned, when this install
+  /// reinstalls it.
   pub fn install_mod_resolving_conflicts(
     &mut self,
     deadlock_mod: Mod,
@@ -79,12 +81,18 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     crate::mod_manager::file_permissions::prepare_profile_for_write(&addons_path)?;
 
+    // A mod folder whose archives were cleaned up reads as an empty tree. It
+    // selects nothing, so it counts as no tree: the mod keeps its disabled file
+    // order and gets a tree rebuilt from the VPKs it re-enables.
     deadlock_mod.file_tree.take_if(|tree| tree.files.is_empty());
 
+    // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
       .vpk_manager
       .find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
 
+    // Local and interchange imports retain their VPKs even if another manager
+    // moves or removes the profile's copies.
     if prefixed_vpks.is_empty() {
       Self::ensure_safe_mod_id(&deadlock_mod.id)?;
       let local_files_dir = self
@@ -135,6 +143,8 @@ impl ModManager {
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // Without a file tree, a re-enabled mod keeps the file order it had when
+    // it was disabled instead of the directory's alphabetical order.
     if deadlock_mod.file_tree.is_none()
       && let Some(entry) = manifest.mods.get(&deadlock_mod.id)
     {
@@ -146,6 +156,9 @@ impl ModManager {
           .unwrap_or(usize::MAX)
       });
     }
+    // A re-enabled or reinstalled mod returns to its recorded place in the load
+    // order. Without it, the mod would stay in the last shard until an
+    // unrelated reorder moved it back and shifted every mod after it.
     if deadlock_mod.install_order.is_none() {
       deadlock_mod.install_order = kept_choices.and_then(|kept| kept.order).or_else(|| {
         manifest
@@ -256,6 +269,10 @@ impl ModManager {
     log::info!("Adding mod to managed mods list");
     self.mod_repository.add_mod(deadlock_mod.clone());
 
+    // If the mod has an install order, trigger a reorder to maintain correct
+    // sequence. The install itself is already committed above, so a reorder
+    // failure must not be reported as an install failure; keep the enabled mod
+    // and just log a warning.
     if deadlock_mod.install_order.is_some() {
       log::info!("Mod has install order, triggering reorder to maintain sequence");
       match self.reorder_all_mods_for_profile(profile_folder.clone()) {
@@ -346,6 +363,8 @@ impl ModManager {
       )));
     };
 
+    // Enabled VPKs live in the mod's shard; the disabled prefixed copies always
+    // go back to the profile base dir.
     let shard_index = manifest_entry
       .as_ref()
       .map(|entry| entry.shard)
@@ -375,6 +394,7 @@ impl ModManager {
       };
     }
 
+    // The mod's shard may now be empty; drop stray empty shard folders.
     VpkManager::prune_empty_shard_dirs(&addons_path);
 
     if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
@@ -393,6 +413,8 @@ impl ModManager {
     Ok(())
   }
 
+  /// Returns the choices the player made for the mod in this profile, for a
+  /// reinstall to give back, or `None` when the profile had no entry for it.
   pub fn purge_mod(
     &mut self,
     mod_id: String,
@@ -413,8 +435,15 @@ impl ModManager {
     #[cfg(feature = "plugins")]
     let event_profile = profile_folder.clone();
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
+    // Not redundant with the check in `remove_mod_vpks`: when the addons
+    // directory is missing that call is skipped, and this is all that stands
+    // between a traversing ID and the recursive delete below.
     Self::ensure_safe_mod_id(&mod_id)?;
 
+    // A mod whose download failed never reached the addons directory, which
+    // may not exist at all yet - and without a game path there is no addons
+    // directory to speak of. Nothing was installed in either case, but the
+    // downloaded files still have to go, so neither may fail the purge.
     let mut kept_choices = None;
     match self.get_addons_path(profile_folder.as_deref()) {
       Ok(addons_path) if addons_path.path().exists() => {
@@ -449,6 +478,8 @@ impl ModManager {
     Ok(kept_choices)
   }
 
+  /// Records a reinstalled mod that stays disabled the way disabling it did:
+  /// its downloaded VPKs as disabled files, with the choices its purge returned.
   pub fn keep_disabled_mod_choices(
     &mut self,
     mod_id: &str,
@@ -458,6 +489,8 @@ impl ModManager {
     Self::ensure_safe_mod_id(mod_id)?;
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)?;
+    // A download with several variants keeps its VPKs in the archive until
+    // install picks one, so there is nothing to record the choices against.
     if prefixed_vpks.is_empty() {
       log::info!("No downloaded VPKs to keep the choices of disabled mod {mod_id} on");
       return Ok(());
@@ -478,6 +511,11 @@ impl ModManager {
     Ok(())
   }
 
+  /// Remove a mod's VPKs transactionally when the mod is purged.
+  ///
+  /// Files are first renamed to non-VPK staging names. The manifest is then
+  /// committed without the mod, and only after that are the staged files
+  /// deleted. A failed manifest write restores every staged file.
   pub fn remove_mod_vpks(
     &mut self,
     mod_id: &str,
@@ -490,6 +528,8 @@ impl ModManager {
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
     let claimed_by_others = Self::vpk_paths_claimed_by_others(mod_id, &manifest, &addons_path);
+    // An enabled mod's entry omits the variants Mod Options parked; only this
+    // scan finds them.
     let mut sources = self.unclaimed_prefixed_vpks(mod_id, &addons_path, &claimed_by_others)?;
     if let Some(entry) = &manifest_entry {
       sources.extend(
@@ -537,6 +577,12 @@ impl ModManager {
     Ok(removed_count)
   }
 
+  /// Drop the manifest entries of mods whose every VPK the user deleted.
+  ///
+  /// Each mod is checked again here, under the manager lock, rather than
+  /// trusting the caller's earlier snapshot: a mod that regained a file or
+  /// became restorable in between keeps its entry. No file is touched.
+  /// Returns the mods that were forgotten.
   pub fn forget_orphaned_mods(
     &mut self,
     mod_ids: &[String],
@@ -601,6 +647,8 @@ impl ModManager {
     )
   }
 
+  /// Bare fallback names resolve to shard 1, so the claimed filter is what
+  /// stops a stale `pak01_dir.vpk` from deleting a different mod's file.
   fn unclaimed_fallback_vpks(
     &self,
     mod_id: &str,
@@ -659,6 +707,7 @@ impl ModManager {
     Ok(hydrated)
   }
 
+  /// Replace VPK files for a mod
   pub fn replace_mod_vpks(
     &mut self,
     mod_id: String,
@@ -671,6 +720,7 @@ impl ModManager {
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
+    // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
     let manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let target_shard = manifest
       .mods
@@ -693,6 +743,8 @@ impl ModManager {
       log::info!(
         "Mod not in repository and no installed VPKs provided, will find VPKs by prefix: {mod_id}"
       );
+      // Mod not in repository - it might be disabled or the repository wasn't loaded
+      // We'll let replace_vpks find the prefixed VPKs directly
       Vec::new()
     };
 
@@ -739,6 +791,9 @@ impl ModManager {
     Ok(())
   }
 
+  /// Replace a working install with already-extracted VPKs without deleting the
+  /// old files first. Old paths are staged, new files are written, and the
+  /// manifest is committed in one journaled operation.
   pub fn update_mod_from_prepared(
     &mut self,
     mod_id: &str,
@@ -754,6 +809,8 @@ impl ModManager {
         "No prepared VPKs provided for update".to_string(),
       ));
     }
+    // An update keeps the install's rule: name order, then the file tree's
+    // load order when there is a tree.
     let mut prepared_vpks = prepared_vpks.to_vec();
     prepared_vpks.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
     if let Some(tree) = &file_tree {
@@ -807,6 +864,8 @@ impl ModManager {
         }
       }
     }
+    // Files Mod Options parked hold the old version's bytes, so enabling one
+    // later has to fetch it from the update instead.
     let parked = match self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id) {
       Ok(names) => names,
       Err(error) => return Err(staging.rollback(error)),

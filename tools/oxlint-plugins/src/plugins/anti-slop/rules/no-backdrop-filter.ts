@@ -9,6 +9,8 @@ import {
   variableDeclarator,
 } from "../shared/ast.ts";
 
+// Tailwind backdrop utilities (with optional variant, `!`, or negative prefixes),
+// arbitrary `[backdrop-filter:...]` properties, and raw `backdrop-filter:` declarations.
 const BACKDROP_CLASS_PATTERN =
   /(?:^|[\s:!-])(?:backdrop-(?:blur|brightness|contrast|grayscale|hue-rotate|invert|opacity|saturate|sepia|filter)\b|\[(?:-webkit-)?backdrop-filter:)/;
 
@@ -35,6 +37,11 @@ const isLinuxPlatformCheck = (expression: ESTree.Expression): boolean => {
   );
 };
 
+/**
+ * Reports whether an expression can only be true on Linux: a `platform() === "linux"`
+ * check, an `&&` chain containing one, or a const bound to either. Opt-in gates such as
+ * `canvasBlur = linuxCanvasNSFWBlur && platform() === "linux" && …` qualify.
+ */
 const isLinuxOnly = (
   sourceCode: SourceCode,
   expression: ESTree.Expression,
@@ -64,6 +71,11 @@ const isLinuxOnly = (
   return isLinuxOnly(sourceCode, declarator.init, visitedVariables);
 };
 
+/**
+ * Reports whether a class string is behind a Linux gate: `!<linux-only condition> && "…"`.
+ * The gate may be an opt-in, so Linux users who turn it off still get the class;
+ * that choice is theirs (for example `!canvasBlur` with the canvas NSFW blur setting off).
+ */
 const isLinuxGated = (
   sourceCode: SourceCode,
   node: ESTree.Node,
@@ -83,6 +95,7 @@ const isLinuxGated = (
   );
 };
 
+/** Ban backdrop-filter on Linux, where WebKitGTK composites it poorly enough to freeze the desktop app. */
 export const noBackdropFilterRule = defineRule({
   meta: {
     type: "problem",

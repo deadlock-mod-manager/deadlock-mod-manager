@@ -10,6 +10,11 @@ import { useMatchSync } from "@/hooks/use-match-sync";
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
 import { cn } from "@/lib/utils";
 
+/**
+ * Match sync is what keeps this page current, so it can be flipped right here
+ * instead of a trip to Settings. The consent dialog still guards turning it on,
+ * and the full controls (quota, full sync) stay in the Match Data Sharing settings tab.
+ */
 export const MatchSyncToggle = () => {
   const { t } = useTranslation();
   const { status, setConsent, setEnabled } = useMatchSync();
@@ -22,6 +27,11 @@ export const MatchSyncToggle = () => {
 
   return (
     <Tooltip>
+      {/* A real switch rather than a pressed button: a button here reads as
+          "sync now". No border either; it sits in the header's quiet status
+          group, and the switch alone says it is a setting. The trigger is the
+          label, not the switch, so the explanation still shows while the
+          status loads and the switch is disabled. */}
       <TooltipTrigger asChild>
         <Label
           className={cn(

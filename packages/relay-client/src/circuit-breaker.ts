@@ -1,3 +1,4 @@
+// Per-relay circuit breaker: trips after N consecutive failures, cools down, then probes.
 export type CircuitState = "closed" | "open" | "half-open";
 
 export interface CircuitBreakerOptions {
@@ -22,6 +23,7 @@ export class CircuitBreaker {
     }
 
     if (Date.now() - state.openedAt >= this.options.cooldownMs) {
+      // Allow a single probe; we'll reset on success.
       state.openedAt = null;
       state.failures = this.options.failureThreshold - 1;
       return true;

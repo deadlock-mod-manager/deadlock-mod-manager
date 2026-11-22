@@ -52,6 +52,11 @@ export const readFileOrderStore = async (world: string) =>
 const pakNumber = (filename: string) =>
   Number(/^pak(\d+)_dir\.vpk$/.exec(filename)?.[1] ?? Number.NaN);
 
+/**
+ * Checks that every enabled VPK holds the bytes of the file the manifest says
+ * it is, that the engine sees the files in `engineOrder`, and that the
+ * library records the same files and file order.
+ */
 export const assertFileOrderDisk = async (
   world: string,
   step: string,

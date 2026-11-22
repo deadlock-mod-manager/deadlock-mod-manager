@@ -1,3 +1,5 @@
+// Importing a share code downloads each mod while it looks up the next one's
+// files. The scenario's network check asserts the overlap.
 import assert from "node:assert/strict";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";

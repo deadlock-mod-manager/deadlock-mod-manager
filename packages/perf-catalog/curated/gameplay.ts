@@ -7,6 +7,18 @@ interface GameplayRule {
   why?: string;
 }
 
+/**
+ * Convars that change what the player sees or how the camera frames the world,
+ * rather than how fast the game renders. Camera and visibility settings apply
+ * as the author set them and can be turned off one by one; developer, debug and
+ * hideout tools stay off unless the user enables them.
+ *
+ * Enforcement (adapted from Grimoire's opt-in rule): every key a preset sets
+ * that matches one of `GAMEPLAY_PATTERNS` must appear in `GAMEPLAY`, in
+ * `ALLOW_IN_BODY` with a reason, or be denied in `rules.ts`. The generator fails
+ * otherwise, so an upstream bump that adds a new outline or FOV convar cannot
+ * slip into a preset unnoticed.
+ */
 export const GAMEPLAY_PATTERNS: RegExp[] = [
   /timescale/,
   /outline/,
@@ -23,8 +35,10 @@ export const GAMEPLAY_PATTERNS: RegExp[] = [
   /^cam_/,
 ];
 
+/** Explicit classification, with the reason where it isn't obvious from the name. */
 export const GAMEPLAY = new Map(
   Object.entries({
+    // Enemy and unit visibility
     citadel_player_outline_enemies: { class: "visibility" },
     citadel_trooper_outline_enabled: { class: "visibility" },
     citadel_trooper_friendly_glow_disabled: { class: "visibility" },
@@ -101,6 +115,7 @@ export const GAMEPLAY = new Map(
       class: "visibility",
       why: "How transparent objects between the camera and your hero become; 0 makes them fully see-through.",
     },
+    // Camera and field of view
     r_aspectratio: {
       class: "camera",
       why: "Stretches the view horizontally (a wider field of view).",
@@ -167,6 +182,7 @@ export const GAMEPLAY = new Map(
       class: "visibility",
       why: "Server-side player transmission.",
     },
+    // Developer, debug and hideout tools
     citadel_hideout_enable_testing_tools: { class: "devtools" },
     movement_stats_debug_draw: { class: "devtools" },
     citadel_orb_debug_draw_state: { class: "devtools" },
@@ -186,6 +202,7 @@ export const GAMEPLAY = new Map(
   } satisfies Record<string, GameplayRule>),
 );
 
+/** Keys that match a pattern but are ordinary performance settings, with the reason. */
 export const ALLOW_IN_BODY = new Map(
   Object.entries({
     cl_phys_timescale:
@@ -201,6 +218,10 @@ export const ALLOW_IN_BODY = new Map(
   } satisfies Record<string, string>),
 );
 
+/**
+ * Classification for keys no preset sets, so the settings editor can still
+ * group them. Explicit entries above always win.
+ */
 export const PATTERN_DEFAULTS: { pattern: RegExp; class: GameplayClass }[] = [
   { pattern: /debug_draw|debug_show|hideout/, class: "devtools" },
   { pattern: /_fov$|aspectratio|camera|^cam_/, class: "camera" },

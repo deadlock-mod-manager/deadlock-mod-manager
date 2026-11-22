@@ -1,3 +1,5 @@
+//! Edits only DMM's mounts; the surrounding KeyValues document belongs to the game and user.
+
 use std::ops::Range;
 
 use super::gameinfo::{
@@ -12,7 +14,10 @@ mod tests;
 
 pub(super) const LEGACY_START: &str = "// Deadlock Mod Manager - Start";
 pub(super) const LEGACY_END: &str = "// Deadlock Mod Manager - End";
+// Deadworks detects the legacy start prefix. Keep the end distinct so older
+// DMM refuses to treat this narrow block as its whole-SearchPaths wrapper.
 const START: &str = "// Deadlock Mod Manager - Start (SearchPaths v2)";
+// Records the line break we added when a compact block had no insertion line.
 const INLINE_START: &str = "// Deadlock Mod Manager - Start (SearchPaths v2, inline)";
 const END: &str = "// Deadlock Mod Manager (SearchPaths v2) - End";
 const OWNED: &str = "// dmm-search-path";
@@ -33,6 +38,8 @@ enum Format {
 
 struct Ownership<'a> {
   entries: Vec<&'a Site>,
+  /// Lines outside DMM's block that mount a folder DMM manages. They are not
+  /// ours, but they would load that folder's mods whatever profile is active.
   strays: Vec<&'a Site>,
   format: Format,
 }
@@ -45,12 +52,14 @@ pub(super) struct Inspection {
 #[derive(Clone, Copy)]
 pub(super) enum MountMode<'a> {
   Disabled,
+  /// An empty slice selects the default addons directory.
   Enabled(&'a [String]),
 }
 
 pub(super) struct Rewrite {
   pub content: String,
   pub migrated_legacy: bool,
+  /// Values of the stray mounts the rewrite removed.
   pub removed_strays: Vec<String>,
 }
 
@@ -142,6 +151,7 @@ fn whole_line(text: &str, at: usize) -> Result<Range<usize>, Error> {
   Ok(start..line_end(text, at))
 }
 
+/// Match fence names, so an unrelated comment ending in END cannot close a tool's block.
 fn foreign_fences(comments: &[Comment], body: &Range<usize>) -> Vec<Range<usize>> {
   let mut stack: Vec<(&str, usize)> = Vec::new();
   let mut fences = Vec::new();
@@ -186,6 +196,10 @@ fn is_mount(text: &str, site: &Site, role: &str, path: &str) -> bool {
     && (tail.is_empty() || tail.starts_with("//"))
 }
 
+/// Recognizes tagged entries, historical DMM mounts and, when `find_strays` is
+/// set, stray mounts of folders DMM manages, preserving foreign fences.
+/// `claims` lists those folders' search paths; it reads every profile manifest,
+/// so it only runs once an untagged entry could match.
 fn owned_entries<'a>(
   text: &str,
   doc: &'a Document,
@@ -219,6 +233,7 @@ fn owned_entries<'a>(
     if let Some(load) = claims.take() {
       claimed_paths = load()?;
     }
+    // The game resolves search paths case-insensitively on Windows and Proton.
     Ok(
       claimed_paths
         .iter()
@@ -246,6 +261,8 @@ fn owned_entries<'a>(
       result.push(site);
       continue;
     }
+    // Only a whole line can be removed. Another tool's fence marks a deliberate
+    // mount, and dropping a compound role like `Game+Mod` would lose its Mod role.
     let removable = same_line
       && text[line_start(text, site.key_start)..site.key_start]
         .trim()
@@ -254,6 +271,8 @@ fn owned_entries<'a>(
       && site.is_unconditional()
       && site.path[2].eq_ignore_ascii_case("Game")
       && (tail.is_empty() || tail.starts_with("//"));
+    // Historical writers emitted plain lines. Comments and quoting are evidence
+    // that a line is not ours.
     let old = legacy.is_some()
       && removable
       && tail.is_empty()
@@ -290,6 +309,7 @@ pub(super) fn validate(text: &str) -> Result<(), Error> {
   Ok(())
 }
 
+/// A reset must produce a configuration the Windows game client can mount.
 pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   let doc = Document::parse(text)?;
   owned_entries(text, &doc, || Ok(Vec::new()), false)?;
@@ -305,6 +325,7 @@ pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   Err(fail("Reset configuration has no active Game mount"))
 }
 
+/// Strays are not DMM's mounts, so inspection never looks for them.
 pub(super) fn inspect(
   text: &str,
   claims: impl FnOnce() -> Result<Vec<String>, Error>,
@@ -379,6 +400,8 @@ pub(super) fn rewrite(
   if format == Format::Legacy {
     for site in doc.entries() {
       let end = line_end(text, site.key_start);
+      // Older DMM templates used this obsolete engine key. Only migrate our
+      // exact historical line, never a user's annotated or conditional entry.
       if text[site.key_start..end].trim_end() == "Game_Language       citadel_*LANGUAGE*"
         && !in_foreign_block(&doc, site.key_start)
       {

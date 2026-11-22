@@ -29,6 +29,10 @@ const isEnabled = (state: State, mod: LocalMod) =>
 export const getEnabledMods = (state: State) =>
   state.localMods.filter((mod) => isEnabled(state, mod));
 
+/**
+ * Map mods are turned off by every launch, and critical-path mods ask for a
+ * confirmation each time they are enabled, so neither can be toggled freely.
+ */
 export const isBisectCandidate = (mod: LocalMod) =>
   !mod.isMap && !mod.usesCriticalPaths;
 
@@ -52,6 +56,10 @@ class GameRunningError extends Error {
   }
 }
 
+/**
+ * Re-enabled mods take the next free pak slots, so without this the order on
+ * disk drifts every round, and with it which mod wins a conflict.
+ */
 const restoreLoadOrder = async (loadOrder: string[]) => {
   const state = usePersistedStore.getState();
   const profileFolder = state.getActiveProfile()?.folderName ?? null;
@@ -78,6 +86,10 @@ const restoreLoadOrder = async (loadOrder: string[]) => {
   state.updateModVpksAfterReorder(mappings);
 };
 
+/**
+ * Turns the `scope` mods in `target` on and the rest of them off, then puts
+ * every enabled mod back in its original load order.
+ */
 const useApplyModSet = () => {
   const { install } = useInstallWithCollection();
 
@@ -181,6 +193,7 @@ class ProfileMismatchError extends Error {
   }
 }
 
+/** True when a candidate was toggled by hand since the round was set up. */
 const roundDrifted = (state: State, session: BisectSession) => {
   const candidates = new Set(session.candidates);
   const on = new Set(session.config);
@@ -255,6 +268,7 @@ export const useBisect = () => {
       disableOnFinish: [],
       history: [],
     };
+    // Saved before any mod changes, so a crash mid-way can still restore.
     state.setBisectSession(session);
     analytics.track("bisect_started", { mod_count: candidates.length });
     await applyRound(session);
@@ -344,6 +358,7 @@ export const useBisect = () => {
         state.setBisectSession(null);
         return;
       }
+      // Toggling here would change another profile's mods.
       if (session.profileId !== state.activeProfileId) {
         throw new ProfileMismatchError();
       }
@@ -412,6 +427,7 @@ export const useBisect = () => {
 
   return {
     run: mutation.mutate,
+    // Shared by every component that drives the session.
     isPending: pending,
   };
 };

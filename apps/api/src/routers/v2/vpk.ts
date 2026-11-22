@@ -22,6 +22,7 @@ export const vpkRouter = {
         merkleRoot: input.merkleRoot,
       };
       const results = await ModAnalyser.instance.analyseHashes(hashes);
+      // Legacy desktop compatibility: remove with the catalog retirement (#715).
       return Promise.all(results.map((result) => withLegacyVpkMods(result)));
     }),
   analyseVPK: publicProcedure
@@ -55,6 +56,7 @@ export const vpkRouter = {
           submissionId: result.matchedVpk?.submissionId,
         });
 
+        // Legacy compatibility: remove with the catalog retirement (#715).
         return await withLegacyVpkMods(result);
       } catch (error) {
         wide?.set("outcomeReason", "analysis_failed");

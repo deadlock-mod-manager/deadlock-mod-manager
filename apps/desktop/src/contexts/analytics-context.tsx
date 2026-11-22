@@ -14,6 +14,7 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
 interface AnalyticsContextType {
+  // The analytics events hook is re-exported for convenience
   analytics: ReturnType<typeof useAnalyticsEvents>;
 }
 
@@ -34,6 +35,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   const modsState = usePersistedStore((state) => state.localMods);
   const profilesState = usePersistedStore((state) => state.profiles);
 
+  // Track app started event
   useEffect(() => {
     if (
       analytics.isEnabled &&

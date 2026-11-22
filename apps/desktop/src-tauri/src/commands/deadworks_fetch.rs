@@ -1,3 +1,10 @@
+//! Downloading and unpacking Deadworks VPKs from hosts we do not trust.
+//!
+//! The download URL comes from a game server, so every hop is checked before
+//! connecting and pinned to the address that was checked. Sizes the server
+//! advertises are only claims: the caps apply to bytes actually received and
+//! written.
+
 use std::io::{Read, Write};
 use std::net::SocketAddr;
 use std::path::Path;
@@ -10,21 +17,28 @@ use crate::errors::Error;
 
 use super::server_browser::is_public_target;
 
+/// Per-file cap, compressed and decompressed.
 pub const MAX_FILE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const MAX_REDIRECTS: usize = 5;
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 const READ_TIMEOUT: Duration = Duration::from_secs(30);
+/// A transfer slower than this over a whole window is dropped.
 const MIN_RATE_WINDOW: Duration = Duration::from_secs(30);
 const MIN_BYTES_PER_WINDOW: u64 = 32 * 1024;
+/// zstd window log 27 is 128 MiB; larger windows are refused.
+/// How often progress is reported, so a large file is not thousands of events.
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 const MAX_ZSTD_WINDOW_LOG: u32 = 27;
 pub const VPK_MAGIC: [u8; 4] = [0x34, 0x12, 0xAA, 0x55];
 
 pub enum Fetched {
   Saved,
+  /// 403, 404 or 410: the host does not have this file in this format.
   Missing,
 }
 
+/// Resolve `url` and refuse loopback, private and link-local targets unless
+/// the game server itself is on the player's LAN.
 async fn checked_addrs(url: &Url, allow_private: bool) -> Result<(String, Vec<SocketAddr>), Error> {
   if !matches!(url.scheme(), "http" | "https")
     || !url.username().is_empty()
@@ -55,6 +69,9 @@ async fn checked_addrs(url: &Url, allow_private: bool) -> Result<(String, Vec<So
   Ok((host, addrs))
 }
 
+/// Stream `url` into `dest`, following up to five redirects and stopping at
+/// `max_bytes` received. `on_progress` gets the running byte count and the
+/// size the host declared, if any (a claim, used only for display).
 pub async fn fetch_to_file(
   url: Url,
   dest: &Path,
@@ -158,12 +175,14 @@ enum Format {
   Bzip2,
 }
 
+/// Full SHA-256 of the file at `path`, as lowercase hex. Blocking.
 pub fn file_sha256_hex(path: &Path) -> Result<String, Error> {
   let mut hasher = Sha256::new();
   std::io::copy(&mut std::fs::File::open(path)?, &mut hasher)?;
   Ok(hex::encode(hasher.finalize()))
 }
 
+/// The format comes from the first bytes, never from the URL.
 fn sniff(head: &[u8]) -> Option<Format> {
   match head {
     [0x28, 0xB5, 0x2F, 0xFD, ..] => Some(Format::Zstd),
@@ -195,6 +214,9 @@ impl<W: Write> Write for HashingWriter<W> {
   }
 }
 
+/// Decode every zstd frame or bzip2 stream in `compressed` into `out` (the
+/// parallel compressors write several), stopping at `max_bytes`, and check
+/// the result is a VPK. Blocking; run it off the async runtime.
 pub fn decode_vpk(compressed: &Path, out: &Path, max_bytes: u64) -> Result<Decoded, Error> {
   let mut source = std::fs::File::open(compressed)?;
   let mut head = [0_u8; 4];
@@ -254,6 +276,7 @@ mod tests {
   fn decodes_every_zstd_frame_including_skippable_ones() {
     let data = vpk_bytes();
     let (first, second) = data.split_at(5);
+    // A skippable frame: magic 0x184D2A50 (LE), 4-byte length, payload.
     let mut stream = vec![0x50, 0x2A, 0x4D, 0x18, 2, 0, 0, 0, 0xAB, 0xCD];
     stream.extend(zstd::encode_all(first, 3).expect("frame 1"));
     stream.extend(zstd::encode_all(second, 3).expect("frame 2"));

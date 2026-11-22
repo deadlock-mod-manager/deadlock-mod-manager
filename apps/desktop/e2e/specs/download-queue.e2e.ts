@@ -50,6 +50,7 @@ describe("queued download retry", () => {
     await card(DOWNLOAD_NAME).waitForDisplayed();
     await card(QUEUE_NAME).waitForDisplayed();
 
+    // The backend starts this attempt's slow clock when the attempt starts.
     const firstAttempt = Date.now();
     await step("the first attempt fails", async () => {
       await retry(DOWNLOAD_NAME);
@@ -66,6 +67,7 @@ describe("queued download retry", () => {
       );
     });
 
+    // Let the failed attempt's clock age past the notice delay.
     const aged = firstAttempt + NOTICE_DELAY_MS + 1_000;
     if (Date.now() < aged) await browser.pause(aged - Date.now());
 
@@ -79,9 +81,11 @@ describe("queued download retry", () => {
       );
       while (Date.now() < queued + NOTICE_DELAY_MS + 4_000) {
         expect(await notice(DOWNLOAD_NAME).isDisplayed()).toBe(false);
+        // The notice only renders while downloading, so a finished retry would hide it.
         expect(await statusOf(world, DOWNLOAD_MOD)).toBe("downloading");
         await browser.pause(250);
       }
+      // The blocker is still running, so the retry never left the queue.
       expect(await statusOf(world, QUEUE_MOD)).toBe("downloading");
     });
 

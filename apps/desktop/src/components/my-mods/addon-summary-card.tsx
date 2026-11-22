@@ -31,12 +31,15 @@ export const AddonSummaryCard = ({
 }: {
   addon: LocalAddonInfo;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
+  /** Without it (onboarding), the card offers no file actions. */
   fileContext?: AnalysisTarget | null;
 }) => {
   const { t } = useTranslation();
   const { isLibraryVpk, isLoading: isLoadingSnapshot } = useVpkScan();
   const isIdentified = !!addon.remoteId;
   const ignoredByGame = isIgnoredByGame(addon);
+  // An identified file counts as added once its mod is in the library, even
+  // when the file isn't one of the mod's installed files (a parked VPK).
   const isModInLibrary = usePersistedStore((state) =>
     state.localMods.some((mod) => mod.remoteId === addon.remoteId),
   );
@@ -46,8 +49,11 @@ export const AddonSummaryCard = ({
   );
 
   const owned = isLibraryVpk(addon.locator);
+  // Wait for the snapshot; if it can't be read, Add reports the error itself.
   const isCheckingLibrary = owned === undefined && isLoadingSnapshot;
 
+  // Every action waits for Analyze to finish registering, and acts only on the
+  // analyzed profile.
   const locked =
     !!fileContext &&
     (fileContext.registering ||
@@ -57,6 +63,7 @@ export const AddonSummaryCard = ({
     isIdentifiedByNameOnly(addon) && !isModInLibrary
       ? addon.remoteId
       : undefined;
+  // Only offered once the ownership snapshot says no library mod has the file.
   const fileActions =
     fileContext &&
     owned === false &&
@@ -69,6 +76,7 @@ export const AddonSummaryCard = ({
       />
     ) : undefined;
 
+  // Local mods are identified too, but have no GameBanana page to open.
   const gameBananaUrl = addon.remoteId
     ? gameBananaPageUrl(addon.remoteId)
     : null;

@@ -41,6 +41,7 @@ type SearchBarProps = {
   setQuery: (query: string) => void;
   sortType?: SortType;
   setSortType?: (sortType: SortType) => void;
+  /** Source for the hero and category menus; only these fields are read. */
   mods: Array<
     Pick<ModDto, "category" | "hero" | "name"> & {
       detectedHero?: string | null;
@@ -56,6 +57,7 @@ type SearchBarProps = {
   onHideNSFWChange: (hideNSFW: boolean) => void;
   nsfwOnly?: boolean;
   onNSFWOnlyChange?: (nsfwOnly: boolean) => void;
+  // Local libraries filter by audio/map flags; the store has section tabs.
   audioQuickFilter?: AudioQuickFilter;
   onAudioQuickFilterChange?: (value: AudioQuickFilter) => void;
   mapQuickFilter?: MapQuickFilter;
@@ -274,6 +276,7 @@ const SearchBar = ({
         )}
       </div>
 
+      {/* Active Filters */}
       {hasActiveFilters && (
         <div className='flex flex-wrap items-center gap-2'>
           <span className='text-muted-foreground text-sm'>
@@ -282,6 +285,7 @@ const SearchBar = ({
               : t("filters.excludingFilters")}
           </span>
 
+          {/* Category badges */}
           {selectedCategories.map((category) => (
             <Badge
               className='flex items-center gap-1'
@@ -342,6 +346,7 @@ const SearchBar = ({
               </Badge>
             ))}
 
+          {/* Hero badges */}
           {selectedHeroes.map((hero) => (
             <Badge
               className='flex items-center gap-1'
@@ -362,6 +367,7 @@ const SearchBar = ({
             </Badge>
           ))}
 
+          {/* NSFW filter badge */}
           {hideNSFW && (
             <Badge className='flex items-center gap-1' variant='destructive'>
               {t("filters.hideNSFW")}
@@ -386,6 +392,7 @@ const SearchBar = ({
             </Badge>
           )}
 
+          {/* Audio filter badge */}
           {audioQuickFilter && audioQuickFilter !== "off" && (
             <Badge className='flex items-center gap-1' variant='secondary'>
               {audioQuickFilter === "only"
@@ -414,6 +421,7 @@ const SearchBar = ({
             </Badge>
           )}
 
+          {/* Broken/Outdated filter badge */}
           {hideOutdated && (
             <Badge className='flex items-center gap-1' variant='secondary'>
               {t("filters.hideOutdated")}
@@ -463,6 +471,7 @@ const SearchBar = ({
             </Badge>
           )}
 
+          {/* Clear all button */}
           <button
             className='text-muted-foreground text-xs underline hover:text-foreground'
             onClick={clearAllFilters}

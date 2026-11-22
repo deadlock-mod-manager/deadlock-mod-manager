@@ -1,5 +1,12 @@
 import { DeadlockHeroes } from "./constants";
 
+/**
+ * Stable hero and content-type IDs that mod sources tag listings with
+ * (RFC 002). Published at https://deadlockmods.app/v1/taxonomy.json.
+ *
+ * IDs are a public contract: never rename or reuse one. Display names may
+ * change freely.
+ */
 export const TAXONOMY_VERSION = 1;
 
 export const HERO_IDS = {
@@ -50,6 +57,7 @@ export const HERO_IDS = {
   [DeadlockHeroes.Yamato]: "yamato",
 } satisfies Record<DeadlockHeroes, string>;
 
+/** The desktop's mod categories, which follow GameBanana's. */
 export const CONTENT_TYPES = [
   { id: "skins", name: "Skins" },
   { id: "gameplay", name: "Gameplay" },

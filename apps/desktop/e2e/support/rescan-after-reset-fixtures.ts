@@ -18,10 +18,13 @@ import {
 import { buildSyntheticVpk } from "./vpk";
 import type { CreatedWorld } from "./world";
 
+/** Local import whose name only its metadata file still knows after a reset. */
 export const RESET_LOCAL_MOD = "local-reset-skin";
 export const RESET_LOCAL_NAME = "E2E Reset Skin";
+/** A disabled mod parked in the base folder under its prefixed name. */
 export const RESET_DISABLED_MOD = "900077";
 const RESET_DISABLED_FILE = `${RESET_DISABLED_MOD}_red.vpk`;
+/** A VPK no manifest entry owns: the only file Analyze should ask about. */
 const RESET_STRAY_FILE = "pak04_dir.vpk";
 
 export const resetProfileDirectory = (world: string) =>
@@ -34,11 +37,16 @@ const strayPayload = () =>
 
 const HASH_PATH = "/api/v2/vpk-analyse-hashes";
 
+/**
+ * The catalog fixture, with hash identification that never matches: anything
+ * Analyze restores has to come from DMM's own records, not the server.
+ */
 export const rescanAfterResetRoutes = async () => {
   const catalogRoutes = await createCatalogRoutes("gamebanana-switch-reset");
   return (origin: string): FixtureRoute[] => [
     ...catalogRoutes(origin),
     { method: "POST", path: HASH_PATH, status: 200, body: "[]" },
+    // The disabled mod has since left GameBanana: only DMM's records know it.
     {
       method: "GET",
       path: `/apiv11/Mod/${RESET_DISABLED_MOD}/ProfilePage`,
@@ -59,6 +67,11 @@ export const hashRequests = (requests: readonly FixtureRequest[]) =>
     (request) => request.method === "POST" && request.url.includes(HASH_PATH),
   );
 
+/**
+ * Profile Alpha as DMM leaves it: the catalog mod enabled across `pak01` and
+ * `pak02`, a local import enabled as `pak03`, a disabled catalog mod parked as
+ * `900077_red.vpk`, and one hand-placed `pak04` no entry owns.
+ */
 export const prepareRescanAfterResetWorld = async (world: CreatedWorld) => {
   await prepareInstalledProfiles(
     world,

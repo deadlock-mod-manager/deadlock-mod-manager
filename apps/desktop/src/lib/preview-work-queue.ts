@@ -5,6 +5,7 @@ interface Work {
   run: () => Promise<void>;
 }
 
+/** Serializes expensive preview analysis with cancellation for queued requests. */
 export class PreviewWorkQueue {
   private pending: Work[] = [];
   private running = false;

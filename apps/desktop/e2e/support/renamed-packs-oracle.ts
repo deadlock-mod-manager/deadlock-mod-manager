@@ -22,6 +22,7 @@ const manifestSchema = z.object({
   ),
 });
 
+/** VPK names each mod should have enabled, and the version they come from. */
 export type RenamedExpectation = Record<
   string,
   { version: RenamedVersion; vpks: readonly string[] }
@@ -74,6 +75,8 @@ export const assertRenamedPacksDisk = async (
           .sort(),
         vpks.toSorted(),
       );
+      // The stored tree names the archives just installed, so the next update
+      // matches them directly.
       assert.deepEqual(
         [...new Set(files.map((file) => file.archive_name))].sort(),
         mod.files.map((file) => file.archive[version]).sort(),

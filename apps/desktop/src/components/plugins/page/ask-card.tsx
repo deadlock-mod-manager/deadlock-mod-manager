@@ -7,6 +7,7 @@ type AskCardProps = {
   copy: PermissionCopy;
   ready: boolean;
   active: boolean;
+  /** The card tightens while the profile menu is open below its field. */
   tight?: boolean;
   children?: ReactNode;
 };

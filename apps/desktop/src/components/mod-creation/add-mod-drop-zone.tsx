@@ -14,6 +14,7 @@ interface AddModDropZoneProps {
   onSource: (source: DetectedSource) => void;
 }
 
+/** The dialog's first step: files dropped here or picked from disk. */
 export const AddModDropZone = ({ onSource }: AddModDropZoneProps) => {
   const { t } = useTranslation();
   const { isDragging, dragHandlers, openTauriFilePicker } = useFileDrop(

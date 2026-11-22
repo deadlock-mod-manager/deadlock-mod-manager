@@ -25,12 +25,17 @@ const ICONS = {
   videoAdopted: PushPinIcon,
 } satisfies Record<VideoEntry["action"], typeof MonitorIcon>;
 
+/**
+ * A History row for something that happened to video.txt alone. Changes made
+ * in game can still be kept or undone while the file holds them.
+ */
 export const HistoryVideoRow = ({ entry }: { entry: VideoEntry }) => {
   const { t } = useTranslation();
   const { data: status } = usePerfStatus();
   const resolve = useResolveVideoChanges();
   const Icon = ICONS[entry.action];
 
+  // The entry's changes the file still holds and the player hasn't settled.
   const open =
     entry.action === "videoChanged"
       ? entry.changes.filter((change) =>

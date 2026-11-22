@@ -14,6 +14,7 @@ interface PartyMemberRowProps {
   heroesById: Map<number, DeadlockHero>;
   isActive: boolean;
   advice: PickAdvice | null;
+  /** The hero a suggested swap just placed for this player. */
   landedHeroId: number | null;
   canRemove: boolean;
   onSelect: () => void;
@@ -22,6 +23,7 @@ interface PartyMemberRowProps {
   onRemove: () => void;
 }
 
+/** One player in the party: the heroes they offer, and the change that helps most. */
 export const PartyMemberRow = ({
   label,
   picks,
@@ -83,6 +85,7 @@ export const PartyMemberRow = ({
             <OpenPickChip
               isNext={isActive && index === 0}
               onSelect={onSelect}
+              // Open slots carry nothing but their position.
               key={`open-${picks.length + index}`}
             />
           ))}

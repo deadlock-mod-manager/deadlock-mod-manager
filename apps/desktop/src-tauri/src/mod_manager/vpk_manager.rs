@@ -20,10 +20,13 @@ pub(crate) mod staging;
 
 pub(crate) use naming::allocate_enabled_vpk_names;
 
+/// Final placement of a mod's enabled VPKs after a sharded reorder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardPlacement {
   pub mod_id: String,
+  /// 1-based shard index the VPKs now live in.
   pub shard: ShardIndex,
+  /// New `pak##_dir.vpk` filenames within that shard, in order.
   pub vpks: Vec<String>,
 }
 
@@ -34,9 +37,14 @@ pub struct ShardAssignment {
   pub vpks: Vec<String>,
 }
 
+/// Where a sharded reorder moved everything it touched.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ShardReorderOutcome {
+  /// Final placement of every mod in the requested assignments.
   pub placements: Vec<ShardPlacement>,
+  /// Enabled VPKs no assignment claimed, as old `(shard, filename)` to new
+  /// `(shard, filename)`. A reorder renumbers these too, so records that still
+  /// name them have to follow them.
   pub orphan_renames: BTreeMap<(ShardIndex, String), (ShardIndex, String)>,
 }
 
@@ -50,11 +58,15 @@ pub struct SwapRequest<'a> {
   pub selected_original_names: &'a [String],
 }
 
+/// How to handle enabled VPK files that are recorded but missing on disk.
 pub enum MissingVpkPolicy {
+  /// Fail if any recorded enabled VPK file is missing (variant switch, swap).
   Strict,
+  /// Filter missing files, warn, and proceed with those that exist (uninstall/disable).
   Reconcile,
 }
 
+/// Manages VPK file operations and installation
 pub struct VpkManager {
   filesystem: FileSystemHelper,
 }
@@ -83,6 +95,8 @@ mod tests {
     fs::write(addons_path.join(name), b"test vpk").unwrap();
   }
 
+  /// `ProfileBase` only accepts `citadel/addons`-rooted paths, so tests that
+  /// reach the shard layout need a real addons tree rather than a bare tempdir.
   fn addons_base(temp: &tempfile::TempDir) -> std::path::PathBuf {
     let addons_path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&addons_path).unwrap();
@@ -97,6 +111,8 @@ mod tests {
     }
   }
 
+  /// Extracts one `pak01_dir.vpk` per variant archive, returning the extraction
+  /// root, an empty addons folder and the mod's tree.
   fn extract_variants(
     temp: &tempfile::TempDir,
     variants: &[&str],
@@ -159,6 +175,7 @@ mod tests {
   fn placing_again_keeps_files_an_earlier_attempt_moved() {
     let temp = tempfile::tempdir().unwrap();
     let (extraction_root, addons_path, tree) = extract_variants(&temp, &["Red", "Blue"]);
+    // The earlier attempt moved Red, then failed before recording anything.
     fs::rename(
       extraction_root.join("Red.zip/pak01_dir.vpk"),
       addons_path.join("123_pak01-red_dir.vpk"),
@@ -191,6 +208,7 @@ mod tests {
   fn placing_skips_a_leftover_of_another_size() {
     let temp = tempfile::tempdir().unwrap();
     let (extraction_root, addons_path, tree) = extract_variants(&temp, &["Red", "Blue"]);
+    // The archive's folder is still extracted, but this isn't the file it held.
     fs::remove_file(extraction_root.join("Red.zip/pak01_dir.vpk")).unwrap();
     fs::write(addons_path.join("123_pak01-red_dir.vpk"), b"older red").unwrap();
 
@@ -222,6 +240,7 @@ mod tests {
     assert!(placed.is_empty());
   }
 
+  /// Places a tree of selected `(name, path)` entries over these extracted files.
   fn place_listed(extracted: &[&str], listed: &[(&str, &str)]) -> Vec<String> {
     use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 
@@ -430,6 +449,9 @@ mod tests {
     assert!(!temp.path().join("pak01_dir.vpk").exists());
   }
 
+  /// Every journaled move costs a disk flush, so a reorder leaves files that
+  /// keep their slot alone: swapping the last two mods moves only those two,
+  /// and a crash before the commit still recovers the original layout.
   #[test]
   fn reorder_moves_only_vpks_whose_slot_changes() {
     let temp = tempfile::tempdir().unwrap();
@@ -465,6 +487,8 @@ mod tests {
     );
     assert_eq!(read_slots(), ["a", "b", "d", "c"]);
 
+    // Crash before the manifest commit: nothing rolls back in process, and the
+    // next start recovers from the journal alone.
     std::mem::forget(pending);
     let base = ProfileBase::new(&addons_path).unwrap();
     recover_staging_directory(
@@ -478,12 +502,17 @@ mod tests {
     assert!(!staging_dir.exists());
   }
 
+  /// The core feature: more than 99 enabled VPKs are spread across sibling
+  /// `addons`/`addons2` folders, bypassing the engine's 99-file-per-directory
+  /// limit while preserving global load order.
   #[test]
   fn sharding_spreads_more_than_99_vpks_across_addon_folders() {
     let temp = tempfile::tempdir().unwrap();
     let addons_path = addons_base(&temp);
     let addons_path = addons_path.as_path();
 
+    // 150 single-file mods, currently all crammed into the base folder
+    // (the legacy "over the 99 limit" state on disk).
     let mut ordered = Vec::new();
     for i in 1..=150u32 {
       let name = format!("pak{i:02}_dir.vpk");
@@ -498,9 +527,12 @@ mod tests {
     let shard1 = base.shard_dir(ShardIndex::FIRST);
     let shard2 = base.shard_dir(ShardIndex::new(2).unwrap());
 
+    // Shard 1 (citadel/addons) fills to capacity, shard 2 (citadel/addons2)
+    // takes the overflow.
     assert_eq!(VpkManager::count_enabled_vpks(&shard1), 99);
     assert_eq!(VpkManager::count_enabled_vpks(&shard2), 51);
 
+    // Load order preserved: mods 1..99 in shard 1, 100..150 in shard 2.
     assert_eq!(placements.len(), 150);
     assert_eq!(placements[0].shard, ShardIndex::FIRST);
     assert_eq!(placements[98].shard, ShardIndex::FIRST);
@@ -508,16 +540,20 @@ mod tests {
     assert_eq!(placements[149].shard, ShardIndex::new(2).unwrap());
     assert!(shard2.join("pak01_dir.vpk").is_file());
     assert!(shard2.join("pak51_dir.vpk").is_file());
+    // No mod is split: shard 2 numbering restarts at pak01.
     assert!(!shard2.join("pak100_dir.vpk").exists());
   }
 
+  /// Fix regression guard: disabling a mod whose prefixed destination already
+  /// exists (a newly staged variant) must remove the active copy and keep the
+  /// pre-existing variant intact — never clobber it via a bogus rollback rename.
   #[test]
   fn disable_with_existing_prefixed_destination_removes_active_copy() {
     let temp = tempfile::tempdir().unwrap();
     let addons_path = addons_base(&temp);
     let addons_path = addons_path.as_path();
-    write_vpk(addons_path, "pak01_dir.vpk");
-    write_vpk(addons_path, "123456_original.vpk");
+    write_vpk(addons_path, "pak01_dir.vpk"); // active
+    write_vpk(addons_path, "123456_original.vpk"); // pre-existing staged variant
 
     let manager = VpkManager::new();
     let out = manager
@@ -532,16 +568,18 @@ mod tests {
       .unwrap();
 
     assert_eq!(out, vec!["123456_original.vpk".to_string()]);
-    assert!(!addons_path.join("pak01_dir.vpk").exists());
-    assert!(addons_path.join("123456_original.vpk").exists());
+    assert!(!addons_path.join("pak01_dir.vpk").exists()); // active removed
+    assert!(addons_path.join("123456_original.vpk").exists()); // preserved
   }
 
+  /// Fix regression guard: enabling must reject a missing source up front
+  /// instead of warn-and-skip, so a mod can never be left partially enabled.
   #[test]
   fn enable_rejects_missing_source_before_renaming() {
     let temp = tempfile::tempdir().unwrap();
     let addons_path = addons_base(&temp);
     let addons_path = addons_path.as_path();
-    write_vpk(addons_path, "123456_a.vpk");
+    write_vpk(addons_path, "123456_a.vpk"); // 123456_b.vpk is intentionally missing
 
     let manager = VpkManager::new();
     let err = manager
@@ -554,10 +592,13 @@ mod tests {
       .unwrap_err();
 
     assert!(err.to_string().contains("source VPK files are missing"));
+    // Nothing was renamed: existing source untouched, no pak## created.
     assert!(addons_path.join("123456_a.vpk").exists());
     assert!(!addons_path.join("pak01_dir.vpk").exists());
   }
 
+  /// Disabled copies always live in the profile base, whatever shard the mod is
+  /// enabled in — otherwise re-enabling could not find its sources.
   #[test]
   fn enabling_and_disabling_cross_the_shard_boundary() {
     let temp = tempfile::tempdir().unwrap();
@@ -595,6 +636,8 @@ mod tests {
     assert!(!shard_two.join("pak01_dir.vpk").exists());
   }
 
+  /// Clearing a profile has to empty every shard, not just the base, or the
+  /// engine would keep loading whatever was left behind in `addons2`.
   #[test]
   fn clearing_a_profile_empties_every_shard() {
     let temp = tempfile::tempdir().unwrap();
@@ -615,6 +658,9 @@ mod tests {
     assert!(!shard_two.join("pak01_dir.vpk").exists());
   }
 
+  /// Fix regression guard: if a hard crash interrupts the placement phase, some
+  /// files sit at their new `pak##` names and others are still staged. Recovery
+  /// must never overwrite an already-placed file when restoring a staged one.
   #[test]
   fn reorder_recovery_does_not_clobber_already_placed_files() {
     let temp = tempfile::tempdir().unwrap();
@@ -622,6 +668,7 @@ mod tests {
     let base = ProfileBase::new(base_path).unwrap();
 
     fs::write(base.join("pak01_dir.vpk"), b"placed").unwrap();
+    // A staged file whose original name collides with the placed one.
     let reorder = base.join(".dmm-reorder");
     fs::create_dir_all(&reorder).unwrap();
     fs::write(reorder.join("s1__pak01_dir.vpk"), b"staged").unwrap();
@@ -634,6 +681,8 @@ mod tests {
     )
     .unwrap();
 
+    // Neither file is lost: the placed file keeps its slot, the staged file is
+    // recovered into a free one.
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"placed");
     assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"staged");
   }

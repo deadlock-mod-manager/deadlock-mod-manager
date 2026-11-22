@@ -11,6 +11,11 @@ import { ALPHA, BETA, prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk } from "./vpk";
 import type { CreatedWorld } from "./world";
 
+/**
+ * Two enabled GameBanana mods whose VPKs were deleted while DMM was closed.
+ * The first always downloads again; in the partial case the second's download
+ * is gone for good.
+ */
 export const REPAIR_MODS = [
   { id: "950001", name: "E2E Repairable Mod", archive: "repairable.zip" },
   { id: "950002", name: "E2E Unrepairable Mod", archive: "unrepairable.zip" },
@@ -57,6 +62,7 @@ export const launchRepairRoutes = async (scenario: string) => {
       _sMd5Checksum: createHash("md5").update(mod.body).digest("hex"),
     }));
     return [
+      // No updates, so automatic checks leave both mods alone.
       {
         ...json(
           "/Core/Item/Data",
@@ -97,6 +103,11 @@ const documentSchema = z.object({
   version: z.number(),
 });
 
+/**
+ * Seeds both mods as installed GameBanana downloads in Alpha, keeps their
+ * downloaded copies (so startup flags them as broken instead of dropping them)
+ * and deletes their VPKs from the profile.
+ */
 export const prepareLaunchRepairWorld = async (
   world: CreatedWorld,
   origin: string,

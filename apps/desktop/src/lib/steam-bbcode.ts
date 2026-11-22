@@ -1,3 +1,9 @@
+/**
+ * Steam announcements are written in Steam's BBCode dialect. This turns them
+ * into plain HTML for `interweave`, which sanitises the result again before it
+ * reaches the DOM.
+ */
+
 const CLAN_IMAGE_BASE = "https://clan.akamai.steamstatic.com/images";
 
 const SIMPLE_TAGS: Record<string, string> = {
@@ -28,6 +34,8 @@ const BREAKS_BEFORE_BLOCK = new RegExp(
 );
 const BREAKS_AFTER_BLOCK = new RegExp(`(<\\/?${BLOCK_TAG}>)(?:\\s*<br>)+`, "g");
 
+// Placeholders for Steam's escaped brackets (`\[ General ]`), so the tag
+// passes below leave them alone.
 const OPEN_BRACKET = "\u0001";
 const CLOSE_BRACKET = "\u0002";
 
@@ -40,6 +48,8 @@ const escapeHtml = (value: string): string =>
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 
+// Steam writes images as `[img]url[/img]` or, in newer posts,
+// `[img src="url"][/img]`. Quotes may already be HTML-escaped.
 const IMAGE_TAG =
   /\[img(?:\s+src=(?:"|&quot;)?(.*?)(?:"|&quot;)?)?\](.*?)\[\/img\]/gi;
 
@@ -82,6 +92,8 @@ export const steamBbcodeToHtml = (input: string): string => {
       (_, id: string) =>
         `<p><a href="https://www.youtube.com/watch?v=${id}">YouTube</a></p>`,
     )
+    // Anything we don't understand (tables, spoilers, video) is dropped,
+    // keeping its inner text.
     .replace(/\[\/?[\w-]+(?:[=\s][^\]]*)?\]/gi, "")
     .replaceAll(OPEN_BRACKET, "[")
     .replaceAll(CLOSE_BRACKET, "]")
@@ -93,6 +105,7 @@ export const steamBbcodeToHtml = (input: string): string => {
   return html.trim();
 };
 
+/** First `[img]` in a post, used as its cover. */
 export const steamBbcodeFirstImage = (input: string): string | null => {
   const match = new RegExp(IMAGE_TAG.source, "i").exec(
     resolveImageTokens(input),
@@ -102,6 +115,7 @@ export const steamBbcodeFirstImage = (input: string): string | null => {
   return isHttpUrl(src) ? src : null;
 };
 
+/** Plain-text preview of a post, without images or markup. */
 export const steamBbcodeExcerpt = (input: string, maxLength = 180): string => {
   const text = input
     .replace(IMAGE_TAG, "")

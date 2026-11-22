@@ -14,6 +14,10 @@ fn get_console_log_path(game_path: &Path) -> PathBuf {
     .join(CONSOLE_LOG_FILENAME)
 }
 
+/// A cursor over `console.log` that yields whatever the game appended since
+/// the last read. Callers pick where to start: `from_start` for a cold launch
+/// (the game truncates the log, so the early lines are all ours), `from_end`
+/// when the client is already up and only new activity is interesting.
 pub(crate) struct ConsoleLogTail {
   path: PathBuf,
   offset: u64,
@@ -38,6 +42,7 @@ impl ConsoleLogTail {
     let current_len = file.metadata().ok()?.len();
 
     if current_len < self.offset {
+      // File was truncated / rotated; start from scratch.
       self.offset = 0;
     }
 
@@ -55,6 +60,8 @@ impl ConsoleLogTail {
   }
 }
 
+/// Watches the console log for `ServerSteamID=\[...\]` until found or stopped.
+/// Returns the connect code (e.g. `[A:1:3695290372:49365]`) or `None` if stopped.
 pub async fn watch_for_connect_code(
   game_path: &Path,
   running_flag: Arc<AtomicBool>,

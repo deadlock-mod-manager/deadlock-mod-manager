@@ -7,6 +7,12 @@ import type {
 } from "@/lib/stats/api";
 import { badgeToStep } from "@/lib/stats/rank";
 
+/**
+ * Everything on the Stats page is derived from the one match-history payload, so
+ * a full dashboard costs a handful of requests instead of one per widget.
+ */
+
+/** `match_result` alone cannot distinguish a win from a non-scored game. */
 export const isUnscored = (
   match: Pick<MatchHistoryEntry, "player_match_outcome">,
 ): boolean => match.player_match_outcome === 5;
@@ -29,14 +35,24 @@ export const matchOutcome = (
 export const isWin = (match: MatchHistoryEntry): boolean =>
   matchOutcome(match) === "win";
 
+/** Leaving is a display status; the scored result still drives aggregates. */
 export const matchStatus = (match: MatchHistoryEntry): MatchStatus =>
   (match.abandoned_time_s ?? 0) > 0 ? "abandoned" : matchOutcome(match);
 
+/** The API returns newest first; charts read left to right. */
 export const chronological = (
   matches: MatchHistoryEntry[],
 ): MatchHistoryEntry[] =>
   [...matches].sort((a, b) => a.start_time - b.start_time);
 
+/**
+ * Merges the matches the Game Coordinator knows about into the API's history.
+ *
+ * deadlock-api ingests with up to a day of delay, so today's games are missing
+ * from it while the GC already has them. The API entry wins on conflicts - it is
+ * the richer record - and local-only matches are appended. A local non-score
+ * still fills in when the API entry carries no outcome of its own.
+ */
 export const mergeLocalMatches = (
   api: MatchHistoryEntry[],
   local: MatchHistoryEntry[],
@@ -57,6 +73,7 @@ export const mergeLocalMatches = (
   return extra.length === 0 ? merged : [...extra, ...merged];
 };
 
+/** The local matches the API does not know yet - the gap everything else fills from. */
 export const localOnlyMatches = (
   api: MatchHistoryEntry[],
   local: MatchHistoryEntry[],
@@ -68,6 +85,17 @@ export const localOnlyMatches = (
   return local.filter((match) => !known.has(match.match_id));
 };
 
+/**
+ * Folds matches the API has not ingested into its per-hero aggregates.
+ *
+ * `hero-stats` lags the same day the match history does, so without this the
+ * Heroes tab would ignore everything played today - including a hero picked up
+ * for the first time, which would be missing entirely rather than merely stale.
+ *
+ * Only the counters that can be reconstructed from a match row are updated; the
+ * per-minute rates and accuracy stay on the API's values, which is why they are
+ * left alone rather than recomputed from a partial picture.
+ */
 export const mergeHeroStats = (
   heroStats: PlayerHeroStats[],
   extraMatches: MatchHistoryEntry[],
@@ -194,6 +222,7 @@ export const summarize = (matches: MatchHistoryEntry[]): StatsSummary => {
     kills: kills / matches.length,
     deaths: deaths / matches.length,
     assists: assists / matches.length,
+    // Deathless stretches would divide by zero; count them as a single death.
     kda: (kills + assists) / Math.max(deaths, 1),
     soulsPerMin: minutes > 0 ? netWorth / minutes : 0,
     lastHitsPerMin: minutes > 0 ? lastHits / minutes : 0,
@@ -204,6 +233,7 @@ export const summarize = (matches: MatchHistoryEntry[]): StatsSummary => {
 export interface RollingPoint {
   matchId: number;
   startTime: number;
+  /** Winrate across the trailing `window` matches, `null` until it is filled. */
   winrate: number | null;
   kda: number;
 }
@@ -219,17 +249,26 @@ export const rollingWinrate = (
     return {
       matchId: match.match_id,
       startTime: match.start_time,
+      // Leave the line blank until the window is actually full, otherwise the
+      // first few points swing between 0 and 1.
       winrate: slice.length >= window ? summary.winrate : null,
       kda: summary.kda,
     };
   });
 };
 
+/** A rolling-winrate point that actually has a value, ready to plot. */
 export interface FormPoint {
   startTime: number;
+  /** Percent, not a fraction: recharts axes are configured in whole percent. */
   winrate: number;
 }
 
+/**
+ * The plot-ready form curve: the rolling winrate with the not-yet-filled leading
+ * points dropped. Both form charts want exactly this, so neither has to re-derive
+ * it (and neither has to assert the nullable winrate away).
+ */
 export const formCurve = (
   matches: MatchHistoryEntry[],
   window: number,
@@ -241,6 +280,7 @@ export const formCurve = (
   );
 
 export interface StreakInfo {
+  /** Positive for a win streak, negative for a loss streak. */
   current: number;
   longestWin: number;
   longestLoss: number;
@@ -294,15 +334,22 @@ const bucketize = (
     .sort((a, b) => a.bucket - b.bucket);
 };
 
+/** Local hour of day (0-23) - timezone matters, the player's evening is what counts. */
 export const winrateByHour = (matches: MatchHistoryEntry[]): BucketStats[] =>
   bucketize(matches, (match) => new Date(match.start_time * 1000).getHours());
 
+/** 0 = Sunday, matching `Date#getDay`. */
 export const winrateByWeekday = (matches: MatchHistoryEntry[]): BucketStats[] =>
   bucketize(matches, (match) => new Date(match.start_time * 1000).getDay());
 
 const SESSION_GAP_MS = 3 * 60 * 60 * 1000;
+/** Beyond this the samples get too thin to say anything. */
 export const MAX_SESSION_POSITION = 6;
 
+/**
+ * Each match with its position within a session (matches less than 3h apart),
+ * oldest first and capped at `MAX_SESSION_POSITION`.
+ */
 export const sessionPositions = (
   matches: MatchHistoryEntry[],
 ): Array<{ match: MatchHistoryEntry; position: number }> => {
@@ -318,11 +365,13 @@ export const sessionPositions = (
 };
 
 export interface PlaySession {
+  /** Newest first, the order the list reads in. */
   matches: MatchHistoryEntry[];
   startTime: number;
   endTime: number;
   wins: number;
   losses: number;
+  /** Subranks gained (or lost) across the session; `null` without ranked games on both ends. */
   rankSteps: number | null;
 }
 
@@ -331,7 +380,13 @@ const rankedBadge = (match: MatchHistoryEntry): number | null =>
     ? match.ranked_display_badge
     : null;
 
+/**
+ * The history cut into play sessions (the same 3h gap `sessionPositions` uses),
+ * newest session first. Rank movement compares the last badge of a session with
+ * the last one shown before it started.
+ */
 export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
+  // Walked oldest first, each session collected newest first.
   const sessions: MatchHistoryEntry[][] = [];
   for (const { match, position } of sessionPositions(matches)) {
     const current = sessions[sessions.length - 1];
@@ -365,6 +420,10 @@ export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
   return result;
 };
 
+/**
+ * Winrate by position within a session. A steep drop-off is the clearest "stop
+ * playing" signal the history can give.
+ */
 export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
   const byPosition = new Map<number, MatchHistoryEntry[]>();
   for (const { match, position: slot } of sessionPositions(matches)) {
@@ -391,15 +450,18 @@ export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
 };
 
 export interface TodaysSession {
+  /** Oldest first, the order the day was played in. */
   matches: MatchHistoryEntry[];
   wins: number;
   losses: number;
+  /** The match with the best kills plus assists minus deaths. */
   best: MatchHistoryEntry | undefined;
 }
 
 const sessionScore = (match: MatchHistoryEntry) =>
   match.player_kills + match.player_assists - match.player_deaths;
 
+/** The matches started since local midnight. */
 export const todaysSession = (
   matches: MatchHistoryEntry[],
   now = new Date(),
@@ -429,13 +491,19 @@ export interface BenchmarkMetric {
     | "playerDamage";
   mine: number;
   global: number;
+  /** Signed percentage difference from the global average. */
   deltaPct: number;
+  /** False for deaths, where being under the average is the good outcome. */
   higherIsBetter: boolean;
 }
 
 const perMatch = (total: number, matches: number): number =>
   matches > 0 ? total / matches : 0;
 
+/**
+ * Per-match averages of the player on one hero against every player on that hero.
+ * The analytics endpoint only reports totals, so both sides are normalised here.
+ */
 export const benchmarkDeltas = (
   mine: PlayerHeroStats,
   global: AnalyticsHeroStats,
@@ -508,11 +576,16 @@ export interface MateInsight {
   matchesTogether: number;
   winsTogether: number;
   winrateTogether: number;
+  /** Winrate difference against the same player's matches without this mate. */
   winrateDelta: number;
   kdaTogether: number;
   lastPlayed: number;
 }
 
+/**
+ * Mate stats only carry match ids; intersecting them with the own history turns
+ * them into "how do I actually play with this person".
+ */
 export const joinMateStats = (
   mates: MateStats[],
   matches: MatchHistoryEntry[],
@@ -584,12 +657,19 @@ export interface ItemInsight {
   itemId: number;
   matches: number;
   winrate: number;
+  /** Winrate difference against everyone else building the same item. */
   winrateDelta: number;
   globalWinrate: number;
   avgBuyTimeS: number;
+  /** Positive means the player buys it later into the match than average. */
   buyTimeDeltaS: number;
 }
 
+/**
+ * Joins the player's item stats with the global ones. The interesting part is
+ * not the raw winrate - good items win for everyone - but the gap to how the
+ * same item performs in everyone else's hands, and how late it gets bought.
+ */
 export const joinItemStats = (
   mine: ItemStats[],
   global: ItemStats[],
@@ -669,9 +749,12 @@ export type Insight =
 export type Tone = "good" | "bad" | "neutral";
 
 const RECENT_WINDOW = 30;
+/** Below this a bucket is noise, not a pattern. */
 const MIN_BUCKET_MATCHES = 15;
 const SIGNIFICANT_WINRATE_GAP = 0.06;
 
+// The insights are all "the one entry that stands out", which is a min or a max
+// on an empty-able list. Named here so the rules below read as rules.
 const extremeBy = <T>(
   items: T[],
   score: (item: T) => number,
@@ -689,6 +772,10 @@ const minBy = <T>(items: T[], score: (item: T) => number) =>
 const maxBy = <T>(items: T[], score: (item: T) => number) =>
   extremeBy(items, score, (a, b) => a > b);
 
+/**
+ * Ranks the notable deviations in the history so the dashboard can show a few
+ * sentences that are actually actionable instead of a wall of numbers.
+ */
 export const generateInsights = (
   matches: MatchHistoryEntry[],
   heroes: HeroPerformance[],
@@ -783,8 +870,15 @@ export const generateInsights = (
   return [...insights, ...fallbackInsights(ordered, heroes, career, insights)];
 };
 
+/** Beyond this a match counts as a long game for the closing-out insight. */
 const LONG_MATCH_S = 35 * 60;
 
+/**
+ * Observations that hold regardless of how the season is going. The threshold
+ * insights above only fire on a real deviation, so on a steady account they can
+ * run out; these keep the list filled with something true rather than leaving a
+ * hole in the grid.
+ */
 const fallbackInsights = (
   ordered: MatchHistoryEntry[],
   heroes: HeroPerformance[],
@@ -794,6 +888,7 @@ const fallbackInsights = (
   const fallbacks: Insight[] = [];
 
   const mostPlayed = maxBy(heroes, (hero) => hero.matches);
+  // Skip it when the same hero already carries a comfort/trap card.
   const heroAlreadyShown = chosen.some(
     (insight) =>
       (insight.kind === "comfortHero" || insight.kind === "trapHero") &&
@@ -826,6 +921,7 @@ const fallbackInsights = (
   return fallbacks;
 };
 
+/** Splits a multi-account hero stats response per player. */
 export const heroStatsByAccount = (
   heroStats: PlayerHeroStats[],
 ): Map<number, PlayerHeroStats[]> => {

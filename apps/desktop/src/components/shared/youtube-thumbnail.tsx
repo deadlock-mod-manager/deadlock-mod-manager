@@ -6,6 +6,7 @@ interface YouTubeThumbnailProps {
 }
 
 export const YouTubeThumbnail = ({ id, alt }: YouTubeThumbnailProps) => {
+  // maxresdefault only exists for HD uploads; hqdefault is always generated
   const [quality, setQuality] = useState<"maxresdefault" | "hqdefault">(
     "maxresdefault",
   );

@@ -28,6 +28,7 @@ interface AnalysisResultsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   result: AnalyzeAddonsResult | null;
+  /** The analyzed profile; enables Delete and Quarantine on unplaced files. */
   fileContext?: AnalysisTarget | null;
 }
 

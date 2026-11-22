@@ -21,6 +21,7 @@ import { useOIDCSession } from "@/hooks/use-oidc-session";
 export default function UserMenu({
   signInClassName,
 }: {
+  /** Replaces the default outline button styling for the signed-out state. */
   signInClassName?: string;
 } = {}) {
   const { t } = useTranslation("common");

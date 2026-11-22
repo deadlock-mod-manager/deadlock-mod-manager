@@ -14,9 +14,11 @@ import { DESKTOP_RELEASES, NEXT_VERSION } from "@/lib/desktop-changelog";
 import { orpc } from "@/utils/orpc";
 import { CtaArrow, DownloadCta, secondaryCta } from "./cta";
 
+/** The facts a player checks before running an installer that touches their game. */
 const DownloadFacts = () => {
   const { t } = useTranslation("home");
   const { data } = useQuery(orpc.getVersion.queryOptions());
+  // Phones and Macs already get "Available for Windows and Linux" under the button.
   const { canInstall } = usePlatformDownload();
   const version =
     data?.version && data.version !== "unknown" ? `v${data.version}` : null;
@@ -33,6 +35,7 @@ const DownloadFacts = () => {
   );
 };
 
+/** Points players who want a skin that doesn't exist yet to the commissions site. */
 const CommissionsLink = () => {
   const { t } = useTranslation("home");
 
@@ -129,8 +132,10 @@ export const HeroSection = () => {
   );
 };
 
+// A real mod from the store snapshot; mod names are never translated.
 const TOAST_MOD_NAME = "Jacket (Billy Overhaul)";
 
+/** The app window, angled and bleeding off the right edge on large screens. */
 const HeroWindow = () => {
   const { t } = useTranslation("home");
 
@@ -153,6 +158,7 @@ const HeroWindow = () => {
         />
       </div>
 
+      {/* Plays one install once the window lands: progress fills, then it settles. */}
       <div
         aria-hidden='true'
         className='hero-toast -bottom-7 absolute left-6 hidden w-[320px] overflow-hidden rounded-xl border border-white/10 bg-[#211d1b] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.7)] sm:block lg:-left-8'>

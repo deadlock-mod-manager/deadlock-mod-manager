@@ -1,5 +1,6 @@
 import type { LocalizationOverlayAnalysis } from "@/components/my-mods/localization-conflict-review";
 
+/** Scope exported diagnostics to the requested mod, retaining provider identity. */
 export function formatCompatibilityFindings(
   analysis: LocalizationOverlayAnalysis,
   modNames: ReadonlyMap<string, string>,

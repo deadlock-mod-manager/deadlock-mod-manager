@@ -151,6 +151,8 @@ pub(super) fn mapping(
   if root != 0 {
     return None;
   }
+  // The authored model supplies sibling order where animation poses cannot
+  // distinguish a branch. Static, named bind poses constrain reordered branches.
   let authored = model
     .get("m_modelSkeleton")?
     .get("m_boneName")?
@@ -221,6 +223,7 @@ fn anchors(
           .as_f64()?,
       );
     }
+    // Identity helper poses are common and cannot identify a bone.
     if pose.iter().all(|v| v.abs() < 0.0001) {
       continue;
     }
@@ -250,6 +253,8 @@ fn anchors(
       }
     })
     .collect();
+  // NM clips always start with the root; its animation frame can differ from
+  // the deformation skeleton's coordinate frame.
   result[0] = Some(0);
   Some(result)
 }

@@ -5,20 +5,24 @@ import type { ModDownloadItem } from "@/types/mods";
 export interface SelectionRow {
   id: string;
   label: string;
+  /** What choosing the row downloads: the file itself, or a component's artifacts. */
   files: ModDownloadItem[];
 }
 
 interface SelectionSection {
   id: string;
+  /** `null` for the flat file list, which gets a select-all header instead. */
   label: string | null;
   minSelections: number;
   maxSelections: number;
   rowIds: string[];
 }
 
+/** What the download dialog lists: plain files, or a source's declared components. */
 export interface SelectionModel {
   rows: SelectionRow[];
   sections: SelectionSection[];
+  /** Always selected and not toggleable. */
   lockedIds: string[];
   initialIds: string[];
 }
@@ -106,6 +110,7 @@ export const toggleSelection = (
     next.delete(id);
     return next;
   }
+  // A single-choice section behaves like a radio group.
   const section = model.sections.find((candidate) =>
     candidate.rowIds.includes(id),
   );
@@ -126,6 +131,7 @@ export const isSelectionValid = (
     return count >= section.minSelections && count <= section.maxSelections;
   });
 
+/** Components can share an archive, so each file counts once. */
 export const selectedFiles = (
   model: SelectionModel,
   selected: ReadonlySet<string>,

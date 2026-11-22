@@ -22,6 +22,7 @@ import { RailButton } from "./viewer-rail-button";
 const formatSeconds = (ms: number) =>
   `0:${String(Math.floor(ms / 1000)).padStart(2, "0")}`;
 
+/** Camera and capture controls down the right edge of the viewport, plus the shutter flash and the recording badge they drive. */
 export const ViewerToolRail = ({
   belowGizmo,
   autoRotate,

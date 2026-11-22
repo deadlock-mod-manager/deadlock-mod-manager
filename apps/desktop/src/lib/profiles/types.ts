@@ -22,6 +22,8 @@ export interface AvailableImportedMod {
   modData: ModDto;
 }
 
+/** All of the mod's downloads and the ones the import fetched, kept so
+ *  re-sharing the profile passes the same picks. */
 export interface ImportedModDownloads {
   downloads: ModDownloadItem[];
   selectedDownloads: ModDownloadItem[];
@@ -92,6 +94,9 @@ export interface ResolvedProfileImportDownloadFiles {
   resolvedWithPersistedFallbackNames: string[];
 }
 
+/** Where an imported mod dropped out: its catalog lookup, fetching its
+ *  download list, or the batch download and install. The batch reports all of
+ *  its errors as one string, so it stays a single step. */
 export type ImportFailureStep = "lookup" | "downloads" | "install";
 
 export interface ImportFailure {
@@ -101,6 +106,7 @@ export interface ImportFailure {
   error: string | null;
 }
 
+/** What an import did, for the dialog that started it to report. */
 export interface ProfileImportOutcome {
   profileId: ProfileId;
   profileName: string;

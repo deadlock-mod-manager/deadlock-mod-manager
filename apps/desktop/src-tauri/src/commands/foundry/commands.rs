@@ -1,3 +1,9 @@
+//! The Tauri command surface of the Mod Foundry.
+//!
+//! Every command that touches the filesystem or decodes an asset runs on the
+//! blocking pool: parsing a multi-gigabyte pak or re-encoding a texture would
+//! otherwise stall the UI thread.
+
 use std::io::Cursor;
 use std::path::PathBuf;
 
@@ -26,6 +32,8 @@ use super::workspace::{
 };
 use crate::vpk_archive_cache::clear_archive_cache;
 
+/// Parse a skin VPK, detect its hero, and return the entries grouped by editing
+/// category. Read-only: this never writes to the user's copy of the VPK.
 #[tauri::command]
 pub async fn foundry_analyze_vpk(file_path: String) -> Result<FoundryManifest, Error> {
   tauri::async_runtime::spawn_blocking(move || analyze_vpk_path(&PathBuf::from(file_path)))
@@ -33,6 +41,8 @@ pub async fn foundry_analyze_vpk(file_path: String) -> Result<FoundryManifest, E
     .map_err(|e| Error::InvalidInput(format!("VPK analysis task failed: {e}")))?
 }
 
+/// Open the base game's default hero assets as a Foundry source, filtered to
+/// that one hero instead of the entire game archive.
 #[tauri::command]
 pub async fn foundry_analyze_default_hero(hero_display: String) -> Result<FoundryManifest, Error> {
   tauri::async_runtime::spawn_blocking(move || analyze_default_hero(hero_display))
@@ -40,6 +50,8 @@ pub async fn foundry_analyze_default_hero(hero_display: String) -> Result<Foundr
     .map_err(|e| Error::InvalidInput(format!("default hero analysis task failed: {e}")))?
 }
 
+/// Prepare the editable workspace for the loaded skin: unpack it to
+/// `<app_local_data>/foundry/<id>/files` (copying, never moving, the source).
 #[tauri::command]
 pub async fn foundry_prepare_workspace(
   file_path: String,
@@ -55,6 +67,8 @@ pub async fn foundry_prepare_workspace(
   .map_err(|e| Error::InvalidInput(format!("workspace task failed: {e}")))?
 }
 
+/// Bundle the active workspace into a standalone VPK. Export passes an explicit
+/// output path; without one the VPK lands under `<workspace>/exports/`.
 #[tauri::command]
 pub async fn foundry_build_workspace_vpk(
   workspace_root: String,
@@ -72,6 +86,10 @@ pub async fn foundry_build_workspace_vpk(
   .map_err(|e| Error::InvalidInput(format!("VPK build task failed: {e}")))?
 }
 
+/// Pack the workspace and deliver it: to a file the user picked, to a new local
+/// mod in the library, or over the VPK the Foundry loaded.
+///
+/// Replacing keeps a `.bak` of the original beside it.
 #[tauri::command]
 pub async fn foundry_export_workspace(
   workspace_root: String,
@@ -104,11 +122,15 @@ pub async fn foundry_export_workspace(
   .map_err(|e| Error::InvalidInput(format!("export task failed: {e}")))?
 }
 
+/// Drop the cached VPK indexes. Called when the Foundry unloads a skin, so a
+/// parsed pak01 does not sit in memory for the rest of the session.
 #[tauri::command]
 pub fn foundry_release_archives() {
   clear_archive_cache();
 }
 
+/// Replace one file inside the workspace. A PNG/JPG dropped on a `.vtex_c` entry
+/// is re-encoded into that texture's container; other formats must match.
 #[tauri::command]
 pub async fn foundry_replace_workspace_file(
   workspace_root: String,
@@ -128,6 +150,7 @@ pub async fn foundry_replace_workspace_file(
   .map_err(|e| Error::InvalidInput(format!("workspace replacement task failed: {e}")))?
 }
 
+/// The colors the skin's color maps already wear, as `#rrggbb`, for swatches.
 #[tauri::command]
 pub async fn foundry_skin_palette(
   file_path: String,
@@ -156,6 +179,7 @@ pub async fn foundry_skin_palette(
   .map_err(|e| Error::InvalidInput(format!("skin palette task failed: {e}")))?
 }
 
+/// How much of the hero each paint target covers in the loaded skin.
 #[tauri::command]
 pub async fn foundry_paint_targets(
   file_path: String,
@@ -173,6 +197,11 @@ pub async fn foundry_paint_targets(
   .map_err(|e| Error::InvalidInput(format!("paint target scan failed: {e}")))?
 }
 
+/// Recolor one part of the hero — body, gun body, gun, or ability effects.
+///
+/// Each pass reads the packed originals rather than the previous pass's output,
+/// so re-applying with a different color replaces the paint instead of stacking
+/// hue shift on hue shift.
 #[tauri::command]
 pub async fn foundry_paint_target(
   workspace_root: String,
@@ -220,6 +249,8 @@ pub async fn foundry_paint_target(
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
 }
 
+/// The paintable sections of a model, for the paint tab's section list and the
+/// viewer's click-to-select.
 #[tauri::command]
 pub async fn foundry_model_parts(
   file_path: String,
@@ -237,6 +268,8 @@ pub async fn foundry_model_parts(
   .map_err(|e| Error::InvalidInput(format!("part scan failed: {e}")))?
 }
 
+/// Paint individual sections of the model, identified by their color maps.
+/// Same paint as [`foundry_paint_target`], applied to exactly these maps.
 #[tauri::command]
 pub async fn foundry_paint_parts(
   workspace_root: String,
@@ -289,6 +322,8 @@ pub async fn foundry_paint_parts(
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
 }
 
+/// Remove exactly these sections of the model from the game, putting back any
+/// removed earlier and no longer listed. An empty list restores the model.
 #[tauri::command]
 pub async fn foundry_remove_parts(
   workspace_root: String,
@@ -310,6 +345,9 @@ pub async fn foundry_remove_parts(
   .map_err(|e| Error::InvalidInput(format!("part removal task failed: {e}")))?
 }
 
+/// Resolve an optional pattern name into a [`vpkmanager::Pattern`]. `None` and
+/// `"none"` both mean a plain recolor; an unknown name is rejected rather than
+/// silently ignored, so a typo surfaces instead of quietly doing nothing.
 fn parse_pattern(
   name: Option<&str>,
   intensity: Option<f32>,
@@ -327,6 +365,8 @@ fn parse_pattern(
   )))
 }
 
+/// A PNG swatch of one pattern style, for the picker tiles. Pure generation:
+/// no VPK is read, so this is cheap enough to call for every style at once.
 #[tauri::command]
 pub async fn foundry_pattern_swatch(
   pattern: String,
@@ -352,6 +392,7 @@ pub async fn foundry_pattern_swatch(
   .map_err(|e| Error::InvalidInput(format!("swatch task failed: {e}")))?
 }
 
+/// Undo every edit to one workspace entry, restoring the packed original.
 #[tauri::command]
 pub async fn foundry_revert_workspace_file(
   workspace_root: String,
@@ -369,6 +410,8 @@ pub async fn foundry_revert_workspace_file(
   .map_err(|e| Error::InvalidInput(format!("workspace revert task failed: {e}")))?
 }
 
+/// Set one sound's volume, normalize and mute, rebuilding it from its
+/// replacement or the original clip.
 #[tauri::command]
 pub async fn foundry_adjust_sound(
   workspace_root: String,
@@ -394,6 +437,8 @@ pub async fn foundry_adjust_sound(
   .map_err(|e| Error::InvalidInput(format!("sound adjust task failed: {e}")))?
 }
 
+/// Decode a `.vtex_c` entry (card or texture) to a PNG data URL, preferring the
+/// workspace's edited copy when one exists.
 #[tauri::command]
 pub async fn foundry_decode_texture(
   file_path: String,
@@ -421,6 +466,7 @@ pub async fn foundry_decode_texture(
   .map_err(|e| Error::InvalidInput(format!("texture decode task failed: {e}")))?
 }
 
+/// Decode every hero-card texture for the active skin in one background pass.
 #[tauri::command]
 pub async fn foundry_decode_cards(
   file_path: String,
@@ -440,6 +486,9 @@ pub async fn foundry_decode_cards(
   .map_err(|e| Error::InvalidInput(format!("card decode task failed: {e}")))?
 }
 
+/// Extract a browser-playable preview from a compiled Source 2 sound. Clips that
+/// aren't MP3-encoded have no preview; the caller treats that as "not playable"
+/// rather than an error worth surfacing.
 #[tauri::command]
 pub async fn foundry_decode_sound(
   file_path: String,
@@ -453,6 +502,8 @@ pub async fn foundry_decode_sound(
       &vpk_path,
       &entry_path,
     )?;
+    // Clips the Foundry minted are PCM16, which a byte scan for MP3 frames can
+    // misread, so the container is read properly first.
     let (audio, mime_type) = match vpkmanager::source2::sound::extract_vsnd_audio(&bytes) {
       Ok(VsndAudio::WavPcm16 { wav, .. }) => (wav, "audio/wav"),
       Ok(VsndAudio::Mp3(mp3)) => (mp3, "audio/mpeg"),

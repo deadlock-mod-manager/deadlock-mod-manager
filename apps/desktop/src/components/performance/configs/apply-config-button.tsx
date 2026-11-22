@@ -21,6 +21,10 @@ type ApplyConfigButtonProps = {
   size?: "sm" | "default";
 };
 
+/**
+ * Applies a config with the user's saved tweaks for it. Shows "Applied" for
+ * the active config, or "Apply changes" when its tweaks changed since.
+ */
 export const ApplyConfigButton = ({
   config,
   entryPoint,

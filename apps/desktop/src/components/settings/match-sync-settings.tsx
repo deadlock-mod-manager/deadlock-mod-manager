@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-match-sync-toggle";
 import { cn } from "@/lib/utils";
 
+// Mirrors the backend's FETCH_QUOTA_LIMIT; used only until `status.accounts` loads.
 const DEFAULT_QUOTA_LIMIT = 40;
 const FULL_SYNC_DESCRIPTION_ID = "match-sync-full-sync-description";
 
@@ -43,6 +44,7 @@ export const MatchSyncSettings = () => {
     setEnabled,
   });
 
+  // Announce the outcome once a full sync finishes (esp. hitting the daily limit).
   const wasRunning = useRef(false);
   useEffect(() => {
     if (!progress) {

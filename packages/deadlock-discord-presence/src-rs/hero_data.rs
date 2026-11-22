@@ -5,13 +5,19 @@ use std::time::{Duration, SystemTime};
 const API_URL: &str = "https://api.deadlock-api.com/v1/assets/heroes?language=english";
 const CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+/// Versioned so older caches are never read: v1 lacks `image_url` and would pin
+/// every hero to a Discord upload that may not exist, v2 lists disabled heroes.
 const CACHE_FILENAME: &str = "hero_presence_cache_v3.json";
 const IMAGE_BASE_URL: &str = "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes";
 
+/// Model folders (`models/heroes/<folder>/`) whose name differs from the hero's
+/// class name. Hero data is keyed by class name only, so each hero is listed once
+/// and an override applies whichever log line named the hero.
 const MODEL_FOLDER_ALIASES: &[(&str, &str)] = &[
     ("abrams", "atlas"),
     ("archer", "orion"),
     ("atlas_detective", "atlas"),
+    // Calico's presence key before keys became class names.
     ("cadence", "nano"),
     ("digger", "krill"),
     ("engineer", "forge"),
@@ -30,6 +36,8 @@ pub struct HeroInfo {
     pub name: String,
     pub hideout_text: String,
     pub asset_key: String,
+    /// Square portrait from the assets API. Discord accepts an https URL as an
+    /// image key, so heroes show up without an upload to the Discord app.
     #[serde(default)]
     pub image_url: Option<String>,
 }
@@ -285,6 +293,7 @@ fn hero(name: &str, hideout_text: &str, asset_key: &str, image: Option<&str>) ->
     }
 }
 
+/// Used only until the first API response or cache load.
 fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
     vec![
         (

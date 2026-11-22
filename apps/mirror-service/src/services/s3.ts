@@ -70,7 +70,7 @@ export class S3Service {
     const writer = s3File.writer({
       retry: 3,
       queueSize: 10,
-      partSize: 5 * 1024 * 1024,
+      partSize: 5 * 1024 * 1024, // 5 MB chunks
     });
 
     const reader = stream.getReader();
@@ -105,7 +105,7 @@ export class S3Service {
     const writer = s3File.writer({
       retry: 3,
       queueSize: 10,
-      partSize: 5 * 1024 * 1024,
+      partSize: 5 * 1024 * 1024, // 5 MB chunks
     });
 
     const uploadPromise = (async () => {
@@ -117,6 +117,7 @@ export class S3Service {
           if (done) break;
 
           hash.update(value);
+          // Update the hash
           writer.write(value);
           await writer.flush();
         }

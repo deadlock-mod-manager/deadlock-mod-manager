@@ -13,6 +13,7 @@ type RangeCheck =
   | { within: true }
   | { within: false; bound: "min" | "max"; limit: number };
 
+/** A value as the reference column shows it. */
 type ValueDisplay =
   | { kind: "bool"; on: boolean }
   | { kind: "enum"; label: string }
@@ -24,11 +25,13 @@ type StepMeta = Pick<ConvarMeta, "kind" | "step" | "min" | "max">;
 const NUMBER_PATTERN = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
 const BOOL_WORD_PATTERN = /^(true|false)$/i;
 const FLOAT_DECIMALS = 6;
+/** Above this many positions a slider is too coarse to be useful; the number input alone is clearer. */
 const MAX_SLIDER_POSITIONS = 10_000;
 
 const isNumericKind = (kind: ConvarKind): kind is NumericKind =>
   kind === "int" || kind === "float";
 
+/** Reads the forms Source 2 accepts for a bool convar: 0/1 and true/false. */
 export const parseBool = (value: string): boolean | null => {
   const normalized = value.trim().toLowerCase();
   if (normalized === "1" || normalized === "true") return true;
@@ -36,6 +39,7 @@ export const parseBool = (value: string): boolean | null => {
   return null;
 };
 
+/** Writes a bool in the config's own style: words if it used words, digits otherwise. */
 export const formatBool = (on: boolean, styleOf: string | null): string => {
   if (styleOf !== null && BOOL_WORD_PATTERN.test(styleOf.trim())) {
     return on ? "true" : "false";
@@ -64,6 +68,7 @@ export const numericStep = (meta: StepMeta): number => {
   if (meta.step !== null && meta.step > 0) return meta.step;
   if (meta.kind === "int") return 1;
   if (meta.min !== null && meta.max !== null && meta.max > meta.min) {
+    // About a hundred stops across the range, on a power of ten.
     return Math.min(
       1,
       10 ** Math.floor(Math.log10((meta.max - meta.min) / 100)),
@@ -97,6 +102,10 @@ export const clampToRange = (value: number, meta: RangeMeta): number => {
 const isNumericText = (value: string) =>
   NUMBER_PATTERN.test(value.trim()) && Number.isFinite(Number(value));
 
+/**
+ * The control for an entry. Values that don't fit the convar's kind fall back
+ * to a text input so the user can still see and fix them.
+ */
 export const controlKind = (
   meta: ConvarMeta | null,
   value: string | null,
@@ -113,6 +122,7 @@ export const controlKind = (
   return "text";
 };
 
+/** Whether two values mean the same thing for this kind ("1" and "true", "2" and "2.0"). */
 export const sameValue = (
   a: string,
   b: string,
@@ -145,6 +155,7 @@ export const describeValue = (
   return { kind: "raw", text: value };
 };
 
+/** Starting value for a convar the user adds: its code default, or the closest sensible value. */
 export const initialValueFor = (meta: ConvarMeta): string => {
   if (meta.default !== null) return meta.default;
   if (meta.enumValues.length > 0) return meta.enumValues[0].value;
@@ -158,5 +169,6 @@ export const initialValueFor = (meta: ConvarMeta): string => {
 export const isConvarPath = (path: string[]) =>
   path[0]?.toLowerCase() === "convars";
 
+/** The key as the config writes it: `r_ssao`, `rate/max`, or `SceneSystem/CSMCascadeResolution`. */
 export const entryKeyLabel = (path: string[]): string =>
   (isConvarPath(path) ? path.slice(1) : path).join("/");

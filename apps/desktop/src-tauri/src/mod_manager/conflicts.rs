@@ -1,3 +1,14 @@
+//! File-level conflict detection between the enabled mods of a profile.
+//!
+//! Two mods conflict when their VPKs ship the same entry path with different
+//! contents. The engine resolves each path from the first VPK that provides it:
+//! shard search paths are registered in ascending order in `gameinfo.gi`, and
+//! inside a shard `pak01_dir.vpk` is mounted before `pak02_dir.vpk`. So the
+//! mod with the lowest `(shard, pak number)` wins every file it shares.
+//!
+//! Only VPK directory trees are read, never file data, and parsed trees are
+//! cached per VPK path until its mtime or size changes.
+
 use crate::errors::Error;
 use crate::mod_manager::shard::ProfileBase;
 use crate::mod_manager::vpk_manager::VpkManager;
@@ -130,6 +141,7 @@ pub struct ProfileConflicts {
   pub ignores: ConflictIgnores,
 }
 
+/// Order-independent key for a pair of mods.
 pub fn pair_key(mod_a: &str, mod_b: &str) -> String {
   if mod_a <= mod_b {
     format!("{mod_a}::{mod_b}")
@@ -166,6 +178,7 @@ impl ConflictIgnores {
     }
   }
 
+  /// Read a profile's ignores. A missing file means nothing is ignored.
   pub fn load(base: &Path) -> Result<Self, Error> {
     let path = base.join(IGNORES_FILENAME);
     match fs::read_to_string(&path) {
@@ -202,11 +215,14 @@ impl ConflictIgnores {
   }
 }
 
+/// Load order position of a mod: the lowest `(shard, pak number)` it occupies.
 type LoadRank = (u32, u32);
 
+/// One enabled mod's merged directory tree, as input to [`find_conflicts`].
 struct ModEntries {
   mod_id: String,
   rank: LoadRank,
+  /// Normalized entry path -> CRC32 of its contents.
   files: HashMap<String, String>,
 }
 
@@ -214,6 +230,8 @@ fn normalize_entry_path(path: &str) -> String {
   path.trim().replace('\\', "/").to_lowercase()
 }
 
+/// Files every packed mod tends to carry, which say nothing about what the
+/// mod changes in game.
 fn is_noise_file(path: &str) -> bool {
   const NOISE_NAMES: &[&str] = &["addoninfo.txt", "modinfo.json"];
   const NOISE_DOC_STEMS: &[&str] = &["readme", "license", "credits", "changelog", "info"];
@@ -228,6 +246,8 @@ fn is_noise_file(path: &str) -> bool {
   {
     return true;
   }
+  // Compiler output bundled with any panorama mod, and fallback textures some
+  // packers add to every VPK.
   path == "panorama/image_compiler.vdata_c" || path.starts_with("materials/default/default_")
 }
 
@@ -242,6 +262,8 @@ fn severity_of(path: &str) -> ConflictSeverity {
   }
 }
 
+/// Find every pair of mods that ship the same path with different contents,
+/// then split them into active and ignored conflicts.
 fn find_conflicts(mods: &[ModEntries], ignores: &ConflictIgnores) -> ProfileConflicts {
   let mut owners: HashMap<&str, Vec<(usize, &str)>> = HashMap::new();
   for (index, entries) in mods.iter().enumerate() {
@@ -256,6 +278,7 @@ fn find_conflicts(mods: &[ModEntries], ignores: &ConflictIgnores) -> ProfileConf
   for (path, providers) in &owners {
     for (i, (index_a, crc_a)) in providers.iter().enumerate() {
       for (index_b, crc_b) in &providers[i + 1..] {
+        // Byte-identical files look the same whichever mod wins.
         if crc_a == crc_b {
           continue;
         }
@@ -304,6 +327,8 @@ fn find_conflicts(mods: &[ModEntries], ignores: &ConflictIgnores) -> ProfileConf
       }
     };
 
+    // A pair or mod ignore lists every shared file so the user knows what
+    // restoring brings back.
     let pair_reason = if ignores.pairs.contains(&key) {
       Some(ConflictIgnoreReason::Pair)
     } else if ignores.mods.contains(&winner.mod_id) || ignores.mods.contains(&loser.mod_id) {
@@ -316,6 +341,8 @@ fn find_conflicts(mods: &[ModEntries], ignores: &ConflictIgnores) -> ProfileConf
       continue;
     }
 
+    // Otherwise the files ignored one by one are listed apart from the ones
+    // that still count, so a partly ignored pair can be restored too.
     let ignored_files = ignores.pair_files.get(&key);
     let (ignored, active): (Vec<&str>, Vec<&str>) = paths
       .into_iter()
@@ -350,6 +377,7 @@ fn sort_files(files: &mut [ConflictFile]) {
   });
 }
 
+/// Parsed directory trees, valid while a VPK's mtime and size are unchanged.
 struct CachedTree {
   modified: Option<SystemTime>,
   size: u64,
@@ -394,6 +422,8 @@ fn read_tree(vpk_path: &Path) -> Result<Arc<Vec<(String, String)>>, Error> {
   Ok(files)
 }
 
+/// Check only the selected archives before activation. Ignores hide review
+/// noise; they must not authorize replacing another skin's files.
 pub(crate) fn activation_model_conflicts(
   base: &ProfileBase,
   manifest: &ProfileVpkManifest,
@@ -425,6 +455,7 @@ pub(crate) fn activation_model_conflicts(
     for vpk in entry.file_paths(base) {
       let tree = match read_tree(&vpk) {
         Ok(tree) => tree,
+        // Missing archives cannot load; launch validation reports them separately.
         Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => continue,
         Err(error) => return Err(error),
       };
@@ -442,6 +473,7 @@ pub(crate) fn activation_model_conflicts(
   Ok(conflicts)
 }
 
+/// Read the enabled mods of a profile and find their conflicts.
 pub fn detect_profile_conflicts(base: &ProfileBase) -> Result<ProfileConflicts, Error> {
   let manifest = ProfileVpkManifest::load(base)?;
   let ignores = ConflictIgnores::load(base)?;
@@ -465,6 +497,8 @@ pub fn detect_profile_conflicts(base: &ProfileBase) -> Result<ProfileConflicts, 
     let mut files = HashMap::new();
     for vpk_path in entry.file_paths(base) {
       scanned.insert(vpk_path.clone());
+      // A VPK can vanish or be half-written during a concurrent operation;
+      // skipping it only hides its conflicts until the next scan.
       match read_tree(&vpk_path) {
         Ok(tree) => {
           for (path, crc) in tree.iter() {
@@ -482,6 +516,8 @@ pub fn detect_profile_conflicts(base: &ProfileBase) -> Result<ProfileConflicts, 
     });
   }
 
+  // Reordering renames paks and only the active profile is scanned, so keep
+  // just the trees this scan used instead of growing with every old path.
   TREE_CACHE
     .lock()
     .unwrap()
@@ -490,6 +526,7 @@ pub fn detect_profile_conflicts(base: &ProfileBase) -> Result<ProfileConflicts, 
   Ok(find_conflicts(&mods, &ignores))
 }
 
+/// Apply ignore changes to a profile with a single write.
 pub fn update_profile_conflict_ignores(
   base: &ProfileBase,
   actions: Vec<ConflictIgnoreAction>,
@@ -739,6 +776,7 @@ mod tests {
       mod_b: "b".into(),
       path: "hat.vmdl_c".into(),
     });
+    // Saved for a file the pair no longer shares.
     ignores.apply(ConflictIgnoreAction::IgnorePairFile {
       mod_a: "a".into(),
       mod_b: "b".into(),
@@ -749,6 +787,7 @@ mod tests {
 
     assert_eq!(result.conflicts.len(), 1);
     assert_eq!(paths(&result.conflicts[0]), ["pants.vmat_c", "notes.txt"]);
+    // The ignored model doesn't count toward the files that still conflict.
     assert_eq!(result.conflicts[0].severity, ConflictSeverity::Normal);
     assert_eq!(result.ignored.len(), 1);
     let ignored = &result.ignored[0];

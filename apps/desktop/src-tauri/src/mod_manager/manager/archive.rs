@@ -8,8 +8,13 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
+/// Records placed VPKs in the profile manifest. Callers pass a function that
+/// takes the mod manager lock only for this step, not for the copy before it.
 pub(crate) type RecordImport<'a> = &'a dyn Fn(&Path, &str, Vec<String>) -> Result<(), Error>;
 
+/// Per-mod lock for archive copies. Every profile shares the mod's `extracted`
+/// folders, so two copies of one mod must not run at once. Take it before the
+/// mod manager lock, never while holding it: recording takes that lock.
 fn mod_copy_lock(mod_id: &str) -> Arc<Mutex<()>> {
   static LOCKS: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
   let mut locks = LOCKS
@@ -20,6 +25,7 @@ fn mod_copy_lock(mod_id: &str) -> Arc<Mutex<()>> {
 }
 
 impl ModManager {
+  /// The mod store and validated addons folder an archive copy works with.
   pub(crate) fn archive_copy_paths(
     &self,
     profile_folder: Option<&str>,
@@ -60,6 +66,8 @@ impl ModManager {
       }
 
       let Some(archive_path) = archive_path else {
+        // A first install deletes the archive after placing the selected VPKs
+        // under this mod's prefix. Re-enabling it finds them already there.
         if !selection_already_placed(destination_path, mod_id, file_tree)? {
           return Err(Error::ModFileNotFound);
         }
@@ -68,6 +76,8 @@ impl ModManager {
       };
 
       log::info!("Extracting archive: {archive_path:?}");
+      // An existing `extracted` folder is reused as complete, so extract beside
+      // it and move it into place only once the whole archive is out.
       let staging_dir = mod_dir.join("extracted.partial");
       if staging_dir.exists() {
         std::fs::remove_dir_all(&staging_dir)?;
@@ -169,6 +179,9 @@ impl ModManager {
   }
 }
 
+/// Whether every selected VPK sits in `destination`, whole, under the name
+/// `place_selected_vpks_with_prefix` gives it: the tree's name when it is a
+/// plain `.vpk` name, otherwise the source file's name.
 fn selection_already_placed(
   destination: &Path,
   mod_id: &str,
@@ -187,6 +200,7 @@ fn selection_already_placed(
     let name = if is_plain_vpk_name(&file.name) {
       Some(file.name.as_str())
     } else {
+      // Placement matches archive paths with `/` separators on every platform.
       file
         .path
         .rsplit(['/', '\\'])
@@ -195,6 +209,7 @@ fn selection_already_placed(
     };
     name.is_some_and(|name| {
       let prefixed = format!("{mod_id}_{name}");
+      // A size of 0 means the tree doesn't know it.
       placed.contains(&prefixed)
         && (file.size == 0
           || std::fs::metadata(destination.join(&prefixed))
@@ -255,6 +270,8 @@ mod tests {
     std::fs::write(addons.path().join("42_b.vpk"), b"placed").unwrap();
     ModManager::copy_selected_vpks_from(mods.path(), addons.path(), "42", &tree, record).unwrap();
 
+    // A tree name that isn't a plain VPK name falls back to the archive
+    // path's file name, whichever separator the archive used.
     tree.files = vec![crate::mod_manager::file_tree::ModFile {
       name: "Variant A".to_string(),
       path: "variant\\a.vpk".to_string(),

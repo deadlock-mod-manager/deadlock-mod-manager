@@ -137,6 +137,7 @@ impl From<fe_model::ClothModel> for PreviewCloth {
   }
 }
 
+/// The model's cloth setup, or `None` when nothing on it is simulated.
 #[tauri::command]
 pub async fn foundry_decode_cloth(
   file_path: String,

@@ -156,6 +156,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
+      # Required by prost-build, pulled in transitively via steam-vent/valveprotos.
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -191,9 +192,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # Linux build - upload directly to release
       - name: Build the app (Linux)
         if: matrix.platform == 'ubuntu-24.04'
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -239,6 +241,10 @@ jobs:
             });
             console.log('Successfully uploaded Flatpak bundle');
 
+      # Windows is built in two passes so the application executable inside the
+      # installer carries its own Authenticode signature: build, sign the exe,
+      # then bundle it without Tauri's in-place bundle-type patch (which would
+      # rewrite the signed binary), then sign the installers.
       - name: Build the app (Windows)
         if: matrix.platform == 'windows-latest'
         env:
@@ -274,9 +280,12 @@ jobs:
           pnpm --filter @deadlock-mods/desktop tauri bundle --bundles nsis,updater --no-binary-patching
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+          # The portable build is the signed executable itself, so it skips the installer signing pass.
           New-Item -ItemType Directory -Force -Path ./artifact-output | Out-Null
           Copy-Item -LiteralPath ./signed-application/deadlock-mod-manager.exe -Destination "./artifact-output/Deadlock Mod Manager_${version}_x64-portable.exe"
 
+          # The Microsoft Store needs an installer that works offline, so this one bundles WebView2.
+          # The -store.exe suffix keeps it out of the -setup.exe matchers used by latest.json and winget.
           $setupName = "Deadlock Mod Manager_${version}_x64-setup.exe"
           $stash = Join-Path $env:RUNNER_TEMP "nsis-stash"
           New-Item -ItemType Directory -Force -Path $stash | Out-Null

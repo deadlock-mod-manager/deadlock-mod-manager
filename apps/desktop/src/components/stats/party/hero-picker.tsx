@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils";
 
 interface HeroPickerProps {
   heroesById: Map<number, DeadlockHero>;
+  /** The player the picker adds heroes for. */
   playerLabel: string;
   selected: number[];
   onToggle: (heroId: number) => void;
 }
 
+/** The whole roster as portraits; a click adds or removes a hero for one player. */
 export const HeroPicker = ({
   heroesById,
   playerLabel,

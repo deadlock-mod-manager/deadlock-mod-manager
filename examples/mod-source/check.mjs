@@ -93,6 +93,7 @@ function checkInstallation(installation, artifactIds) {
   );
 }
 
+/** Offline preflight for this copyable static subset; DMM validates again. */
 export async function checkSource(directory) {
   const root = await realpath(directory);
   const descriptorPath = resolve(root, "dmm-source.json");
@@ -140,6 +141,7 @@ export async function checkSource(directory) {
       typeof reference === "string" && reference.length > 0,
       "Missing document URL",
     );
+    // This example deploys one directory to one origin. Keep preflight offline.
     assert.ok(
       !reference.startsWith("/") && !reference.includes(":"),
       "Use relative URLs in the copyable example",

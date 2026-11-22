@@ -20,6 +20,11 @@ import { GroupNav } from "./foundry-sound-group-nav";
 import { ClipChunk } from "./foundry-sound-clip-chunk";
 import { ClipInspector } from "./foundry-sound-clip-inspector";
 
+/**
+ * The sounds tab: groups on the left, the active group's clips in the middle,
+ * the selected clip on the right. Clips play in place, and an edited clip can
+ * be flipped against the original mid-playback.
+ */
 export const FoundrySoundsWorkspace = ({
   sidePanelClassName,
 }: {

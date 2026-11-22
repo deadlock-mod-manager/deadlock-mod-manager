@@ -3,6 +3,7 @@ import type { Mod } from "@deadlock-mods/database";
 import { logger } from "../lib/logger";
 
 export abstract class Provider<T> {
+  // Do we even need the T  ?
   protected logger: typeof logger;
 
   constructor() {
@@ -11,6 +12,7 @@ export abstract class Provider<T> {
     });
   }
 
+  /** `signal` aborts when the caller's job lock is lost; stop before writing. */
   abstract synchronize(signal?: AbortSignal): Promise<void>;
   abstract createMod(
     mod: T,
@@ -21,6 +23,10 @@ export abstract class Provider<T> {
     filesChanged: boolean;
     contentChanged: boolean;
     handledAsTrashed?: boolean;
+    /**
+     * Why the profile produced no payload: "not_found" for a 404, or
+     * "unavailable" when private, withheld, or for another game.
+     */
     skipped?: string;
   }>;
   abstract getModDownload<D>(remoteId: string): Promise<D>;

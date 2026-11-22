@@ -38,12 +38,15 @@ function CompareGrimoirePage() {
   const { t } = useTranslation("guide-grimoire");
   const { t: tPreview } = useTranslation("preview");
   const page = getPage(t);
+  /** What both apps do since Deadlock Mod Manager V2. */
   const shared = Object.entries(t("shared.features", { returnObjects: true }));
+  /** Checked against both repositories' commit history in October 2026. */
   const rootsStats = Object.entries(t("roots.stats", { returnObjects: true }));
   const grimoireOptions = Object.entries(
     t("interface.grimoire.options", { returnObjects: true }),
   );
   const switchSteps = t("switch.steps", { returnObjects: true });
+  /** The few differences that aren't about the interface. */
   const smallPrint = Object.entries(
     t("smallPrint.items", { returnObjects: true }),
   );

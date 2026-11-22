@@ -50,6 +50,7 @@ export type ModDto = Omit<
   ReturnType<typeof toModDto>,
   "isTrashed" | "lastSyncedAt" | "remoteIndexModifiedAt"
 > & {
+  /** Card-sized cover rendition; absent until the catalog has backfilled it. */
   thumbnailUrl?: string | null;
 };
 export type ModDownloadDto = ReturnType<typeof toModDownloadDto>;

@@ -1,14 +1,30 @@
+//! Removing parts of a compiled model (`.vmdl_c` / `.vmesh_c`) from the game.
+//!
+//! A part is removed by zeroing the `m_nIndexCount` of every draw call that uses
+//! one of its materials: a draw call with no indices submits no primitives, so
+//! the part stops rendering while the vertex and index buffers stay untouched.
+//! Matching on material rather than mesh name reaches every LOD, because the
+//! lower-detail meshes draw the same materials as LOD0.
+//!
+//! As in [`crate::particle_edit`], the tree is only used to locate the counts;
+//! they are patched in place on a byte-faithful re-wrap of each mesh block,
+//! because a re-encoded block loses value flags the engine's loader needs.
+
 use std::collections::HashSet;
 
 use crate::error::{Result, VpkManagerError};
 use crate::source2::kv3::{self, Seg, Value};
 use crate::source2::resource::Resource;
 
+/// Draw-call material paths are written with and without the compiled `_c`
+/// suffix and in either slash direction, so both sides compare on this form.
 fn material_key(path: &str) -> String {
     let lower = path.replace('\\', "/").to_ascii_lowercase();
     lower.strip_suffix("_c").map(str::to_owned).unwrap_or(lower)
 }
 
+/// The `m_nIndexCount` path of every draw call in `mesh` drawn with a material
+/// in `hidden`.
 fn hidden_index_counts(mesh: &Value, hidden: &HashSet<String>) -> Vec<Vec<Seg>> {
     let Some(scene_objects) = mesh.get("m_sceneObjects").and_then(Value::as_array) else {
         return Vec::new();
@@ -37,6 +53,12 @@ fn hidden_index_counts(mesh: &Value, hidden: &HashSet<String>) -> Vec<Vec<Seg>> 
     paths
 }
 
+/// Stop every draw call using one of `materials` from rendering.
+///
+/// Mesh data lives in the `MDAT` blocks of a model with embedded meshes and in
+/// the `DATA` block of a standalone `.vmesh_c`; both are searched. Returns
+/// `Ok(None)` when no draw call uses those materials, so the caller can tell a
+/// resource that does not draw the part from a failed edit.
 pub fn hide_draw_calls(resource_bytes: &[u8], materials: &[String]) -> Result<Option<Vec<u8>>> {
     let hidden = materials
         .iter()
@@ -66,6 +88,8 @@ pub fn hide_draw_calls(resource_bytes: &[u8], materials: &[String]) -> Result<Op
     if patched_blocks.is_empty() {
         return Ok(None);
     }
+    // Rebuilding keeps block order and count, so the indices found above still
+    // address the same blocks after each swap.
     let mut output = resource_bytes.to_vec();
     for (index, patched) in patched_blocks {
         output = Resource::parse(&output)?.rebuild_with_block(index, &patched)?;

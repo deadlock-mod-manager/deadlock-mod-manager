@@ -64,6 +64,13 @@ export const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
   }
 };
 
+/**
+ * Picks the right installer for the visitor's OS and tracks the click. Shared
+ * by PlatformDownloadButton and the landing page's own download CTAs.
+ *
+ * The app only ships for Windows and Linux, so phones, tablets and macOS never
+ * get a direct download link.
+ */
 export const usePlatformDownload = () => {
   const { t } = useTranslation("common");
   const [userOS, setUserOS] = useState<DeviceInfo | null>(null);
@@ -74,6 +81,9 @@ export const usePlatformDownload = () => {
     setUserOS(detectOS());
   }, []);
 
+  // False only once detection confirms the device can't run the app. Stays
+  // true on the server, before detection and on unrecognized desktops, so
+  // those keep the generic download link and the markup hydrates cleanly.
   const canInstall = !(userOS?.mobile || userOS?.os === "macos");
 
   const recommendedDownload: PlatformDownload | null =
@@ -114,6 +124,7 @@ export const usePlatformDownload = () => {
 
   return {
     os: userOS?.os ?? "unknown",
+    /** Phone or tablet the visitor is on, once detected. */
     mobile: userOS?.mobile ?? null,
     canInstall,
     versionInfo,

@@ -39,6 +39,7 @@ const keepCover = async (identity: string, dataUrl: string) => {
   return remember(identity, dataUrl);
 };
 
+/** Keeps a cover rendered before import as the new mod's library thumbnail. */
 export const saveLocalCover = async (remoteId: string, dataUrl: string) =>
   keepCover(await localCoverIdentity(remoteId), dataUrl);
 
@@ -47,6 +48,8 @@ const localModThumbnail = async (
   profileFolder: string | null,
   signal: AbortSignal,
 ): Promise<string | null> => {
+  // Local imports have a unique id. Deployment paths and enablement are not
+  // revisions of their cover: read the saved image before resolving any VPK.
   const identity = await localCoverIdentity(mod.remoteId);
   signal.throwIfAborted();
   const cached = memory.get(identity);
@@ -67,6 +70,7 @@ const localModThumbnail = async (
       filePath,
     });
     signal.throwIfAborted();
+    // Reuse covers produced before the import-based cache key was introduced.
     const previous = await invoke<string | null>("foundry_read_thumbnail", {
       identity: info.identity,
     });
@@ -80,6 +84,7 @@ const localModThumbnail = async (
   }, signal);
 };
 
+// The hero model a VPK ships, rendered as a base64 PNG, or null without one.
 const renderCover = async (
   info: ModPreviewInfo,
   signal: AbortSignal,
@@ -92,6 +97,7 @@ const renderCover = async (
     signal,
   );
   try {
+    // Partial previews need viewer diagnostics, rather than an accurate-looking cover.
     if (model.report?.issues.length) return null;
     const image = await renderModelThumbnail(model, signal);
     if (!image) return null;
@@ -104,6 +110,10 @@ const renderCover = async (
   }
 };
 
+/**
+ * A cover for a mod not imported yet, from the first VPK with a hero model.
+ * Queued ahead of library thumbnails, since someone is waiting on it.
+ */
 const filesCover = (filePaths: string[], signal: AbortSignal) =>
   previewCaptureQueue.run(
     async () => {
@@ -126,6 +136,7 @@ export const filesCoverOptions = (filePaths: string[]) =>
     queryKey: ["files-cover", filePaths],
     queryFn: ({ signal }) => filesCover(filePaths, signal),
     enabled: filePaths.length > 0,
+    // Local reads and rendering: React Query's default would pause while offline.
     networkMode: "always",
     staleTime: Infinity,
     gcTime: 0,

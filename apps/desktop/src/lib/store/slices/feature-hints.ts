@@ -96,6 +96,8 @@ export const createFeatureHintsSlice: StateCreator<
         counters: { ...counters, [counter]: (counters[counter] ?? 0) + 1 },
       })),
 
+    // Brings every hint back without waiting out the first-run quiet period
+    // again.
     resetFeatureHints: () =>
       update(() => ({
         enabled: true,

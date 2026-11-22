@@ -290,6 +290,7 @@ Root
       const result = parseKv(input);
       const serialized = serializeAst(result.ast);
 
+      // Should preserve spacing
       expect(serialized).toBe(input);
     });
 

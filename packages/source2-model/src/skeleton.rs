@@ -5,6 +5,9 @@ use crate::resource::Resource;
 const BONE_FLAG_CLOTH: u32 = 0x8;
 const BONE_FLAG_PROCEDURAL: u32 = 0x400000;
 
+/// A bone's local transform. The Foundry never plays animation, but it does
+/// stand the model in the game's idle rest pose so the weapon sits in the hand,
+/// and the glTF skin writer needs the decomposed TRS of each bone matrix.
 #[derive(Debug, Clone, Copy)]
 pub struct BoneTransform {
     pub translation: [f32; 3],
@@ -25,6 +28,7 @@ pub struct Bone {
 }
 
 impl Bone {
+    /// A root `pin_procedural_cloth_roots` moves with the body.
     pub fn is_procedural_cloth_root(&self) -> bool {
         self.parent < 0
             && self.flags & (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
@@ -102,6 +106,11 @@ impl Skeleton {
         })
     }
 
+    /// Source 2 drives procedural cloth roots with a solver the Foundry does not
+    /// run. Without it those bones fall back to their bind transform and the
+    /// cloth detaches from the body, so mirror the renderer's fallback: copy the
+    /// skinning transform from the first non-procedural bone marked as a cloth
+    /// anchor. This is a static fix-up of one pose, not simulation.
     pub fn pin_procedural_cloth_roots(&self, pose: &mut [BoneTransform]) {
         if pose.len() < self.bones.len() {
             return;

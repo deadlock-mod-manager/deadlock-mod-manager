@@ -4,6 +4,7 @@ import { getPluginAssetUrl } from "@/lib/plugins";
 import { cn } from "@/lib/utils";
 import type { ThemeOverrides } from "@/types/theme-overrides";
 
+// Clicking the sidebar emote cycles through these, starting with the peek.
 const SIDEBAR_EMOTES = ["peek", "w", "popcorn", "cozy", "sleep"].map((name) =>
   getPluginAssetUrl("themes", `public/pre-defined/drututt/${name}.png`),
 );
@@ -21,6 +22,7 @@ const SidebarContentExtra = () => {
         onClick={() => setIndex((i) => (i + 1) % SIDEBAR_EMOTES.length)}
         title={label}
         type='button'>
+        {/* The peek art has a wall on its right; mirrored, the window edge becomes the wall. */}
         <img
           alt={t("accessibility.drututtEmoteAlt")}
           className={cn(

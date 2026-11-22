@@ -8,6 +8,10 @@ import type { ModDependency, ResolvedDependency } from "@/types/dependencies";
 
 type DependencyWithRemoteId = ModDependency & { remoteId: string };
 
+/**
+ * Looks each dependency up in our mod catalogue. If we have the mod it's
+ * internal and gets a proper card, otherwise it's external and just links out
+ */
 export const useResolvedDependencies = (
   dependencies: ModDependency[] | undefined,
 ): ResolvedDependency[] => {
@@ -27,6 +31,9 @@ export const useResolvedDependencies = (
   });
 
   return useMemo(() => {
+    // While we're still fetching a mod, leave its row out instead of briefly
+    // showing it as a plain link. Only drop to a link once the fetch has finished
+    // and found nothing
     const stateByRemoteId = new Map<
       string,
       { mod?: ModDto; pending: boolean }
@@ -42,6 +49,7 @@ export const useResolvedDependencies = (
     const resolved: ResolvedDependency[] = [];
     for (const dependency of deps) {
       if (!dependency.remoteId) {
+        // No id, so it's just a note or a link elsewhere
         resolved.push({ kind: "external", dependency });
         continue;
       }

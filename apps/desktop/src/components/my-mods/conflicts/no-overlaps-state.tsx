@@ -14,9 +14,14 @@ import type { LocalMod } from "@/types/mods";
 import { ModCover } from "./mod-cover";
 
 const MAX_TILES = 5;
+// Most of a tile's 72px slot (width plus gap), so stacked tiles still peek out.
 const STACK_STEP = 58;
 const STACK_TILT = [-7, 4, -3, 6, -5];
 
+/**
+ * The all-clear shows the enabled mods' covers starting in a messy stack and
+ * sliding apart into their own slots: the picture of "nothing overlaps".
+ */
 export const NoOverlapsState = ({ mods }: { mods: LocalMod[] }) => {
   const { t } = useTranslation();
   const reduced = usePrefersReducedMotion();
@@ -24,6 +29,8 @@ export const NoOverlapsState = ({ mods }: { mods: LocalMod[] }) => {
 
   useEffect(() => {
     if (reduced) return;
+    // The first frame callback can run before the stacked pose is painted, so
+    // spread on the second one or the transition has nothing to start from.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => setSpread(true));
     });

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ModEntryPoint } from "@/lib/analytics/schema";
 
 type OneClickInstalls = {
+  /** Mods between link arrival and install finishing, keyed by slug. */
   active: Record<string, ModEntryPoint>;
 };
 
@@ -9,6 +10,7 @@ export const useOneClickInstalls = create<OneClickInstalls>()(() => ({
   active: {},
 }));
 
+/** Returns false when the mod is already being handled. */
 export const startOneClickInstall = (
   slug: string,
   entryPoint: ModEntryPoint,

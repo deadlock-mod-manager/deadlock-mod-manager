@@ -90,6 +90,7 @@ export const ViewOptions = ({ dataset, view, onChange }: ViewOptionsProps) => {
   const { fieldLabel } = useFieldFormat(dataset);
   const patch = (next: Partial<WidgetView>) => onChange({ ...view, ...next });
 
+  // Labels first, but any field can be the axis (match progress, a timestamp).
   const categories = [
     ...dataset.fields.filter(isCategoryField),
     ...dataset.fields.filter((field) => !isCategoryField(field)),
@@ -107,6 +108,8 @@ export const ViewOptions = ({ dataset, view, onChange }: ViewOptionsProps) => {
       }
       return;
     }
+    // At the limit the newest pick replaces the oldest, so clicking always does
+    // something visible.
     patch({ y: [...view.y, key].slice(-maxSeries) });
   };
 

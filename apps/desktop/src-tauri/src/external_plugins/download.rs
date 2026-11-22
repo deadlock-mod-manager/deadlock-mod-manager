@@ -1,3 +1,7 @@
+//! Catalog downloads for `external_plugins_install_url`. The runtime stays
+//! network-free: the archive lands in a temporary file under the runtime's
+//! archive cap, and the runtime checks its SHA-256 before installing.
+
 use crate::errors::Error;
 use dmm_plugin_runtime::MAX_ARCHIVE_BYTES;
 use futures::StreamExt;
@@ -35,6 +39,8 @@ pub fn is_sha256(value: &str) -> bool {
       .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
 }
 
+/// Downloads `url` into a temporary file that is deleted when dropped.
+/// Redirects must stay on https.
 pub async fn fetch_archive(url: reqwest::Url) -> Result<TempPath, Error> {
   let client = crate::proxy::build_http_client(|builder| {
     builder

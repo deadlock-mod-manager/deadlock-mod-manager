@@ -5,6 +5,11 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
+/**
+ * Renders the scene in HDR and blooms only what is brighter than white, which
+ * in practice is self-illuminated material (its glTF emissive strength runs
+ * well past 1) and particles. Tone mapping then happens once, in the output pass.
+ */
 export const createViewerPostFx = (
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,

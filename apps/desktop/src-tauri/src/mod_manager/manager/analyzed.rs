@@ -9,6 +9,10 @@ pub struct AnalyzedModRegistration {
 }
 
 impl ModManager {
+  /// Record `installed_vpks` as `mod_id`'s enabled files. Another mod owning
+  /// exactly the same files is replaced (an identified mod taking over its
+  /// placeholder) unless `refuse_existing_owner` is set, as it is when the
+  /// user adds a file by hand.
   #[allow(clippy::too_many_arguments)]
   pub fn register_analyzed_mod(
     &mut self,
@@ -41,6 +45,8 @@ impl ModManager {
           "Invalid or duplicate analyzed VPK filename: {filename}"
         )));
       }
+      // The repair builder refuses an enabled mod that claims a file the game
+      // never loads, so recording one would break the profile's repairs.
       if VpkManager::enabled_vpk_number(filename).is_none() {
         return Err(Error::InvalidInput(format!(
           "Deadlock doesn't load {filename}: only files named like pak01_dir.vpk load. It was not added"
@@ -69,6 +75,9 @@ impl ModManager {
         .unwrap_or_default()
     });
     let mut order = manifest.mods.get(&mod_id).and_then(|entry| entry.order);
+    // The player's compatibility choice (Fix or original files) moves with the
+    // files, with the same precedence as the install order: the identity's own
+    // choice first, then the first replaced owner that made one.
     let mut compatibility = manifest.mods.get(&mod_id).and_then(compatibility_choice);
     let mut aliases = Vec::new();
     for (owner, entry) in &manifest.mods {
@@ -213,6 +222,8 @@ fn analyzed_shard(
   }
 }
 
+/// An entry's (`compatibility_enabled`, `compatibility_opted_out`) pair, or
+/// `None` when the player never chose.
 fn compatibility_choice(entry: &ProfileVpkManifestEntry) -> Option<(bool, bool)> {
   (entry.compatibility_enabled || entry.compatibility_opted_out)
     .then_some((entry.compatibility_enabled, entry.compatibility_opted_out))

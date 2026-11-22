@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils";
 interface StatTileProps {
   label: string;
   value: string;
+  /** Signed change against a named baseline; omitted when there is nothing to compare. */
   delta?: {
     text: string;
+    /** Whether the change is an improvement - not whether it points up. */
     isGood: boolean;
     caption: string;
   };

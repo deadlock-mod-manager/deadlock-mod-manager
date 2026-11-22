@@ -34,15 +34,21 @@ struct SpyGc {
   fail_history: bool,
   own_history_rate_limited: bool,
   rate_limited: bool,
+  // Matches the GC refuses for good, and ones it says are still in progress.
   refused: HashSet<u64>,
   in_flight: HashSet<u64>,
+  // Matches the GC won't show this account.
   forbidden: HashSet<u64>,
   persona_calls: AtomicU64,
   history: Vec<u64>,
+  // Own history split into pages, used instead of `history` when set. The cursor is the
+  // next page's index.
   history_pages: Vec<Vec<u64>>,
   friends: HashMap<u32, Persona>,
   friend_history: Vec<u64>,
+  // What the GC answers instead of `friend_history` (`MatchSyncError` isn't `Clone`).
   friend_history_error: Option<fn() -> MatchSyncError>,
+  // What the GC answers instead of the friends list.
   friend_ids_error: Option<fn() -> MatchSyncError>,
 }
 impl GcMatchClient for SpyGc {
@@ -154,16 +160,22 @@ enum BackfillCall {
   Release,
 }
 
+// Sticky, like the real endpoint: it keeps listing the same ids until they are
+// ingested, so run termination must come from what the run already did with each id.
 #[derive(Default)]
 struct SpyBackfill {
   account: Vec<u64>,
   global: Vec<u64>,
   active: Vec<ActiveFriend>,
+  // Matches deadlock-api already has salts for.
   stored_salts: HashSet<u64>,
   calls: AtomicU64,
   log: Mutex<Vec<BackfillCall>>,
+  // The `limit` of each global list request.
   global_limits: Mutex<Vec<usize>>,
+  // The attempts reported with each release.
   reports: Mutex<Vec<Vec<Attempt>>>,
+  // Every id `missing_salts` checked, and the id whose check fails, ending the checks.
   checked: Mutex<Vec<u64>>,
   check_fails_at: Option<u64>,
 }
@@ -295,6 +307,7 @@ impl SyncPersistence for MemPersistence {
     self.progress_events.fetch_add(1, Ordering::Relaxed);
     *self.last_progress_running.lock().unwrap() = Some(progress.running);
   }
+  // Counts every report: what backs the account off is decided in production code.
   fn record_gc_error(&self, _err: &MatchSyncError) {
     self.gc_errors.fetch_add(1, Ordering::Relaxed);
   }
@@ -303,6 +316,9 @@ impl SyncPersistence for MemPersistence {
 #[derive(Default)]
 struct SpyGameCheck {
   running: bool,
+  // Simulates the game launching mid-pass: is_game_running() starts returning
+  // true starting from this call number (1-indexed) across the whole engine.
+  // 0 (the default) means never trips this way.
   trip_after_calls: usize,
   calls: std::sync::atomic::AtomicUsize,
 }
@@ -418,6 +434,7 @@ async fn full_sync_fetches_posts_and_is_idempotent() {
   assert_eq!(eng.counter.load(Ordering::Relaxed), 3);
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![12, 11, 10]);
 
+  // Re-run: the same ids are already fetched -> nothing new is fetched/posted.
   let p2 = eng
     .run_full_sync_if_enabled(&active_config(), &cancel)
     .await
@@ -429,6 +446,7 @@ async fn full_sync_fetches_posts_and_is_idempotent() {
 
 #[tokio::test]
 async fn hard_quota_caps_total_fetches_at_limit() {
+  // 200 distinct ids available, but the 24h cap must stop us at LIMIT.
   let ids: Vec<u64> = (1..=200).collect();
   let backfill = SpyBackfill {
     account: ids,
@@ -444,6 +462,7 @@ async fn hard_quota_caps_total_fetches_at_limit() {
   assert_eq!(p.fetched, LIMIT as u32);
   assert!(p.quota_reached);
   assert_eq!(eng.counter.load(Ordering::Relaxed), LIMIT as u64);
+  // Persisted quota is full, proving it survives to the next process.
   assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), LIMIT);
 }
 
@@ -454,6 +473,7 @@ async fn monitoring_unions_history_and_to_fetch_then_backfills_within_quota() {
     global: vec![200, 201, 202, 203, 204, 205, 206],
     ..Default::default()
   };
+  // GC history contributes 102 and a duplicate of 100.
   let eng = engine(
     SpyGc {
       history: vec![102, 100],
@@ -467,7 +487,9 @@ async fn monitoring_unions_history_and_to_fetch_then_backfills_within_quota() {
     .await
     .unwrap()
     .unwrap();
+  // own = {102, 101, 100} after union + dedup, fetched newest first.
   assert_eq!(p.fetched, 3);
+  // Backfill takes the rest of the global list (quota has plenty left).
   assert_eq!(p.backfilled, 7);
   let posted = eng.sink.posted.lock().unwrap();
   assert_eq!(
@@ -480,6 +502,8 @@ async fn monitoring_unions_history_and_to_fetch_then_backfills_within_quota() {
 
 #[tokio::test]
 async fn background_backfill_leaves_reserve_for_own_matches() {
+  // No own matches, a bottomless global list: backfill must stop at LIMIT - reserve
+  // rather than drain the whole bucket, so a later-played match keeps headroom.
   let backfill = SpyBackfill {
     account: vec![],
     global: (1..=200).collect(),
@@ -495,10 +519,12 @@ async fn background_backfill_leaves_reserve_for_own_matches() {
   assert_eq!(p.fetched, 0);
   assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
   assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
+  // Asks for no more than the budget, so the server doesn't claim ids this pass won't fetch.
   assert_eq!(
     *eng.backfill.global_limits.lock().unwrap(),
     [LIMIT - BACKFILL_QUOTA_RESERVE]
   );
+  // The ids past the budget stay claimed unless released.
   assert_eq!(
     *eng.backfill.log.lock().unwrap(),
     [
@@ -535,6 +561,7 @@ async fn own_matches_the_server_stores_are_remembered_without_asking_the_gc() {
   assert_eq!(p.quota_remaining as usize, LIMIT - 2);
   assert!(eng.persistence.fetched.lock().unwrap().contains(&102));
 
+  // The next pass neither checks nor fetches any of them again.
   eng.backfill.checked.lock().unwrap().clear();
   let p = eng
     .run_background_pass(&active_config(), &cancel)
@@ -566,6 +593,8 @@ async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
     .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
     .await
     .unwrap();
+  // 105 is stored, 104 missing; 103 and 102 couldn't be checked, so they wait. The
+  // account's pending list needs no check and is still fetched.
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![104, 200]);
   assert_eq!(p.fetched, 2);
   assert_eq!(p.skipped, 1);
@@ -573,11 +602,13 @@ async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
     *eng.persistence.fetched.lock().unwrap(),
     vec![105, 104, 200]
   );
+  // History wasn't fully checked, so the sync isn't caught up.
   assert!(!*eng.persistence.complete.lock().unwrap());
 }
 
 #[tokio::test]
 async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
+  // One slot left: 103 is fetched, 102 and 101 are never checked.
   let persistence = MemPersistence {
     now: 1_000_000,
     quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
@@ -604,6 +635,7 @@ async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
   assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![103]);
   assert!(!*eng.persistence.complete.lock().unwrap());
 
+  // Once the quota frees up, the next sync checks and fetches the rest and completes.
   eng.persistence.quota_hits.lock().unwrap().clear();
   let p = eng
     .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
@@ -617,6 +649,7 @@ async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
 
 #[tokio::test]
 async fn full_sync_stops_paging_history_once_the_quota_is_spent() {
+  // One slot left, taken by the first page's only match.
   let persistence = MemPersistence {
     now: 1_000_000,
     quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
@@ -638,6 +671,7 @@ async fn full_sync_stops_paging_history_once_the_quota_is_spent() {
     .unwrap();
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
   assert!(p.quota_reached);
+  // One history page and one salts request: the second page is never asked for.
   assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 2);
   assert!(!*eng.persistence.complete.lock().unwrap());
 }
@@ -683,6 +717,7 @@ async fn background_pass_releases_the_global_claim_once_backfill_is_done() {
     .unwrap()
     .unwrap();
   assert_eq!(p.backfilled, 2);
+  // Released exactly once, after the global list, as the last deadlock-api call.
   assert_eq!(
     *eng.backfill.log.lock().unwrap(),
     [
@@ -699,6 +734,8 @@ async fn background_pass_releases_the_global_claim_when_backfill_aborts() {
     global: vec![200, 201, 202],
     ..Default::default()
   };
+  // Not running for the pass-start check, the history page or the friends lookup,
+  // but flips true on the first backfill salt fetch, aborting the pass with an error.
   let eng = engine_with_game_check(
     SpyGc::default(),
     backfill,
@@ -721,6 +758,7 @@ async fn background_pass_releases_the_global_claim_when_backfill_aborts() {
 
 #[tokio::test]
 async fn background_pass_reports_how_each_global_attempt_went() {
+  // Four fetches of budget left: the two oldest ids aren't tried.
   let persistence = MemPersistence {
     now: 1_000_000,
     quota_hits: Mutex::new(vec![1_000_000; LIMIT - BACKFILL_QUOTA_RESERVE - 4]),
@@ -747,6 +785,7 @@ async fn background_pass_reports_how_each_global_attempt_went() {
     .unwrap();
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![205]);
   let attempt = |match_id, result| Attempt { match_id, result };
+  // In the order the list was handed out; untried ids are left out.
   assert_eq!(
     *eng.backfill.reports.lock().unwrap(),
     [vec![
@@ -760,6 +799,8 @@ async fn background_pass_reports_how_each_global_attempt_went() {
 
 #[tokio::test]
 async fn background_pass_reports_failed_and_already_fetched_global_ids() {
+  // Newest first: 301 was posted on an earlier pass, 300's request fails, which ends the
+  // backfill before 299.
   let persistence = MemPersistence {
     now: 1_000_000,
     fetched: Mutex::new(vec![301]),
@@ -841,6 +882,7 @@ async fn background_pass_asks_for_a_drained_account_list_once_a_day() {
     Some(1_000_000)
   );
 
+  // It came back empty, so later passes that day skip it.
   eng.persistence.now += ACCOUNT_LIST_INTERVAL_SECS - 1;
   eng.run_background_pass(&config, &cancel).await.unwrap();
   assert_eq!(account_calls(&eng), 1);
@@ -852,6 +894,7 @@ async fn background_pass_asks_for_a_drained_account_list_once_a_day() {
 
 #[tokio::test]
 async fn background_pass_keeps_asking_for_an_account_list_until_it_is_drained() {
+  // The GC keeps failing, so 100 stays new to this client.
   let backfill = SpyBackfill {
     account: vec![100],
     ..Default::default()
@@ -886,6 +929,7 @@ async fn background_pass_keeps_asking_for_an_account_list_until_it_is_drained() 
 
 #[tokio::test]
 async fn an_account_list_of_already_fetched_ids_counts_as_drained() {
+  // The server still lists 100, but this client posted it on an earlier pass.
   let persistence = MemPersistence {
     now: 1_000_000,
     fetched: Mutex::new(vec![100]),
@@ -918,6 +962,7 @@ async fn an_account_list_of_already_fetched_ids_counts_as_drained() {
 
 #[tokio::test]
 async fn full_sync_clears_a_recent_drain_when_the_account_list_has_new_ids() {
+  // Drained an hour ago; the full sync now finds 100 pending but has no quota for it.
   let persistence = MemPersistence {
     now: 1_000_000,
     quota_hits: Mutex::new(vec![1_000_000; LIMIT]),
@@ -943,6 +988,7 @@ async fn full_sync_clears_a_recent_drain_when_the_account_list_has_new_ids() {
     *eng.persistence.account_list_drained_at.lock().unwrap(),
     None
   );
+  // So the next background pass asks for it again.
   eng
     .run_background_pass(&active_config(), &AtomicBool::new(false))
     .await
@@ -982,6 +1028,7 @@ async fn full_sync_marks_a_drained_account_list() {
 
 #[tokio::test]
 async fn background_pass_without_backfill_claims_nothing_to_release() {
+  // Rate-limited on the own matches: the global list is never requested.
   let backfill = SpyBackfill {
     account: vec![1],
     global: vec![9],
@@ -1023,11 +1070,14 @@ async fn gc_failure_posts_nothing_and_spares_quota() {
     .unwrap();
   assert_eq!(p.fetched, 0);
   assert!(eng.sink.posted.lock().unwrap().is_empty());
+  // A failed fetch got no data, so it must not spend quota.
   assert!(eng.persistence.quota_hits.lock().unwrap().is_empty());
 }
 
 #[tokio::test]
 async fn sticky_to_fetch_failure_does_not_falsely_complete_the_sync() {
+  // deadlock-api's to-fetch list is sticky: it keeps listing an id until it's
+  // actually ingested. A transient GC failure must not make that look "caught up".
   let backfill = SpyBackfill {
     account: vec![1],
     global: vec![],
@@ -1074,7 +1124,9 @@ async fn rate_limit_stops_the_pass_and_exhausts_quota_for_24h() {
   assert!(p.rate_limited);
   assert!(p.quota_reached);
   assert_eq!(p.quota_remaining, 0);
+  // One history call + exactly one salts attempt, then stop.
   assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 2);
+  // The very first rate-limit hit burns the whole 24h bucket, not just this attempt.
   assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), LIMIT);
 }
 
@@ -1141,6 +1193,7 @@ async fn refuses_while_game_is_running() {
   assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
   assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
 
+  // Background pass treats it as a quiet no-op, not an error.
   assert!(
     eng
       .run_background_pass(&active_config(), &AtomicBool::new(false))
@@ -1176,6 +1229,7 @@ async fn fails_closed_when_quota_cannot_be_loaded() {
       .await,
     Err(MatchSyncError::Store(_))
   ));
+  // A quota we couldn't read must not be treated as empty (full headroom).
   assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
 }
 
@@ -1203,6 +1257,7 @@ async fn stops_fetching_when_quota_cannot_be_saved() {
       .await,
     Err(MatchSyncError::Store(_))
   ));
+  // The fetch that couldn't be persisted must not be reported as posted.
   assert!(eng.sink.posted.lock().unwrap().is_empty());
 }
 
@@ -1230,6 +1285,8 @@ async fn background_pass_finalizes_progress_as_not_running_on_mid_pass_failure()
       .await
       .is_err()
   );
+  // Even though the pass aborted mid-fetch, the last emitted progress must
+  // reflect "not running" so the UI never sticks on a stale "running" state.
   assert_eq!(
     *eng.persistence.last_progress_running.lock().unwrap(),
     Some(false)
@@ -1243,6 +1300,8 @@ async fn game_launching_mid_pass_aborts_the_run() {
     global: vec![],
     ..Default::default()
   };
+  // Not running for the pass-start check or the history page, but flips true on
+  // the first salt fetch (the actual GC choke point, not just pass-start).
   let eng = engine_with_game_check(
     SpyGc::default(),
     backfill,
@@ -1256,11 +1315,14 @@ async fn game_launching_mid_pass_aborts_the_run() {
     .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
     .await;
   assert!(matches!(p, Err(MatchSyncError::GameRunning)));
+  // Aborted at the first match, not after walking the whole list.
   assert!(eng.sink.posted.lock().unwrap().is_empty());
 }
 
 #[tokio::test]
 async fn swallowed_salt_gc_error_is_still_reported_via_hook() {
+  // A salt-fetch GcUnavailable is swallowed to Ok (best-effort), but the orchestrator
+  // needs to see it to back the account off — the hook is that channel.
   let backfill = SpyBackfill {
     account: vec![1, 2, 3],
     global: vec![],
@@ -1284,6 +1346,8 @@ async fn swallowed_salt_gc_error_is_still_reported_via_hook() {
 
 #[tokio::test]
 async fn swallowed_history_gc_error_is_still_reported_via_hook() {
+  // A history-page GcUnavailable is likewise swallowed (Vec::new / break) but must
+  // reach the hook so a broken-handshake account (e.g. no game ownership) backs off.
   let backfill = SpyBackfill {
     account: vec![],
     global: vec![],
@@ -1307,6 +1371,8 @@ async fn swallowed_history_gc_error_is_still_reported_via_hook() {
 const NOW: i64 = 1_000_000;
 const FRIEND: u32 = 7;
 
+// A friend in Deadlock right now whose newest stored match ended two hours ago, with
+// salts stored for their two older matches.
 fn friend_scenario(global: Vec<u64>) -> (SpyGc, SpyBackfill) {
   let gc = SpyGc {
     friends: HashMap::from([(
@@ -1344,6 +1410,7 @@ async fn friends_new_matches_are_backfilled_before_the_global_list() {
     .unwrap()
     .unwrap();
   assert_eq!(p.backfilled, 3);
+  // Only the matches deadlock-api has no salts for, ahead of the global list.
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![502, 501, 600]);
   assert_eq!(eng.persistence.history_hits.lock().unwrap().len(), 1);
   assert_eq!(
@@ -1354,6 +1421,7 @@ async fn friends_new_matches_are_backfilled_before_the_global_list() {
 
 #[tokio::test]
 async fn global_ids_the_friend_check_found_stored_are_not_fetched_again() {
+  // 500 is one of the friend's matches deadlock-api already has salts for.
   let (gc, backfill) = friend_scenario(vec![600, 500]);
   let eng = engine(gc, backfill);
 
@@ -1375,6 +1443,7 @@ async fn global_ids_the_friend_check_found_stored_are_not_fetched_again() {
 #[tokio::test]
 async fn friend_comes_back_soon_while_the_budget_leaves_matches_unfetched() {
   let (gc, backfill) = friend_scenario(Vec::new());
+  // 9 fetches left: 1 above the reserve kept for the user's own matches.
   let eng = engine_with_persistence(
     gc,
     backfill,
@@ -1432,7 +1501,9 @@ async fn refused_friend_match_is_skipped_without_backing_off() {
     Some(&(NOW + FRIEND_COOLDOWN_SECS))
   );
   assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+  // The refusal is a GC answer too, so it counts like the two fetches.
   assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), 3);
+  // ...and is remembered, so no later pass asks for it again.
   assert!(eng.persistence.fetched.lock().unwrap().contains(&502));
 }
 
@@ -1457,6 +1528,8 @@ async fn in_flight_friend_match_is_skipped_without_stopping_the_pass() {
 #[tokio::test]
 async fn game_launching_while_friends_are_ranked_skips_the_persona_request() {
   let (gc, backfill) = friend_scenario(Vec::new());
+  // Running from the check right before the persona request: after the pass-start
+  // check, the user's own history page and the friend lookup's own check.
   let eng = engine_with_game_check(
     gc,
     backfill,
@@ -1516,6 +1589,7 @@ async fn forbidden_friend_match_is_skipped_without_backing_off() {
     .unwrap();
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![501, 600]);
   assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+  // Not written off: a later lookup may ask again.
   assert!(!eng.persistence.fetched.lock().unwrap().contains(&502));
 }
 

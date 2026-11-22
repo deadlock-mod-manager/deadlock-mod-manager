@@ -16,6 +16,7 @@ const metadataSchema = z.object({
 });
 
 export const readLocalModMetadata = async (modId: string) => {
+  // Local IDs also include Foundry's timestamp IDs; never accept path segments.
   if (!/^local-[a-zA-Z0-9_-]+$/.test(modId)) {
     throw new Error("Invalid local mod ID");
   }

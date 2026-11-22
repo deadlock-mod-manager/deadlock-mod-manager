@@ -17,6 +17,9 @@ pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
+// FFI interface will be implemented later when needed
+// For now, this module provides the Rust library foundation
+
 #[cfg(test)]
 mod tests {
     use super::*;

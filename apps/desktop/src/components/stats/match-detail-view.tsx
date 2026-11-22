@@ -19,6 +19,11 @@ import {
 } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
+/**
+ * One number in the stat line. Frameless on purpose: ten of these used to be ten
+ * bordered cells, which cost more height than the numbers themselves and turned
+ * the summary into a table nobody reads across.
+ */
 const Figure = ({ label, value }: { label: string; value: string }) => (
   <div className='min-w-0'>
     <dt className='truncate text-[11px] text-muted-foreground'>{label}</dt>
@@ -30,6 +35,7 @@ interface MatchDetailViewProps {
   accountId: number;
   match: MatchHistoryEntry;
   heroesById: Map<number, DeadlockHero>;
+  /** Opens the hero's own card; omitted where there is nowhere to go. */
   onSelectHero?: (heroId: number) => void;
   className?: string;
 }
@@ -134,6 +140,8 @@ export const MatchDetailView = ({
         </div>
       ) : (
         <>
+          {/* Two rules instead of twenty cell borders - the row still reads as a
+              block, at a third of the height. */}
           <dl className='grid grid-cols-3 gap-x-4 gap-y-3 border-y py-3 sm:grid-cols-5'>
             <Figure
               label={t("stats.player.kdaRatio")}

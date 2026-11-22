@@ -1,3 +1,7 @@
+//! Rolling-window fetch quota — the hard cap on Steam GC match-salt fetches.
+//! Pure and clock-injected so it unit-tests without a store or real clock;
+//! persistence lives in [`super::settings`].
+
 #[derive(Debug, Clone)]
 pub struct QuotaWindow {
   hits: Vec<i64>,
@@ -44,6 +48,7 @@ impl QuotaWindow {
       .map(|&oldest| oldest + self.window_secs)
   }
 
+  // On success records `now`; caller must persist snapshot(). Nothing mutates on failure.
   pub fn try_consume(&mut self, now: i64) -> Result<(), QuotaExhausted> {
     self.prune(now);
     if self.hits.len() >= self.limit {
@@ -62,6 +67,7 @@ impl QuotaWindow {
     self.hits.clone()
   }
 
+  // For when Steam itself rate-limits us: treat the window as fully used from `now`.
   pub fn exhaust(&mut self, now: i64) {
     self.prune(now);
     let needed = self.limit.saturating_sub(self.hits.len());
@@ -90,6 +96,7 @@ mod tests {
     assert_eq!(q.remaining(now), 0);
     let err = q.try_consume(now).unwrap_err();
     assert_eq!(err.limit, LIMIT);
+    // The 71st fetch must wait a full window since all hits share `now`.
     assert_eq!(err.retry_after_secs, WINDOW);
   }
 
@@ -100,7 +107,9 @@ mod tests {
     for _ in 0..LIMIT {
       q.try_consume(start).unwrap();
     }
+    // Still blocked one second before the window elapses.
     assert!(q.try_consume(start + WINDOW - 1).is_err());
+    // Exactly one slot frees up the moment the oldest ages out.
     let later = start + WINDOW + 1;
     assert_eq!(q.remaining(later), LIMIT);
     assert!(q.try_consume(later).is_ok());
@@ -114,6 +123,7 @@ mod tests {
       q.try_consume(now).unwrap();
     }
     assert_eq!(q.reset_at(now), Some(now + WINDOW));
+    // Not full -> no reset time.
     let mut q2 = window();
     q2.try_consume(now).unwrap();
     assert_eq!(q2.reset_at(now), None);
@@ -135,6 +145,7 @@ mod tests {
     assert_eq!(q.remaining(now), 0);
     assert_eq!(q.snapshot().len(), LIMIT);
     assert_eq!(q.reset_at(now), Some(now + WINDOW));
+    // Blocked right up until the window elapses from the moment of exhaustion.
     assert_eq!(q.remaining(now + WINDOW - 1), 0);
     assert_eq!(q.remaining(now + WINDOW + 1), LIMIT);
   }

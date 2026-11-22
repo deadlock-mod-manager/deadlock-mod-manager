@@ -21,6 +21,10 @@ interface HeroModGridProps {
   onDelete: (mod: LocalMod) => void;
 }
 
+/**
+ * Everything one hero can wear. Mount it per hero (keyed by hero) so picking
+ * a shuffle pool ends when the user moves on to another hero.
+ */
 export const HeroModGrid = ({
   hero,
   group,
@@ -49,7 +53,10 @@ export const HeroModGrid = ({
     skins: randomizerSkins,
     defaultHeroes: randomizerDefaultHeroes,
   });
+  // Which skin the last launch rolled is meant to be found in game, so the
+  // page stops pointing at it while the randomizer owns this hero.
   const randomized = randomizerEnabled && isRandomizedPool(pool);
+  // Several skins at once is only a conflict while the user expects one.
   const conflicted =
     !randomized && !multipleSkinsEnabled && activeSkins.length > 1;
   const activeIds = new Set(
@@ -57,6 +64,9 @@ export const HeroModGrid = ({
   );
 
   return (
+    // The negative margin and padding keep the outline of a selected card
+    // from being clipped by the scroll container. Children must not shrink:
+    // in a scrolling flex column they would otherwise squash and overlap.
     <div className='-ml-1 flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto pr-2 pb-1 pl-1 *:shrink-0'>
       <HeroBanner
         disabled={disabled}

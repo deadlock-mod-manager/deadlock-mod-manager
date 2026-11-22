@@ -5,6 +5,7 @@ use super::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+/// Additional evidence for sampling changes. The model's deformation rig is never replaced.
 pub(super) struct ModelEvidence {
   old: ModelRig,
   current: ModelRig,
@@ -108,6 +109,10 @@ impl AnimationInputs {
     !self.overrides.is_empty() || self.mod_ids.contains(mod_id)
   }
 
+  /// Whether restoring this model's current animation bindings could change
+  /// what an enabled animation override plays. An override for another hero
+  /// stays outside the model's graph closure and skeleton, so it does not
+  /// block the restore.
   pub(super) fn blocks_model_bindings(
     &self,
     resources: &ResourceSnapshot,
@@ -124,6 +129,7 @@ impl AnimationInputs {
     current: &Kv3Value,
     mod_id: &str,
   ) -> bool {
+    // Authored animations in the model's own mod still need a migration proof.
     if self.mod_ids.contains(mod_id) {
       return false;
     }
@@ -146,12 +152,16 @@ impl AnimationInputs {
     {
       return false;
     }
+    // Reuse the graph-closure proof instead of treating every animation override
+    // in the library as an override of this model's camera controls.
     self.unrelated(resources, current, &skeleton)
   }
 
   pub(super) fn record(&mut self, path: &str, mod_id: &str) {
     if is_animation_path(path) {
       self.mod_ids.insert(mod_id.to_owned());
+      // Legacy graphs cannot replace the active NM graphs required by this proof.
+      // A legacy graph belonging to the skeleton's own mod still prevents migration.
       let path = normalize_path(path);
       if !path.ends_with(".vanmgrph_c") {
         self
@@ -162,6 +172,8 @@ impl AnimationInputs {
     }
   }
 
+  /// Prove that effective overrides neither enter this model's graph closure nor
+  /// sample this skeleton through another graph. Unknown animation formats fail closed.
   fn unrelated(&self, resources: &ResourceSnapshot, model: &Kv3Value, skeleton: &str) -> bool {
     if self.overrides.is_empty() {
       return true;
@@ -288,10 +300,15 @@ fn walk_animation(
       .get("m_resources")
       .and_then(Kv3Value::as_array)
       .is_some_and(|refs| {
+        // Event graphs can be leaves. Their explicit skeleton binding supplies
+        // the evidence that would otherwise come from child graphs or clips.
         binding != Some(false)
           && (!refs.is_empty() || binding == Some(true))
           && refs.iter().all(|reference| {
             reference.as_str().is_some_and(|name| {
+              // Installed graphs can retain references to optional, absent clips.
+              // A verified game graph binding proves its target, and an absent
+              // provider cannot introduce an override into this closure.
               let absent_clip = model_closure
                 && binding == Some(true)
                 && super::resources::resource_path(name).is_some_and(|path| {
@@ -367,6 +384,8 @@ pub(super) fn find(
     if !references_skeleton(current, skeleton_path) {
       return None;
     }
+    // Retired UI graphs do not sample the active NM rig. Require a vanilla NM
+    // closure before exempting them; authored clips still keep their own layout.
     if animation_inputs.mod_ids.contains(&source.mod_id)
       && !permits_retired_graphs(resources, current, skeleton_path, &source.mod_id)
     {
@@ -485,6 +504,8 @@ impl ModelEvidence {
     })
   }
 
+  /// Removed samples must form closed branches. Their deformation bones either
+  /// remain unchanged in both model rigs, or are virtual samples absent from both.
   pub(super) fn permits_removed(&self, name: &str, parent: &str) -> bool {
     match (
       self.old.indices.contains_key(name),
@@ -504,6 +525,8 @@ impl ModelEvidence {
     }
   }
 
+  /// An added control must be a leaf, unused by embedded meshes or their interfaces,
+  /// and anchored to a retained bone whose model bind transform is unchanged.
   pub(super) fn permits_added(&self, name: &str, parent: &str, pose: &Kv3Value) -> bool {
     self.unused_current_bones.contains(name)
       && !self.old.indices.contains_key(name)
@@ -529,6 +552,9 @@ impl ModelEvidence {
         })
   }
 
+  /// A large authored pose difference is accepted only when each sampling pose
+  /// agrees with its own model's bind pose. Both world transforms must also agree
+  /// with their own parent/local transforms (checked by the sampling comparer).
   pub(super) fn permits_pose(
     &self,
     name: &str,
@@ -660,6 +686,8 @@ mod tests {
         allowed,
         "{owner}:{path}"
       );
+      // A replaced skeleton is not an animation override; the binding restore
+      // declines it when it resolves the skeleton.
       let skeleton_replaced = path == "models/a.vnmskel_c";
       assert_eq!(
         inputs.blocks_model_bindings(&resources, &model, "skin"),

@@ -28,10 +28,18 @@ const logger = createLogger("install-with-collection");
 
 export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
+  /** Cancel instead of opening the file selector, for batch installs. */
   skipFileSelection?: boolean;
+  /** Restore only combinations from the diagnostic session's original setup. */
   bisectOriginalEnabled?: string[];
+  /** Mods the user already chose to keep alongside this one. */
   keepBothWith?: string[];
+  /**
+   * Nobody is watching, as during a launch: cancel instead of asking about a
+   * missing requirement or a model conflict.
+   */
   unattended?: boolean;
+  /** What purging the mod returned, when this install reinstalls it. */
   keptChoices?: KeptChoices | null;
 };
 
@@ -83,6 +91,9 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
+      // If file tree is provided and mod was downloaded with multiple files,
+      // we need to copy selected VPKs from archive first. Loose parts of a
+      // custom mod name no archive; they are already parked in the addons.
       if (
         fileTree?.has_multiple_files &&
         fileTree.files.some((file) => file.archive_name)
@@ -152,6 +163,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         throw new Error("Mod is already installed!");
       }
 
+      // If a preselected file tree was provided, use it directly
       if (preselectedFileTree) {
         logger
           .withMetadata({
@@ -165,6 +177,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         return await performInstallation(mod, options, preselectedFileTree);
       }
 
+      // Check if file tree was stored during download
       if (mod.installedFileTree) {
         logger
           .withMetadata({
@@ -175,9 +188,13 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           })
           .info("Using stored file tree from download");
 
+        // Call onFileTreeAnalyzed callback if provided
         options.onFileTreeAnalyzed?.(mod, mod.installedFileTree);
 
+        // If mod has multiple files, check if we already have a previous selection
         if (requiresFileSelection(mod.installedFileTree)) {
+          // Reconciliation clears installedVpks for disabled mods. Their
+          // manifest entry still proves the stored selection was installed.
           let previousSelection = previousInstallSelection(mod);
           if (!previousSelection) {
             const { manifest } = await getProfileVpkSnapshot(
@@ -195,9 +212,13 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
               })
               .info("Mod has previous VPK selection, using it for re-enable");
 
+            // Installed VPKs have pakXX names. The stored tree retains the
+            // original names and selection; renumbered paths cannot recover it.
             return await performInstallation(mod, options, previousSelection);
           }
 
+          // The variant picked in the download dialog already answers this
+          // question, so don't ask it a second time on activation.
           const downloadTimeSelection = applyDownloadTimeSelection(
             mod,
             mod.installedFileTree,
@@ -225,6 +246,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             return null;
           }
 
+          // No previous selection - show file selector dialog
           logger
             .withMetadata({
               modId: mod.remoteId,
@@ -232,15 +254,18 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             })
             .info("Mod has multiple files, showing file selector dialog");
 
+          // Store mod and options for dialog callbacks
           setCurrentMod(mod);
           setCurrentOptions(options);
           setCurrentFileTree(mod.installedFileTree);
           setShowFileSelector(true);
           setIsAnalyzing(false);
 
+          // Return null - installation will proceed after user confirms selection
           return null;
         }
 
+        // Single file - proceed with installation directly
         logger
           .withMetadata({
             modId: mod.remoteId,
@@ -253,6 +278,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         return await performInstallation(mod, options, mod.installedFileTree);
       }
 
+      // Analyze file tree to check for multiple VPK files
       setIsAnalyzing(true);
       let fileTree: ModFileTree | null = null;
 
@@ -271,9 +297,13 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           })
           .info("File tree analysis complete");
 
+        // Call onFileTreeAnalyzed callback if provided
         options.onFileTreeAnalyzed?.(mod, fileTree);
 
+        // If mod has multiple files, show file selector dialog
         if (fileTree.has_multiple_files) {
+          // Same as above: a variant chosen at download time still counts here,
+          // where the tree was rebuilt from the archives left in the mod folder.
           const downloadTimeSelection = applyDownloadTimeSelection(
             mod,
             fileTree,
@@ -310,15 +340,18 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             })
             .info("Mod has multiple files, showing file selector dialog");
 
+          // Store mod and options for dialog callbacks
           setCurrentMod(mod);
           setCurrentOptions(options);
           setCurrentFileTree(fileTree);
           setShowFileSelector(true);
           setIsAnalyzing(false);
 
+          // Return null - installation will proceed after user confirms selection
           return null;
         }
 
+        // Single file or no files - proceed with installation directly
         logger
           .withMetadata({
             modId: mod.remoteId,
@@ -339,6 +372,8 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             "File tree analysis failed, proceeding with direct installation",
           );
 
+        // If analysis fails, proceed with installation without file tree
+        // This handles cases where mod directory doesn't exist or analysis fails
         return await performInstallation(mod, options);
       }
     } catch (error) {
@@ -381,6 +416,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     try {
       await performInstallation(currentMod, currentOptions, fileTree);
     } finally {
+      // Clean up state
       setCurrentMod(null);
       setCurrentOptions(null);
       setCurrentFileTree(null);
@@ -393,6 +429,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         .withMetadata({ modId: currentMod.remoteId })
         .info("User canceled installation");
 
+      // Call onCancel callback to revert mod status
       currentOptions.onCancel?.(currentMod);
     }
 

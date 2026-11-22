@@ -21,6 +21,7 @@ interface PopularHeroSkinsProps {
   onSeeAll: () => void;
 }
 
+/** The store's most downloaded skins for a hero that has none yet. */
 export const PopularHeroSkins = ({ hero, onSeeAll }: PopularHeroSkinsProps) => {
   const { t } = useTranslation();
   const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
@@ -46,6 +47,7 @@ export const PopularHeroSkins = ({ hero, onSeeAll }: PopularHeroSkinsProps) => {
     refetchOnWindowFocus: false,
   });
 
+  // A hero the catalog has no skins for gets the empty state above alone.
   if (!isPending && !skins?.length) {
     return null;
   }

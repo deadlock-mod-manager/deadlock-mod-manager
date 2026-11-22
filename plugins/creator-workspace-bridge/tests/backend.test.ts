@@ -1,3 +1,8 @@
+/**
+ * Runs the built backend.wasm through the ABI v1 exports and the
+ * dmm.host_call import, with a fresh instance per call as the host does.
+ * Requires `bun scripts/build.ts` first.
+ */
 import { beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

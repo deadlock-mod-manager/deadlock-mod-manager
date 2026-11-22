@@ -19,6 +19,9 @@ fn pad_four(bytes: &mut Vec<u8>, value: u8) {
     }
 }
 
+/// Replace the GLB skeleton's local bind transforms with a sampled pose.
+/// Geometry, materials and skin weights remain untouched, so the browser and
+/// the native renderer evaluate exactly the same skinning inputs.
 pub fn pose_model_glb(
     model: &ModelGlb,
     skeleton: &Skeleton,

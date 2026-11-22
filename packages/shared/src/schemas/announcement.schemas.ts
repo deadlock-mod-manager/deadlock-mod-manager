@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Helper for date fields that may come as strings from cache (JSON serialization)
 const coercedDateNullable = z.coerce.date().nullable();
 
 export const AnnouncementStatusSchema = z.enum([

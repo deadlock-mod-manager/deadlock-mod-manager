@@ -2,6 +2,7 @@ import { CardsThreeIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { CatalogCollectionDto } from "@/types/generated/CatalogCollectionDto";
 
+// Tile layouts for one to four preview images; three puts the first on its own row.
 const MOSAIC_CLASS = [
   "grid-cols-1",
   "grid-cols-2",
@@ -9,6 +10,10 @@ const MOSAIC_CLASS = [
   "grid-cols-2 grid-rows-2",
 ];
 
+/**
+ * The collection's GameBanana cover, or a mosaic of its first mods' thumbnails
+ * when GameBanana only has the generic placeholder.
+ */
 export const CollectionCover = ({
   collection: { coverUrl, previewImages, isNsfw },
   className,
@@ -20,6 +25,7 @@ export const CollectionCover = ({
 }) => {
   const imageClass = "h-full w-full object-cover object-top";
 
+  // Only the uploader's own cover can be explicit; generated covers skip NSFW mods.
   if (coverUrl) {
     return (
       <img

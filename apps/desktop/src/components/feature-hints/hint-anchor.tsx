@@ -30,13 +30,20 @@ type HintAction = AnalyticsEvents["feature_hint_closed"]["action"];
 
 type HintAnchorProps = ComponentPropsWithoutRef<typeof PopoverAnchor> & {
   hintId: FeatureHintId;
+  /** Page conditions that make the hint worth showing, such as library size. */
   eligible?: boolean;
+  /** Demonstrates the feature, for example by opening the menu it points at. */
   onShowMe?: (anchor: HTMLElement) => void;
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   children: ReactElement;
 };
 
+/**
+ * Wraps a control that is easy to miss. When the scheduler picks this hint,
+ * the control pulses and a "Did you know?" card points at it. The feature
+ * itself must call `markFeatureUsed` so users who find it alone never see it.
+ */
 export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
   (
     {
@@ -105,6 +112,7 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
       if (open || useFeatureHintsSession.getState().active !== hintId) {
         return;
       }
+      // Using the feature can dismiss the card before the used effect runs.
       const store = usePersistedStore.getState();
       if (store.featureHints.used[hintId]) {
         finish("used");
@@ -118,6 +126,7 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
       const anchor = anchorRef.current;
       finish("show_me");
       usePersistedStore.getState().markFeatureUsed(hintId);
+      // Let the card unmount first so the menu it opens keeps focus.
       requestAnimationFrame(() => {
         if (anchor) onShowMe?.(anchor);
       });
@@ -135,6 +144,8 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
 
     return (
       <Popover onOpenChange={handleOpenChange} open={active}>
+        {/* The highlight attribute is only set while active so nested
+            anchors on one control don't clear each other's. */}
         <PopoverAnchor
           asChild
           ref={setRef}
@@ -150,6 +161,7 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
             collisionPadding={12}
             onCloseAutoFocus={(event) => event.preventDefault()}
             onInteractOutside={(event) => {
+              // Using the control itself is how the hint should end.
               if (
                 event.target instanceof Node &&
                 anchorRef.current?.contains(event.target)

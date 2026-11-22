@@ -20,6 +20,8 @@ import {
 
 const logger = createLogger("use-file-drop");
 
+// Each drop clears the staging folder, so a second one would delete the first
+// one's files while they are still being copied. Shared by every drop target.
 let dropInFlight = false;
 
 export const pickModFiles = async (
@@ -144,6 +146,11 @@ const extractPathsFromStringPayloads = (
   return Array.from(extractedPaths);
 };
 
+/**
+ * Turns a drop's DataTransfer into a staged mod source and reports it, or
+ * reports why it could not. Shared by the Add Mods drop zone and the
+ * window-wide drop target.
+ */
 export const useDroppedSource = (
   onFilesDetected: (source: DetectedSource) => void,
   onError: (message: string) => void,
@@ -151,8 +158,11 @@ export const useDroppedSource = (
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
 
+  // A file read by the renderer is flushed to disk right away, so the import
+  // only ever handles paths and never holds a large mod in memory.
   const stageSource = useCallback(
     async (source: DetectedSource): Promise<DetectedSource> => {
+      // One drop gives either path-backed files or read ones, never a mix.
       const files = sourceFiles(source);
       if (files.every((file) => getSourceFilePath(file))) {
         return source;

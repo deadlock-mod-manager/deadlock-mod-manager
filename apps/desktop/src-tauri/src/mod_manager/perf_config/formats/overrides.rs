@@ -1,7 +1,12 @@
+//! Sqooky's `overrides.gi`: values to lock and keys to force commented out.
+
 use super::kv::MAX_REPORTED_ERRORS;
 use super::{ParsedConfig, ParsedLeaf, clean, truncate};
 use crate::mod_manager::perf_config::types::{IgnoredKind, IgnoredPart, ImportFormat};
 
+/// Grammar: blank and `#` lines are skipped; `// NAME [# note]` forces the
+/// key to be commented out; `NAME VALUE [# note]` locks the value (quotes
+/// dropped). A name both locked and commented is locked.
 pub(super) fn parse_overrides(text: &str) -> ParsedConfig {
   let text = clean(text);
   let mut locked: Vec<ParsedLeaf> = Vec::new();
@@ -64,6 +69,7 @@ pub(super) fn parse_overrides(text: &str) -> ParsedConfig {
   }
 }
 
+/// Cuts a trailing `# note`, which must follow whitespace.
 pub(super) fn strip_hash_note(text: &str) -> &str {
   let bytes = text.as_bytes();
   (1..bytes.len())

@@ -44,6 +44,7 @@ export const formatModNames = (
   }).format(items);
 };
 
+/** The game file only carries the id; the name comes from what was applied. */
 export const configName = (
   config: PerfConfigFingerprint,
   userConfigName: string | undefined,
@@ -52,6 +53,7 @@ export const configName = (
   userConfigName ??
   config.configId.replace(/^(preset|user):/, "");
 
+/** One line for the toast: the first (most likely) change. */
 export const summarizeChange = (
   t: TFunction,
   change: SessionChange,

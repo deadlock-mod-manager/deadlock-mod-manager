@@ -153,6 +153,8 @@ export const BottomBar = () => {
           <DiscordPresenceIndicator />
         </div>
 
+        {/* After the status icons, so they don't jump under the cursor when a
+            download starts or finishes. */}
         {downloadingCount > 0 && (
           <>
             <Separator className='mx-1 h-3' orientation='vertical' />

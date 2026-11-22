@@ -52,30 +52,44 @@ export type SettingsState = {
   settings: Record<LocalSetting["id"], LocalSetting>;
   nsfwSettings: NSFWSettings;
   telemetrySettings: TelemetrySettings;
-  perItemNSFWOverrides: Record<string, boolean>;
+  perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
   developerMode: boolean;
   ingestToolEnabled: boolean;
   autoUpdateEnabled: boolean;
   showModUpdateBadges: boolean;
+  /** Whether the Mod Foundry decodes and renders a skin's 3D model. Off skips
+   *  the decode entirely, which is the slow part of opening a skin. */
   foundry3dPreviewEnabled: boolean;
+  /** Playback volume for the Foundry sound browser, 0..1. */
   foundrySoundVolume: number;
   crosshairsEnabled: boolean;
+  /** Whether a hero can keep several skins installed instead of exactly one. */
   multipleSkinsEnabled: boolean;
+  /** Whether weapon skins, sounds and the like get listed under a hero too. */
   heroExtrasEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
+  /** Linux only: blur NSFW thumbnails through a canvas instead of CSS filters. */
   linuxCanvasNSFWBlur: boolean;
-  enabledPlugins: Record<string, boolean>;
+  enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
+  /** Whether Rich Presence leaves out how many players are in the party. */
   gamePresenceHidePartySize: boolean;
   forgeInstallEnabled: boolean;
+  /** Whether gameinfo.gi goes back to vanilla once Deadlock closes. */
   autoResetGameinfoOnExit: boolean;
+  /** Whether changing mods is refused while Deadlock is running. The game holds
+   *  its VPKs open, so renaming or deleting them mid-session corrupts the load
+   *  order. Users who know what they are doing can turn this off. */
   blockActionsWhileGameRunning: boolean;
+  /** Whether minimizing hides the window to the system tray. */
   minimizeToTray: boolean;
+  /** Whether closing the window hides it to the system tray instead of quitting. */
   closeToTray: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
+  /** When updates back up the mods they replace first. */
   backupMode: BackupMode;
-  maxBackupCount: number;
+  maxBackupCount: number; // 0 means unlimited
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -86,28 +100,36 @@ export type SettingsState = {
     newValue?: boolean,
   ) => void;
 
+  // NSFW settings management
   updateNSFWSettings: (updates: Partial<NSFWSettings>) => void;
   setPerItemNSFWOverride: (modId: string, isVisible: boolean) => void;
   removePerItemNSFWOverride: (modId: string) => void;
   clearPerItemNSFWOverrides: () => void;
   getPerItemNSFWOverride: (modId: string) => boolean | undefined;
 
+  // Telemetry settings management
   updateTelemetrySettings: (updates: Partial<TelemetrySettings>) => void;
 
+  // Developer mode management
   setDeveloperMode: (enabled: boolean) => void;
 
+  // Ingest tool management
   setIngestToolEnabled: (enabled: boolean) => void;
 
+  // Auto-update management
   setAutoUpdateEnabled: (enabled: boolean) => void;
   setShowModUpdateBadges: (enabled: boolean) => void;
   setFoundry3dPreviewEnabled: (enabled: boolean) => void;
   setFoundrySoundVolume: (volume: number) => void;
 
+  // Crosshairs management
   setCrosshairsEnabled: (enabled: boolean) => void;
 
+  // Hero page management
   setMultipleSkinsEnabled: (enabled: boolean) => void;
   setHeroExtrasEnabled: (enabled: boolean) => void;
 
+  // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
   setLinuxCanvasNSFWBlur: (enabled: boolean) => void;
 
@@ -132,9 +154,11 @@ export type SettingsState = {
   ) => void;
   resetGamePresenceTextTemplates: () => void;
 
+  // Backup settings management
   setBackupMode: (mode: BackupMode) => void;
   setMaxBackupCount: (count: number) => void;
 
+  // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
 };
@@ -235,6 +259,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       };
     }),
 
+  // NSFW settings management
   updateNSFWSettings: (updates: Partial<NSFWSettings>) =>
     set((state) => ({
       nsfwSettings: { ...state.nsfwSettings, ...updates },
@@ -261,21 +286,25 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     return get().perItemNSFWOverrides[modId];
   },
 
+  // Telemetry settings management
   updateTelemetrySettings: (updates: Partial<TelemetrySettings>) =>
     set((state) => ({
       telemetrySettings: { ...state.telemetrySettings, ...updates },
     })),
 
+  // Developer mode management
   setDeveloperMode: (enabled: boolean) =>
     set(() => ({
       developerMode: enabled,
     })),
 
+  // Ingest tool management
   setIngestToolEnabled: (enabled: boolean) =>
     set(() => ({
       ingestToolEnabled: enabled,
     })),
 
+  // Auto-update management
   setAutoUpdateEnabled: (enabled: boolean) =>
     set(() => ({
       autoUpdateEnabled: enabled,
@@ -284,21 +313,25 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setShowModUpdateBadges: (enabled: boolean) =>
     set({ showModUpdateBadges: enabled }),
 
+  // Mod Foundry 3D preview
   setFoundry3dPreviewEnabled: (enabled: boolean) =>
     set(() => ({
       foundry3dPreviewEnabled: enabled,
     })),
 
+  // Mod Foundry sound preview volume
   setFoundrySoundVolume: (volume: number) =>
     set(() => ({
       foundrySoundVolume: Math.min(1, Math.max(0, volume)),
     })),
 
+  // Crosshairs management
   setCrosshairsEnabled: (enabled: boolean) =>
     set(() => ({
       crosshairsEnabled: enabled,
     })),
 
+  // Hero page management
   setMultipleSkinsEnabled: (enabled: boolean) =>
     set(() => ({
       multipleSkinsEnabled: enabled,
@@ -309,6 +342,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       heroExtrasEnabled: enabled,
     })),
 
+  // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") =>
     set(() => ({
       linuxGpuOptimization: value,
@@ -399,6 +433,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       maxBackupCount: count,
     })),
 
+  // Plugin management
   togglePlugin: (pluginId: string) =>
     set((state) =>
       resolvePluginEnabled(state.enabledPlugins, pluginId)

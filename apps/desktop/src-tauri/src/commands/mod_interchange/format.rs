@@ -1,3 +1,7 @@
+//! The manager-neutral "Deadlock Mod Interchange" document (see
+//! `rfcs/001-mod-interchange/proposal.md`). Every reader produces it, every importer
+//! consumes it, so a new mod manager only has to speak this one shape.
+
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -102,6 +106,7 @@ pub struct InterchangeMod {
   pub extensions: Option<serde_json::Value>,
 }
 
+/// One mod's membership in a profile.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct InterchangeProfileMod {
@@ -129,6 +134,7 @@ pub struct InterchangeProfile {
   pub autoexec: Option<Vec<String>>,
 }
 
+/// A crosshair as the game's own `citadel_crosshair_*` convars.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InterchangeCrosshair {
@@ -153,6 +159,7 @@ pub struct InterchangeDocument {
   pub created_at: Option<String>,
   #[serde(default)]
   pub source: InterchangeSource,
+  /// Sections the producer included (`mods`, `profiles`, `crosshairs`).
   #[serde(default)]
   pub contents: Vec<String>,
   #[serde(default)]
@@ -180,6 +187,7 @@ impl InterchangeDocument {
     }
   }
 
+  /// Record that a section is present (idempotent).
   pub fn include(&mut self, section: &str) {
     if !self.contents.iter().any(|existing| existing == section) {
       self.contents.push(section.to_string());
@@ -187,6 +195,8 @@ impl InterchangeDocument {
   }
 }
 
+/// Parse an optional array section entry by entry; broken entries become
+/// warnings. Duplicate keys keep the first entry.
 fn parse_section<T: serde::de::DeserializeOwned>(
   object: &serde_json::Map<String, serde_json::Value>,
   name: &str,
@@ -215,6 +225,8 @@ fn parse_section<T: serde::de::DeserializeOwned>(
   parsed
 }
 
+/// Parse a document leniently: the envelope must be valid, but a single broken
+/// mod entry only costs that entry (reported as a warning), never the import.
 pub fn parse_document(json: &str) -> Result<InterchangeDocument, Error> {
   let raw: serde_json::Value = serde_json::from_str(json)
     .map_err(|e| Error::InvalidInput(format!("{MANIFEST_FILENAME} is not valid JSON: {e}")))?;
@@ -288,6 +300,7 @@ pub fn parse_document(json: &str) -> Result<InterchangeDocument, Error> {
         .collect()
     })
     .unwrap_or_default();
+  // Older documents have no `contents`: infer it from what is there.
   for (section, present) in [
     (SECTION_MODS, true),
     (SECTION_PROFILES, !profiles.is_empty()),
@@ -311,6 +324,8 @@ pub fn parse_document(json: &str) -> Result<InterchangeDocument, Error> {
   })
 }
 
+/// A profile may only point at mods the document carries; anything else is
+/// dropped with a warning instead of being guessed.
 pub fn drop_dangling_profile_entries(
   mods: &[InterchangeMod],
   profiles: &mut [InterchangeProfile],
@@ -332,6 +347,7 @@ pub fn drop_dangling_profile_entries(
   }
 }
 
+/// Accepts either a bundle directory or the path of its manifest file.
 pub fn manifest_path_for(path: &Path) -> PathBuf {
   if path.is_dir() {
     path.join(MANIFEST_FILENAME)
@@ -340,6 +356,9 @@ pub fn manifest_path_for(path: &Path) -> PathBuf {
   }
 }
 
+/// Read a bundle from disk and rewrite every file path to an absolute path.
+/// Paths that are absolute, contain `..`, or escape the bundle are dropped
+/// (the mod is then skipped at import time for having no files).
 pub fn read_bundle(path: &Path) -> Result<InterchangeDocument, Error> {
   let manifest_path = manifest_path_for(path);
   let json = std::fs::read_to_string(&manifest_path)
@@ -385,12 +404,14 @@ fn resolve_bundle_path(base: &Path, relative: &str) -> Option<PathBuf> {
   match joined.canonicalize() {
     Ok(canonical) if canonical.starts_with(base) => Some(canonical),
     Ok(_) => None,
+    // Missing files are reported by the importer, not here.
     Err(_) => Some(joined),
   }
 }
 
 pub use crate::mod_manager::file_tree::is_plain_vpk_name;
 
+/// Lowercase, filesystem-safe slug used for folder and file names.
 pub fn slugify(value: &str, max_len: usize) -> String {
   let mut slug = String::new();
   let mut last_dash = true;

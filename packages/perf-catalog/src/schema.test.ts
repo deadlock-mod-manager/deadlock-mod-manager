@@ -52,6 +52,7 @@ describe("bundled performance catalog", () => {
   });
 
   it("only uses null for commented-out entry values", () => {
+    // Rust reads most fields as plain values with a default; null fails there.
     const nulls: string[] = [];
     JSON.parse(readFileSync(CATALOG_PATH, "utf8"), (key, value) => {
       if (value === null && key !== "value") nulls.push(key);
@@ -144,6 +145,7 @@ describe("bundled performance catalog", () => {
       for (const setting of settings.flat()) {
         expect(setting.label).toBe(VIDEO_MENU.get(setting.key)?.label);
       }
+      // Older apps only read videoSettings, so it must be the default variant.
       if (variants.length > 0)
         expect(preset.videoSettings).toEqual(variants[0].settings);
     }

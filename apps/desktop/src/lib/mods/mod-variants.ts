@@ -6,6 +6,10 @@ import type {
 } from "@/types/mods";
 import type { VpkManifest } from "@/types/profiles";
 
+/**
+ * `downloads` lists every file the mod offers, so it only stands in when no
+ * selection was ever recorded.
+ */
 export const getQueuedDownloads = (mod: LocalMod): ModDownloadItem[] =>
   mod.selectedDownloads?.length ? mod.selectedDownloads : (mod.downloads ?? []);
 
@@ -20,6 +24,7 @@ export const previousInstallSelection = (
   return wasInstalled ? mod.installedFileTree : undefined;
 };
 
+/** Selected downloads with one VPK each need no further file choice. */
 export const requiresFileSelection = (tree: ModFileTree): boolean => {
   if (!tree.has_multiple_files) return false;
   const archives = new Set<string>();
@@ -36,6 +41,8 @@ export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
   for (const f of files) {
     if (f.is_selected && f.archive_name) names.add(f.archive_name);
   }
+  // A tree that lists files but selects none is an explicit empty selection,
+  // not missing data, so the stale fallbacks below must not resurrect it.
   if (files.length > 0 && !files.some((f) => f.is_selected)) {
     return names;
   }
@@ -44,6 +51,8 @@ export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
       if (part) names.add(part);
     }
   }
+  // Only usable when nothing is known about the files on disk: the list keeps
+  // archives that were downloaded once but later deselected.
   if (
     names.size === 0 &&
     files.length === 0 &&
@@ -57,6 +66,8 @@ export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
   return names;
 };
 
+// Active archives the live list dropped still need a row to be unchecked;
+// deselecting reads only the name.
 export const withUnlistedActiveArchives = (
   downloads: ModDownloadItem[],
   activeArchiveNames: Set<string>,
@@ -77,6 +88,11 @@ export const withUnlistedActiveArchives = (
   return [...downloads, ...unlisted];
 };
 
+/**
+ * How many variants are currently active. Prefers archive-level counting, but
+ * mods installed before variant tracking existed carry no archive names, so we
+ * fall back to the enabled files on disk.
+ */
 export const deriveActiveVariantCount = (mod: LocalMod | null): number => {
   const archiveNames = deriveActiveArchiveNames(mod);
   if (archiveNames.size > 0) {
@@ -93,6 +109,11 @@ export const deriveActiveVariantCount = (mod: LocalMod | null): number => {
   return mod?.installedVpks?.length ?? 0;
 };
 
+/**
+ * The archives the user picked in the download dialog. Empty when the mod only
+ * ever offered one download, because then nothing was chosen and there is no
+ * decision to carry over.
+ */
 type DownloadTimeChoice = Pick<
   LocalMod,
   "downloads" | "selectedDownloads" | "activeVariantArchive"
@@ -120,6 +141,12 @@ const deriveDownloadTimeArchiveNames = (
   return names;
 };
 
+/**
+ * Turns the variant picked during download into a file selection, so enabling a
+ * mod does not ask the same question twice. Returns null when the choice cannot
+ * be applied - no choice was ever made, or none of the files on disk belong to
+ * the chosen archives - and the file selector has to be shown after all.
+ */
 export const applyDownloadTimeSelection = (
   mod: DownloadTimeChoice | null,
   fileTree: ModFileTree,
@@ -149,6 +176,9 @@ export const deriveFilesForArchive = (
     (f) => f.archive_name === archiveName,
   );
 
+// A replaced upload isn't reused: the tree may miss its files, and only a mod
+// update replaces the parked ones. Nor is a tree with entries without an
+// archive, since any of them may be this archive's file.
 export const deriveReusableFilesForArchive = (
   mod: LocalMod,
   archive: ModDownloadItem,

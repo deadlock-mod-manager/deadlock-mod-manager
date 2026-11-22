@@ -68,6 +68,7 @@ reviews:
   poem: false
   enable_prompt_for_ai_agents: true
   path_filters:
+    # Ignore generated / vendored / lock files from detailed review
     - "!**/*.lock"
     - "!**/pnpm-lock.yaml"
     - "!**/*.gen.ts"
@@ -78,6 +79,7 @@ reviews:
     - "!**/node_modules/**"
     - "!apps/desktop/src/locales/*.json"
   path_instructions:
+    # ── General Conventions ───────────────────────────────────────────
     - path: "**"
       instructions: >-
         This is a Tauri v2 desktop app monorepo (React + Rust) for managing
@@ -94,6 +96,7 @@ reviews:
         project structure (https://docs.deadlockmods.app/developer-docs/project-structure).
         For security-related changes, reference SECURITY.md in the repo root.
 
+    # ── Tauri Desktop App ──────────────────────────────────────────────
     - path: "apps/desktop/src-tauri/**"
       instructions: >-
         This is the Tauri v2 Rust backend. Review for memory safety, proper error
@@ -117,6 +120,7 @@ reviews:
         and no placeholders like {{variable}} are removed or altered. Do not
         review translation quality — that is handled by native speakers.
 
+    # ── API Server ─────────────────────────────────────────────────────
     - path: "apps/api/**"
       instructions: >-
         Bun + Hono API server. Ensure proper input validation with Zod schemas,
@@ -131,6 +135,7 @@ reviews:
         carefully for session handling, token management, and OAuth flow
         correctness. Ensure no secrets are leaked in responses.
 
+    # ── Discord Bot ────────────────────────────────────────────────────
     - path: "apps/bot/**"
       instructions: >-
         Discord.js bot with LangChain AI integration. Watch for rate limiting
@@ -138,6 +143,7 @@ reviews:
         injection in LLM-facing code. Ensure slash commands are registered
         correctly.
 
+    # ── Web App ────────────────────────────────────────────────────────
     - path: "apps/www/**"
       instructions: >-
         TanStack Start web app. Check for SSR compatibility issues, proper
@@ -149,6 +155,7 @@ reviews:
         Next.js documentation site with Fumadocs. Review for accuracy and
         proper MDX formatting.
 
+    # ── Shared Packages ────────────────────────────────────────────────
     - path: "packages/database/**"
       instructions: >-
         Drizzle ORM PostgreSQL package. Schema changes are critical — review
@@ -179,6 +186,7 @@ reviews:
         processors, proper retry/backoff configuration, and dead letter
         queue handling.
 
+    # ── Rust FFI Parsers ───────────────────────────────────────────────
     - path: "packages/vpk-parser/**"
       instructions: >-
         Rust VPK (Valve Pak) parser exposed via Bun FFI. Review for memory
@@ -196,6 +204,7 @@ reviews:
         for correct archive handling, file integrity checks, and
         backwards-compatible format changes.
 
+    # ── Infrastructure ─────────────────────────────────────────────────
     - path: "infrastructure/**"
       instructions: >-
         Kubernetes Helm charts. Check for resource limits, security contexts,
@@ -210,12 +219,14 @@ reviews:
         tags), proper secret usage, and no credential exposure in logs.
         Ensure workflow permissions follow least-privilege principle.
 
+    # ── Security ──────────────────────────────────────────────────────
     - path: "SECURITY.md"
       instructions: >-
         Security policy for the project. Changes here should be reviewed
         carefully — ensure reporting channels, response timelines, and
         security measures are accurate.
 
+    # ── Documentation Site ────────────────────────────────────────────
     - path: "apps/docs/content/docs/**"
       instructions: >-
         Project documentation source. These files are published to
@@ -223,6 +234,7 @@ reviews:
         and instructions are accurate. When reviewing PRs that touch
         both code and docs, verify the docs reflect the code changes.
 
+    # ── Configuration ──────────────────────────────────────────────────
     - path: "turbo.json"
       instructions: >-
         Turborepo pipeline config. Ensure task dependencies are correct
@@ -272,12 +284,14 @@ reviews:
       mode: warning
     custom_checks: []
   tools:
+    # ── AST-based analysis ───────────────────────────────────────────
     ast-grep:
       rule_dirs: []
       util_dirs: []
       essential_rules: true
       packages: []
 
+    # ── Relevant tools (languages/tech actually used) ────────────────
     shellcheck:
       enabled: true
     markdownlint:
@@ -328,6 +342,7 @@ reviews:
     checkov:
       enabled: true
 
+    # ── Disabled tools (languages/tech NOT in this repo) ─────────────
     ruff:
       enabled: false
     flake8:

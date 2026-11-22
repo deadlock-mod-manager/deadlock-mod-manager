@@ -12,11 +12,13 @@ import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
 
 export const getPerfCatalog = () => invoke<CatalogSummary>("perf_get_catalog");
 
+/** Adopts a newer catalog from the API when there is one; never fails on network errors. */
 export const refreshPerfCatalog = () =>
   invoke<CatalogSummary>("perf_refresh_catalog");
 
 export const getPerfStatus = () => invoke<PerfStatus>("perf_get_status");
 
+/** What applying the request would write, without writing it. */
 export const resolvePerfConfig = (request: PerfApplyRequest) =>
   invoke<ResolvedConfig>("perf_resolve", { request });
 
@@ -27,20 +29,25 @@ export const applyPerfConfig = (
 
 export const removePerfConfig = () => invokeGuarded<PerfStatus>("perf_remove");
 
+/** Writes the player's own video.txt back as it was before the first write. */
 export const restoreVideoBackup = () =>
   invokeGuarded<PerfStatus>("perf_restore_video_backup");
 
+/** Makes the current video.txt the player's own: the copy Restore brings back. */
 export const adoptVideo = () => invoke<PerfStatus>("perf_video_adopt");
 
+/** Writes the config's value back for video.txt settings changed in game. */
 export const writeConfigVideoValues = (keys: string[]) =>
   invokeGuarded<PerfStatus>("perf_video_use_config", { keys });
 
+/** Keeps the player's in-game value for video.txt settings changed in game. */
 export const keepVideoValues = (keys: string[]) =>
   invoke<PerfStatus>("perf_video_keep", { keys });
 
 export const reapplyPerfConfig = () =>
   invokeGuarded<PerfStatus>("perf_reapply");
 
+/** Writes the chosen config back if gameinfo.gi lost it; skipped while the game runs. */
 export const syncPerfConfig = () => invoke<boolean>("perf_sync");
 
 export const analyzePerfImport = (source: ImportSource) =>
@@ -52,6 +59,7 @@ export const exportPerfConfig = (request: PerfApplyRequest) =>
 export const searchConvars = (query: string, limit = 50) =>
   invoke<ConvarMeta[]>("perf_search_convars", { query, limit });
 
+/** Catalog entries for the given names; names it doesn't know are left out. */
 export const getConvars = (names: string[]) =>
   invoke<ConvarMeta[]>("perf_get_convars", { names });
 

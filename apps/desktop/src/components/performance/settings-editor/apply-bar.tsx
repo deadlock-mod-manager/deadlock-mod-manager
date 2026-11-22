@@ -11,6 +11,7 @@ type ApplyBarProps = {
   onApply: () => void;
 };
 
+/** Sticky footer while the editor holds edits, or a config that isn't the applied one. */
 export const ApplyBar = ({
   configName,
   unsavedCount,

@@ -20,6 +20,8 @@ const INITIAL: ShardExpectation = {
   shards: { [SHARD_ONE_WINNER]: 1, [OVERFLOW_CHALLENGER]: 2 },
   searchPaths: searchPathsFor(2),
 };
+// Loading the overflow mod first pulls it into shard 1 and pushes the mod that
+// was 99th across the boundary.
 const PROMOTED: ShardExpectation = {
   loadOrder: [
     OVERFLOW_CHALLENGER,
@@ -39,6 +41,7 @@ const readGroups = () =>
     severity: (await row.getAttribute("data-severity")) ?? "",
   }));
 
+/** Providers are listed in load order, so the first one is used in game. */
 const expectWinner = (first: string, second: string) =>
   browser.waitUntil(
     async () =>
@@ -68,6 +71,7 @@ describe("conflicts across addon shards", () => {
     if (process.env.DMM_E2E_PHASE === "cross-shard") {
       await assertShardLayout(world, "initial", INITIAL);
       await step("badge only the two conflicting mods", async () => {
+        // Both ship pak01_dir.vpk, in different shards; the rest never conflict.
         await browser.waitUntil(
           async () =>
             (await $$('[data-testid="mod-conflict-badge"]').length) === 2,

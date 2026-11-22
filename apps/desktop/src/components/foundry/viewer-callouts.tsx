@@ -11,15 +11,26 @@ export interface ViewerCallout {
 interface PlacedCallout extends ViewerCallout {
   anchorX: number;
   anchorY: number;
+  /** Which side of the hero the tag sits on. */
   side: "left" | "right";
 }
 
+/** Re-placed this often while the model animates or the camera moves. */
 const PLACE_INTERVAL_MS = 100;
+/** How far the tag sits from its anchor, in pixels. */
 const LEADER_PX = 110;
 const TAG_HEIGHT_PX = 24;
 
+/** Vertices read per mesh; enough to find a section's middle. */
 const SAMPLES_PER_MESH = 1500;
 
+/**
+ * Where each section's middle lands on screen, and which side its tag goes.
+ *
+ * The middle is the mean of the section's posed vertices. A bounding box would
+ * be cheaper, but three.js boxes skinned meshes in their bind pose, so the tag
+ * would point where the part sits before the animation moves it.
+ */
 const place = (
   callouts: readonly ViewerCallout[],
   root: THREE.Object3D,
@@ -70,6 +81,10 @@ const place = (
   });
 };
 
+/**
+ * Tags pinned to the selected sections, each joined to its spot on the model
+ * by a leader line, so the hero itself shows what is about to be painted.
+ */
 export const ViewerCallouts = ({
   callouts,
   modelRef,
@@ -78,6 +93,7 @@ export const ViewerCallouts = ({
 }: {
   callouts: readonly ViewerCallout[];
   modelRef: RefObject<THREE.Object3D | null>;
+  /** Stable across renders; the camera can be replaced with the scene. */
   getCamera: () => THREE.Camera | null;
   containerRef: RefObject<HTMLElement | null>;
 }) => {

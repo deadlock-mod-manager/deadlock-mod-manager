@@ -25,6 +25,7 @@ import { FiltersTriggerButton } from "./filters-trigger-button";
 type FiltersDropdownProps = {
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
+  // Omitted when NSFW mods are hidden globally, so the switch has nothing to show.
   nsfwOnly?: boolean;
   onNSFWOnlyChange?: (nsfwOnly: boolean) => void;
   audioQuickFilter?: AudioQuickFilter;
@@ -63,6 +64,8 @@ const SwitchRow = ({
   </div>
 );
 
+// The secondary filters. Content type, hero, and category live in the bar
+// itself; this menu holds the rarer refinements and counts only what it owns.
 const FiltersDropdown = ({
   hideNSFW,
   onHideNSFWChange,
@@ -101,6 +104,8 @@ const FiltersDropdown = ({
   ].filter(Boolean).length;
   const canReset = totalActiveFilters > 0 || !include;
 
+  // Audio and map are three-way (off/only/exclude), so their switch follows
+  // the match mode. NSFW and outdated are plain toggles.
   const quickFilterValue = (checked: boolean) =>
     checked ? (include ? "only" : "exclude") : "off";
 
@@ -123,6 +128,8 @@ const FiltersDropdown = ({
       <DropdownMenuContent
         align='start'
         className='w-80 divide-y divide-border/60 p-0'
+        // Keep the menu's typeahead and arrow keys away from the selects and
+        // date pickers inside it.
         onKeyDown={(e) => e.stopPropagation()}>
         <div className='flex items-center justify-between py-2 pr-2 pl-4'>
           <span className='font-semibold text-sm'>{t("filters.filters")}</span>

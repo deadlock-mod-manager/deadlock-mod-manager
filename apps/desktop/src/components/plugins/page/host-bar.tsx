@@ -30,6 +30,7 @@ type HostBarProps = {
   status: HostStatus;
   showAccess: boolean;
   onOpenAccess: () => void;
+  /** Omit when there is no frame to reload. */
   onReload?: () => void;
 };
 

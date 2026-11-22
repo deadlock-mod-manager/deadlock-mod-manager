@@ -1,4 +1,5 @@
 #![deny(clippy::disallowed_types)]
+// Prevents additional console window on Windows in release
 #![cfg_attr(
   all(not(debug_assertions), target_os = "windows"),
   windows_subsystem = "windows"
@@ -147,6 +148,9 @@ pub fn run() {
 
   #[cfg(feature = "e2e-harness")]
   {
+    // tauri-plugin-wdio installs a fallback logger during setup. Register it
+    // after the application logger so the plugin observes the existing logger
+    // instead of preventing tauri-plugin-log from initializing.
     builder = builder.plugin(tauri_plugin_wdio::init());
     if std::env::var("WDIO_EMBEDDED_SERVER").as_deref() == Ok("true") {
       builder = builder.plugin(tauri_plugin_wdio_webdriver::init());

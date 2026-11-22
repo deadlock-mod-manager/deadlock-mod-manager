@@ -4,6 +4,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import type { LocalMod } from "@/types/mods";
 
+/** A mod's cover, blurred when NSFW, or a package icon when it has none. */
 export const ModCover = ({
   mod,
   className,

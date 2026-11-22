@@ -92,6 +92,8 @@ export const createServerProfilesSlice: StateCreator<
       (a, b) => new Date(a.lastUsed).getTime() - new Date(b.lastUsed).getTime(),
     );
 
+    // Walk oldest-first and skip the last-joined entry; pre-slicing would
+    // leave the cache stuck above the cap when it happens to be the oldest.
     let toEvict = entries.length - MAX_STAGED_SERVERS;
     for (const entry of sorted) {
       if (toEvict <= 0) break;

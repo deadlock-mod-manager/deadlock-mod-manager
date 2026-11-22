@@ -3,6 +3,11 @@ import { step } from "./evidence";
 
 type DeepLinkData = { download_url: string; mod_type: string; mod_id: string };
 
+/**
+ * E2E builds skip the deep-link plugin's setup and the single-instance plugin,
+ * so nothing outside the app can open a link. This emits the event the Rust
+ * handler emits after validating a `deadlock-mod-manager:` URL.
+ */
 export const sendDeepLink = (modId: string, fileId: number) =>
   step(`open 1-click link for ${modId}/${fileId}`, () =>
     browser.execute(
@@ -19,6 +24,7 @@ export const sendDeepLink = (modId: string, fileId: number) =>
     ),
   );
 
+/** Sonner toasts currently on screen. */
 export const visibleToasts = () =>
   browser.execute(() =>
     Array.from(document.querySelectorAll("[data-sonner-toast]")).map(

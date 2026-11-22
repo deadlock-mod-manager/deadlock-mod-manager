@@ -41,6 +41,7 @@ const DESTINATIONS: FoundryExportDestination[] = [
   "replaceSource",
 ];
 
+/** Turn a hero name into a filesystem-safe VPK filename. */
 const suggestedFileName = (name: string): string => {
   const slug = name
     .toLowerCase()
@@ -49,6 +50,10 @@ const suggestedFileName = (name: string): string => {
   return `${slug || "foundry_skin"}_dir.vpk`;
 };
 
+/**
+ * Review what changed, pick where it goes, build the VPK. A sheet over the
+ * workspace rather than a dialog, so the work stays in view behind it.
+ */
 export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation();
   const { manifest, busy, exportVpk, captureHero } = useFoundry();
@@ -62,6 +67,7 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
     t("foundry.export.defaultModName", { hero: heroName }),
   );
   const [result, setResult] = useState<FoundryExportResult | null>(null);
+  // Capture the finished skin while the viewer is still mounted behind the sheet.
   const [heroStill, setHeroStill] = useState<string | null>(null);
   useEffect(() => {
     if (!result) return;
@@ -106,6 +112,8 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
         name: destination === "newMod" ? modName.trim() || heroName : heroName,
       });
       if (exported.destination === "newMod" && exported.modId) {
+        // The backend created the mod on disk; the library is renderer state,
+        // so it has to be told here or the mod stays invisible until a scan.
         const now = new Date();
         addLocalMod(
           {

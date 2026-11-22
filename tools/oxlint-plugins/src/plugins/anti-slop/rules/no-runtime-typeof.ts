@@ -4,8 +4,14 @@ import { defineRule } from "@oxlint/plugins";
 
 const comparisonOperators = new Set(["===", "!==", "==", "!="]);
 
+/**
+ * `typeof x === "undefined"` guards platform globals and optional bindings, and `typeof x ===
+ * "function"` dispatches on callback-or-value union parameters. Neither narrows an undecoded
+ * payload, so neither is what this rule targets.
+ */
 const allowedTargets = new Set(["undefined", "function"]);
 
+/** Disallow runtime typeof checks that narrow unparsed values instead of decoding them. */
 export const noRuntimeTypeofRule = defineRule({
   meta: {
     type: "problem",
@@ -38,6 +44,8 @@ export const noRuntimeTypeofRule = defineRule({
           return;
         }
 
+        // Outside a comparison the operand is never narrowed — the result is a
+        // diagnostic string for a log line or error message.
         if (
           parent.type !== "BinaryExpression" ||
           !comparisonOperators.has(parent.operator)

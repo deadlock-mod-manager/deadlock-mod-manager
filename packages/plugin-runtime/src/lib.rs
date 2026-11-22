@@ -1,3 +1,7 @@
+//! Runtime-installed external plugins: packages unpacked from archives,
+//! interfaces served to sandboxed frames, and Rust/WASM backends running in
+//! supervised worker processes behind a permission broker. See `README.md`.
+
 mod abi;
 mod activity;
 mod adapter;
@@ -60,11 +64,14 @@ struct PluginServices {
 
 type RetireHook = Box<dyn Fn(&str) + Send + Sync>;
 type BlockedHook = Box<dyn Fn(&str, &ExternalPluginActivity) + Send + Sync>;
+/// Snapshot observations of one plugin, by resolved file path.
 type Observations = HashMap<PathBuf, Observation>;
 type NotificationHook = Box<dyn Fn(&str, &str, &str) + Send + Sync>;
 
+/// Notifications one plugin may show per [`NOTIFICATION_WINDOW`].
 const MAX_NOTIFICATIONS: usize = 3;
 const NOTIFICATION_WINDOW: Duration = Duration::from_secs(60);
+/// Files a plugin's snapshots watch at once before observations start over.
 const MAX_OBSERVED_FILES: usize = 64;
 
 pub struct PluginHost {
@@ -141,21 +148,27 @@ impl PluginHost {
     lock(&self.registry).runtime_enabled()
   }
 
+  /// The host starts suspended until the application restores the user's opt-in.
   pub fn set_runtime_enabled(&self, enabled: bool) {
     let _transition = lock(&self.runtime_transition);
     let ids = lock(&self.registry).set_runtime_enabled(enabled);
     for id in ids {
       self.retire(&id);
+      // Drain a call that passed authorization just before suspension, including
+      // one that had not spawned its worker when retire ran.
       self
         .supervisor
         .exclusive(&id, || self.supervisor.terminate(&id));
     }
   }
 
+  /// Called with the plugin id whenever its sessions are retired or its
+  /// pending update changes, so the Tauri layer can refresh that plugin.
   pub fn set_retire_hook(&self, hook: RetireHook) {
     let _ = self.retire_hook.set(hook);
   }
 
+  /// Called when a hostcall refusal is recorded as `blocked` activity.
   pub fn set_blocked_hook(&self, hook: BlockedHook) {
     let _ = self.blocked_hook.set(hook);
   }
@@ -184,6 +197,8 @@ impl PluginHost {
     self.adapter.as_ref()
   }
 
+  /// Called with the plugin id, title and body of every notification a
+  /// plugin is allowed to show.
   pub fn set_notification_hook(&self, hook: NotificationHook) {
     let _ = self.notification_hook.set(hook);
   }
@@ -204,6 +219,7 @@ impl PluginHost {
     f(entry.1.entry(path.to_path_buf()).or_default())
   }
 
+  /// Takes one of the plugin's notifications for the current window.
   fn allow_notification(&self, id: &str) -> bool {
     let mut notifications = lock(&self.notifications);
     let shown = notifications.entry(id.to_owned()).or_default();
@@ -253,6 +269,7 @@ impl PluginHost {
     }
   }
 
+  /// Recorded activity, newest first; `limit` is clamped to 1-100.
   pub fn activity(&self, id: &str, limit: usize) -> Result<Vec<ExternalPluginActivity>, Error> {
     lock(&self.registry).require(id)?;
     self
@@ -296,10 +313,16 @@ impl PluginHost {
       .collect()
   }
 
+  /// Installs or updates from an archive the user picked in host UI. New
+  /// installs start disabled and ungranted. An update that needs permissions
+  /// the grant does not cover waits as the pending update; the installed
+  /// version keeps running until the user applies or discards it.
   pub fn install(&self, archive: &Path) -> Result<ExternalPluginSummary, Error> {
     self.install_from(archive, ExternalPluginSource::File, None)
   }
 
+  /// Installs a downloaded catalog archive after checking it against the
+  /// SHA-256 the catalog published.
   pub fn install_catalog(
     &self,
     archive: &Path,
@@ -446,6 +469,10 @@ impl PluginHost {
     self.summary(&id)
   }
 
+  /// Installs the pending update. The user approved its requests, so they
+  /// become the grant; the picked file and profile stay when the new scopes
+  /// still allow them, and so does the enabled state while nothing is left
+  /// to pick.
   pub fn apply_update(
     &self,
     id: &str,
@@ -510,6 +537,8 @@ impl PluginHost {
     Ok(())
   }
 
+  /// Deletes the plugin's storage. Staged snapshots and deployment records
+  /// stay. The worker is stopped first and restarts on the next call.
   pub fn clear_data(&self, id: &str) -> Result<(), Error> {
     lock(&self.registry).update(id, |_| Ok(()))?;
     self.supervisor.terminate(id);
@@ -520,6 +549,9 @@ impl PluginHost {
     Ok(())
   }
 
+  /// Records the user's consent for every required request, with the file
+  /// or folder and the profile the user picked in host UI. Each is required
+  /// exactly when a request needs it.
   pub fn grant(
     &self,
     id: &str,
@@ -652,6 +684,8 @@ impl PluginHost {
     self.summary(id)
   }
 
+  /// Removes the package, its grant and its private data. Mods it deployed
+  /// stay installed in their profile as ordinary local mods.
   pub fn remove(&self, id: &str) -> Result<(), Error> {
     self.retire(id);
     let removed = lock(&self.registry).remove(id)?;
@@ -705,6 +739,8 @@ impl PluginHost {
     );
   }
 
+  /// A UI command from a verified plugin view session. Authentication
+  /// failures are errors; everything after that is a JSON envelope.
   pub fn ui_call(
     &self,
     id: &str,
@@ -761,6 +797,8 @@ impl PluginHost {
     }
   }
 
+  /// Runs `tick` for every enabled backend on a fixed schedule, one call per
+  /// plugin at a time, skipping plugins whose worker is still busy.
   pub fn start_scheduler(self: &Arc<Self>) {
     let host = Arc::downgrade(self);
     let spawned = std::thread::Builder::new()
@@ -802,6 +840,8 @@ impl PluginHost {
   }
 }
 
+/// Canonicalizes a picked path. A folder must exist; a file may not exist
+/// yet, but its folder must.
 fn canonical_pick(path: &Path, kind: ExternalPluginFileKind) -> Result<PathBuf, Error> {
   if !path.is_absolute() {
     return Err(invalid("Select an absolute path"));

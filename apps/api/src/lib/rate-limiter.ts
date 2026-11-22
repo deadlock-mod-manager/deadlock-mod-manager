@@ -1,17 +1,24 @@
 import { redis } from "./redis";
 
 interface RateLimitConfig {
+  /** Maximum number of requests allowed within the window */
   maxRequests: number;
+  /** Time window in seconds */
   windowSeconds: number;
 }
 
 interface RateLimitResult {
   allowed: boolean;
   remaining: number;
+  /** Seconds until the current window resets (from Redis TTL). */
   resetSeconds: number;
   retryAfterSeconds: number;
 }
 
+/**
+ * Redis-backed fixed-window rate limiter.
+ * Uses an atomic Lua script to avoid race conditions between INCR and EXPIRE.
+ */
 export async function checkRateLimit(
   key: string,
   config: RateLimitConfig,

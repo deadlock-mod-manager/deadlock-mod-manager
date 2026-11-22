@@ -52,6 +52,7 @@ const readManifest = async (world: string) => {
   );
 };
 
+/** Which skins' Haze model the game would mount from gameinfo.gi right now. */
 const readLoadedHazeModels = async (world: string) => {
   const {
     configuration: { roots },
@@ -105,6 +106,7 @@ const expectOnlyHaze = (world: string, active: string) =>
       assert.equal(manifest.mods[other].enabled, false);
       assert.deepEqual(manifest.mods[other].currentVpks, []);
     }
+    // The bug report: the old skin keeps showing in game after the swap.
     const { searchPaths, loaded } = await readLoadedHazeModels(world);
     assert.deepEqual(
       loaded.map((entry) => entry.split(" ")[0]),
@@ -119,6 +121,7 @@ describe("hero mod swap (#741)", () => {
     const world = runtime.roots.world;
     await navigate("my-mods");
     if (process.env.DMM_E2E_PHASE === "swap") {
+      // Start from one active Haze skin and a second one downloaded.
       await setModEnabled(world, HAZE_SWAP, false);
       await expectOnlyHaze(world, HAZE_CURRENT);
 
@@ -138,6 +141,7 @@ describe("hero mod swap (#741)", () => {
       });
       await expectOnlyHaze(world, HAZE_SWAP);
 
+      // Fully removing the previous skin must not bring it back either.
       await deleteMod(world, HAZE_CURRENT);
       await expectOnlyHaze(world, HAZE_SWAP);
     } else if (process.env.DMM_E2E_PHASE === "restart-swap") {

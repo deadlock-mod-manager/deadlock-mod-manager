@@ -2,6 +2,10 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useId } from "react";
 import type { Locale } from "@/lib/i18n/locales";
 
+/**
+ * Small flag artwork per language. Inline SVG rather than emoji: Windows,
+ * where most visitors are, renders flag emoji as two letters.
+ */
 const FLAGS = {
   en: (
     <>
@@ -67,6 +71,7 @@ export const LocaleFlag = ({
   locale: Locale;
   className?: string;
 }) => {
+  // The same flag can render twice on a page (trigger and menu).
   const clipId = useId();
   return (
     <svg
@@ -77,6 +82,7 @@ export const LocaleFlag = ({
         <rect width='30' height='20' rx='2.5' />
       </clipPath>
       <g clipPath={`url(#${clipId})`}>{FLAGS[locale]}</g>
+      {/* Hairline edge so dark stripes don't dissolve into dark surfaces. */}
       <rect
         x='0.5'
         y='0.5'

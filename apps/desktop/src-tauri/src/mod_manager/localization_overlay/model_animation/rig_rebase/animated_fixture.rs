@@ -1,3 +1,4 @@
+//! Opt-in corpus proof using real current NM clips and the authored weighted mesh.
 use super::*;
 use source2_model::{nm_anim::NmAnimation, vmesh::RenderModel};
 
@@ -5,6 +6,7 @@ fn sample_worlds(animation: &NmAnimation, time: f32) -> BTreeMap<String, Transfo
   let samples = animation.sample_pose(time, true).unwrap();
   let mut worlds: Vec<Transform> = Vec::new();
   for (i, sample) in samples.iter().enumerate() {
+    // The independent decoder returns glTF Y-up; this proof uses Source Z-up.
     let [x, y, z] = sample.translation.map(f64::from);
     let [a, b, c, d] = sample.rotation.map(f64::from);
     assert!(
@@ -102,6 +104,7 @@ pub(in super::super) fn verify(
       }
     }
   }
+  // This fixture must expose the seated-vs-standing binding error, not just parse.
   assert!(
     canonical_error > 100.,
     "fixture did not expose articulated bind-frame error"

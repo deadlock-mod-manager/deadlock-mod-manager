@@ -145,6 +145,7 @@ fn collect_sites(
     }
 }
 
+// Legacy AST positions count Unicode scalar values; source edits need UTF-8 bytes.
 struct CharOffsets {
     bytes: Option<Vec<usize>>,
     shift: usize,

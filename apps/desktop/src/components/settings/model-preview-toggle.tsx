@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 
+/** The Hero Skins panel's 3D preview. The Mod Foundry always shows its model. */
 export const ModelPreviewToggle = () => {
   const { t } = useTranslation();
   const enabled = usePersistedStore((state) => state.foundry3dPreviewEnabled);

@@ -1,3 +1,13 @@
+/**
+ * Builds the installable plugin archive:
+ *   1. compiles the Rust backend to wasm32-unknown-unknown,
+ *   2. bundles the React UI with Vite,
+ *   3. assembles dist/package and writes a reproducible ZIP from it.
+ *
+ * The ZIP stores entries uncompressed, in byte order of their paths, with a
+ * fixed 1980-01-01 timestamp and no extra fields, so identical inputs and
+ * toolchains always produce an identical archive.
+ */
 import { createHash } from "node:crypto";
 import {
   copyFileSync,
@@ -51,6 +61,9 @@ function run(command: string[], env: Record<string, string> = {}) {
 
 function buildBackend() {
   const cargoHome = process.env.CARGO_HOME ?? join(homedir(), ".cargo");
+  // Strip machine-specific paths from panic locations so the module is
+  // byte-identical across checkouts. CARGO_ENCODED_RUSTFLAGS keeps paths with
+  // spaces intact.
   const sysroot = Bun.spawnSync(["rustc", "--print", "sysroot"])
     .stdout.toString()
     .trim();
@@ -128,6 +141,7 @@ function crc32(bytes: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+/** Minimal stored-entry ZIP writer; see the file header for why. */
 function writeZip(entries: { name: string; data: Uint8Array }[]): Uint8Array {
   const DOS_DATE_1980_01_01 = (0 << 9) | (1 << 5) | 1;
   const UTF8_NAMES = 0x0800;

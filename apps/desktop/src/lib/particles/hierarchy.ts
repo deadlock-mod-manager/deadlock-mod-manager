@@ -14,6 +14,7 @@ export interface ParticleHierarchyNode {
   releaseAt: number | null;
 }
 
+/** One deterministic timeline for a hierarchy; children never replay independently. */
 export class ParticleHierarchy {
   readonly nodes: ParticleHierarchyNode[] = [];
   age = 0;
@@ -73,6 +74,7 @@ export class ParticleHierarchy {
     }
   }
 
+  /** Release active systems, cancel unreached ordinary children, and arm end caps. */
   release() {
     if (this.released) return;
     this.released = true;
@@ -136,6 +138,10 @@ export class ParticleHierarchy {
     }
   }
 
+  /**
+   * Inherit transforms by value, then apply each system's own drivers and operators.
+   * The callback can also apply preview charge/target inputs in Source coordinates.
+   */
   placeControlPoints(
     place: (node: ParticleHierarchyNode) => void,
     snap: boolean,

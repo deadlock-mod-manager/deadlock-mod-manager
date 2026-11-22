@@ -30,10 +30,11 @@ const PluginEntry = () => {
 
   useEffect(() => {
     let cancelled = false;
+    // Always clear prior module state when plugin changes or effect reruns
     setModule(null);
     (async () => {
       if (!plugin?.entryImporter) {
-        return;
+        return; // module already reset above so UI clears
       }
 
       try {
@@ -43,6 +44,7 @@ const PluginEntry = () => {
           return;
         }
 
+        // Attempt to resolve both ESM default export and direct export
         const record =
           typeof mod === "object" && mod
             ? (mod as Record<string, unknown>)

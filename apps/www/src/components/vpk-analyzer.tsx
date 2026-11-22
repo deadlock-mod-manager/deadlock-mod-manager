@@ -30,6 +30,7 @@ export function VpkAnalyzer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { analytics } = useAnalyticsContext();
 
+  // Use a ref to store the current file analyses to avoid stale closure issues
   const fileAnalysesRef = useRef<FileAnalysisState[]>([]);
   fileAnalysesRef.current = fileAnalyses;
 
@@ -105,6 +106,7 @@ export function VpkAnalyzer() {
 
         await Promise.allSettled(analysisPromises);
 
+        // Track analysis completed
         if (analytics.isEnabled) {
           const endTime = Date.now();
           const durationSeconds = (endTime - startTime) / 1000;

@@ -52,6 +52,7 @@ fn validate_update_url(url: &str) -> Result<reqwest::Url, Error> {
 
 fn bundle_directory(cache: &Path) -> Result<tempfile::TempDir, Error> {
   std::fs::create_dir_all(cache)?;
+  // Flatpak's /tmp is private; the app cache has the same path on the host.
   Ok(
     tempfile::Builder::new()
       .prefix("dmm-update-")
@@ -121,6 +122,7 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
     },
   )
   .await?;
+  // Re-executing /app inside this sandbox would start the old deployment again.
   relaunch::schedule(scope, &cache).await?;
   app_handle.exit(0);
   Ok(())

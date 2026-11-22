@@ -127,11 +127,18 @@ const ConfigFoundDialog = ({
   );
 };
 
+/**
+ * Asks what to do with a performance config found in a downloaded mod's
+ * archive. Mods the user chose not to be asked about again are skipped, and
+ * their staged files discarded.
+ */
 export const ConfigFoundListener = () => {
   const [queue, setQueue] = useState<ConfigFoundEvent[]>([]);
 
   useEffect(() => {
     downloadManager.setConfigFoundHandler((found) => {
+      // Asking still works while Performance is experimental (reviewing opts
+      // in), but not once the user turned the feature off.
       const state = usePersistedStore.getState();
       if (
         !state.features.performance ||

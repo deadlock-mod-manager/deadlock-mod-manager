@@ -16,6 +16,7 @@ import {
 } from "@/types/profiles";
 import type { ProfilesState } from "./profiles";
 
+// Bun evaluates static imports before module mocks; load the slice after its IPC/API mocks.
 const { createProfilesSlice } = await import("./profiles");
 
 const defaultProfileId = createProfileId("default");

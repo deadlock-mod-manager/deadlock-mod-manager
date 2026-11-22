@@ -156,17 +156,25 @@ const SETTINGS_SOURCES = [
   "../pages/settings.tsx",
 ];
 
+// Files under components/settings that are not part of the settings page.
 const IGNORED_FILES = new Set([
-  "add-setting.tsx",
-  "restore-backup-dialog.tsx",
-  "crosshairs-toggle.tsx",
+  "add-setting.tsx", // create-launch-option dialog fields
+  "restore-backup-dialog.tsx", // restore strategy choices inside a dialog
+  "crosshairs-toggle.tsx", // rendered on the crosshairs page
 ]);
 
-const IGNORED_LABELS = new Set(["settings.backupWillRemoveOldest"]);
+// Label/description pairs that are not standalone settings.
+const IGNORED_LABELS = new Set([
+  "settings.backupWillRemoveOldest", // warning shown next to the backup count
+]);
 
 const TRANSLATION_CALL_REGEX = /\bt\(\s*"([\w.]+)"/g;
 const SEARCH_ID_PROP_REGEX = /\bsearchId='([\w-]+)'/g;
 
+/**
+ * A key is treated as a setting label when the same file also renders its
+ * description: `foo` + `fooDescription`, or `x.title` + `x.description`.
+ */
 const findSettingLabels = (source: string) => {
   const keys = new Set(
     Array.from(source.matchAll(TRANSLATION_CALL_REGEX), ([, key]) => key),
@@ -214,6 +222,8 @@ describe("SETTINGS_SEARCH_INDEX", () => {
       }
     }
 
+    // Add these to SETTINGS_SEARCH_INDEX, or to an ignore list above if they
+    // are not user-facing settings.
     expect(missing).toEqual([]);
   });
 

@@ -234,6 +234,7 @@ export const assertUpgradedCatalog = (appData: string) => {
           .all(),
       )
       .map((row) => row.version);
+    // Every shipped migration ran, and the legacy-only 20260916000000 row is gone.
     assert.deepEqual(
       versions,
       readdirSync(CATALOG_MIGRATIONS)

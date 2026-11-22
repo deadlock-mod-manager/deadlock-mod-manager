@@ -1,13 +1,24 @@
 import type { PerfTier } from "../src/schema";
 
+/**
+ * An upstream gameinfo.gi we pin. Presets point at one; the DMM Clean
+ * consensus votes with all of them, one vote per lineage.
+ */
 export interface UpstreamFile {
   id: string;
   repo: string;
   path: string;
+  /**
+   * The author's recommended in-game settings, shown as a checklist. An
+   * author can ship several video.txt files; the first is the default.
+   */
   videos?: { path: string; label?: string }[];
+  /** `tag`: pin the latest release tag. `branch`: pin the last commit touching `path`. */
   track: "tag" | "branch";
   license: string;
+  /** Configs that derive from each other share a lineage and vote once. */
   lineage: string;
+  /** Pulls the author's version label out of the file when there is no tag. */
   versionPattern?: RegExp;
 }
 
@@ -123,9 +134,11 @@ interface PresetDefinition {
   highlights?: string[];
   notes?: string[];
   recommended?: boolean;
+  /** `UpstreamFile.id`, or `null` for DMM's own consensus preset. */
   upstream: string | null;
 }
 
+/** Listing order in the app. */
 export const PRESETS: PresetDefinition[] = [
   {
     id: "dmm-clean",

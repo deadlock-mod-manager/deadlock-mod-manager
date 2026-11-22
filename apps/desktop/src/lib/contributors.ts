@@ -20,6 +20,7 @@ export const CORE_TEAM: CoreMember[] = [
   { name: "Tylevo", login: "Tylevo", role: "core" },
 ];
 
+// Automation accounts GitHub reports as regular users.
 const AUTOMATION_LOGINS = new Set([
   "actions-user",
   "crowdin-bot",
@@ -57,6 +58,7 @@ export type Contributor = {
   contributions: number;
 };
 
+/** Community contributors from GitHub, most commits first, without bots or the core team. */
 export const getContributors = async (): Promise<Contributor[]> => {
   const origin = runtimeServiceOrigin("github", GITHUB_API_ORIGIN);
   const res = await fetch(`${origin}${CONTRIBUTORS_PATH}`, {

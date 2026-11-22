@@ -6,6 +6,11 @@ interface NSFWItem {
   isNSFW: boolean;
 }
 
+/**
+ * Custom hook to handle NSFW blur logic for mods
+ * @param item - The item with remoteId and isNSFW properties
+ * @returns shouldBlur boolean and handleNSFWToggle function
+ */
 export function useNSFWBlur(item?: NSFWItem | null) {
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const setPerItemNSFWOverride = usePersistedStore(

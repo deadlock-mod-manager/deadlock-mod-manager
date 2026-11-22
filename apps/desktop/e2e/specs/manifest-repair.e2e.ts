@@ -17,6 +17,11 @@ const awaitRepair = (world: string, label: string) =>
     isRepaired,
   );
 
+/**
+ * The broken state the user reports is a navigation badge counting mods stuck
+ * in a transfer. The sidebar renders on every route, so reading it there cannot
+ * race the page the application happens to be on.
+ */
 const assertNoQueuedDownloads = () =>
   step("no downloads are queued", async () => {
     const entry = await $('a[href="/downloads"]');
@@ -37,6 +42,7 @@ describe("manifest repair", () => {
     if (phase !== "repair" && phase !== "restart-repair")
       throw new Error("Unknown manifest repair phase");
 
+    // Seeded stale on the first process; already repaired and saved on the second.
     await awaitRepair(world, phase);
     await assertRepairDisk(world, phase);
     await assertNoQueuedDownloads();

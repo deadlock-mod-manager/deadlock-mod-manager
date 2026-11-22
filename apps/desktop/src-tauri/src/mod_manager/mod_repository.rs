@@ -2,6 +2,7 @@ use crate::mod_manager::file_tree::ModFileTree;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Represents a single mod in the system
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
   pub id: String,
@@ -18,6 +19,7 @@ pub struct Mod {
   pub original_vpk_names: Vec<String>,
 }
 
+/// Manages the repository of installed and tracked mods
 pub struct ModRepository {
   mods: HashMap<String, Mod>,
 }
@@ -29,14 +31,17 @@ impl ModRepository {
     }
   }
 
+  /// Add a mod to the repository
   pub fn add_mod(&mut self, mod_entry: Mod) -> Option<Mod> {
     self.mods.insert(mod_entry.id.clone(), mod_entry)
   }
 
+  /// Remove a mod from the repository
   pub fn remove_mod(&mut self, mod_id: &str) -> Option<Mod> {
     self.mods.remove(mod_id)
   }
 
+  /// Get a mod by ID
   pub fn get_mod(&self, mod_id: &str) -> Option<&Mod> {
     self.mods.get(mod_id)
   }

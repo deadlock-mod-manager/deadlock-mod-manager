@@ -27,11 +27,13 @@ export const CATEGORY_BAR: Record<ItemCategory, string> = {
   spirit: "bg-dl-spirit",
 };
 
+/** Soul counts with the active language's digit grouping. */
 export const useFormatSouls = () => {
   const format = useNumberFormat();
   return (souls: number): string => format.format(souls);
 };
 
+/** Shop descriptions ship with Panorama markup the page has no use for. */
 export const stripMarkup = (value: string | undefined): string => {
   if (!value) return "";
 

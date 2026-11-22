@@ -19,6 +19,7 @@ export type NetworkCheckStatus =
   | "warning"
   | "error";
 
+/** Keys under `networkDiagnostics.results` in the locale files. */
 export const NETWORK_CHECK_MESSAGES = [
   "online",
   "offline",
@@ -43,6 +44,7 @@ export const NETWORK_CHECK_MESSAGES = [
 
 type NetworkCheckMessage = (typeof NETWORK_CHECK_MESSAGES)[number];
 
+/** Keys under `networkDiagnostics.fixes` in the locale files. */
 export const NETWORK_FIXES = [
   "checkConnection",
   "restartRouter",
@@ -70,6 +72,7 @@ export type NetworkCheckResult = {
   message?: NetworkCheckMessage;
   params?: Record<string, string | number>;
   latencyMs?: number;
+  /** The address that was probed, so the user can see and share what failed. */
   url?: string;
   host?: string;
   fixes: NetworkFix[];
@@ -84,9 +87,11 @@ export type NetworkDiagnosticsDeps = {
   ) => Promise<ProbeResponse>;
   isOnline: () => boolean;
   inspectCatalog: () => Promise<CatalogSyncStatusDto>;
+  /** Only on Windows; resolves `null` when the setting can't be read. */
   readTcpAutoTuning?: () => Promise<TcpAutoTuningLevel | null>;
   proxyEnabled: boolean;
   origins: {
+    /** Cloudflare's trace endpoint, by bare IP and by hostname. */
     internet: string;
     dns: string;
     dmmApi: string;
@@ -122,6 +127,11 @@ type ProbeOutcome =
   | { kind: "timeout"; latencyMs: number }
   | { kind: "failed"; latencyMs: number; dns: boolean };
 
+/**
+ * A host that does not resolve fails within milliseconds and needs completely
+ * different advice than a blocked or dead server, so the transport error is
+ * inspected instead of being lumped in with every other failure.
+ */
 const isDnsFailure = (error: unknown): boolean => {
   const message = error instanceof Error ? error.message : String(error);
   return /dns|resolve|getaddrinfo|name not known|nodename|no such host/i.test(
@@ -137,6 +147,10 @@ const hostOf = (url: string): string => {
   }
 };
 
+/**
+ * The bare service address, without the probe path. That is what a user has to
+ * unblock or hand to support; which endpoint happened to be probed is noise.
+ */
 const originOf = (url: string): string => {
   try {
     return new URL(url).origin;
@@ -252,6 +266,8 @@ const checkInternet = async (
 ): Promise<NetworkCheckResult> => {
   const { origins } = context.deps;
   const direct = await probe(context.deps, `${origins.internet}${TRACE_PATH}`);
+  // Some networks block 1.1.1.1 outright; reaching the hostname still proves
+  // there is a way out.
   const viaHostname = direct.kind !== "response";
   const outcome = viaHostname ? await dnsProbe(context) : direct;
   const url = viaHostname ? origins.dns : origins.internet;
@@ -302,6 +318,9 @@ const checkDns = async (context: RunContext): Promise<NetworkCheckResult> => {
     };
   }
 
+  // Only a resolver error says anything about DNS. A timeout or a refused
+  // connection to a host that did resolve is a reachability problem, and
+  // sending the user off to change nameservers over it wastes their time.
   const dnsFailed = outcome.kind === "failed" && outcome.dns;
   const message = dnsFailed
     ? "dnsFailed"
@@ -394,6 +413,8 @@ const evaluateServiceProbe = (
     };
   }
 
+  // The DMM readiness probe answers 503 while it is up but its database or
+  // cache is not, so mods may still partially load.
   if (status === 503 && service.id === "dmmApi") {
     return {
       ...base,
@@ -481,6 +502,7 @@ const RESTRICTED_AUTO_TUNING = new Set<TcpAutoTuningLevel>([
   "restricted",
 ]);
 
+/** Names the level the way `Get-NetTCPSetting` prints it. */
 export const evaluateTcpAutoTuning = (
   level: TcpAutoTuningLevel,
 ): NetworkCheckResult => {
@@ -502,6 +524,7 @@ export const evaluateTcpAutoTuning = (
       };
 };
 
+/** The auto-tuning check only exists on Windows. */
 const checkIdsFor = (
   deps: Pick<NetworkDiagnosticsDeps, "readTcpAutoTuning">,
 ): NetworkCheckId[] =>
@@ -514,6 +537,11 @@ export const createPendingResults = (
 ): NetworkCheckResult[] =>
   checkIdsFor(deps).map((id) => ({ id, status: "pending", fixes: [] }));
 
+/**
+ * Runs every check in order, top to bottom, reporting each state change so a
+ * dialog can show progress as it happens. Later checks still run when earlier
+ * ones fail: a local API or a cached catalog can work without internet.
+ */
 export const runNetworkDiagnostics = async (
   deps: NetworkDiagnosticsDeps,
   onUpdate?: (results: NetworkCheckResult[]) => void,
@@ -535,6 +563,7 @@ export const runNetworkDiagnostics = async (
     deadlockApi: () => checkService(context, "deadlockApi"),
     deadlockAssets: () => checkService(context, "deadlockAssets"),
     catalog: () => checkCatalog(context),
+    // A setting that can't be read is left out rather than reported.
     tcpAutoTuning: async () => {
       const level = await deps.readTcpAutoTuning?.().catch(() => null);
       return level ? evaluateTcpAutoTuning(level) : null;

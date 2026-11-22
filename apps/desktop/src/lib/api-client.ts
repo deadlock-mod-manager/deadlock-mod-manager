@@ -109,6 +109,7 @@ export const getModAuthor = async (id: string) => {
   const profile = await apiRequest<{ author: ModAuthorDto; mods: ModDto[] }>(
     `/api/v2/mod-authors/${encodeURIComponent(id)}`,
   );
+  // An API from before contacts existed leaves the field out.
   profile.author.contacts ??= [];
   if (profile.author.provider !== "gamebanana") return profile;
   const mods = await getGameBananaCatalogMods(profile.author.remoteId);
@@ -132,6 +133,7 @@ export const getModDownloads = async (remoteId: string) => {
 export const checkModUpdates = async (
   mods: Array<{
     remoteId: string;
+    // Persisted store dates come back from JSON as ISO strings.
     installedAt: Date | string;
     selectedFileIds: string[];
     selectedFileNames: string[];

@@ -9,5 +9,7 @@ export const usePatchNotes = ({ enabled = true } = {}) =>
     enabled,
     staleTime: STALE_TIME_UPDATER,
     refetchOnWindowFocus: false,
+    // The dashboard shows its own inline retry; a toast on every launch
+    // while Steam is down would be noise.
     meta: { skipGlobalErrorHandler: true },
   });

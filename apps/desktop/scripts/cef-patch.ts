@@ -11,6 +11,9 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 
+// Pinned so upstream API changes on the `feat/cef` branches can't break CI
+// unannounced. The plugins revision is the `feat/cef` commit built against
+// this Tauri tag. Bump together with `TAURI_CEF_TAG` in `_build-cef.yml`.
 const TAURI_CEF_TAG = process.env.TAURI_CEF_TAG ?? "tauri-cef-v3.0.0-alpha.27";
 const PLUGINS_CEF_REV = "835adce473e8f059f6ba84660dd07bcb19fb9030";
 const TAURI_GIT = "https://github.com/tauri-apps/tauri";
@@ -21,6 +24,9 @@ const TAURI_CORE_CRATES = [
   "tauri-plugin",
   "tauri-utils",
 ];
+// Several crates.io releases enable `tauri/wry` for mobile targets, a feature
+// the CEF branch removed. Patch every official plugin we use from the matching
+// plugins branch so they also share its internal plugin dependencies.
 const CEF_PATCHED_PLUGINS = [
   "tauri-plugin-clipboard-manager",
   "tauri-plugin-deep-link",
@@ -35,6 +41,8 @@ const CEF_PATCHED_PLUGINS = [
   "tauri-plugin-store",
   "tauri-plugin-updater",
 ];
+// Optional Wry and E2E crates whose releases can require a newer Tauri than the
+// CEF branch ships. CEF builds never enable them, but Cargo still resolves them.
 const CEF_UNUSED_DEPENDENCIES = [
   "tauri-plugin-mcp-bridge",
   "tauri-plugin-wdio",
@@ -44,11 +52,15 @@ const PATCH_MARKER = "[patch.crates-io]";
 const CEF_TAURI_CONFIG = "src-tauri/tauri.cef.conf.json";
 const DEPENDENCIES_HEADER = "[dependencies]";
 
+// On `feat/cef` the CEF runtime is a standalone crate and `tauri` no longer has
+// `wry`/`cef` features, so CEF builds swap the Wry feature for one enabling an
+// optional `tauri-runtime-cef` dependency.
 const TAURI_WRY_LINE = `tauri-wry = [
   "tauri/wry",
   "dep:tauri-plugin-mcp-bridge",
   "tauri-plugin-dialog/gtk3",
 ]`;
+// RFD's GTK worker can dispatch CEF's GLib callbacks off the Chromium UI thread.
 const CEF_FEATURE_LINES =
   'tauri-wry = []\ncef = ["dep:tauri-runtime-cef", "tauri-plugin-dialog/xdg-portal"]';
 const CEF_DEPENDENCY_LINE = `tauri-runtime-cef = { git = "${TAURI_GIT}", tag = "${TAURI_CEF_TAG}", optional = true, features = ["devtools"] }`;
@@ -125,6 +137,8 @@ const CEF_METADATA_ARGS = [
   "cef,match-sync",
 ];
 
+// Adds lock entries for dependencies the Wry lockfile gained since the last
+// sync, without bumping the pinned Tauri crates like `update-lockfile` does.
 function syncCefLockfile(): number {
   ensureCefSetup();
   const result = spawnSync("cargo", CEF_METADATA_ARGS, {
@@ -196,6 +210,8 @@ function injectCefManifest(): void {
       `${DEPENDENCIES_HEADER}\n`,
       `${DEPENDENCIES_HEADER}\n${CEF_DEPENDENCY_LINE}\n`,
     );
+  // The CEF branch can trail crates.io releases, so the patched crates take
+  // whatever 2.x version it ships instead of the release the manifest asks for.
   for (const name of [...TAURI_CORE_CRATES, ...CEF_PATCHED_PLUGINS]) {
     updated = updated.replace(
       new RegExp(`^(${name} = (?:\\{ version = )?)"[^"]*"`, "gm"),
@@ -218,9 +234,12 @@ function stripCefManifest(): boolean {
     return true;
   }
 
+  // Setups injected before the manifest was backed up.
   const manifest = readUtf8(packageCargoToml);
+  // Match the dependency by prefix so cleanup still works after a pin bump.
   const updated = manifest
     .replace(/^tauri-runtime-cef = .*\n/m, "")
+    // Also restore setups injected before CEF selected its own dialog backend.
     .replace(/^tauri-wry = \[\]\ncef = \[.*\]\n/m, `${TAURI_WRY_LINE}\n`);
 
   if (updated === manifest) {
@@ -242,12 +261,15 @@ function isCefSetupCurrent(): boolean {
   );
 }
 
+// Re-injects from a clean state whenever the existing setup doesn't match the
+// current pins, so a tag bump never leaves a stale or duplicated patch behind.
 function ensureCefSetup(lockfile = cefCargoLock): boolean {
   if (isCefSetupCurrent()) {
     return false;
   }
 
   cleanupCefSetup();
+  // Read before changing the manifests so a missing vendored lock fails cleanly.
   const lock = readFileSync(lockfile);
   mkdirSync(dirname(workspaceCargoLockBackup), { recursive: true });
   copyFileSync(workspaceCargoLock, workspaceCargoLockBackup);
@@ -271,6 +293,14 @@ function cleanupCefSetup(): boolean {
   return patchRemoved || featureRemoved || lockRestored;
 }
 
+// CEF builds need `--features cef` passed twice: once to the Tauri CLI (before
+// `--`) so the bundler picks up libcef.dll, and once to cargo (after `--`)
+// alongside `--no-default-features` so the crate compiles against the cef
+// feature instead of the default wry feature. That drops every default, so the
+// other defaults (`match-sync`) are passed again. `tauri build` also gets the CEF
+// config overlay, which declares the Linux package dependencies Chromium needs.
+// Centralizing this here keeps every call site (package.json scripts, CI
+// steps) free of the contract.
 function injectCefFlags(command: string, args: string[]) {
   const tokens = [command, ...args];
   const tauriIdx = tokens.indexOf("tauri");

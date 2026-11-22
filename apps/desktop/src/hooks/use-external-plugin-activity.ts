@@ -9,6 +9,8 @@ import {
 } from "@/lib/external-plugins";
 import type { ExternalPluginBlockedEvent } from "@/types/generated/ExternalPluginBlockedEvent";
 
+/** A plugin's activity log, newest first, refetched when the plugin changes
+ * or the host blocks one of its requests. */
 export const useExternalPluginActivity = (pluginId: string) => {
   const queryClient = useQueryClient();
 

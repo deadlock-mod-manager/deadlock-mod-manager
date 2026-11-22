@@ -1,3 +1,7 @@
+//! Per-plugin activity: what a plugin staged, installed, wrote, fetched,
+//! announced or was refused, and what the user changed about it. Kept newest
+//! first in the plugin's data directory. Routine reads are not recorded.
+
 use super::manifest::ExternalPluginPermissionId;
 use crate::{Error, lock};
 use serde::{Deserialize, Serialize};
@@ -7,6 +11,8 @@ use std::sync::Mutex;
 use ts_rs::TS;
 
 pub const MAX_ENTRIES: usize = 100;
+/// A plugin that retries a refused call on every tick records it once per
+/// window instead of once per tick.
 const REPEAT_WINDOW_SECONDS: i64 = 60;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -64,6 +70,9 @@ impl ExternalPluginActivity {
     }
   }
 
+  /// Refusals, writes and fetches that repeat the newest entry within the
+  /// window are dropped, so a plugin doing the same thing on every tick
+  /// logs it once a minute.
   fn repeats(&self, newer: &Self) -> bool {
     use ExternalPluginActivityKind as Kind;
     let elapsed = chrono::DateTime::parse_from_rfc3339(&newer.at)
@@ -95,6 +104,7 @@ impl ActivityLog {
     }
   }
 
+  /// A corrupt log starts over instead of blocking new entries.
   fn load(&self) -> Result<Vec<ExternalPluginActivity>, Error> {
     match fs::read(&self.path) {
       Ok(bytes) => Ok(serde_json::from_slice(&bytes).unwrap_or_else(|error| {
@@ -106,12 +116,15 @@ impl ActivityLog {
     }
   }
 
+  /// Newest first, at most `limit` entries.
   pub fn list(&self, limit: usize) -> Result<Vec<ExternalPluginActivity>, Error> {
     let mut entries = self.load()?;
     entries.truncate(limit);
     Ok(entries)
   }
 
+  /// Adds `entry` as the newest one. Returns false when it repeats the
+  /// newest entry within the repeat window and was not recorded.
   pub fn record(&self, entry: &ExternalPluginActivity) -> Result<bool, Error> {
     let _writing = lock(&self.writing);
     let mut entries = self.load()?;

@@ -59,6 +59,7 @@ export function sortLibraryMods(
       const heroes = new Map(
         mods.map((mod) => [mod, resolveLocalModHero(mod).hero]),
       );
+      // Mods without a detected hero go last, then ties fall back to name.
       return [...mods].sort((a, b) => {
         const heroA = heroes.get(a);
         const heroB = heroes.get(b);

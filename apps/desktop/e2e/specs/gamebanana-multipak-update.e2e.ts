@@ -72,6 +72,7 @@ describe("multipak updates", () => {
           await expect(dialog).toHaveText(expect.stringContaining(mod.name));
         await dialog.$("button=Update All").click();
         await expect(dialog).not.toBeDisplayed({ wait: 30_000 });
+        // Both were already installed at v1, so wait for the v2 files too.
         await observeUntil(
           "v2 files recorded",
           () => readCatalogState(world),

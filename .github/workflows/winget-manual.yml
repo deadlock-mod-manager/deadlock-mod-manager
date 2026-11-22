@@ -39,6 +39,7 @@ jobs:
                 return;
               }
               
+              // List assets for debugging
               const exeAssets = release.assets.filter(asset => asset.name.endsWith('-setup.exe') && !asset.name.endsWith('-cef-setup.exe'));
               console.log(`EXE assets found: ${exeAssets.map(a => a.name).join(', ')}`);
               

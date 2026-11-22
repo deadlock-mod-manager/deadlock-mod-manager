@@ -18,6 +18,8 @@ import { assertConflictDisk, pairKey } from "../support/conflict-oracle";
 import { step } from "../support/evidence";
 import { navigate } from "../support/ui";
 
+// A closed Radix menu or dialog can leave body pointer-events disabled,
+// which blocks every click without showing anything on screen.
 const expectBodyUnlocked = (after: string) =>
   browser.waitUntil(
     async () =>
@@ -31,6 +33,7 @@ const expectBodyUnlocked = (after: string) =>
 
 type ShownGroup = { providers: string; severity: string };
 
+/** Providers are listed in load order, so this also asserts who is used in game. */
 const shown = (severity: string, ...providers: string[]): ShownGroup => ({
   providers: providers.join(","),
   severity,
@@ -93,6 +96,7 @@ const expectSharedFiles = (providers: string[], expected: string[]) =>
     },
   );
 
+/** The per-file ignore button only shows while its row is hovered. */
 const ignoreFile = async (providers: string[], filePath: string) => {
   const row = await group(...providers);
   const toggle = await row.$('[data-testid="conflict-files-toggle"]');
@@ -167,6 +171,8 @@ describe("mod conflicts", () => {
 
       await openConflictsTab();
       await step("list the detected conflicts", async () => {
+        // The identical jacket and the packer noise files are not conflicts,
+        // so hat-jacket and pants-texture never share a group.
         await expectGroups([
           shown("critical", HAT_JACKET, HAT_PANTS),
           shown("normal", HAT_PANTS, PANTS_TEXTURE),
@@ -213,6 +219,7 @@ describe("mod conflicts", () => {
         });
         await section.click();
         const row = $('[data-testid="ignored-conflict"]');
+        // Fixture mods are named after their ids.
         await expect(row).toHaveText(
           `1 file shared by ${HAT_PANTS} and ${PANTS_TEXTURE}`,
           { containing: true },

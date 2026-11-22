@@ -72,6 +72,8 @@ impl EventJournal {
     if !replay {
       return;
     }
+    // Progress is replaceable state. Removing superseded samples must not
+    // expire cursors or allow a download to evict every operation outcome.
     if matches!(
       event_type,
       HostEventType::DownloadProgress | HostEventType::MatchScoreboardUpdated
@@ -181,6 +183,8 @@ impl EventJournal {
 }
 
 impl crate::PluginHost {
+  /// Accepts trusted, typed observations from the application's services.
+  /// Plugin callers cannot publish host events.
   pub fn publish_event(&self, event: HostEventData, operation_id: Option<String>) {
     let registry = lock(&self.registry);
     if registry.runtime_enabled() {
@@ -188,6 +192,7 @@ impl crate::PluginHost {
     }
   }
 
+  /// Initializes observed state without replaying old log entries as new events.
   pub fn seed_event(&self, event: HostEventData) {
     let registry = lock(&self.registry);
     if registry.runtime_enabled() {

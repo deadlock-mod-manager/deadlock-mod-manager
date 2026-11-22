@@ -12,6 +12,11 @@ const PATTERNS = FOUNDRY_PATTERNS.filter(
   (pattern): pattern is PatternName => pattern !== "none",
 );
 
+/**
+ * Swatches are pure pattern generation with no VPK read, so they are the same
+ * for every skin and every session. Caching them module-wide means the picker
+ * paints instantly after the first open.
+ */
 const swatchCache = new Map<PatternName, string>();
 
 const useSwatches = (): Map<PatternName, string> => {
@@ -27,6 +32,7 @@ const useSwatches = (): Map<PatternName, string> => {
         try {
           swatchCache.set(pattern, await foundryPatternSwatch(pattern, 0, 64));
         } catch (err) {
+          // A missing swatch only costs the tile its preview.
           logger.withError(err).warn("[Foundry] Pattern swatch failed");
         }
       }),
@@ -42,15 +48,18 @@ const useSwatches = (): Map<PatternName, string> => {
   return swatches;
 };
 
+/** The patterns shown before the grid is expanded, after "none". */
 const FEATURED: PatternName[] = ["camo", "carbon", "holo", "lava", "galaxy"];
 
 interface FoundryPatternPickerProps {
   value: FoundryPatternId;
   onChange: (pattern: FoundryPatternId) => void;
+  /** Every pattern, or "none" and a featured few plus the selected one. */
   expanded: boolean;
   disabled?: boolean;
 }
 
+/** A grid of pattern swatches, with "none" for a plain recolor. */
 export const FoundryPatternPicker = ({
   value,
   onChange,

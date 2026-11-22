@@ -5,6 +5,7 @@ import { PREVIEW_MODS } from "./app-preview/mods";
 import { CtaArrow, secondaryCta } from "./cta";
 import { ModCard } from "./mod-card";
 
+// Real community skins from the store snapshot, credited and linked to their pages.
 const FEATURED_SKIN_IDS = new Set([
   "691863",
   "656006",

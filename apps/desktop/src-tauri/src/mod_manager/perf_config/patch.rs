@@ -1,3 +1,48 @@
+//! The marker grammar and the text edits that apply or remove an overlay.
+//!
+//! Grammar (`<indent>` follows the entries around it; `<tab>` is a tab):
+//!
+//! ```text
+//!   ConVars
+//!   {
+//!     // ==== Deadlock Mod Manager · Performance BEGIN (config=<id> rev=<12 hex>) ====
+//!     // <name>: <credit line> [dmm-perf]
+//!     // <credit line> [dmm-perf]
+//!     "new_key"<tab><tab>"value"
+//!     // ==== Deadlock Mod Manager · Performance END ====
+//!     "fps_max"<tab><tab>"0" // dmm-perf was "400"
+//!     // dmm-perf removed: "some_key" "1"
+//!     "rate"
+//!     {
+//!       "max"<tab><tab>"2000000" // dmm-perf was "1000000"
+//!       "version"<tab><tab>"2" // dmm-perf added
+//!     }
+//!   }
+//!   SceneSystem
+//!   {
+//!     CSMCascadeResolution 512 // dmm-perf was 2048
+//!     "NewKey"<tab><tab>"1" // dmm-perf added
+//!   }
+//! ```
+//!
+//! - The BEGIN/END block goes right after the `ConVars {` line whenever the
+//!   overlay changes anything, because it is what tells a reader which config
+//!   and revision the file carries. New top-level ConVars keys go inside it.
+//! - Keys the file already has are edited in place at every occurrence (the
+//!   engine reads the last one, so leaving another one behind would make the
+//!   result depend on order) and are never also injected. Only the value token
+//!   changes; quoting, spacing and trailing comments stay. `was` records the
+//!   original token verbatim, quotes included.
+//! - New keys in other blocks go before the block's closing brace.
+//! - Removal works from the file alone: drop the block, the credit lines and
+//!   the `added` lines, restore `was` tokens, uncomment `removed:` lines. Every
+//!   line keeps its own line ending, so the result is byte-identical to the
+//!   file before apply, mixed line endings and a missing final newline
+//!   included.
+//! - Nothing we write contains `citadel/addons`, `SearchPaths` or the
+//!   SearchPaths markers, which other code looks for anywhere in the file, and
+//!   nothing is ever written inside `FileSystem`.
+
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Range;
@@ -25,6 +70,8 @@ const ADDED_TAG: &str = " // dmm-perf added";
 const REMOVED_TAG: &str = "// dmm-perf removed: ";
 const OWN_TAG: &str = "dmm-perf";
 
+/// Strings other code searches the whole file for. Writing one in a comment or
+/// a value would make DMM think mods are mounted or move its SearchPaths edit.
 const RESERVED: [&str; 4] = [
   "citadel/addons",
   "SearchPaths",
@@ -32,6 +79,8 @@ const RESERVED: [&str; 4] = [
   "// Deadlock Mod Manager - End",
 ];
 
+/// Lower-case fragments neutralized in free text we write as comments, so a
+/// config name can't spell a marker that we or another tool act on.
 const NEUTRALIZED: [(&str, &str); 9] = [
   ("citadel/addons", "citadel addons"),
   ("searchpaths", "search paths"),
@@ -48,10 +97,13 @@ pub struct OverlayPlan<'a> {
   pub config_id: &'a str,
   pub name: &'a str,
   pub rev: &'a str,
+  /// Entries whose status [`is_written`](super::types::EntryStatus::is_written).
   pub entries: Vec<&'a ResolvedEntry>,
+  /// Credit lines written under the BEGIN marker (author, source, licence).
   pub credits: Vec<String>,
 }
 
+/// Removes our overlay, returning the text without it and what it described.
 pub fn strip_overlay(text: &str) -> (String, Option<AppliedOverlay>) {
   let applied = read_overlay(text);
   if !mentions_own_markers(text) {
@@ -75,6 +127,10 @@ pub fn strip_overlay(text: &str) -> (String, Option<AppliedOverlay>) {
   (out, applied)
 }
 
+/// `line` without our markers, or `None` for a line only we wrote. Hand edits
+/// and other tools can stack text on our lines (a note after `added`, a second
+/// `was`, Grimoire's tag after ours), so the line is unwound until no marker
+/// is left; the first `was` holds the value from before any of them.
 fn strip_line(line: &str) -> Option<Cow<'_, str>> {
   let mut current = Cow::Borrowed(line);
   for _ in 0..=line.matches(OWN_TAG).count() {
@@ -88,6 +144,8 @@ fn strip_line(line: &str) -> Option<Cow<'_, str>> {
   Some(current)
 }
 
+/// The first line `strip_overlay` would act on, or any BEGIN/END marker, as
+/// `line N: <text>`.
 fn own_leftover(text: &str) -> Option<String> {
   if !mentions_own_markers(text) {
     return None;
@@ -103,6 +161,14 @@ fn own_leftover(text: &str) -> Option<String> {
     })
 }
 
+/// What our markers say about the overlay in `text`, or `None` without a
+/// BEGIN marker.
+///
+/// `hand_edited` is best effort. Markers record original values, not the ones
+/// we wrote, so a value changed by hand inside the block or on a `was` line is
+/// indistinguishable from ours. What the file alone does show: a `was` line
+/// set back to its original value, and marked lines that were commented out
+/// or no longer read as `key value`.
 pub fn read_overlay(text: &str) -> Option<AppliedOverlay> {
   if !text.contains(BEGIN_MARKER) {
     return None;
@@ -191,6 +257,8 @@ pub fn read_overlay(text: &str) -> Option<AppliedOverlay> {
   })
 }
 
+/// Applies `plan` to `base`, which must not carry our overlay. Fails rather
+/// than writing a file that doesn't parse or doesn't strip back to `base`.
 pub fn apply_overlay(base: &str, plan: &OverlayPlan) -> Result<String, Error> {
   if let Some(leftover) = own_leftover(base) {
     return Err(fail(format!(
@@ -340,6 +408,7 @@ pub fn apply_overlay(base: &str, plan: &OverlayPlan) -> Result<String, Error> {
   Ok(out)
 }
 
+/// The config id as the BEGIN marker records it.
 pub fn marker_config_id(config_id: &str) -> String {
   sanitize_comment(config_id)
     .chars()
@@ -353,6 +422,7 @@ pub fn marker_config_id(config_id: &str) -> String {
     .collect()
 }
 
+/// Whether a path segment can be written as a gameinfo.gi key.
 pub fn is_writable_key(key: &str) -> bool {
   !key.is_empty()
     && key
@@ -361,6 +431,8 @@ pub fn is_writable_key(key: &str) -> bool {
     && !contains_reserved(key)
 }
 
+/// Whether a value can be written between quotes without changing how the
+/// file parses or what other code finds in it.
 pub fn is_writable_value(value: &str) -> bool {
   !value
     .chars()
@@ -383,6 +455,7 @@ struct OwnedLine {
   eol: String,
 }
 
+/// Lines with their own endings; concatenating `content + eol` gives `text`.
 fn split_lines(text: &str) -> Vec<Line<'_>> {
   let mut lines = Vec::new();
   let mut rest = text;
@@ -412,6 +485,7 @@ fn split_lines(text: &str) -> Vec<Line<'_>> {
   lines
 }
 
+/// The line holding byte `offset`, given each line's start.
 fn line_at(starts: &[usize], offset: usize) -> usize {
   starts.partition_point(|&start| start <= offset) - 1
 }
@@ -434,6 +508,7 @@ fn indent_of(content: &str) -> &str {
   &content[..content.len() - content.trim_start_matches([' ', '\t']).len()]
 }
 
+/// Indentation of the block's first entry, when that entry starts its line.
 fn child_indent(sites: &[Site], parent: &Site, lines: &[Line], starts: &[usize]) -> Option<String> {
   let SiteKind::Object { open, close } = parent.kind else {
     return None;
@@ -454,6 +529,8 @@ fn format_entry(key: &str, value: &str) -> String {
   format!("\"{key}\"\t\t\"{value}\"")
 }
 
+/// `content` with the value token at `value` replaced, or commented out for
+/// `None`. `None` when the line holds more than this one entry.
 fn edit_line(content: &str, value: Range<usize>, new_value: Option<&str>) -> Option<String> {
   let entry = parse_entry_line(content)?;
   if entry.value_range != value {
@@ -485,6 +562,8 @@ fn edit_line(content: &str, value: Range<usize>, new_value: Option<&str>) -> Opt
   }
 }
 
+/// Whether `value` reads back as this one token without quotes. To the engine
+/// a `[` after a bare token starts a conditional (`40[$X360]`).
 fn is_bare_token(value: &str) -> bool {
   !value.is_empty()
     && !value.starts_with('#')
@@ -520,6 +599,7 @@ fn check_writable(entry: &ResolvedEntry) -> Result<(), Error> {
   Ok(())
 }
 
+/// The checks every patched file passes before it may be written.
 fn verify(
   base: &str,
   base_sites: &[Site],
@@ -574,6 +654,9 @@ fn verify(
   Ok(())
 }
 
+/// The checks `original` with our overlay stripped passes before it may be
+/// written. None of our lines holds a brace, so losing one means a line we
+/// drop was edited into something else.
 pub fn verify_stripped(original: &str, stripped: &str) -> Result<(), Error> {
   if brace_count(original) != brace_count(stripped) {
     return Err(fail(
@@ -594,6 +677,7 @@ fn contains_reserved(text: &str) -> bool {
     .any(|reserved| lower.contains(&reserved.to_ascii_lowercase()))
 }
 
+/// Free text made safe for a `//` comment line we own.
 fn sanitize_comment(text: &str) -> String {
   let mut out: String = text
     .chars()
@@ -633,6 +717,8 @@ enum OwnLine {
   Other,
 }
 
+/// Tags are found anywhere on the line: text after them (a note, another
+/// tool's marker) doesn't make the line any less ours.
 fn classify(content: &str) -> OwnLine {
   let trimmed = content.trim_start_matches([' ', '\t']);
   if trimmed.starts_with(BEGIN_MARKER) {
@@ -652,6 +738,9 @@ fn classify(content: &str) -> OwnLine {
   }
 }
 
+/// The END line closing the block that starts at `begin`. A block without one
+/// (the END line was deleted by hand) only loses its BEGIN and credit lines:
+/// without END there is no telling where our keys stop and the file's start.
 fn block_end(lines: &[Line], begin: usize) -> Option<usize> {
   for (index, line) in lines.iter().enumerate().skip(begin + 1) {
     match classify(line.content) {
@@ -679,6 +768,7 @@ fn restore_removed(content: &str) -> String {
   format!("{indent}{}", rest.strip_prefix(REMOVED_TAG).unwrap_or(rest))
 }
 
+/// The line before our `was` marker, and the original token it records.
 fn split_was(content: &str) -> (&str, Option<&str>) {
   let Some(position) = content.rfind(WAS_TAG) else {
     return (content, None);
@@ -688,6 +778,8 @@ fn split_was(content: &str) -> (&str, Option<&str>) {
   (&content[..position], token)
 }
 
+/// The line with our `was` marker removed and the recorded token put back.
+/// Anything after the token (a note added by hand) stays at the end.
 fn restore_was(content: &str) -> String {
   let (head, original) = split_was(content);
   let Some(original) = original else {
@@ -704,9 +796,12 @@ fn restore_was(content: &str) -> String {
   }
 }
 
+/// One `key value` line, split by the token rules kv-parser uses with escape
+/// sequences off.
 struct EntryLine<'a> {
   key: &'a str,
   value: &'a str,
+  /// The raw value token, quotes included, within the line.
   value_range: Range<usize>,
   rest: &'a str,
 }
@@ -724,6 +819,7 @@ fn parse_entry_line(content: &str) -> Option<EntryLine<'_>> {
   })
 }
 
+/// The token starting at `start`: its end and its text without quotes.
 fn read_token(content: &str, start: usize) -> Option<(usize, &str)> {
   let rest = content.get(start..)?;
   if let Some(quoted) = rest.strip_prefix('"') {
@@ -752,6 +848,7 @@ fn is_clean_entry(content: &str) -> bool {
   })
 }
 
+/// The key of an entry line, also when it has been commented out.
 fn commented_key(content: &str) -> Option<String> {
   let uncommented = content
     .trim_start()
@@ -760,6 +857,7 @@ fn commented_key(content: &str) -> Option<String> {
   parse_entry_line(uncommented).map(|entry| entry.key.to_string())
 }
 
+/// `key` under the innermost block that contains `offset`.
 fn path_at(sites: Option<&[Site]>, offset: usize, key: String) -> Vec<String> {
   let parent = sites.and_then(|sites| {
     sites

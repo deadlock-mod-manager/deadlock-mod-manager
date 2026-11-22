@@ -19,6 +19,7 @@ impl From<PickerError> for Error {
 }
 
 async fn picker(app: &AppHandle) -> Result<&'static ServerPicker, Error> {
+  // An isolated E2E world must never inspect or change the host firewall.
   if crate::runtime_environment::is_e2e_active() {
     return Err(Error::InvalidInput(
       "Server picker is unavailable in isolated E2E runs".into(),

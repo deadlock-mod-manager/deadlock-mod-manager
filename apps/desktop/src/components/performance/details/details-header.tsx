@@ -13,6 +13,7 @@ const openExternal = (url: string) =>
     logger.withError(error).error("Failed to open link");
   });
 
+/** Inline link for running text; `Trans` fills in the label. */
 export const ExternalLink = ({
   url,
   children,

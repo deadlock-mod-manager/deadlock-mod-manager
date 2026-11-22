@@ -16,6 +16,15 @@ import { observeUntil } from "../support/observations";
 import { findMod, setModEnabled } from "../support/shard-actions";
 import { navigate } from "../support/ui";
 
+// An unfixed mod that ships the same text file as a fixed one keeps that file
+// as shipped, so the fixed mod's repair is left out of the package. Its status
+// must then stop claiming anything: not "fixed", and not "works" either.
+
+/**
+ * Opens the mod's own page and waits for its health alert to match
+ * `expected`, returning what it last showed either way (undefined if it never
+ * read the alert).
+ */
 const modPage = async (modId: string, expected: string | null) => {
   await navigate("my-mods");
   await findMod(modId);
@@ -23,6 +32,7 @@ const modPage = async (modId: string, expected: string | null) => {
   await title.waitForClickable();
   await title.click();
   await expect(browser).toHaveUrl(expect.stringContaining(`/mods/${modId}`));
+  // Before the page loads, a missing alert proves nothing.
   await $("button*=Delete Mod").waitForDisplayed();
   let shown: string | null | undefined;
   await browser
@@ -53,6 +63,8 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
 
     await setModEnabled(world, RIVAL_MOD, true);
     await step("enable the unfixed mod sharing its file", async () => {
+      // The rebuild keeps the shared file as shipped, so the package loses
+      // the fixed mod's repair. That protection is intended.
       const repairs = await observeUntil(
         "repair package rebuilt without the fixed mod",
         () => readRepairState(world, STATUS.folder),

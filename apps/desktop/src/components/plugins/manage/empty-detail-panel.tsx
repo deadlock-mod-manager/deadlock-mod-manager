@@ -4,6 +4,7 @@ import { PANEL_CLASS } from "@/components/plugins/manage/panel-styles";
 import { RowButton } from "@/components/plugins/manage/row-button";
 import { cn } from "@/lib/utils";
 
+/** The detail panel's place when no external plugin is installed. */
 export const EmptyDetailPanel = ({ onBrowse }: { onBrowse: () => void }) => {
   const { t } = useTranslation();
   return (

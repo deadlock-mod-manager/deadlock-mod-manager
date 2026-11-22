@@ -16,10 +16,16 @@ use super::state::MANAGER;
 
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 
+/// Cancels the `start_game` call in flight. A finished launch leaves its token
+/// behind, and cancelling that is a no-op.
 static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
 
+/// Runs one `stop_game` at a time, from marking the session through undoing
+/// the marks on failure, so an earlier Stop's rollback can't overwrite a later
+/// Stop's marks.
 static STOP_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
+/// Protect staged mounts until launch succeeds, fails, or is cancelled.
 pub(super) static GAMEINFO_LAUNCH: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 async fn await_launched_game(
@@ -157,6 +163,8 @@ pub async fn start_game(
 
   let request = prepare_game_launch(vanilla, additional_args, profile_folder).await?;
 
+  // Preparation can't be interrupted, but Steam must not be asked to start
+  // the game once the player has cancelled.
   if cancel.is_cancelled() {
     return Err(Error::LaunchCancelled);
   }
@@ -170,6 +178,8 @@ pub async fn start_game(
   await_launched_game(monitor, cancel.cancelled()).await
 }
 
+/// Stops the in-flight `start_game`. Once Steam has the launch request the game
+/// may still start; this only stops waiting for it.
 #[tauri::command]
 pub fn cancel_launch() {
   if let Some(cancel) = LAUNCH_CANCEL.lock().unwrap().as_ref() {
@@ -177,6 +187,8 @@ pub fn cancel_launch() {
   }
 }
 
+/// Launch preparation can build the compatibility repair package, which parses
+/// every opted-in VPK, so it runs off the async worker threads.
 async fn prepare_game_launch(
   vanilla: bool,
   additional_args: String,
@@ -192,6 +204,13 @@ async fn prepare_game_launch(
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not prepare launch: {error}")))?
 }
 
+/// Launch the game without touching the search paths in `gameinfo.gi`.
+///
+/// The server-browser join flow writes its own (possibly layered) addon path
+/// set via `apply_server_gameinfo` before launching; going through
+/// `start_game` here would overwrite that with the active profile alone and
+/// the server's required mods would never load. The performance config, which
+/// never touches search paths, is still re-applied.
 #[tauri::command]
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
   let _gameinfo_launch = GAMEINFO_LAUNCH.lock().await;
@@ -216,6 +235,7 @@ pub async fn stop_game() -> Result<(), Error> {
     return Ok(());
   }
   let _stop = STOP_LOCK.lock().await;
+  // Before the kill, so the session's forced exit reads as ours.
   #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
   let stopped_session = crate::game_session::note_dmm_stop();
   #[cfg(target_os = "linux")]
@@ -224,6 +244,7 @@ pub async fn stop_game() -> Result<(), Error> {
       crate::game_session::note_dmm_stop_failed(stopped_session);
       return Err(error);
     }
+    // Without a PID, the session can't see the game exit on its own.
     crate::game_session::note_dmm_stop_completed(stopped_session);
     return Ok(());
   }
@@ -233,6 +254,9 @@ pub async fn stop_game() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn is_game_running() -> Result<bool, Error> {
+  // The sandbox hides the game. This is polled every few seconds, so a failed
+  // host check is logged instead of raising an error toast on every poll, and
+  // reports the last known state so it isn't taken for the game closing.
   #[cfg(target_os = "linux")]
   if crate::flatpak::running_in_flatpak() {
     return Ok(
@@ -244,6 +268,7 @@ pub async fn is_game_running() -> Result<bool, Error> {
         }),
     );
   }
+  // In E2E builds the scan sees only the world's stand-in game.
   let processes = MANAGER.lock().unwrap().game_processes()?;
   crate::game_session::observe(&processes);
   Ok(!processes.is_empty())
@@ -260,12 +285,16 @@ pub async fn get_installed_build_id() -> Result<Option<u64>, Error> {
   Ok(game_path.and_then(|path| installed_build_id(&path)))
 }
 
+/// Mirrors the "block actions while Deadlock is running" setting into the
+/// backend, which is where the guard actually runs.
 #[tauri::command]
 pub async fn set_game_file_guard(enabled: bool) -> Result<(), Error> {
   crate::game_guard::set_enforced(enabled);
   Ok(())
 }
 
+/// Arms the one-shot override behind the warning dialog's "continue anyway".
+/// Returns the token the confirmed retry passes back as `guardPermit`.
 #[tauri::command]
 pub async fn allow_next_game_file_operation(operation: String) -> Result<String, Error> {
   Ok(crate::game_guard::allow_next(operation))

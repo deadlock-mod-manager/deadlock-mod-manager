@@ -220,6 +220,7 @@ export const FileSelectorDialog = ({
             <div className='max-h-[50vh] overflow-y-auto pr-4'>
               <div className='space-y-4'>
                 {hasMultipleArchives ? (
+                  // Group view - show files grouped by archive
                   archiveNames.map((archiveName) => (
                     <div className='space-y-2' key={archiveName}>
                       <div className='flex items-center gap-2 border-b pb-2'>
@@ -300,6 +301,7 @@ export const FileSelectorDialog = ({
                     </div>
                   ))
                 ) : (
+                  // Single archive view - flat list
                   <div className='space-y-2'>
                     {localFileTree.files.map((file, index) => (
                       <button

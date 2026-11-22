@@ -10,6 +10,10 @@ import { featureForFlag, type OptionalFeature } from "@/lib/features";
 import { isPluginsBuilt } from "@/lib/runtime-bootstrap";
 import type { ExperimentalFeature } from "@/lib/store/slices/ui";
 
+/**
+ * Why an opted-in experiment does nothing: the Features tab keeps the feature
+ * it belongs to off.
+ */
 const blockedReason = (
   flag: ExperimentalFeature,
   flagOn: boolean,

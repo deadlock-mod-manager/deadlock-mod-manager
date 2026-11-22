@@ -50,6 +50,7 @@ describe("performance configs and video.txt", () => {
           [...expected].every(([key, value]) => settings.get(key) === value),
       );
     };
+    // The header and settings no config writes stay as the player had them.
     const assertPlayerLinesKept = async () => {
       const text = await readFile(paths.video, "utf8");
       assert.match(text, /^"video\.cfg"\r\n\{\r\n\t"Version"\t\t"20"\r\n/);

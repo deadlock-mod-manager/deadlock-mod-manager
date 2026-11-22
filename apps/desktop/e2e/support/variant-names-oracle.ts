@@ -50,6 +50,7 @@ const payload = (name: VariantName, version: VariantVersion) => {
   return fingerprint(variantVpk(variant.archive, version));
 };
 
+/** Whether the variant's installed copy holds that version's bytes. */
 export const hasInstalledVersion = async (
   world: string,
   name: VariantName,

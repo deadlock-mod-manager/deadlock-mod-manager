@@ -585,6 +585,8 @@ fn migration_and_atomic_rewrites_support_long_game_paths() {
   assert_eq!(fs::read_to_string(path).unwrap(), fixture());
 }
 
+/// A mount of the Default profile's folder outside DMM's block kept it loaded
+/// under every other profile (#1401).
 #[test]
 fn hand_added_mounts_of_managed_folders_are_removed_with_a_safety_copy() {
   use crate::mod_manager::vpk_manifest::ProfileVpkManifest;

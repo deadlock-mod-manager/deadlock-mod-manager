@@ -6,7 +6,7 @@ export const SENTRY_OPTIONS = {
   environment: env.NODE_ENV,
   tracesSampleRate: 0.01,
   release: `mirror-service@${version}`,
-  skipOpenTelemetrySetup: true,
+  skipOpenTelemetrySetup: true, // Skip OpenTelemetry setup, we'll use our own.
 };
 
 export enum MonitorSlug {

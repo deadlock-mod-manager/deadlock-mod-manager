@@ -41,6 +41,7 @@ function TermsComponent() {
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto max-w-6xl py-12'>
+        {/* Header */}
         <div className='mb-12 text-center'>
           <h1 className='mb-4 font-bold font-primary text-5xl tracking-tight'>
             Terms of Service

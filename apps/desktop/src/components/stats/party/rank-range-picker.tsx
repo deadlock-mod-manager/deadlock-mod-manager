@@ -24,6 +24,7 @@ interface RankRangePickerProps {
   onChange: (range: RankRange) => void;
 }
 
+/** Which ranks the party's stats come from, as a from-to pair of tiers. */
 export const RankRangePicker = ({
   range,
   rankAssets,
@@ -39,6 +40,7 @@ export const RankRangePicker = ({
   const minTier = range?.minTier ?? lowest;
   const maxTier = range?.maxTier ?? highest;
 
+  // Spanning every tier is the same request as no filter, so it is stored as one.
   const update = (from: number, to: number) =>
     onChange(
       from <= lowest && to >= highest

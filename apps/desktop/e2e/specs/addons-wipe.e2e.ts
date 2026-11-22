@@ -56,6 +56,7 @@ describe("a profile addons folder wiped outside DMM", () => {
           const notification = await $(
             '//*[@data-sonner-toast and contains(., "mods were removed because their files were deleted")]',
           );
+          // Startup can finish and its transient toast expire before WDIO attaches.
           const visible = await notification.isDisplayed();
           const message = visible
             ? await notification.getText()

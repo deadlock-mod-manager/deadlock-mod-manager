@@ -18,6 +18,7 @@ import { observeUntil } from "../support/observations";
 import { findMod, setModEnabled } from "../support/shard-actions";
 import { navigate } from "../support/ui";
 
+// What the library shows next to what a game started from Steam would load.
 const observe = async (world: string) => {
   const state = await readRepairState(world, REENABLE.folder);
   return {
@@ -29,6 +30,7 @@ const observe = async (world: string) => {
   };
 };
 
+// Enabling deletes the package; the background refresh rebuilds it.
 const settle = async (world: string) => {
   await observeUntil(
     "repair rebuilt after enabling",
@@ -55,6 +57,7 @@ describe("compatibility fix on a mod that comes back enabled", () => {
     await setModEnabled(world, REENABLED_MOD, false);
 
     const saved = await step("fix the disabled mod from its page", async () => {
+      // The library banner leaves out disabled mods; their page offers Fix.
       await findMod(REENABLED_MOD);
       await $(`//*[@title="${REENABLED_MOD}"]`).click();
       const alert = await $('[data-testid="mod-health-alert"]');

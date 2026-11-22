@@ -3,6 +3,8 @@ import { ThemeBackdrop } from "../../components/theme-backdrop";
 const GRID_SIZE = "64px";
 const GRID_LINE = "rgba(255, 255, 255, 0.07)";
 
+// Layers top to bottom: accent glow along the top edge, a vignette that fades the
+// grid out towards the edges, then the hairline grid on black.
 const BACKDROP_STYLE = {
   background: `
     radial-gradient(ellipse 50% 45% at 85% 0%, rgba(255, 30, 86, 0.16) 0%, transparent 70%),

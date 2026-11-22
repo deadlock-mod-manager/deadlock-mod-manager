@@ -104,6 +104,7 @@ export const RemoteInstallSettings = () => {
     useRemoteInstallSummary();
   const { unpair } = useRemoteInstallPairing();
 
+  // Reaching this section is what the Integrations tab hint points to.
   useEffect(() => {
     usePersistedStore.getState().markFeatureUsed("remote-install");
   }, []);

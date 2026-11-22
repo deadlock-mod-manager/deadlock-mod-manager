@@ -130,6 +130,7 @@ const MENU_HINT_MIN_MODS = 8;
 
 const CONTEXT_MENU_HINT_MIN_MODS = 5;
 
+// Below this, turning mods off one by one is about as quick as bisecting.
 const FIND_BROKEN_MOD_HINT_MIN_MODS = 6;
 
 const MODS_FOLDER_HINT_MIN_OPENS = 3;
@@ -300,6 +301,8 @@ const MyMods = () => {
     },
   });
 
+  // A pasted GameBanana id or link matches that mod exactly, without the
+  // fuzzy search's debounce.
   const idReference = parseGameBananaReference(librarySearchQuery);
 
   const displayMods = useMemo(() => {
@@ -352,6 +355,7 @@ const MyMods = () => {
       isConflictsTab ? ModFilter.All : activeTab,
     );
 
+    // Search results keep relevance order unless the user picked a sort.
     if (query.trim() && sortType === LibrarySortType.InstallOrder) {
       return statusFilteredMods;
     }
@@ -398,6 +402,7 @@ const MyMods = () => {
     [groupedDisplayMods, page, paginationEnabled],
   );
 
+  // Kept in a ref so toggleSelection stays stable for the memoized cards.
   const selectionScope = useRef({ visibleMods, selecting });
   useEffect(() => {
     selectionScope.current = { visibleMods, selecting };
@@ -434,6 +439,7 @@ const MyMods = () => {
     [activeProfileId],
   );
 
+  // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
   useEffect(() => {
     setPage(0);
   }, [
@@ -456,6 +462,7 @@ const MyMods = () => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // getOrderedMods reads the same localMods as `mods`, so `mods` is what invalidates it.
   const installedMods = useMemo(() => getOrderedMods(), [getOrderedMods, mods]);
 
   const {
@@ -464,6 +471,7 @@ const MyMods = () => {
     disabledModsCount,
     enabledVpkFileCount,
   } = useMemo(() => {
+    // Enable all leaves randomized groups to the launch roll.
     const rolled = randomizedGroupModIds(modGroups);
     let enabled = 0;
     let enableable = 0;

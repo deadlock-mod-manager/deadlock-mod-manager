@@ -16,6 +16,8 @@ import { navigate, waitForOverlaysClosed } from "../support/ui";
 import { crashReport } from "../support/crash-attribution-fixtures";
 const { PRIMARY } = reliabilityFixture;
 const modCard = () => $(`[data-library-mod="${PRIMARY.id}"]`);
+// E2E launches record game requests instead of starting Deadlock. Feed its real
+// event boundary; resource-to-VPK attribution is covered by Rust integration tests.
 const deliverReport = (report: SessionReport) =>
   browser.execute(
     (payload: SessionReport) =>

@@ -30,12 +30,16 @@ export const FeaturedModsCarousel = ({ mods, isLoading }: Props) => {
   const windowFocused = useWindowFocused();
   const sectionRef = useRef<HTMLElement>(null);
   const [selected, setSelected] = useState(0);
+  // The slide fading out underneath the incoming one.
   const [previous, setPrevious] = useState<number | null>(null);
   const activeAudioUrl = mods[selected]?.audioUrl;
+  // Don't slide away from a preview the user is listening to.
   const isPreviewing = useGlobalAudioStore(
     (s) => s.isPlaying && !!activeAudioUrl && s.currentUrl === activeAudioUrl,
   );
 
+  // Scrolled out of view, the progress bar stops (via CSS) so slides don't keep
+  // swapping and decoding images nobody sees.
   const hasSection = !isLoading && mods.length > 0;
   useEffect(() => {
     const section = sectionRef.current;
@@ -63,6 +67,9 @@ export const FeaturedModsCarousel = ({ mods, isLoading }: Props) => {
     setPrevious(reducedMotion ? null : selected);
     setSelected(target);
   };
+  // Crossfading stacked slides instead of sliding a strip of every slide keeps
+  // each transition to one opacity animation. Only the visible slides and the
+  // neighbours (so their images are loaded before they fade in) are mounted.
   const mounted = new Set([
     selected,
     (selected + 1) % count,

@@ -17,6 +17,11 @@ interface PartyPlannerProps {
   scope: StatsScope;
 }
 
+/**
+ * Plans a party before it queues. Each player offers up to three heroes and the
+ * game gives them one, so the planner rates every lineup that can come out of
+ * those picks. Global stats, so no account is involved.
+ */
 export const PartyPlanner = ({
   heroesById,
   rankAssets,
@@ -42,6 +47,8 @@ export const PartyPlanner = ({
       ? t("stats.party.member.you")
       : t("stats.party.member.player", { number: index + 1 });
 
+  // Any edit but a suggested swap clears the landing glow, so a hero added
+  // back by hand does not light up as if a suggestion had placed it.
   const updateMember = (
     index: number,
     picks: number[],

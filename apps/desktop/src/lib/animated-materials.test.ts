@@ -59,6 +59,7 @@ describe("animated material previews", () => {
     const previousKey = material.customProgramCacheKey();
     removeFirst();
     const shader = { vertexShader: "", fragmentShader: "", uniforms: {} };
+    // Source-only callback verification does not need a renderer or WebGL context.
     // oxlint-disable-next-line anti-slop/no-reflect-apply
     Reflect.apply(material.onBeforeCompile, material, [shader]);
     expect(shader.fragmentShader).toBe(" paint");
@@ -237,6 +238,7 @@ describe("animated material previews", () => {
       fragmentShader: THREE.ShaderLib.standard.fragmentShader,
       uniforms: {},
     };
+    // Three's compile callback also accepts a live renderer; this hook only reads shader source.
     // oxlint-disable-next-line anti-slop/no-reflect-apply
     Reflect.apply(material.onBeforeCompile, material, [shader]);
     expect(shader.fragmentShader).toContain("highlight-hook");

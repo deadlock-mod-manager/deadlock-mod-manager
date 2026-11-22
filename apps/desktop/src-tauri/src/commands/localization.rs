@@ -49,6 +49,8 @@ pub async fn fix_mods(
   profile_folder: Option<String>,
   mod_ids: Vec<String>,
 ) -> Result<FixModsResult, Error> {
+  // The plan build is the slow part, so it runs without the mod manager lock
+  // and library actions stay responsive meanwhile.
   tauri::async_runtime::spawn_blocking(move || {
     ModManager::fix_mods(
       || {
@@ -67,6 +69,12 @@ pub async fn fix_mods(
 
 static REFRESH_LOCK: Mutex<()> = Mutex::new(());
 
+/// Rebuilds the repair package that installing, enabling, disabling or
+/// reordering a mod deleted, so fixed mods keep their repairs when the game
+/// starts outside the manager. gameinfo.gi keeps the package's search path
+/// through those changes, so it is left as is. The plan builds without the mod
+/// manager lock so library actions stay responsive meanwhile. While the game
+/// runs, or when the rebuild needs review, launch prepares the package instead.
 #[tauri::command]
 pub async fn refresh_mod_fixes(profile_folder: Option<String>) -> Result<(), Error> {
   tauri::async_runtime::spawn_blocking(move || {

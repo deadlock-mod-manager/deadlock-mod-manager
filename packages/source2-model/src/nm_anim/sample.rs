@@ -77,6 +77,10 @@ impl NmAnimation {
                 );
             }
 
+            // Additive clips store deltas from the skeleton's reference pose:
+            // rotation composes onto the reference, translation and scale add.
+            // Resolve here, in raw Source space, so every consumer receives a
+            // complete local pose instead of an un-layerable delta.
             if self.clip.additive {
                 let reference = self
                     .skeleton
@@ -376,6 +380,7 @@ mod tests {
                 additive,
                 compressed_pose_data: Vec::new(),
                 compressed_pose_offsets: vec![0],
+                // A pure translation delta with an identity rotation delta.
                 track_settings: vec![static_setting([0.5, 0.0, 0.0], 0.0, [0.0, 0.0, 0.0, 1.0])],
             },
         }
@@ -384,6 +389,8 @@ mod tests {
     #[test]
     fn additive_clip_layers_delta_over_reference_pose() {
         let pose = animation(true).sample_frame(0).expect("sample");
+        // Source-space result (ref + delta) = [1.5, 2, 3], scale 1, then the
+        // Z-up -> Y-up conversion maps [x, y, z] -> [x, z, -y].
         assert!((pose[0].translation[0] - 1.5).abs() < 1e-5);
         assert!((pose[0].translation[1] - 3.0).abs() < 1e-5);
         assert!((pose[0].translation[2] + 2.0).abs() < 1e-5);
@@ -393,6 +400,7 @@ mod tests {
     #[test]
     fn non_additive_clip_ignores_reference_pose() {
         let pose = animation(false).sample_frame(0).expect("sample");
+        // Only the raw delta is emitted: [0.5, 0, 0] -> [0.5, 0, -0].
         assert!((pose[0].translation[0] - 0.5).abs() < 1e-5);
         assert!(pose[0].translation[1].abs() < 1e-5);
         assert!(pose[0].translation[2].abs() < 1e-5);

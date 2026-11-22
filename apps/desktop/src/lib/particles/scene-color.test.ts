@@ -79,6 +79,7 @@ test("distortion captures once for all emitters, excludes feedback, bounds resol
   expect(renderer.autoClear).toBe(false);
   expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping);
   expect(renderer.xr.enabled).toBe(true);
+  // The actual target is observed through the renderer adapter, without GPU mocks.
   const captureSize = () => (captured ? [captured.width, captured.height] : []);
   expect(captureSize()).toEqual([1536, 864]);
   expect(captured).not.toBeNull();

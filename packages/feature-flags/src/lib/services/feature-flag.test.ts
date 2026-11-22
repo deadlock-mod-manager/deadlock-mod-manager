@@ -21,6 +21,7 @@ function setup() {
   const logger = createMockLogger();
   const repository = new FeatureFlagRepository(db, logger);
   const cache = createNoOpCache();
+  // Deserialization drops class prototypes, as a Redis cache hit does.
   cache.wrap = async (_key, load) => structuredClone(await load());
   return {
     repository,

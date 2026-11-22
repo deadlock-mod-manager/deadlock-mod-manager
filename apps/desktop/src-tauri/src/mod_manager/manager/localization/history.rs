@@ -7,6 +7,8 @@ use std::{
   path::{Path, PathBuf},
 };
 
+/// The install's observed game data file, keyed by the citadel path. None when
+/// the platform has no cache folder; loads are then empty and saves skipped.
 pub(super) fn path(citadel: &Path) -> Option<PathBuf> {
   let installation = hex::encode(Sha256::digest(citadel.as_os_str().as_encoded_bytes()));
   crate::runtime_environment::app_cache_dir("dev.stormix.deadlock-mod-manager").map(|root| {

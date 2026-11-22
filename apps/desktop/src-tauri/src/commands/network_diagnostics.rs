@@ -28,6 +28,8 @@ fn autotuning_level(value: u32) -> Option<TcpAutoTuningLevel> {
 
 const AUTO_TUNING_READ_LIMIT: Duration = Duration::from_secs(10);
 
+/// Reads the setting and never changes it. `None` off Windows, or when it
+/// can't be read in time, which the diagnostics treat as nothing to show.
 #[tauri::command]
 pub async fn get_tcp_autotuning_level() -> Result<Option<TcpAutoTuningLevel>, Error> {
   let read = tokio::task::spawn_blocking(read_autotuning_value);
@@ -45,6 +47,7 @@ pub async fn get_tcp_autotuning_level() -> Result<Option<TcpAutoTuningLevel>, Er
 }
 
 fn read_autotuning_value() -> Result<Option<u32>, String> {
+  // E2E worlds never read the host's setting; a case injects the CIM value.
   #[cfg(feature = "e2e-harness")]
   if let Some(configuration) = crate::runtime_environment::current().e2e() {
     let injected = configuration
@@ -90,6 +93,8 @@ fn read_cim_autotuning_value() -> Result<Option<u32>, String> {
         &BSTR::new(),
         None,
       )?;
+      // Without impersonation the provider refuses the query (WBEM_E_ACCESS_DENIED).
+      // 10 and 0 are RPC_C_AUTHN_WINNT and RPC_C_AUTHZ_NONE.
       CoSetProxyBlanket(
         &services,
         10,
@@ -110,6 +115,7 @@ fn read_cim_autotuning_value() -> Result<Option<u32>, String> {
       )?;
       let mut row: [Option<IWbemClassObject>; 1] = [None];
       let mut returned = 0;
+      // In milliseconds; no row by then reads as no setting.
       rows.Next(5_000, &mut row, &mut returned).ok()?;
       let Some(row) = row[0].take() else {
         return Ok(None);
@@ -138,6 +144,7 @@ fn read_cim_autotuning_value() -> Result<Option<u32>, String> {
 mod tests {
   use super::*;
 
+  // Reads this machine's real setting, read-only: `cargo test -- --ignored`.
   #[cfg(windows)]
   #[test]
   #[ignore = "reads the host's TCP settings"]

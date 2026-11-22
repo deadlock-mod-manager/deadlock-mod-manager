@@ -53,18 +53,18 @@ const tones = (source: string, entries: ResolvedEntry[] | null) =>
 describe("highlightConfig", () => {
   test("colors each line by its entry's status, following sections", () => {
     expect(tones(GAMEINFO, ENTRIES)).toEqual([
+      "plain", // "GameInfo"
       "plain",
-      "plain",
-      "plain",
+      "plain", // game "citadel"
+      "skipped", // FileSystem
       "skipped",
       "skipped",
       "skipped",
-      "skipped",
+      "stripped", // SceneSystem
       "stripped",
       "stripped",
       "stripped",
-      "stripped",
-      "plain",
+      "plain", // ConVars: mixed
       "plain",
       "ignored",
       "applies",

@@ -26,6 +26,7 @@ const formatBracketValue = (metric: BracketMetric, value: number): string => {
   }
 };
 
+/** Position on the ruler, which spans the bracket's 5th to 95th percentile. */
 const at = (row: BracketRow, value: number) => {
   const span = row.high - row.low;
   const ratio = span > 0 ? (value - row.low) / span : 0.5;
@@ -75,11 +76,16 @@ const Ruler = ({ row }: { row: BracketRow }) => {
 
 interface RankBenchmarkProps {
   rows: BracketRow[];
+  /** Name of the tier the player is compared with, `null` for everyone. */
   bracketName: string | null;
   isPending: boolean;
   isError: boolean;
 }
 
+/**
+ * The player's per-match averages placed inside their own rank: the ruler is
+ * the bracket from its 5th to its 95th percentile, the bar its middle half.
+ */
 export const RankBenchmark = ({
   rows,
   bracketName,

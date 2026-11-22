@@ -1,5 +1,10 @@
 import type { Category } from "../src/schema";
 
+/**
+ * `weight` is how much turning things off in a category moves a config toward
+ * the Frames end of the Looks ⟷ Frames scale. It ranks configs against each
+ * other; it is not a frame-rate estimate.
+ */
 export const CATEGORIES: Category[] = [
   { id: "shadows", label: "Shadows", weight: 3 },
   { id: "lighting", label: "Lighting & fog", weight: 2 },
@@ -16,6 +21,7 @@ export const CATEGORIES: Category[] = [
   { id: "other", label: "Other", weight: 0.5 },
 ];
 
+/** Category for edits outside ConVars, by lower-case top-level section. */
 export const SECTION_CATEGORIES = {
   animationsystem: "physics",
   engine2: "other",
@@ -31,6 +37,7 @@ export const SECTION_CATEGORIES = {
   worldrenderer: "world",
 } satisfies Record<string, string>;
 
+/** First match wins; names are matched lower-case. Gameplay convars go to `camera` first. */
 export const CATEGORY_RULES: { pattern: RegExp; category: string }[] = [
   {
     pattern:
@@ -98,6 +105,7 @@ export const CATEGORY_RULES: { pattern: RegExp; category: string }[] = [
   },
 ];
 
+/** Explicit category for keys the rules place wrong. */
 export const CATEGORY_OVERRIDES = new Map(
   Object.entries({
     cpu_level: "cpu",

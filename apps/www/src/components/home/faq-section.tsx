@@ -11,6 +11,8 @@ const linkClassName =
 
 type FaqId = keyof typeof home.faq.items;
 
+// Display order. The copy lives in home.json (faq.items), which also feeds the
+// FAQPage JSON-LD, so the page and the structured data never drift apart.
 const FAQ_IDS = [
   "what",
   "install",
@@ -26,6 +28,11 @@ const FAQ_IDS = [
 const installSteps = (t: TFunction<"home">) =>
   Object.values(t("faq.items.install.steps", { returnObjects: true }));
 
+/**
+ * The home FAQ as plain question/answer pairs for JSON-LD. Answers keep their
+ * <Trans> tags; structured-data strips them. The install steps become one
+ * numbered paragraph.
+ */
 export const getHomeFaqs = (t: TFunction<"home">): FaqEntry[] =>
   FAQ_IDS.map((id) => ({
     question: t(`faq.items.${id}.question`),
@@ -37,6 +44,7 @@ export const getHomeFaqs = (t: TFunction<"home">): FaqEntry[] =>
         : t(`faq.items.${id}.answer`),
   }));
 
+// <Trans> fills in the link text.
 const externalLink = (href: string) => (
   <a
     href={href}

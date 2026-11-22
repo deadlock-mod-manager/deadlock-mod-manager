@@ -47,6 +47,10 @@ interface FileModeProps {
   readonly components?: never;
 }
 
+/**
+ * A custom source that declares components, required sets and choice groups.
+ * `files` are the release's artifacts, which the components point into.
+ */
 interface ComponentModeProps {
   readonly components: {
     readonly installation: NativeSourceInstallation;
@@ -105,6 +109,7 @@ export function MultiFileDownloadDialog({
   );
   const allSelected =
     model.rows.length > 0 && selected.size === model.rows.length;
+  // Components cut from one archive would each repeat its name and size.
   const showRowFiles =
     !isComponentMode ||
     new Set(model.rows.flatMap((row) => row.files.map((file) => file.url)))
@@ -119,6 +124,8 @@ export function MultiFileDownloadDialog({
       allSelected ? new Set() : new Set(model.rows.map((row) => row.id)),
     );
 
+  // Files arrive in the author's order, which is also the order their VPKs
+  // load in, so the list keeps it.
   const handleDownload = () => {
     if (mode.components) {
       confirmComponents.mutate([...selected]);
@@ -140,6 +147,7 @@ export function MultiFileDownloadDialog({
     const size = row.files.reduce((sum, file) => sum + (file.size || 0), 0);
     const updatedAt = latest(row.files.map((file) => file.updatedAt));
     const createdAt = latest(row.files.map((file) => file.createdAt));
+    // A component lists the archives it comes from; a file shows its own notes.
     const description = isComponentMode
       ? row.files.map((file) => file.name).join(", ")
       : row.files[0]?.description;

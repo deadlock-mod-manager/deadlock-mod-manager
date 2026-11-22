@@ -36,6 +36,7 @@ interface ProfilePanelProps {
   heroes: HeroPerformance[];
 }
 
+/** Bars of the ladder are relative to the busiest tier, with a sliver for empty ones. */
 const MIN_BAR = 0.04;
 
 const Ladder = ({
@@ -92,6 +93,7 @@ const Ladder = ({
   );
 };
 
+/** Who the numbers belong to, where they stand on the ladder, and how much they play. */
 export const ProfilePanel = ({
   account,
   accounts,

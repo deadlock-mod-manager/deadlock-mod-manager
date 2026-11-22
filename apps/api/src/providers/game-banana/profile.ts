@@ -6,12 +6,18 @@ type GameBananaProfileForCategory =
   | GameBanana.GameBananaModProfile
   | GameBanana.GameBananaSoundProfile;
 
+// Profile pages omit _aRootCategory despite the shared submission type.
 type GameBananaProfileCategories = Pick<
   GameBananaProfileForCategory,
   "_sName" | "_aCategory" | "_aSuperCategory"
 > &
   Partial<Pick<GameBananaProfileForCategory, "_aRootCategory">>;
 
+/**
+ * Profiles only carry the category and its parent, so pass the index record's
+ * root category when the caller has it: skin subcategories sit a level deeper
+ * (Skins > hero > style), where the parent is the hero, not "Skins".
+ */
 export function categoryFromGameBananaProfile(
   profile: GameBananaProfileCategories,
   rootCategoryName?: string,
@@ -50,6 +56,11 @@ export function submitterDisplayName(
   return profile._aSubmitter?._sName?.trim() || "Unknown";
 }
 
+/**
+ * Private and withheld submissions come back as a stub carrying a name and a
+ * few flags: no URL, author, dates, files or images. There is nothing worth
+ * publishing, and the missing URL fails the `remote_url` not-null constraint.
+ */
 export function isUnavailableProfile(
   profile: GameBananaProfileForCategory,
 ): boolean {

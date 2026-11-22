@@ -45,6 +45,11 @@ const findProfile = async (
   return repository.findProfileById(author.id);
 };
 
+/**
+ * Mod sync only sees the submitter summary, which has no contact info, so
+ * contacts are read from the member profile when someone opens it. A failed
+ * read keeps whatever was stored and is tried again on the next view.
+ */
 const withFreshContacts = async (
   profile: ModAuthorProfile,
   repository: ModAuthorProfileStore,

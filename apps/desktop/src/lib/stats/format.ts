@@ -1,5 +1,10 @@
 import i18n from "@/lib/i18n";
 
+/** Formatting helpers shared by the Stats widgets. */
+
+// Follow the app language, not the OS locale: on a German Windows with the app in
+// English, `toLocaleString()` alone turns 1064 souls into "1.064", which reads as
+// a decimal.
 const activeLocale = (): string => i18n.language || "en";
 
 const percentFormat = (digits: number, signed: boolean) =>
@@ -13,9 +18,12 @@ const percentFormat = (digits: number, signed: boolean) =>
 export const formatPercent = (value: number, digits = 1): string =>
   percentFormat(digits, false).format(value);
 
+/** Always carries a sign, because the number only means something as a delta. */
 export const formatSignedPercent = (value: number, digits = 1): string =>
+  // `signDisplay: "always"` would render -0 as "-0%", which reads as a loss.
   percentFormat(digits, true).format(value === 0 ? 0 : value);
 
+// Magnitude, not sign: the soul-lead chart runs negative numbers through here.
 export const formatCompact = (value: number): string =>
   Math.abs(value) >= 10_000
     ? new Intl.NumberFormat(activeLocale(), {
@@ -38,11 +46,16 @@ export const formatDuration = (seconds: number): string => {
   });
 };
 
+/**
+ * "m:ss" - match clock and buy times alike. Rounds the total before splitting,
+ * because rounding the seconds on their own turns 119.6s into "1:60".
+ */
 export const formatClock = (seconds: number): string => {
   const total = Math.round(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
+/** Short date for axis ticks, e.g. "14 Mar". */
 export const formatDayTick = (unixSeconds: number, locale: string): string =>
   new Date(unixSeconds * 1000).toLocaleDateString(locale, {
     day: "numeric",
@@ -55,6 +68,10 @@ export const formatDateTime = (unixSeconds: number, locale: string): string =>
     timeStyle: "short",
   });
 
+/**
+ * "23:00 - 23:59", used for the hour-of-day insight. Formatted through Intl so a
+ * 12-hour locale gets "11:00 PM - 11:59 PM" rather than a forced 24-hour clock.
+ */
 export const formatHourRange = (hour: number): string => {
   const clock = new Intl.DateTimeFormat(activeLocale(), {
     hour: "numeric",
@@ -65,14 +82,17 @@ export const formatHourRange = (hour: number): string => {
   return `${at(0)} - ${at(59)}`;
 };
 
+/** Souls as the game shows them in tight spots: "4.9k", whole numbers below 1000. */
 export const formatThousands = (value: number, digits = 1): string =>
   Math.abs(value) >= 1000
     ? `${formatDecimal(value / 1000, digits)}k`
     : String(Math.round(value));
 
+/** A souls lead: "+1.2k", "−800". */
 export const formatSignedThousands = (value: number): string =>
   `${value >= 0 ? "+" : "−"}${formatThousands(Math.abs(value))}`;
 
+/** "7 / 2 / 11", with a dash for whatever the top bar could not read. */
 export const formatKda = (
   kills: number | null,
   deaths: number | null,
@@ -83,5 +103,6 @@ export const formatKda = (
     .map((value) => (value === null ? "–" : String(value)))
     .join(separator);
 
+/** A whole number with the locale's grouping: "18,400". */
 export const formatWhole = (value: number): string =>
   Math.round(value).toLocaleString(activeLocale());

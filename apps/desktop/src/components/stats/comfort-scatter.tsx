@@ -20,11 +20,18 @@ const X_TICKS = [1, 5, 15, 30, 60, 120, 250];
 interface ComfortScatterProps {
   heroes: HeroPerformance[];
   heroesById: Map<number, DeadlockHero>;
+  /** Overall winrate: the line between comfort picks and traps. */
   baseline: number;
   selectedHeroId: number | null;
   onSelect: (heroId: number) => void;
 }
 
+/**
+ * Games played against winrate, each hero as its own portrait. Games run on a
+ * square-root scale so one-game heroes don't crowd into the left edge, and the
+ * right-hand zones mark heroes with enough games for their winrate to mean
+ * something: above your line a comfort pick, below it a trap.
+ */
 export const ComfortScatter = ({
   heroes,
   heroesById,
@@ -65,6 +72,7 @@ export const ComfortScatter = ({
           <div
             className='stats-dot-grid relative rounded-md'
             style={{ height: PLOT_PX }}>
+            {/* Inset so dots on the edges stay whole. */}
             <div className='absolute inset-[22px]'>
               <div
                 className='absolute right-0 rounded-t-lg'

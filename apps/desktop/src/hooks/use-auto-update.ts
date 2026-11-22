@@ -22,6 +22,7 @@ export const useAutoUpdate = (integrationEnabled = true) => {
         return;
       }
       try {
+        // Check if auto-update is disabled via CLI flag
         const disabledViaCli = await isAutoUpdateDisabled();
         if (disabledViaCli) {
           logger.info(

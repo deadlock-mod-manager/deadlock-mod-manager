@@ -16,6 +16,10 @@ export type SteamAccount = {
 
 export const STEAM_ACCOUNTS_QUERY_KEY = ["steam-accounts"] as const;
 
+/**
+ * Remembered Steam accounts, signed-in one first. Resolves to an empty list when
+ * Steam is not installed rather than throwing, so callers can offer manual entry.
+ */
 export const useSteamAccounts = () =>
   useQuery({
     queryKey: STEAM_ACCOUNTS_QUERY_KEY,
@@ -24,6 +28,10 @@ export const useSteamAccounts = () =>
     meta: { skipGlobalErrorHandler: true },
   });
 
+/**
+ * The account the Stats page works with: the pinned one if the user picked it,
+ * otherwise whichever account Steam is currently signed in with.
+ */
 export const useSelectedSteamAccount = () => {
   const { data: accounts, isPending, isError } = useSteamAccounts();
   const pinnedAccountId = usePersistedStore((state) => state.statsAccountId);
@@ -40,6 +48,8 @@ export const useSelectedSteamAccount = () => {
     return accounts.find((a) => a.isActive) ?? accounts[0];
   }, [accounts, pinnedAccountId]);
 
+  // A pinned id with no local Steam account behind it is still valid: it may have
+  // been typed in by hand.
   const accountId = account?.accountId ?? pinnedAccountId;
 
   return {

@@ -27,6 +27,8 @@ type ContentTypeTabsProps = {
   className?: string;
 };
 
+// Section tabs for the store header. The active tab's underline sits on the
+// header's bottom hairline.
 const ContentTypeTabs = ({
   value,
   onChange,

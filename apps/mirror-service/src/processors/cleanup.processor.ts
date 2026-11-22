@@ -29,6 +29,7 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
     try {
       this.logger.info("Starting cleanup worker");
 
+      // Find unused files based on retention policy
       const unusedFilesResult =
         await this.mirroredFileRepository.findUnusedFiles(
           env.CLEANUP_RETENTION_DAYS,

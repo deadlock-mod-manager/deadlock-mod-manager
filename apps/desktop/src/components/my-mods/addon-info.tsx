@@ -9,7 +9,10 @@ interface AddonInfoProps {
 
 export const AddonInfo = ({ addon, isIdentified }: AddonInfoProps) => {
   if (isIdentified) {
+    // Identified by a prefixed name or by the profile's manifest, not a hash
     if (addon.remoteId && !addon.matchInfo) {
+      // Only a prefixed name means the file is parked; manifest-recorded
+      // `pakNN_dir.vpk` files are loaded by the game.
       const parked = extractSubmissionSlugFromFilename(addon.fileName) !== null;
       return (
         <div className='space-y-1'>

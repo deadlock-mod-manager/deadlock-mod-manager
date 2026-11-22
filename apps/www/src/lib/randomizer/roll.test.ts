@@ -21,6 +21,7 @@ import {
   unlockGates,
 } from "./roll";
 
+/** Everything a slot puts in the inventory at some point. */
 const itemsOf = (entry: RolledItem): DeadlockUpgrade[] =>
   entry.upgrade ? [entry.item, entry.upgrade] : [entry.item];
 
@@ -63,6 +64,8 @@ const UPGRADES: DeadlockUpgrade[] = [
     TIERS.flatMap((tier) =>
       Array.from({ length: ITEMS_PER_TIER }, (_, index) =>
         makeUpgrade(category, tier, index, {
+          // Every tier 3 item is built out of the first tier 1 item of its
+          // category, so the roll has real component conflicts to avoid.
           component_items: tier === 3 ? [`upgrade_${category}_1_0`] : undefined,
           imbue:
             tier === 4 && index === 0
@@ -87,12 +90,14 @@ const makeAbility = (className: string, charges: number): DeadlockAbility =>
     properties: { AbilityCharges: { value: String(charges) } },
   });
 
+/** A kit with no charged ability at all. */
 const UNCHARGED_ABILITIES = new Map(
   ["ability_one", "ability_two", "ability_three", "ability_four"].map(
     (name) => [name, makeAbility(name, 0)],
   ),
 );
 
+/** Level table of the live game: unlocks at levels 1, 3, 5 and 8. */
 const LEVEL_INFO: DeadlockHero["level_info"] = Object.fromEntries(
   Array.from({ length: 36 }, (_, index) => {
     const level = index + 1;
@@ -107,6 +112,7 @@ const LEVEL_INFO: DeadlockHero["level_info"] = Object.fromEntries(
   }),
 );
 
+/** Every item but the last of each tier, mirroring a real per-hero draft pool. */
 const draftBucketing = (
   excluded: Set<string> = new Set(),
 ): DeadlockHero["item_draft_bucketing"] =>
@@ -147,6 +153,7 @@ const makeHero = (
   ...overrides,
 });
 
+/** Drafts no spirit items at all, and nothing above tier 3. */
 const NARROW_POOL = new Set(
   UPGRADES.filter(
     (item) => item.item_slot_type === "spirit" || item.item_tier > 3,
@@ -350,6 +357,7 @@ describe("rollLoadout", () => {
         expect(own).toHaveLength(4);
         expect(own[0].kind).toBe("unlock");
       }
+      // The ultimate unlock waits for the other three.
       const ultUnlock = skillOrder.findIndex(
         (step) => step.kind === "unlock" && step.slot === ULTIMATE_SLOT,
       );
@@ -430,6 +438,8 @@ describe("rollLoadout", () => {
         HEROES,
         UPGRADES,
       );
+      // An upgrade takes the component's cost off its price, so a slot costs
+      // exactly what ends up in it.
       const expected = build.reduce(
         (sum, entry) => sum + (finalItem(entry).cost ?? 0),
         0,

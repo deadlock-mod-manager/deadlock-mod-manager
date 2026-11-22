@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+/** Small festive illustrations on a 48×48 grid, shared by hideouts, the advent calendar and the logo. */
 const Svg = ({
   children,
   className,
@@ -716,6 +717,7 @@ export const ART = {
 
 export type ArtId = keyof typeof ART;
 
+/** Hats and ears that sit on the app logo while a seasonal theme is active. */
 export const SantaHat = ({ className }: ArtProps) => (
   <Svg className={className}>
     <path

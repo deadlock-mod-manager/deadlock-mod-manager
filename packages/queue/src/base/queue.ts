@@ -39,6 +39,7 @@ export class BaseQueue<T extends BaseJobData = BaseJobData> {
   }
 
   async addBulk(jobs: { name: string; data: T; options?: BulkJobOptions }[]) {
+    // BullMQ reads per-job settings from `opts`
     const bulk = jobs.map(({ name, data, options }) => ({
       name,
       data,

@@ -11,6 +11,9 @@ import { step } from "./evidence";
 export const retireClosedApplication = async (pid: number): Promise<void> => {
   for (let attempt = 0; attempt < 150; attempt++) {
     if (!processExists(pid)) {
+      // The embedded server died with its app. Retire the client session so
+      // WDIO does not send DELETE to a server whose exit we just verified.
+      // @wdio/globals only proxies reads; update the injected instance itself.
       globalThis.browser.sessionId = "";
       assert.equal(browser.sessionId, "");
       return;
@@ -20,6 +23,10 @@ export const retireClosedApplication = async (pid: number): Promise<void> => {
   throw new Error("Application did not exit");
 };
 
+/**
+ * Waits for an application whose main window is already closing to exit, then
+ * records the finished phase.
+ */
 export const completeApplicationExit = async (
   world: string,
   pid: number,
@@ -46,6 +53,8 @@ export const closeApplication = async (
   pid: number,
 ): Promise<void> =>
   step("close application normally", async () => {
+    // Return the WebDriver response before closing its webview. Normal window
+    // close lets Tauri finish its exit-time store save; Windows SIGTERM does not.
     await browser.execute(() => {
       window.setTimeout(() => {
         void window.__TAURI_INTERNALS__.invoke("plugin:window|close", {

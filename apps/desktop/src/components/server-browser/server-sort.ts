@@ -4,6 +4,7 @@ export type ServerSortKey = "name" | "players" | "map" | "ping" | "region";
 type SortDirection = "asc" | "desc";
 export type ServerSort = { key: ServerSortKey; direction: SortDirection };
 
+/** The direction a column starts in: busiest and closest servers first. */
 const DEFAULT_DIRECTION = {
   name: "asc",
   players: "desc",
@@ -39,6 +40,7 @@ const textValue = (
   }
 };
 
+/** Missing values sort after present ones, whatever the direction. */
 const compareNullable = <T>(
   left: T | null,
   right: T | null,
@@ -55,6 +57,10 @@ const compareNullable = <T>(
 const compareText = (a: string, b: string): number =>
   a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 
+/**
+ * Servers without a value (no ping reply, unknown region) stay at the bottom
+ * in both directions. Ties keep the API's order.
+ */
 export const sortServers = (
   servers: ServerBrowserEntry[],
   sort: ServerSort | null,
@@ -80,6 +86,7 @@ export const sortServers = (
   );
 };
 
+/** Click cycle: default direction, flipped, then back to the API's order. */
 export const nextSort = (
   current: ServerSort | null,
   key: ServerSortKey,

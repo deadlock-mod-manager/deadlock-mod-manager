@@ -2,16 +2,18 @@ import { db, schema } from "./client";
 
 (async () => {
   try {
+    // Seed custom settings
     await db
       .insert(schema.customSettings)
       .values({
         key: "+citadel_unit_status_use_new",
         value: "true",
-        type: "launch_option",
+        type: "launch_option", // TODO: enum
         description: "Use new unit status system (new healthbar, etc.)",
       })
       .onConflictDoNothing();
 
+    // Seed feature flags
     await db
       .insert(schema.featureFlags)
       .values([
@@ -30,6 +32,7 @@ import { db, schema } from "./client";
       ])
       .onConflictDoNothing();
 
+    // Seed the first-party OAuth clients (public, PKCE, no consent screen)
     const oauthClients = [
       {
         clientId: "deadlockmods-www",

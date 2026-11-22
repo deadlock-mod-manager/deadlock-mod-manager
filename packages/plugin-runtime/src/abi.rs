@@ -1,3 +1,6 @@
+//! Guest ABI v1 shared by the host (package validation) and the worker
+//! (execution). See `README.md` next to this file for the contract.
+
 use serde::Serialize;
 use wasmparser::{ValType, Validator, WasmFeatures, types::EntityType};
 
@@ -10,12 +13,19 @@ pub const EXPORT_CALL: &str = "call";
 pub const MAX_BACKEND_BYTES: usize = 16 * 1024 * 1024;
 pub const MAX_CALL_INPUT_BYTES: usize = 256 * 1024;
 pub const MAX_CALL_OUTPUT_BYTES: usize = 1024 * 1024;
+/// Large enough for a 4 MiB `files.write` and a 4 MiB `http.fetch` response
+/// as base64 inside their JSON envelopes.
 pub const MAX_HOSTCALL_REQUEST_BYTES: usize = 6 * 1024 * 1024;
 pub const MAX_HOSTCALL_RESPONSE_BYTES: usize = 6 * 1024 * 1024;
 pub const MAX_HOSTCALLS_PER_CALL: u32 = 256;
 pub const MAX_GUEST_MEMORY_BYTES: usize = 64 * 1024 * 1024;
 pub const FUEL_PER_CALL: u64 = 2_000_000_000;
 
+/// `host_call` return codes. Non-negative values are the number of response
+/// bytes written. `-16` and below mean the output buffer was too small: the
+/// response needs `-code` bytes and stays pending, so calling again with the
+/// identical request bytes and a large enough buffer returns it without
+/// running the hostcall twice.
 pub const HOSTCALL_MALFORMED: i32 = -1;
 pub const HOSTCALL_LIMIT_REACHED: i32 = -2;
 pub const MIN_RESPONSE_BYTES: usize = 16;
@@ -51,6 +61,7 @@ pub fn error_envelope(code: &str, message: &str) -> String {
   .unwrap_or_else(|_| r#"{"ok":false,"error":{"code":"host_error","message":""}}"#.into())
 }
 
+/// Accepts exactly `{ok:true, value}` or `{ok:false, error:{code, message}}`.
 pub fn validate_envelope(bytes: &[u8]) -> Result<String, String> {
   if bytes.len() > MAX_CALL_OUTPUT_BYTES {
     return Err("Plugin response exceeds the 1 MiB limit".into());
@@ -89,6 +100,9 @@ pub fn features() -> WasmFeatures {
   WasmFeatures::WASM2
 }
 
+/// Validates the module and requires the exact v1 import/export shape. No
+/// other imports are allowed, so a module asking for WASI or anything else
+/// fails here instead of at instantiation.
 pub fn validate_module(bytes: &[u8]) -> Result<(), String> {
   if bytes.len() > MAX_BACKEND_BYTES {
     return Err("Plugin backend exceeds the 16 MiB limit".into());
@@ -147,6 +161,10 @@ pub fn validate_module(bytes: &[u8]) -> Result<(), String> {
 pub(crate) mod tests {
   use super::*;
 
+  /// A minimal guest: echoes `{ok:true,value:<input>}` for `echo`, forwards
+  /// the payload as a hostcall for `host`, loops forever for `spin` and
+  /// traps for anything else. Input arrives at offset 1024, output is built
+  /// at offset 65536.
   pub(crate) const TEST_GUEST: &str = r#"
     (module
       (import "dmm" "host_call" (func $host (param i32 i32 i32 i32) (result i32)))

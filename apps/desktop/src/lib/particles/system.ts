@@ -8,9 +8,11 @@ import {
   type ControlPoint,
 } from "./types";
 
+/** One live simulation of a compiled system. */
 export class ParticleSystem {
   readonly spec: CompiledSystem;
   readonly controlPoints: ControlPoint[];
+  /** Direct children's registries, used only by authored child-CP operators. */
   readonly childControlPoints: ControlPoint[][] = [];
   released = false;
   private releaseAge = 0;
@@ -24,6 +26,7 @@ export class ParticleSystem {
   private readonly capacity: number;
   private readonly scalars = new Map<number, Float32Array>();
   private readonly vectors = new Map<number, Float32Array>();
+  /** Values written at spawn, for operators that scale the initial value. */
   private readonly initial = new Map<number, Float32Array>();
   readonly velocity: Float32Array;
   readonly seeds: Float32Array;
@@ -82,6 +85,7 @@ export class ParticleSystem {
     return values;
   }
 
+  /** How many particles have spawned since the last reset. */
   get spawned() {
     return this.serial;
   }
@@ -90,6 +94,7 @@ export class ParticleSystem {
     return this.released || this.spec.lifecycle.endCap;
   }
 
+  /** End-cap emitters use a release-relative clock without resetting particle ages. */
   get endingAge() {
     return this.released ? this.age - this.releaseAge : this.age;
   }
@@ -101,12 +106,14 @@ export class ParticleSystem {
     this.emitCarry = 0;
   }
 
+  /** A compiled instantaneous emitter fires once per instance, including time zero. */
   emitOnce(emitter: JsonObject) {
     if (this.emitted.has(emitter)) return false;
     this.emitted.add(emitter);
     return true;
   }
 
+  /** Live particle indices from oldest to newest, ties in index order. */
   byAge(out: number[]) {
     const created = this.scalar(FIELD.creationTime);
     out.length = 0;
@@ -122,6 +129,7 @@ export class ParticleSystem {
     return this.controlPoints[index] ?? this.controlPoints[0];
   }
 
+  /** Point the shared input context at particle `index`. */
   focus(index: number) {
     this.current = index;
     const context = this.context;
@@ -137,6 +145,7 @@ export class ParticleSystem {
     return context;
   }
 
+  /** Point the context at the system itself, for per-emitter inputs. */
   focusCollection() {
     const context = this.context;
     context.index = 0;
@@ -237,12 +246,14 @@ export class ParticleSystem {
     for (let index = 0; index < count; index += 1) this.spawn();
     this.emitCarry = Number.isFinite(this.emitCarry) ? this.emitCarry % 1 : 0;
     for (const operator of spec.operators) operator(this, delta);
+    // Particles past their lifetime are removed by C_OP_Decay; without it they persist.
     const lifetime = this.scalar(FIELD.lifetime);
     const created = this.scalar(FIELD.creationTime);
     for (let index = this.count - 1; index >= 0; index -= 1) {
       if (lifetime[index] < 0 || this.age - created[index] > 60)
         this.kill(index);
     }
+    // One-shot effects replay so a looping preview keeps showing them.
     if (
       !spec.continuous &&
       this.autoReplay &&
@@ -257,6 +268,7 @@ export class ParticleSystem {
     } else this.restartTimer = 0;
   }
 
+  /** Marks a particle for removal at the end of the frame. */
   expire(index: number) {
     this.scalar(FIELD.lifetime)[index] = -1;
   }

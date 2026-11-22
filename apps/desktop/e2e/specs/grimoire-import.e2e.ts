@@ -36,6 +36,7 @@ const waitForStep = async (stepName: string, timeout = 60_000) => {
   );
 };
 
+/** Radix menus open on keyboard input under the embedded driver. */
 const openGrimoireImport = async () => {
   const menu = await $('[data-testid="interchange-import-menu"]');
   await menu.waitForClickable();
@@ -79,6 +80,7 @@ describe("Grimoire import", () => {
         await openGrimoireImport();
         assert.equal(await checked("interchange-section-mods"), true);
         assert.equal(await checked("interchange-section-crosshairs"), true);
+        // Profiles are opt-in: they copy every file once more per profile.
         assert.equal(await checked("interchange-section-profiles"), false);
         await $('[data-testid="interchange-section-profiles"]').click();
         assert.equal(await checked("interchange-section-profiles"), true);
@@ -110,6 +112,7 @@ describe("Grimoire import", () => {
           [...rows].sort(),
           [derivedModId(fixtures[1]), derivedModId(fixtures[2])].sort(),
         );
+        // The hash lookup finds nothing for these synthetic files.
         await $('[data-testid="interchange-analyze"]').click();
         await browser.waitUntil(
           async () =>
@@ -127,12 +130,14 @@ describe("Grimoire import", () => {
             (await overflowRow.getAttribute("data-linked")) === "true",
           { timeout: 30_000, timeoutMsg: "Manual link did not complete" },
         );
+        // The drifted slot stays local: skip the rest.
         await $('[data-testid="interchange-finish"]').click();
         await waitForStep("done");
       });
 
       await step("summary and disk state", async () => {
         const summary = await $('[data-testid="interchange-summary"]');
+        // The default profile's only mod is already there from the library.
         await expect(summary).toHaveAttribute("data-imported", "6");
         await expect(summary).toHaveAttribute("data-skipped", "1");
         await expect(summary).toHaveAttribute("data-failed", "0");
@@ -153,6 +158,8 @@ describe("Grimoire import", () => {
 
       await step("a second import offers nothing new", async () => {
         await openGrimoireImport();
+        // Files DMM took over resolve through its store, including the overflow
+        // mod under the GameBanana id the user assigned to it.
         assert.equal(
           await $('[data-testid="interchange-section-mods"]').isEnabled(),
           false,

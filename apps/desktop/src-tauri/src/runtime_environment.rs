@@ -61,6 +61,7 @@ pub enum ServiceName {
   Assets,
   SteamNews,
   Github,
+  /// Cloudflare's trace endpoint, which network diagnostics probe.
   Connectivity,
 }
 
@@ -313,8 +314,12 @@ pub fn records_game_launches() -> bool {
     .is_some()
 }
 
+/// Not `deadlock.exe`, so builds without the E2E rule below ignore the stand-in.
 const E2E_GAME_FILE_NAME: &str = "dmm-e2e-game";
 
+/// The argv[0] of the stand-in game an E2E case may start. E2E builds count
+/// only this process as Deadlock, so neither a real game on the machine nor
+/// another world's stand-in reaches a run.
 pub fn e2e_game_argv0() -> Option<PathBuf> {
   RUNTIME_ENVIRONMENT
     .get()
@@ -382,6 +387,8 @@ pub fn configure_process() {
       "WEBVIEW2_USER_DATA_FOLDER",
       &configuration.roots.webview_data,
     );
+    // WebKitGTK, GTK and Mesa resolve their storage and caches through the
+    // XDG base directories rather than an explicit webview data folder.
     #[cfg(target_os = "linux")]
     {
       std::env::set_var("TMPDIR", &configuration.roots.temporary);
@@ -442,6 +449,8 @@ pub fn app_config_dir(identifier: &str) -> Option<PathBuf> {
     .or_else(|| dirs::config_dir().map(|directory| directory.join(identifier)))
 }
 
+/// Unlike the other roots, this one is also read by unit tests, which never
+/// initialize the runtime environment.
 pub fn app_cache_dir(identifier: &str) -> Option<PathBuf> {
   RUNTIME_ENVIRONMENT
     .get()

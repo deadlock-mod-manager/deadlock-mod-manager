@@ -35,7 +35,9 @@ const policyRepository = new PolicyRuleRepository(db);
 
 const requireIdentity = async (modId: string) => {
   const identity =
-    parseGameBananaSlug(modId) ?? (await resolveLegacyModId(modId));
+    parseGameBananaSlug(modId) ??
+    // Legacy desktop compatibility: remove with the catalog retirement (#715).
+    (await resolveLegacyModId(modId));
   if (!identity) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Invalid GameBanana submission ID",

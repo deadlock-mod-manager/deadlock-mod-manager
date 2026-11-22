@@ -11,6 +11,7 @@ import {
 import { CtaArrow, secondaryCta } from "./cta";
 import { SectionHeading } from "./section-heading";
 
+// The light each theme casts behind the stage.
 const THEME_GLOW = {
   default: "rgb(239 224 190)",
   bloodmoon: "rgb(239 68 68)",
@@ -40,6 +41,10 @@ const loadImage = (src: string) => {
 const prefersReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/**
+ * One large app window that repaints itself when a theme is picked: the new
+ * theme spreads out as a circle from the swatch that was clicked.
+ */
 export const ThemesSection = () => {
   const { t } = useTranslation("home");
   const { t: tPreview } = useTranslation("preview");
@@ -56,6 +61,7 @@ export const ThemesSection = () => {
 
   const paint = async (id: PreviewThemeId) => {
     if (id === selected) return;
+    // A repaint already in flight lands instantly so the next one starts clean.
     if (reveal) setCurrent(reveal.id);
 
     const stage = stageRef.current;
@@ -107,6 +113,7 @@ export const ThemesSection = () => {
     };
   }, [reveal]);
 
+  // Warm the other themes' images once the section is close to the viewport.
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -123,6 +130,7 @@ export const ThemesSection = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Cycle slowly on its own until the visitor picks something.
   useEffect(() => {
     if (interacted || !inView || prefersReducedMotion()) return;
     const interval = window.setInterval(() => {
@@ -212,6 +220,7 @@ export const ThemesSection = () => {
                 <span
                   className='flex size-7 shrink-0 items-center justify-center rounded-full'
                   style={{
+                    // The selected swatch is ringed in its theme's own light.
                     boxShadow: isSelected
                       ? `0 0 0 2px var(--color-background), 0 0 0 4px ${THEME_GLOW[theme.id]}`
                       : undefined,

@@ -152,6 +152,8 @@ pub async fn install_mod_fonts(mod_id: String, guard_permit: Option<String>) -> 
   Ok(())
 }
 
+/// Unguarded: it only clears the stash in app data, so skipping a font install
+/// still works while Deadlock is running.
 #[tauri::command]
 pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
   use crate::mod_manager::FontManager;

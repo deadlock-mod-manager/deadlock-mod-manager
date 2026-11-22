@@ -48,6 +48,7 @@ export const placeholderModFromManifest = (
   };
 };
 
+/** A VPK whose filename marks it as active in its shard, rather than parked. */
 export const ENABLED_VPK_PATTERN = /^pak\d+_dir\.vpk$/i;
 
 export const enabledVpkLocators = (
@@ -59,6 +60,11 @@ export const enabledVpkLocators = (
       .map((file) => `${file.shard}:${file.filename}`),
   );
 
+/**
+ * The single reading of what the manifest says a mod has installed: its claimed
+ * VPKs, but only while every one of them is actually active on disk in the shard
+ * the entry recorded. Anything else counts as not installed.
+ */
 export const installedVpksFromManifest = (
   entry: VpkManifestEntry,
   locators: ReadonlySet<string>,
@@ -71,6 +77,7 @@ export const installedVpksFromManifest = (
     : [];
 };
 
+/** Statuses owned by an operation running right now, which must not be undone. */
 const ACTIVE_OPERATION_STATUSES: ReadonlySet<ModStatus> = new Set([
   ModStatus.Extracting,
   ModStatus.Installing,
@@ -84,6 +91,12 @@ export const sameVpkList = (
   left.length === right.length &&
   left.every((filename, index) => filename === right[index]);
 
+/**
+ * The manifest owns what is installed; a tracked mod only mirrors it. A mirror
+ * that disagrees is stale - typically a store carried over from a build that
+ * wrote install state itself, which then shows installed mods as unfinished
+ * downloads with no VPKs attached.
+ */
 export const needsInstallStateRepair = (
   mod: LocalMod,
   installedVpks: readonly string[],
@@ -106,10 +119,15 @@ export const needsInstallStateRepair = (
   );
 };
 
+/** Statuses of a mod at rest; any other one belongs to a running operation. */
 const SETTLED_STATUSES: ReadonlySet<ModStatus> = new Set([
   ModStatus.Downloaded,
   ModStatus.Installed,
 ]);
 
+/**
+ * Whether a mod whose files were all deleted may leave the library. A mod in
+ * the middle of a download, install, or removal is still being written.
+ */
 export const canForgetMod = (mod: LocalMod): boolean =>
   SETTLED_STATUSES.has(mod.status);

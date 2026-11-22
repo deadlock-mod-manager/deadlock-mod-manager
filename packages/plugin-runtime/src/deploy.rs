@@ -1,3 +1,7 @@
+//! `mods.install`: installs a staged snapshot into the granted profile
+//! through the regular mod manager update path, so manifests, shards, the
+//! running-game guard and VPK staging rollback all apply unchanged.
+
 use super::snapshots::{self, SnapshotError, SnapshotStore};
 use crate::Error;
 use crate::{Deployment, HostAdapter};
@@ -5,8 +9,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// How grants and `mods.list` name the default profile, whose mods live in
+/// the root addons folder.
 pub const DEFAULT_PROFILE: &str = "default";
 
+/// A profile folder name, or [`DEFAULT_PROFILE`].
 pub fn is_profile_folder(folder: &str) -> bool {
   !folder.is_empty()
     && folder.len() <= 128
@@ -15,6 +22,8 @@ pub fn is_profile_folder(folder: &str) -> bool {
       .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
 }
 
+/// A dedicated profile keeps plugin installs away from the default addons
+/// folder the player actually uses.
 pub fn is_dedicated_profile(folder: &str) -> bool {
   folder != DEFAULT_PROFILE && is_profile_folder(folder)
 }
@@ -88,6 +97,8 @@ impl Deployments {
     Ok(())
   }
 
+  /// Snapshots the quota must not evict: the last deployed one and
+  /// one whose deployment may still be in flight.
   pub fn pinned(&self) -> Result<Vec<String>, Error> {
     let state = self.load()?;
     Ok(
@@ -100,6 +111,9 @@ impl Deployments {
     )
   }
 
+  /// Resolves an interrupted deployment: if the profile ended up running a
+  /// staged build, keep a copy of it in the mods store like a completed
+  /// deploy would; either way the pending marker is cleared.
   pub fn reconcile(
     &self,
     access: &dyn HostAdapter,

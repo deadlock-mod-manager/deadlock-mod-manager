@@ -149,6 +149,8 @@ export const usePersistedStore = create<State>()(
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: safeMigrate,
+      // Runs on every hydration, before the download manager scans for stale
+      // statuses that it can only clear through the active profile.
       merge: (persisted, current) =>
         repairMissingActiveProfile(persistMerge(persisted, current)),
       onRehydrateStorage: () => (hydrated, error) => {

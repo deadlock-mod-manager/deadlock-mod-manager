@@ -32,6 +32,7 @@ const Row = ({
   </li>
 );
 
+/** Name of the config whose lines the live-file import leaves out, if one is in the file. */
 export const useAppliedConfigName = () => {
   const { data: status } = usePerfStatus();
   return status?.applied ? (status.desired?.request.name ?? null) : null;
@@ -42,6 +43,7 @@ type CurrentGameinfoSourceProps = {
   onAnalyze: (source: ImportSource) => void;
 };
 
+/** Reads the live file as soon as the tab opens; there is nothing to fill in first. */
 export const CurrentGameinfoSource = ({
   isAnalyzing,
   onAnalyze,

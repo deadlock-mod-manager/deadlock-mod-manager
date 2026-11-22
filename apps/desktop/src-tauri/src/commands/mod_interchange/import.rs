@@ -1,3 +1,17 @@
+//! Importer: interchange document -> DMM profile.
+//!
+//! Each mod ends up exactly where DMM's own download path would put it:
+//! - its VPKs are kept in the mod store (`<app data>/mods/<id>/files`) so DMM
+//!   can re-enable or restore them later,
+//! - the selected VPKs are parked in the profile as `<id>_<name>.vpk` and
+//!   recorded as disabled in `.dmm.json`,
+//! - enabled mods then go through the normal `install_mod` path.
+//!
+//! A mod whose enabled VPKs already sit in a slot this profile loads (both
+//! managers share `citadel/addons`) is adopted in place instead, so the game
+//! never loads the same mod twice. Failures stay per mod: one bad entry never
+//! aborts the rest of the import.
+
 use super::format::{
   InterchangeDocument, InterchangeMod, InterchangeOrigin, SubmissionKind, is_plain_vpk_name,
   sha256_hex,
@@ -19,13 +33,19 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "camelCase")]
 pub struct InterchangeImportRequest {
   pub document: InterchangeDocument,
+  /// Keys of the mods to import; `None` imports everything.
   #[serde(default)]
   pub keys: Option<Vec<String>>,
   pub profile_folder: Option<String>,
+  /// First load-order slot for the imported mods (after the existing ones).
   #[serde(default)]
   pub start_order: u32,
+  /// Mod ids already in the library, as the frontend store knows them.
   #[serde(default)]
   pub known_mod_ids: Vec<String>,
+  /// Load order of the mods already in the profile, as the library shows it.
+  /// DMM leaves `order` empty in `.dmm.json` for mods it installed itself;
+  /// without these the imported mods would be laid out ahead of them.
   #[serde(default)]
   pub existing_orders: std::collections::BTreeMap<String, u32>,
 }
@@ -81,6 +101,7 @@ impl ImportedMod {
   }
 }
 
+/// Emitted once per mod while an import runs.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportProgress {
@@ -97,6 +118,7 @@ pub struct InterchangeImportReport {
   pub warnings: Vec<String>,
 }
 
+/// Format a hex seed as a UUID so the result passes DMM's `local-<uuid>` check.
 fn uuid_from_seed(seed: &str) -> String {
   let hash = sha256_hex(seed);
   format!(
@@ -109,6 +131,8 @@ fn uuid_from_seed(seed: &str) -> String {
   )
 }
 
+/// The DMM library id for an entry. Local mods without a usable UUID get one
+/// derived from their key, so importing the same file twice is idempotent.
 pub fn dmm_mod_id(entry: &InterchangeMod) -> Result<String, String> {
   let candidate = match &entry.origin {
     InterchangeOrigin::GameBanana(origin) => {
@@ -168,6 +192,7 @@ fn usable_files(entry: &InterchangeMod) -> (Vec<UsableFile>, Vec<String>) {
         .unwrap_or("mod_dir.vpk")
         .to_string()
     };
+    // Two files may not share a name inside one mod's store folder.
     let mut unique = name.clone();
     let mut counter = 2;
     while !names.insert(unique.to_lowercase()) {
@@ -230,6 +255,9 @@ pub(super) fn copy_file(source: &Path, destination: &Path, size: u64) -> Result<
   Ok(())
 }
 
+/// Keep `file` in the mod store. Importing a profile lists mods the library
+/// import (or an earlier run) already stored; identical bytes are not copied
+/// again.
 fn store_file(hashes: &HashCache, file: &UsableFile, destination: &Path) -> Result<(), Error> {
   if let Some(sha256) = &file.sha256
     && same_size(destination, file.size)
@@ -277,6 +305,8 @@ fn write_local_metadata(
   Ok(())
 }
 
+/// Enabled pak files that already sit in one shard of this profile and that
+/// no other mod claims can be adopted where they are.
 fn in_place_shard(
   base: &ProfileBase,
   manifest: &ProfileVpkManifest,
@@ -380,6 +410,7 @@ fn place_mod(
       adopted_in_place: false,
       reason: None,
     }),
+    // The mod is safely parked; the user can enable it from the library.
     Err(error) => {
       log::warn!("Imported mod {mod_id} could not be enabled: {error}");
       Ok(Placed {
@@ -391,6 +422,9 @@ fn place_mod(
   }
 }
 
+/// A manifest save can fail after writing `.dmm.json.tmp`, which the loader
+/// reads as committed. If the mod is in the profile, it was imported: report
+/// it so, or a later import would skip it as a duplicate without a ledger entry.
 fn committed_despite(base: &ProfileBase, mod_id: &str, error: Error) -> Result<Placed, Error> {
   let Some(saved) = ProfileVpkManifest::load(base)
     .ok()
@@ -400,6 +434,7 @@ fn committed_despite(base: &ProfileBase, mod_id: &str, error: Error) -> Result<P
   };
   Ok(Placed {
     enabled: saved.enabled,
+    // Only the in-place path saves an enabled entry before it can fail.
     adopted_in_place: saved.enabled,
     reason: Some(format!("profile manifest was not finalized ({error})")),
   })
@@ -414,6 +449,7 @@ pub fn import(
   import_into(manager, &app_data, request, progress)
 }
 
+/// [`import`] with DMM's app data folder (ledger) given.
 pub fn import_into(
   manager: &mut ModManager,
   app_data: &Path,
@@ -463,6 +499,8 @@ pub fn import_into(
       key: entry.key.clone(),
       name: entry.name.clone(),
     });
+    // An earlier import of this key may since have been linked to its
+    // GameBanana page; keep using the id the user chose.
     let remembered = ledger
       .entries
       .get(&entry.key)
@@ -578,6 +616,8 @@ pub fn import_into(
     .filter_map(|result| result.mod_id.clone())
     .collect();
   if !imported.is_empty() {
+    // Write the final order once, then let DMM lay the pak files out, instead
+    // of reshuffling the profile after every single mod.
     let mut manifest = ProfileVpkManifest::open_for_write(&base)?;
     for (id, order) in &request.existing_orders {
       if let Some(saved) = manifest.mods.get_mut(id)
@@ -649,6 +689,7 @@ mod tests {
       vec!["a.vpk".into()],
     );
     manifest.save(&addons).unwrap();
+    // A rename that failed after the temp file was written.
     fs::rename(addons.join(".dmm.json"), addons.join(".dmm.json.tmp")).unwrap();
     let base = ProfileBase::new(&addons).unwrap();
 
@@ -675,9 +716,12 @@ mod tests {
     store_file(&hashes, &file, &stored).unwrap();
     assert_eq!(fs::read(&stored).unwrap(), b"mod bytes");
 
+    // The next profile's import finds the bytes already stored.
     fs::remove_file(&source).unwrap();
     store_file(&hashes, &file, &stored).unwrap();
 
+    // Different bytes of the same size are replaced. Coarse filesystem
+    // clocks can give the rewrite the same mtime, so move it forward.
     fs::write(&stored, b"old bytes").unwrap();
     let rewritten = fs::OpenOptions::new().write(true).open(&stored).unwrap();
     let mtime = rewritten.metadata().unwrap().modified().unwrap();

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+/** Runs `callback` every frame, for readouts that follow the render loop without re-rendering React. */
 export const useAnimationFrame = (callback: () => void) => {
   const latest = useRef(callback);
   useEffect(() => {

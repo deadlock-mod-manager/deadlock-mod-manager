@@ -82,6 +82,7 @@ pub async fn reset_to_vanilla(guard_permit: Option<String>) -> Result<GameInfoRe
 }
 
 #[tauri::command]
+/// None means there are no DMM mounts for an exit cleanup to remove.
 pub async fn gameinfo_cleanup_revision() -> Result<Option<u64>, Error> {
   let manager = MANAGER.lock().unwrap();
   let game_path = manager
@@ -91,6 +92,7 @@ pub async fn gameinfo_cleanup_revision() -> Result<Option<u64>, Error> {
   manager.get_config_manager().cleanup_revision(game_path)
 }
 
+/// Skip stale observations and active launches, including when the manual guard is off.
 #[tauri::command]
 pub async fn remove_mod_search_paths(expected_revision: u64) -> Result<bool, Error> {
   let Ok(_launch_guard) = super::game::GAMEINFO_LAUNCH.try_lock() else {
@@ -143,6 +145,8 @@ pub async fn validate_gameinfo_patch(expected_vanilla: bool) -> Result<(), Error
     .validate_gameinfo_patch(&game_path, expected_vanilla)
 }
 
+/// Whether gameinfo.gi still lists our addon search paths. Polled by the
+/// broken-mods banner, so it reads the file without holding the manager lock.
 #[tauri::command]
 pub async fn gameinfo_has_mod_paths() -> Result<bool, Error> {
   let game_path = MANAGER

@@ -22,6 +22,7 @@ type ExternalPluginRowProps = {
   plugin: ExternalPluginSummary;
   selected?: boolean;
   onSelect?: () => void;
+  /** On the Updates tab the waiting update outranks setup and restart. */
   updateFirst?: boolean;
 };
 

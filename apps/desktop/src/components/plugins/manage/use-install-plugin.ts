@@ -13,6 +13,7 @@ import {
 import logger from "@/lib/logger";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
+/** After an install, land on the plugin's page so the user can finish setup. */
 const useInstalled = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -43,6 +44,7 @@ const useInstalled = () => {
   };
 };
 
+/** The picker stays outside the mutation so the button only reads "Installing" once a file is chosen. */
 export const useInstallFromFile = () => {
   const { t } = useTranslation();
   const mutation = useMutation({

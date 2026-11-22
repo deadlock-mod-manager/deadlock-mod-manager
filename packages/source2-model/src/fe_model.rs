@@ -1,17 +1,32 @@
+//! Reads the cloth setup (`m_pFeModel`) out of a model's PHYS block.
+//!
+//! Source 2 simulates cloth as a set of point masses ("nodes") tied together by
+//! distance constraints ("rods"). Static nodes follow the animated skeleton;
+//! dynamic nodes swing under gravity and collide with capsules and spheres
+//! fixed to static nodes. This keeps only what a preview needs to reproduce
+//! that motion, converted to the glTF axes the exported model uses.
+
 use crate::kv3::{self, KvValue};
 use crate::nm_anim::{source_quat_to_gltf, source_vec3_to_gltf};
 use crate::{Resource, Result};
 
 #[derive(Debug, Clone)]
 pub struct ClothNode {
+    /// The skeleton bone (or cloth control point) this node drives.
     pub name: String,
+    /// Index of the node this one hangs from, or -1 for the model root.
     pub parent: i32,
+    /// Static nodes follow the animation and are never moved by the solver.
     pub is_static: bool,
+    /// Model-space bind position and rotation, in glTF axes.
     pub bind_position: [f32; 3],
     pub bind_rotation: [f32; 4],
+    /// Downward acceleration in model units per second squared.
     pub gravity: f32,
     pub damping: f32,
+    /// How much of the animated motion carries into the node each step.
     pub animation_force_attraction: f32,
+    /// How strongly the node is pulled back to its animated position.
     pub animation_vertex_attraction: f32,
     pub collision_radius: f32,
 }
@@ -21,10 +36,12 @@ pub struct ClothRod {
     pub nodes: [u16; 2],
     pub min_distance: f32,
     pub max_distance: f32,
+    /// Share of the correction applied to the first node.
     pub weight0: f32,
     pub relaxation: f32,
 }
 
+/// Keeps a node within `max_distance` of its animated position.
 #[derive(Debug, Clone, Copy)]
 pub struct ClothStrayRadius {
     pub node: u16,
@@ -32,12 +49,15 @@ pub struct ClothStrayRadius {
     pub relaxation: f32,
 }
 
+/// A capsule whose ends may have different radii, in the local frame of `node`.
+/// Each sphere is `[x, y, z, radius]`.
 #[derive(Debug, Clone, Copy)]
 pub struct ClothCollider {
     pub node: u16,
     pub spheres: [[f32; 4]; 2],
 }
 
+/// Authored frame for a cloth bone: X = x0 - x1, Y = y0 - y1.
 #[derive(Debug, Clone, Copy)]
 pub struct ClothNodeBase {
     pub node: u16,
@@ -45,6 +65,7 @@ pub struct ClothNodeBase {
     pub x1: u16,
     pub y0: u16,
     pub y1: u16,
+    /// Rotation from the reconstructed frame to the bone, in glTF axes.
     pub q_adjust: [f32; 4],
 }
 
@@ -114,6 +135,7 @@ fn node_bases(fe: &KvValue, node_count: usize) -> Vec<ClothNodeBase> {
         .collect()
 }
 
+/// The model's cloth, or `None` when it has no simulated nodes.
 pub fn parse_model_cloth(resource: &Resource) -> Result<Option<ClothModel>> {
     let Some(bytes) = resource.block_bytes("PHYS") else {
         return Ok(None);
@@ -141,6 +163,7 @@ pub fn parse_model_cloth(resource: &Resource) -> Result<Option<ClothModel>> {
     let parents = array(fe, "m_SkelParents");
     let inverse_masses = array(fe, "m_NodeInvMasses");
     let integrators = array(fe, "m_NodeIntegrator");
+    // Collision radii cover only the dynamic nodes, which follow the static ones.
     let radii = array(fe, "m_NodeCollisionRadii");
     let gravity_scale = fe
         .get("m_flDefaultGravityScale")

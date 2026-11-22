@@ -31,6 +31,7 @@ export function CrashSuspectBadge({ modId }: { modId: string }) {
     mod.status !== ModStatus.Installed ||
     !enabled ||
     !atCrash ||
+    // An update or reinstall since the crash replaced the files it named
     modFilesChanged(atCrash, {
       ...atCrash,
       downloadedAt: toIsoString(mod.downloadedAt),

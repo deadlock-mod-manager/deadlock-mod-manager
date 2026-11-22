@@ -3,6 +3,7 @@ import { presetById } from "@/lib/stats/dashboard/catalog";
 import type { DashboardWidget } from "@/lib/stats/dashboard/layout";
 import { panelDef } from "./panels";
 
+/** Whether the widget shows anything without a selected account. */
 export const widgetNeedsAccount = (widget: DashboardWidget): boolean => {
   switch (widget.source.kind) {
     case "panel":
@@ -16,6 +17,7 @@ export const widgetNeedsAccount = (widget: DashboardWidget): boolean => {
   }
 };
 
+/** Whether the widget waits on the shared match history. */
 export const widgetNeedsHistory = (widget: DashboardWidget): boolean => {
   switch (widget.source.kind) {
     case "panel":

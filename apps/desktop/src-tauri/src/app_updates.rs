@@ -51,6 +51,9 @@ fn is_nightly(version: &semver::Version) -> bool {
   version.pre.as_str().starts_with("nightly.")
 }
 
+/// Nightly offers newer builds, plus older nightlies to an installed nightly so
+/// a reset nightly base version (#784) still reaches existing testers. An
+/// installed stable build is never offered anything older than itself.
 fn nightly_offers_release(current: &semver::Version, release: &semver::Version) -> bool {
   release > current || (is_nightly(current) && is_nightly(release) && release != current)
 }
@@ -106,6 +109,7 @@ pub async fn check_app_update(webview: tauri::Webview<AppRuntime>) -> UpdateChec
       .updater_builder()
       .target(&context.target)
       .timeout(Duration::from_secs(30));
+    // Fixture endpoints are configured by the isolated E2E runtime.
     if !crate::runtime_environment::is_e2e_active() {
       let endpoints = updater_channel::endpoints_for(&context.channel)
         .iter()
@@ -188,6 +192,7 @@ mod tests {
         &semver::Version::parse(release).unwrap(),
       )
     };
+    // Published as v2.3.0 and the nightly manifest on 2026-11-02.
     let stable = "2.3.0";
     let nightly = "2.4.0-nightly.20261102.92bebec6";
     assert!(offers(stable, nightly));

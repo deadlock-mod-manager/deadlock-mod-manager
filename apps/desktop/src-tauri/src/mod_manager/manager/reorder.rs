@@ -2,6 +2,9 @@ use super::*;
 use std::collections::HashMap;
 
 impl ModManager {
+  /// Pick the last active shard when it has room, otherwise append a new shard.
+  /// Filling holes in older shards would move a newly installed mod ahead of
+  /// mods in later search paths and silently change load order.
   pub(crate) fn choose_shard_for(
     base: &ProfileBase,
     current_mod: Option<(ShardIndex, u32)>,
@@ -128,6 +131,10 @@ impl ModManager {
     changed
   }
 
+  /// Take the caller's order for a mod's own VPKs, which is how a player
+  /// reorders files inside one mod. The original names move with their files
+  /// so a later disable still restores each one under its own name. Anything
+  /// but a reordering of exactly the recorded files is ignored.
   pub(super) fn adopt_requested_vpk_order(
     entry: &mut ProfileVpkManifestEntry,
     requested: &[String],
@@ -166,6 +173,13 @@ impl ModManager {
     true
   }
 
+  /// Drop VPK claims recorded by more than one mod, keeping the first claimant
+  /// in load order.
+  ///
+  /// A VPK file has exactly one owner on disk, so a shared claim always means a
+  /// stale record. Refusing to reorder in that case leaves the profile
+  /// permanently unorderable, so the later claimants give up the claim instead
+  /// and are reconciled as uninstalled.
   fn dedupe_assignments(
     assignments: Vec<ShardAssignment>,
   ) -> (Vec<ShardAssignment>, Vec<ShardAssignment>) {
@@ -197,6 +211,8 @@ impl ModManager {
     (deduped, dropped)
   }
 
+  /// Record mods that lost every claim as uninstalled, and report them back so
+  /// callers drop the stale VPK names from their own state too.
   fn release_dropped_claims(
     manifest: &mut ProfileVpkManifest,
     dropped: Vec<ShardAssignment>,
@@ -217,6 +233,12 @@ impl ModManager {
       .collect()
   }
 
+  /// Rewrite manifest entries that took no part in a reorder.
+  ///
+  /// A reorder renumbers every enabled VPK in the profile, including files
+  /// these entries still reference. Without this their recorded names end up
+  /// pointing at another mod's file, and the next reorder sees a duplicate
+  /// claim it cannot resolve.
   fn resync_unmapped_manifest_entries(
     manifest: &mut ProfileVpkManifest,
     mapped_mod_ids: &HashSet<String>,
@@ -232,6 +254,7 @@ impl ModManager {
       for vpk in &entry.current_vpks {
         let filename = Self::vpk_filename(vpk);
 
+        // Disabled (prefixed) VPKs are never touched by a reorder.
         if VpkManager::enabled_vpk_number(&filename).is_none() {
           resynced.push(filename);
           continue;
@@ -280,6 +303,10 @@ impl ModManager {
     }
   }
 
+  /// Enabled manifest entries in the order the engine must load them: mods with
+  /// an explicit install order first and in that order, then the rest in the
+  /// position they already occupy on disk, so a partially ordered profile does
+  /// not get shuffled.
   pub(super) fn ordered_assignments(manifest: &ProfileVpkManifest) -> Vec<ShardAssignment> {
     let mut ordered: Vec<((u8, u32, u32), ShardAssignment)> = manifest
       .mods
@@ -313,6 +340,9 @@ impl ModManager {
       .collect()
   }
 
+  /// Move the VPKs, then record where they landed. The manifest write is the
+  /// commit point: until it succeeds every file goes back where it was, so the
+  /// manifest can never describe a layout that is not on disk.
   fn commit_reorder(
     &mut self,
     base: &ProfileBase,
@@ -362,8 +392,12 @@ impl ModManager {
     current_original_names: &[String],
     selected_original_names: Vec<String>,
   ) -> Result<VariantChangeResult, Error> {
+    // The caller sends the selection in the mod's load order, which this keeps:
+    // the first name gets the lowest pak number.
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // The UI file tree may be sorted differently from the numbered VPKs.
+    // Preserve the manifest's positional mapping when staging a later swap.
     let (current_installed_vpks, current_original_names) = manifest
       .mods
       .get(mod_id)
@@ -466,6 +500,8 @@ impl ModManager {
       if manifest_changed {
         manifest.save(&addons_path)?;
       }
+      // Enabled VPKs the manifest does not know about still need compacting, or
+      // a legacy profile would keep its out-of-range pak numbers forever.
       let has_unmanaged_enabled_vpks = shard::all_shards()
         .any(|shard_index| VpkManager::count_enabled_vpks(&addons_path.shard_dir(shard_index)) > 0);
       if has_unmanaged_enabled_vpks {
@@ -485,9 +521,10 @@ impl ModManager {
     Ok(())
   }
 
+  /// Reorder mods based on their remote IDs and current VPK files
   pub fn reorder_mods_by_remote_id(
     &mut self,
-    mod_order_data: Vec<(String, Vec<String>, u32)>,
+    mod_order_data: Vec<(String, Vec<String>, u32)>, // (remote_id, current_vpks, order)
     profile_folder: Option<String>,
   ) -> Result<Vec<(String, Vec<String>)>, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
@@ -546,6 +583,7 @@ impl ModManager {
     )
   }
 
+  /// Reorder mods based on the specified order
   pub fn reorder_mods(
     &mut self,
     mod_order_data: Vec<(String, u32)>,
@@ -598,6 +636,8 @@ impl ModManager {
       return Ok(Vec::new());
     }
 
+    // `commit_reorder` has already written the new VPK names into the
+    // repository, so the reordered mods can just be read back out.
     let placements = self.commit_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
     self.invalidate_localization_overlay(profile_folder.as_deref());
     let result_mods: Vec<Mod> = placements

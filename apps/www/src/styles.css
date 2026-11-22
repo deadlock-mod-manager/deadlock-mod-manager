@@ -5,6 +5,7 @@
 @source "../node_modules/@deadlock-mods/ui";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Custom Fonts */
 @font-face {
   font-family: "Forevs Demo";
   src: url("./assets/fonts/primary/forevsdemo-medium.otf") format("opentype");
@@ -113,6 +114,7 @@ body {
   --font-primary: "Forevs Demo", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 
+  /* Surfaces and text tones from the desktop app, used by the landing page. */
   --color-surface: #161412;
   --color-surface-hover: #1e1b19;
   --color-border-strong: #2e2e2e;
@@ -172,6 +174,7 @@ body {
   }
 }
 
+/* Custom animations for 404 page */
 @keyframes spin-slow {
   to {
     transform: rotate(360deg);
@@ -184,6 +187,8 @@ body {
   }
 }
 
+/* Deadlock in-game shop colours, straight from citadel_shared_colors.
+   The randomizer codes every item by category with them. */
 @theme {
   --color-dl-weapon: #e58a00;
   --color-dl-spirit: #00ddff;
@@ -219,12 +224,14 @@ body {
   }
 }
 
+/* /v2: the fix ticker scrolls a doubled list, so -50% loops seamlessly. */
 @keyframes ticker-up {
   to {
     transform: translateY(-50%);
   }
 }
 
+/* /v2 in October: one bat crosses the seasonal themes, like the Halloween theme's. */
 @keyframes bat-flight {
   from {
     transform: translate(-15vw, 60px) rotate(8deg);
@@ -244,6 +251,7 @@ body {
 }
 
 @layer utilities {
+  /* Angled corners, the way the Deadlock HUD cuts its panels. */
   .dl-notch {
     clip-path: polygon(
       14px 0,
@@ -320,6 +328,8 @@ body {
   }
 }
 
+/* Ported from the desktop app for the landing page app preview. */
+/* Occult Geometry Animations */
 @keyframes occult-rotate {
   from {
     transform: rotate(0deg);
@@ -394,6 +404,7 @@ body {
   color: hsl(var(--foreground));
 }
 
+/* Landing hero: the app window settles into its angle, then the install toast lands. */
 .hero-window {
   transform: var(--hero-tilt);
 }
@@ -432,6 +443,7 @@ body {
   }
 }
 
+/* Hero toast: one install plays out after the window lands. Reduced motion shows the result. */
 .hero-toast-installing {
   opacity: 0;
 }
@@ -482,6 +494,7 @@ body {
   }
 }
 
+/* App preview launch sequence. */
 @keyframes dl-fade-in {
   from {
     opacity: 0;
@@ -529,6 +542,7 @@ body {
   }
 }
 
+/* Themes stage: a registered color so the ambient light can interpolate. */
 @property --theme-glow {
   syntax: "<color>";
   inherits: true;

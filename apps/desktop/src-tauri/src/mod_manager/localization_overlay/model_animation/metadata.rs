@@ -11,6 +11,8 @@ const GRAPH_FIELDS: &[&str] = &[
   "m_sAG2UIAnimGraph",
 ];
 
+/// Activate the proven NM bindings without an unavailable legacy graph selector.
+/// Only missing pawn controls are inherited; authored particles and settings survive.
 pub(super) fn restore(
   old: &str,
   current: &str,

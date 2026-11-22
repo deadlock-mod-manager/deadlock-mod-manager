@@ -6,8 +6,11 @@ import { usePersistedStore } from "@/lib/store";
 
 interface ShufflePoolBarProps {
   hero: string;
+  /** Skins and the default look the next launch can land on. */
   poolSize: number;
+  /** Every skin plus the default look. */
   total: number;
+  /** Skins that can go in the pool without a dialog at launch. */
   selectableSkinIds: string[];
   allSkinIds: string[];
   onDone: () => void;

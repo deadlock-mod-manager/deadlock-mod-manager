@@ -22,6 +22,7 @@ const CONFIG_EXTENSIONS = ["gi", "cfg", "txt", "zip", "rar", "7z"];
 type ImportSourcePanelProps = {
   initialSource: ImportSource | null;
   context: ImportModContext | null;
+  /** False while a handed-over source replaces the tabs. */
   tabsVisible: boolean;
   onShowTabs: () => void;
   report: ImportReport | null;

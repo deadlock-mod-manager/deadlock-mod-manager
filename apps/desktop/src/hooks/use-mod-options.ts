@@ -184,6 +184,8 @@ const deriveOriginalsForArchive = (
   return deriveFilesForArchive(mod, archiveName).map((f) => f.name);
 };
 
+// Trees saved before variant names were made unique can give several archives
+// the same name, which says nothing about which archive's file is on disk.
 const deriveOwnedOriginalsForArchive = (
   mod: LocalMod,
   archiveName: string,
@@ -198,6 +200,7 @@ const deriveOwnedOriginalsForArchive = (
   );
 };
 
+// Entries without an archive claim nothing: their file may be this archive's.
 const deriveClaimedOriginals = (mod: LocalMod, archiveName: string): string[] =>
   (mod.installedFileTree?.files ?? [])
     .filter((f) => f.archive_name && f.archive_name !== archiveName)
@@ -215,11 +218,17 @@ export interface AppliedArchiveSelection {
 
 interface ApplyArchiveSelectionOptions {
   profileFolder: string | null;
+  /** Every archive the mod offers, in the author's order. */
   archiveNames: string[];
   setProgress: (progress: ModOptionsProgress) => void;
   t: TFunction;
 }
 
+/**
+ * Downloads the newly selected archives and swaps the mod's files in the game
+ * to the new selection. Manage files and 1-click links for another file of an
+ * installed mod both add archives through here.
+ */
 export const applyArchiveSelection = async (
   mod: LocalMod,
   {
@@ -241,6 +250,7 @@ export const applyArchiveSelection = async (
       })
       .info("Staging new download archives");
 
+    // Archives staged earlier in this apply aren't in the tree yet.
     const stagedThisApply: string[] = [];
     for (const [index, archive] of selectedArchives.entries()) {
       const position = {
@@ -248,6 +258,8 @@ export const applyArchiveSelection = async (
         index,
         count: selectedArchives.length,
       };
+      // Rust sends the first phase, so a reused archive shows no download.
+      // The listed size only stands in until the transfer reports a total.
       const onProgress = new Channel<StageArchiveProgress>((message) =>
         setProgress(
           message.phase === "downloading" && message.downloaded === 0
@@ -366,6 +378,7 @@ export const applyArchiveSelection = async (
   return { result, stagedOriginals };
 };
 
+/** Records an applied selection on the mod in the library. */
 export const saveArchiveSelection = (
   mod: LocalMod,
   { result, stagedOriginals }: AppliedArchiveSelection,
@@ -399,6 +412,8 @@ export const saveArchiveSelection = (
 
   setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
 
+  // Existing entries keep their URL: a replaced upload's files weren't
+  // written, so reuse stays off and the update check still offers it.
   const existing = mod.selectedDownloads ?? [];
   const existingNames = new Set(existing.map((d) => d.name));
   const newArchives = selectedArchives.filter(
@@ -423,6 +438,8 @@ export const useModOptions = (mod: LocalMod | null) => {
   const installedVpks = mod?.installedVpks ?? [];
   const currentOriginalNames = mod ? deriveCurrentOriginalNames(mod) : [];
 
+  // Stored file IDs go stale when the author replaces files, and staging a
+  // file GameBanana no longer has fails, so the dialog reads the live list.
   const { data: liveDownloads } = useQuery({
     ...modDownloadsQueryOptions(mod?.remoteId ?? ""),
     enabled: isOpen && !!mod && !isLocalMod(mod),
@@ -471,6 +488,7 @@ export const useModOptions = (mod: LocalMod | null) => {
 
   const archiveNames = downloads.map((d) => d.name);
   const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
+  // isPending lags a render; anything sent before then would use stale VPKs.
   const isSubmittingRef = useRef(false);
 
   const applyMutation = useMutation<
@@ -522,6 +540,8 @@ export const useModOptions = (mod: LocalMod | null) => {
         throw new ValidationError("No mod selected");
       }
 
+      // Files left unchecked at install time were never copied to the addons
+      // folder, so they have to come out of their archive again.
       const currentNames = new Set(currentOriginalNames);
       const newlyEnabled = selectedNames.filter((n) => !currentNames.has(n));
       const archives = groupMissingByArchive(newlyEnabled, mod);
@@ -591,7 +611,9 @@ export const useModOptions = (mod: LocalMod | null) => {
   });
 
   const { uninstall } = useUninstall();
+  // Keeps the stored selection, so re-enabling restores the same files.
   const disableMutation = useMutation<boolean, Error, "variants" | "files">({
+    // Local-only, so it must not pause offline.
     networkMode: "always",
     mutationFn: async () => {
       if (!mod) {
@@ -613,6 +635,7 @@ export const useModOptions = (mod: LocalMod | null) => {
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
+  // Only the download can be stopped; extracting and applying run to the end.
   const cancelApply =
     mod && progress?.phase === "downloading"
       ? () => invoke("cancel_stage_download_archive", { modId: mod.remoteId })

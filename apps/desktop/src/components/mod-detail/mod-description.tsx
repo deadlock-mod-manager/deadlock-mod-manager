@@ -8,6 +8,7 @@ import { GameBananaMarkup } from "@/components/mod-detail/gamebanana-markup";
 import { MarkdownContent } from "@/components/mod-detail/markdown-content";
 import { useTranslation } from "react-i18next";
 
+/** GameBanana sends its own HTML markup; custom sources declare plain text or Markdown. */
 type ModDescriptionFormat = "gamebanana" | "plain" | "markdown";
 
 interface ModDescriptionProps {

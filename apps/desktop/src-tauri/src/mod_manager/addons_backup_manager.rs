@@ -36,6 +36,7 @@ pub struct AddonsBackup {
   pub created_at: u64,
   pub file_size: u64,
   pub addons_count: u32,
+  /// Names of the mods an update backup holds; empty for full backups.
   #[serde(default)]
   pub mod_names: Vec<String>,
 }
@@ -84,12 +85,15 @@ impl AddonsBackupManager {
     self.repair_directory = Some(path);
   }
 
+  /// Create a backup without requiring a mutable reference to self
+  /// This is used for async operations where we don't hold locks
   pub fn create_backup_async(
     addons_path: PathBuf,
     backup_dir: PathBuf,
     filename: String,
     app_handle: AppHandle,
   ) -> Result<AddonsBackup, Error> {
+    // Emit progress: initializing
     let _ = app_handle.emit(
       "backup-progress",
       serde_json::json!({
@@ -105,6 +109,7 @@ impl AddonsBackupManager {
       ));
     }
 
+    // Emit progress: scanning
     let _ = app_handle.emit(
       "backup-progress",
       serde_json::json!({
@@ -120,6 +125,16 @@ impl AddonsBackupManager {
 
     let filename = Self::unused_backup_name(&backup_dir, &filename);
     let backup_path = backup_dir.join(&filename);
+    // Build into a hidden staging directory and only rename it to the final
+    // (listable) name after validation succeeds, so an interrupted or invalid
+    // backup can never be listed, restored, deleted, or pruned. The name does
+    // not start with `addons-backup-`, so `list_backups` ignores it.
+    //
+    // Claim the staging directory atomically via exclusive creation and retry
+    // under a fresh name on collision. This never removes or reuses an existing
+    // directory, so a concurrent backup (which may share the same second-
+    // resolution filename) can't have its in-progress staging clobbered, and a
+    // stale leftover can't be copied into the new backup.
     let staging_path = {
       let mut attempt = 0u32;
       loop {
@@ -152,6 +167,7 @@ impl AddonsBackupManager {
       .collect();
     let already_invalid = Self::invalid_profiles(citadel_path);
 
+    // Emit progress: copying
     let _ = app_handle.emit(
       "backup-progress",
       serde_json::json!({
@@ -194,6 +210,7 @@ impl AddonsBackupManager {
       });
     }
 
+    // Publish the validated snapshot atomically.
     if let Err(error) = fs::rename(&staging_path, &backup_path) {
       let _ = fs::remove_dir_all(&staging_path);
       return Err(Error::BackupCreationFailed(format!(
@@ -201,6 +218,7 @@ impl AddonsBackupManager {
       )));
     }
 
+    // Emit progress: finalizing
     let _ = app_handle.emit(
       "backup-progress",
       serde_json::json!({
@@ -215,6 +233,7 @@ impl AddonsBackupManager {
       .unwrap_or_default()
       .as_secs();
 
+    // Emit completion
     let _ = app_handle.emit(
       "backup-progress",
       serde_json::json!({
@@ -261,6 +280,8 @@ impl AddonsBackupManager {
     format!("addons-backup-{}", now.format("%Y-%m-%d_%H-%M-%S"))
   }
 
+  /// Names only have second resolution, so an update retried right after a
+  /// failed one would collide with its backup. Later ones get a `-N` suffix.
   pub(crate) fn unused_backup_name(backup_dir: &Path, filename: &str) -> String {
     let mut name = filename.to_string();
     let mut suffix = 1;
@@ -271,6 +292,7 @@ impl AddonsBackupManager {
     name
   }
 
+  /// Orders backups `unused_backup_name` made within the same second.
   fn backup_name_suffix(filename: &str) -> u32 {
     Self::backup_name_timestamp(filename)
       .and_then(|rest| rest.get("YYYY-MM-DD_HH-MM-SS".len()..))
@@ -289,6 +311,11 @@ impl AddonsBackupManager {
       let entry_name = entry.file_name();
       let entry_name = entry_name.to_string_lossy();
       if entry_name.as_ref() == ".dmm.json.tmp" {
+        // A temp manifest with no canonical `.dmm.json` sibling is the only
+        // surviving record of this profile's mod ownership (the process crashed
+        // between writing the temp file and renaming it into place). Canonicalize
+        // it into the backup as `.dmm.json` so restore and validation see it.
+        // When `.dmm.json` already exists the temp file is stale and skipped.
         if !source.join(".dmm.json").exists() {
           let destination_path = destination.join(".dmm.json");
           let bytes = fs::copy(&source_path, &destination_path)?;
@@ -350,6 +377,8 @@ impl AddonsBackupManager {
     Ok(stats)
   }
 
+  /// Profiles whose manifest is already inconsistent. A faithful copy keeps
+  /// them that way, so they cannot be blamed on the copy.
   fn invalid_profiles(root: &Path) -> BTreeSet<String> {
     ProfileVpkManifest::profile_failures(root)
       .map(|failures| failures.into_keys().collect())
@@ -408,6 +437,7 @@ impl AddonsBackupManager {
     failures
   }
 
+  /// The part of a full or update backup name that starts with its timestamp.
   fn backup_name_timestamp(filename: &str) -> Option<&str> {
     let without_ext = filename.strip_suffix(".7z").unwrap_or(filename);
     without_ext
@@ -416,6 +446,7 @@ impl AddonsBackupManager {
   }
 
   fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
+    // Ignores the suffix `unused_backup_name` adds after the timestamp.
     let timestamp = Self::backup_name_timestamp(filename)?.get(.."YYYY-MM-DD_HH-MM-SS".len())?;
 
     let datetime_str = timestamp.replace('_', " ").replace('-', ":");
@@ -442,6 +473,7 @@ impl AddonsBackupManager {
     let naive_time = chrono::NaiveTime::from_hms_opt(hour, minute, second)?;
     let naive_datetime = chrono::NaiveDateTime::new(naive_date, naive_time);
 
+    // Names hold local time, so read them as local time, not as UTC.
     let datetime = Local.from_local_datetime(&naive_datetime).earliest()?;
 
     Some(datetime.timestamp() as u64)
@@ -614,6 +646,10 @@ impl AddonsBackupManager {
       )));
     }
 
+    // The restore is already committed: the backup roots are active and the
+    // old roots only survive as leftovers in the staging dir. Removing them is
+    // best-effort cleanup and must never turn a successful restore into a
+    // failure.
     if let Err(error) = fs::remove_dir_all(&staging_path) {
       log::warn!(
         "Backup restored successfully, but failed to remove restore staging directory {}: {error}",
@@ -634,6 +670,7 @@ impl AddonsBackupManager {
       return Err(Error::BackupNotFound);
     }
 
+    // Remove the entire backup directory
     fs::remove_dir_all(&backup_path)
       .map_err(|e| Error::BackupRestoreFailed(format!("Failed to delete backup directory: {e}")))?;
 
@@ -641,6 +678,9 @@ impl AddonsBackupManager {
     Ok(())
   }
 
+  /// Keeps the newest `max_count` full backups and, separately, the newest
+  /// `max_count` update backups, so small per-mod backups never push out a
+  /// full one.
   pub fn prune_old_backups(&self, max_count: u32) -> Result<u32, Error> {
     if max_count == 0 {
       return Ok(0);
@@ -737,6 +777,8 @@ mod tests {
     fs::write(path, contents).unwrap();
   }
 
+  /// A sharded profile spans sibling `addons`/`addonsN` roots, so a backup that
+  /// only walked `addons` would silently drop every overflow mod.
   fn sharded_citadel(temp: &tempfile::TempDir) -> PathBuf {
     let citadel = temp.path().join("citadel");
     let profile = "profile_x";
@@ -803,9 +845,12 @@ mod tests {
         .is_file()
     );
 
+    // The snapshot must satisfy the same check restore runs against it.
     AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap();
   }
 
+  /// A backup that captured a shard root but not the files a manifest points at
+  /// would restore a broken profile, so validation has to reject it.
   #[test]
   fn validation_rejects_a_snapshot_missing_an_overflow_shard() {
     let temp = tempfile::tempdir().unwrap();
@@ -818,6 +863,8 @@ mod tests {
     assert!(error.to_string().contains("references missing VPKs"));
   }
 
+  /// The update dialog names the conflicting mods only when the ownership
+  /// error reaches it intact, so validation must not flatten it to a string.
   #[test]
   fn validation_keeps_duplicate_ownership_structured() {
     let temp = tempfile::tempdir().unwrap();
@@ -839,9 +886,12 @@ mod tests {
     let error = AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap_err();
     assert!(matches!(error, Error::DuplicateVpkOwnership { .. }));
 
+    // Already broken before the copy, so the copy is faithful, not inconsistent.
     AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::from([String::new()])).unwrap();
   }
 
+  /// In-progress staging directories belong to an interrupted operation, not to
+  /// the user's addons; restoring them would resurrect a half-finished move.
   #[test]
   fn backup_skips_internal_staging_artifacts() {
     let temp = tempfile::tempdir().unwrap();
@@ -872,6 +922,8 @@ mod tests {
     assert!(restored.join("pak01_dir.vpk").is_file());
   }
 
+  /// A crash between writing the temp manifest and renaming it leaves the temp
+  /// file as the only record of shard ownership; the backup must keep it.
   #[test]
   fn backup_canonicalizes_an_orphaned_temp_manifest() {
     let temp = tempfile::tempdir().unwrap();
@@ -901,6 +953,8 @@ mod tests {
     AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap();
   }
 
+  /// Retrying an update within the same second used to fail with "Backup
+  /// already exists".
   #[test]
   fn backups_in_the_same_second_get_distinct_names() {
     let temp = tempfile::tempdir().unwrap();
@@ -923,6 +977,7 @@ mod tests {
     assert!(manager.parse_backup_filename(name).is_some());
   }
 
+  /// Five one-mod updates used to delete five full backups (#1076).
   #[test]
   fn update_backups_and_full_backups_are_pruned_separately() {
     let temp = tempfile::tempdir().unwrap();

@@ -5,6 +5,7 @@ import { usePerfConfigList } from "@/hooks/performance/use-perf-config-list";
 import { ApplicableDetails } from "./applicable-details";
 import { CommunityDetails } from "./community-details";
 
+/** The sheet's body: a preset or user config, a GameBanana config, or "not found". */
 export const ConfigDetails = ({ configId }: { configId: string }) => {
   const { t } = useTranslation();
   const { catalogQuery, items } = usePerfConfigList();

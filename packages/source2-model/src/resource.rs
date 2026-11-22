@@ -1,5 +1,6 @@
 use crate::error::{Result, Source2Error};
 
+/// One block entry in a compiled Source 2 resource (DATA, RERL, NTRO, ...).
 #[derive(Debug, Clone)]
 pub struct ResourceBlock {
     pub name: String,
@@ -7,6 +8,8 @@ pub struct ResourceBlock {
     pub size: usize,
 }
 
+/// The block table of a compiled Source 2 resource file (`*_c`). Owns the raw
+/// bytes so callers can slice individual blocks.
 #[derive(Debug)]
 pub struct Resource {
     pub data: Vec<u8>,
@@ -26,6 +29,12 @@ fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
 }
 
 impl Resource {
+    /// Parse the resource header + block table.
+    ///
+    /// Header: `fileSize u32`, `headerVersion u16` (12), `version u16`,
+    /// `blockOffset u32`, `blockCount u32`. Block table starts at
+    /// `8 + blockOffset`. Each 12-byte block entry is `type [u8;4]`,
+    /// `offset u32` (relative to the offset field), `size u32`.
     pub fn parse(data: Vec<u8>) -> Result<Self> {
         if data.len() < 16 {
             return Err(Source2Error::Resource("file too small".into()));

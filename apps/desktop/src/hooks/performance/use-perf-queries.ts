@@ -20,11 +20,17 @@ import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
 
+/** Background checks run at most this often. */
 const CATALOG_RECHECK_MS = 60 * 60 * 1000;
 
 let catalogRefresh: Promise<CatalogSummary> | null = null;
 let lastCatalogCheck = 0;
 
+/**
+ * Asks the API for a newer catalog and adopts it. Calls made while a check is
+ * in flight share it. Rejects when the API can't be reached; the current
+ * catalog keeps working.
+ */
 export const refreshPerfCatalogNow = (queryClient: QueryClient) => {
   if (catalogRefresh) return catalogRefresh;
   lastCatalogCheck = Date.now();
@@ -32,8 +38,12 @@ export const refreshPerfCatalogNow = (queryClient: QueryClient) => {
     .then(async (summary) => {
       const catalogKey = perfQueryKeys.catalog();
       const previous = queryClient.getQueryData<CatalogSummary>(catalogKey);
+      // Cancel a read still in flight so it can't land afterwards with the
+      // old catalog, then use the refreshed summary as is.
       await queryClient.cancelQueries({ queryKey: catalogKey });
       queryClient.setQueryData(catalogKey, summary);
+      // Presets resolve against the catalog, so other results only go stale
+      // when it actually changed.
       if (previous?.version === summary.version) return summary;
       await queryClient.invalidateQueries({
         queryKey: perfQueryKeys.all,
@@ -47,6 +57,10 @@ export const refreshPerfCatalogNow = (queryClient: QueryClient) => {
   return catalogRefresh;
 };
 
+/**
+ * Checks for a newer catalog at app start (or the first catalog read), then
+ * at most once an hour. Never rejects.
+ */
 export const refreshPerfCatalogInBackground = async (
   queryClient: QueryClient,
 ) => {
@@ -60,6 +74,7 @@ export const refreshPerfCatalogInBackground = async (
   }
 };
 
+/** The catalog with counts computed against the user's gameinfo.gi. */
 export const usePerfCatalog = (enabled = true) => {
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -75,6 +90,7 @@ export const usePerfCatalog = (enabled = true) => {
   });
 };
 
+/** What the file holds versus what the user chose. Re-read on window focus. */
 export const usePerfStatus = (enabled = true) =>
   useQuery({
     queryKey: perfQueryKeys.status(),
@@ -91,6 +107,10 @@ const removedNames = (convars: ConvarMeta[]) =>
       .map((convar) => convar.name),
   );
 
+/**
+ * The names the current game build no longer has, per the synced catalog.
+ * Names the catalog doesn't know (launch flags, commands) are never included.
+ */
 export const useRemovedConvars = (names: readonly string[]) => {
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -106,8 +126,12 @@ export const useRemovedConvars = (names: readonly string[]) => {
   }).data;
 };
 
+// Each edit changes the request, so each result is a different query. A
+// stable `select` makes the observer share unchanged entries with its previous
+// result, so memoized rows skip re-rendering.
 const keepUnchangedEntries = (resolved: ResolvedConfig) => resolved;
 
+/** What applying `request` would write. `null` disables the query. */
 export const usePerfResolve = (request: PerfApplyRequest | null) =>
   useQuery({
     queryKey: perfQueryKeys.resolve(request),

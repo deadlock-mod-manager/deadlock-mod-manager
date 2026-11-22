@@ -15,6 +15,8 @@ export function getLanguageDetectionText(content: string): string {
     .trim();
 }
 
+// Common English words that are rare as standalone words in other Latin-script
+// languages ("i", "to", "of", "was", "my" are left out because they are not).
 const ENGLISH_WORDS = new Set([
   "the",
   "and",
@@ -81,7 +83,9 @@ export function detectNonEnglishLanguage(
   content: string,
 ): string | null {
   const text = getLanguageDetectionText(content);
+  // Short messages, names, and gaming slang are too ambiguous for enforcement.
   if ((text.match(/\p{L}/gu)?.length ?? 0) < 20) return null;
+  // cld3 confidently misreads short casual English (e.g. as Malagasy).
   if (englishWordShare(text) >= 0.3) return null;
 
   const result = detector.findLanguage(text);

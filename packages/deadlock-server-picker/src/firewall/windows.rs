@@ -54,6 +54,7 @@ impl Drop for MutationLock {
 struct Apartment;
 impl Apartment {
   fn new() -> windows::core::Result<Self> {
+    // Interfaces stay on the operation's blocking thread.
     unsafe {
       CoInitializeEx(None, COINIT_MULTITHREADED).ok()?;
     }
@@ -77,6 +78,8 @@ fn policy() -> windows::core::Result<INetFwPolicy2> {
 }
 
 fn rule_from_variant(value: &VARIANT) -> windows::core::Result<INetFwRule> {
+  // INetFwRules enumerates VT_DISPATCH values. IUnknown::try_from only accepts
+  // VT_UNKNOWN; borrow the dispatch's IUnknown base while the VARIANT owns it.
   unsafe {
     let raw = value.as_raw().Anonymous.Anonymous;
     if raw.vt == VT_DISPATCH.0 {
@@ -222,6 +225,8 @@ pub(super) fn apply(
   let policy = policy().map_err(map_error)?;
   let rules = unsafe { policy.Rules() }.map_err(map_error)?;
   if desired.is_empty() {
+    // Enumerate after each pass: Windows permits duplicate display names,
+    // and recovery must still remove them without relying on the catalog.
     let mut remaining = collect_owned(&rules).map_err(map_error)?;
     while !remaining.is_empty() {
       let count = remaining.len();
@@ -242,6 +247,7 @@ pub(super) fn apply(
     return Ok(Vec::new());
   }
   let before = owned_rules(&rules).map_err(map_error)?;
+  // Firewall application matching expects an ordinary absolute path.
   let Some(executable) = executable.map(|path| {
     path
       .to_string_lossy()
@@ -360,6 +366,7 @@ mod tests {
       port_start: 27015,
       port_end: 27050,
     };
+    // Creating an unattached COM rule does not add it to the firewall.
     let native = build_rule(&expected, &executable.to_string_lossy()).unwrap();
     assert!(matches(&native, &expected, Some(&executable.to_string_lossy())).unwrap());
     let mut other_endpoint = expected.clone();

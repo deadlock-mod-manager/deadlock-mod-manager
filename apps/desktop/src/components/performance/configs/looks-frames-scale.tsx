@@ -25,11 +25,17 @@ type Pin = {
   active: boolean;
 };
 
+/** Half the width of the stretch of track a tier covers around its stop. */
 const TIER_BAND = 0.1;
 
 const toPercent = (score: number) =>
   `${Math.min(0.98, Math.max(0.02, score)) * 100}%`;
 
+/**
+ * Presets and GameBanana configs placed by how much they cut, plus the active
+ * config. The user's other configs have no pin: placing them would mean
+ * resolving each one.
+ */
 const scalePins = (
   items: ConfigListItem[],
   activeConfigId: string | null,
@@ -53,6 +59,7 @@ const scalePins = (
       },
     ];
   });
+  // The active pin is drawn last so it sits on top of neighbours.
   return pins.sort((a, b) => Number(a.active) - Number(b.active));
 };
 
@@ -203,6 +210,7 @@ export const LooksFramesScale = ({
               onPointerEnter={() => setFocus({ kind: "tier", tier: info.id })}
               onPointerLeave={() => setFocus(null)}
               type='button'>
+              {/* Picking a tier renders it again, outline first. */}
               <TierIcon
                 className='size-5'
                 draw={selected}

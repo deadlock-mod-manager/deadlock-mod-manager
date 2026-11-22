@@ -21,6 +21,7 @@ export function resolveModHero(
   if (localMod && "heroOverride" in localMod) {
     const { heroOverride } = localMod;
     if (heroOverride !== undefined) {
+      // Preserve unknown manual overrides so imported or future hero values remain visible.
       return {
         hero: normalizeHero(heroOverride) ?? heroOverride,
         source: "manual",

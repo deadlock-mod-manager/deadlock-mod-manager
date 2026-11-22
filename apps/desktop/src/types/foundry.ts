@@ -1,3 +1,8 @@
+// The shapes the `foundry_*` commands return are generated from the Rust types
+// by ts-rs; run `pnpm generate-types` after changing
+// apps/desktop/src-tauri/src/commands/foundry/. Everything below the re-exports
+// is frontend-only state that never crosses the IPC boundary in this form.
+
 export type { ExportDestinationKind as FoundryExportDestination } from "./generated/ExportDestinationKind";
 export type { FoundryBuildResult } from "./generated/FoundryBuildResult";
 export type { FoundryCardPreview } from "./generated/FoundryCardPreview";
@@ -24,6 +29,7 @@ export type { PaintTarget as FoundryPaintTargetId } from "./generated/PaintTarge
 import type { ExportDestinationKind } from "./generated/ExportDestinationKind";
 import type { PaintTarget } from "./generated/PaintTarget";
 
+/** The procedural patterns the paint tab can lay over a recolor. */
 export const FOUNDRY_PATTERNS = [
   "none",
   "liquid",
@@ -48,15 +54,23 @@ export const FOUNDRY_PATTERNS = [
 
 export type FoundryPatternId = (typeof FOUNDRY_PATTERNS)[number];
 
+/** One target's current paint settings, as the paint tab holds them. */
 export interface FoundryPaint {
   colorHex: string;
   saturation: number;
   brightness: number;
   pattern: FoundryPatternId;
+  /** How strongly the pattern blends over the recolor, 0..1. */
   patternIntensity: number;
+  /** Shifts the pattern's hue and offset, 0..1. */
   patternPhase: number;
 }
 
+/**
+ * What the paint tab paints: one of the whole targets, or sections of the
+ * model picked by hand. A section is identified by its color map, which is
+ * what the paint rewrites.
+ */
 export type FoundryPaintSelection =
   | { kind: "target"; target: PaintTarget }
   | { kind: "parts"; textures: string[] };
@@ -64,7 +78,9 @@ export type FoundryPaintSelection =
 export interface FoundryExportRequest {
   destination: ExportDestinationKind;
   name?: string | null;
+  /** Required for `file`. */
   outputPath?: string | null;
+  /** Defaults to the loaded skin's source VPK; required for `replaceSource`. */
   sourcePath?: string | null;
 }
 

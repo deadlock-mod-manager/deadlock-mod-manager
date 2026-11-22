@@ -37,9 +37,11 @@ fn is_public_ipv4(ip: Ipv4Addr) -> bool {
   }
 
   let octets = ip.octets();
+  // Shared address space 100.64.0.0/10
   if octets[0] == 100 && (octets[1] & 0xc0) == 64 {
     return false;
   }
+  // Benchmarking 198.18.0.0/15
   if octets[0] == 198 && (octets[1] & 0xfe) == 18 {
     return false;
   }
@@ -51,6 +53,7 @@ fn is_public_ipv6(ip: Ipv6Addr) -> bool {
   if ip.is_unspecified() || ip.is_loopback() || ip.is_multicast() || ip.is_unicast_link_local() {
     return false;
   }
+  // Unique local fc00::/7
   ip.octets()[0] & 0xfe != 0xfc
 }
 

@@ -637,6 +637,7 @@ describe("markModUpdated", () => {
     }));
 
     store.getState().markModUpdated("1");
+    // Any later store action rebuilds localMods from the profile.
     store.getState().setInstalledVpks("2", ["pak02_dir.vpk"]);
     store.getState().markModUpdated("2");
 

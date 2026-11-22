@@ -1,3 +1,9 @@
+//! Finds the crash dump a session wrote, if any.
+//!
+//! Deadlock (through Steam's breakpad) writes
+//! `game/bin/win64/deadlock_YYYY_MMDD_HHMMSS_<n>_<reason>.mdmp`; older builds
+//! used a `project8_` prefix.
+
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -7,15 +13,22 @@ use dmp_parser::DmpSummary;
 use super::same_process_start;
 use super::types::DumpSummary;
 
+/// File times and our start time come from different clocks and roundings.
 const START_SLACK: Duration = Duration::seconds(5);
+/// Dumps of a hang can be written well after the last sign of life.
 const END_SLACK: Duration = Duration::seconds(120);
 
+/// The session whose dump we are looking for.
 #[derive(Debug, Clone, Copy)]
 pub struct DumpSearch {
   pub pid: Option<u32>,
+  /// The OS's process start time (seconds since the epoch). A dump records
+  /// the same moment, which tells runs apart where PIDs can't (Proton).
   pub process_start: Option<u64>,
   pub started_at: DateTime<Utc>,
+  /// The last sign of life.
   pub ended_at: Option<DateTime<Utc>>,
+  /// When a later run started; newer dumps are its own.
   pub next_start: Option<DateTime<Utc>>,
 }
 
@@ -30,6 +43,8 @@ impl DumpSearch {
         .is_none_or(|next_start| written < next_start)
   }
 
+  /// A dump that records its process's start time must record ours. Without
+  /// one, only Windows PIDs can be compared: under Proton the dump has Wine's.
   fn matches(&self, dump: &DmpSummary) -> bool {
     if let (Some(start), Some(created)) = (self.process_start, dump.process_create_time) {
       return u64::try_from(created.timestamp())
@@ -54,6 +69,8 @@ fn is_game_dump(name: &str) -> bool {
   (lower.starts_with("deadlock_") || lower.starts_with("project8_")) && lower.ends_with(".mdmp")
 }
 
+/// The newest dump in `dir` written during the session by its process. A dump
+/// that can't be read yet still counts.
 pub fn find_session_dump(dir: &Path, search: &DumpSearch) -> Option<DumpSummary> {
   let mut candidates: Vec<(DateTime<Utc>, String)> = std::fs::read_dir(dir)
     .ok()?
@@ -103,6 +120,8 @@ pub(super) mod tests {
 
   const PROCESS_START: u32 = 1_760_000_000;
 
+  /// A minimal minidump: a MiscInfo stream (PID and, if given, the process
+  /// start time) and a comment stream.
   pub fn synthetic_dump(pid: u32, process_start: Option<u32>, comment: &str) -> Vec<u8> {
     let directory_rva = 32u32;
     let misc_rva = directory_rva + 2 * 12;
@@ -232,6 +251,7 @@ pub(super) mod tests {
   #[test]
   fn matches_a_dump_by_its_process_start_time() {
     let dir = tempfile::tempdir().unwrap();
+    // Under Proton the dump names Wine's PID, not the one we track.
     write_dump(
       &dir,
       &synthetic_dump(1111, Some(PROCESS_START + 1), "Crash\n"),

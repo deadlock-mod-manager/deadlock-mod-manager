@@ -45,6 +45,10 @@ const backupPayloadFor = (
     profile.id === activeProfileId ? localMods : profile.mods,
   );
 
+/**
+ * Backups, each local profile's backup status, and the one backup mutation the
+ * local and cloud tabs share so their pending state agrees.
+ */
 export const useCloudBackups = () => {
   const { user, isAuthenticated } = useAuth();
   const isFeatureEnabled = useExperimentalFeature("cloud-backup");
@@ -163,6 +167,7 @@ const useBackupProfile = () => {
       link && existing
         ? {
             id: existing.id,
+            // Overwriting skips the check by sending the revision the server has.
             expectedRevision: overwrite ? existing.revision : link.revision,
           }
         : {};

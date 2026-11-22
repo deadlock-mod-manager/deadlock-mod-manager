@@ -34,6 +34,7 @@ export const VpkReplacementSection = ({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedVpks, setSelectedVpks] = useState<Set<string>>(new Set());
 
+  // Use remoteId for downloaded mods, or id for local mods
   const modIdentifier = mod.remoteId || mod.id;
 
   const defaultVpks = modIdentifier ? [`${modIdentifier}_*.vpk`] : [];
@@ -79,6 +80,7 @@ export const VpkReplacementSection = ({
     }
 
     try {
+      // Write dropped files to temp location and get their paths
       const tempPaths: string[] = [];
       for (const file of vpkFiles) {
         const tempPath = await join(

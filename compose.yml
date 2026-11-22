@@ -54,6 +54,7 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: deadlock_worker
     restart: unless-stopped
+    # Replaces the image ENTRYPOINT; a `command:` override would append to it.
     entrypoint: ["pnpm", "start:worker"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9001/health/live"]

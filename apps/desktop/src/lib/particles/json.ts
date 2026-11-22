@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+/** A decoded particle definition: KV3 converted to JSON by the backend. */
 export type JsonValue =
   | string
   | number

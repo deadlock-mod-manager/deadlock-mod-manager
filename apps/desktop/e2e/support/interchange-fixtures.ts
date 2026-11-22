@@ -7,6 +7,17 @@ import { BULK_UPDATE_FIELDS } from "./gamebanana-fixtures";
 import { buildSyntheticVpk } from "./vpk";
 import { collectFileInventory, type CreatedWorld } from "./world";
 
+/**
+ * A Grimoire install as Grimoire itself leaves it on disk: its userData
+ * folder (settings, metadata sidecar, profiles) plus VPKs in the game's shared
+ * addons folders. The four mods cover every reader fallback:
+ * - a GameBanana mod with a matching fingerprint (catalog enriches it),
+ * - a local mod in a Grimoire overflow root (`addons1`, not a DMM shard),
+ * - a disabled GameBanana sound with no fingerprint (older Grimoire) whose
+ *   catalog lookup fails, so the interchange data has to carry it,
+ * - an enabled slot whose recorded fingerprint no longer matches (state
+ *   drift), so it must arrive as a local mod, never under the stale identity.
+ */
 const GRIMOIRE_SKIN_ID = "900101";
 export const GRIMOIRE_SKIN_FILE_ID = 910101;
 const GRIMOIRE_SKIN_CATALOG_NAME = "E2E Grimoire Skin (catalog)";
@@ -14,8 +25,11 @@ const GRIMOIRE_SOUND_ID = "900202";
 const GRIMOIRE_SOUND_NAME = "E2E Parked Sound";
 const GRIMOIRE_OVERFLOW_NAME = "E2E Overflow Local";
 const GRIMOIRE_DRIFTED_NAME = "Grimoire mod (pak02)";
+/** The GameBanana submission the user links the overflow mod to by hand. */
 export const LINKED_OVERFLOW_ID = "900404";
 export const LINKED_OVERFLOW_NAME = "E2E Overflow (catalog)";
+/** Grimoire profile names. The second has the name of DMM's default
+ *  profile, so it is imported into that one instead of a new copy. */
 export const LOADOUT_PROFILE = "E2E Loadout";
 export const LOADOUT_PROFILE_KEY = "grimoire:profile:profile_e2e";
 export const CASUAL_PROFILE = "Default Profile";
@@ -128,6 +142,7 @@ const profilesSchema = z.array(
   }),
 );
 
+/** Reproduce Grimoire mutating the shared folder after DMM's first import. */
 export const reshuffleGrimoireWorld = async (
   world: string,
   gameRoot: string,
@@ -354,6 +369,7 @@ export const grimoireRoutes = async () => (origin: string) => {
       body: JSON.stringify({ _aFiles: [] }),
     },
     {
+      // "Analyze" finds nothing: the user links by hand.
       method: "POST",
       path: "/api/v2/vpk-analyse-hashes",
       status: 200,
@@ -377,6 +393,8 @@ export const grimoireRoutes = async () => (origin: string) => {
       status: 404,
       body: '{"_sErrorCode":"ITEM_NOT_FOUND"}',
     },
+    // Update checks batch every linked mod through the legacy multicall,
+    // first for the imported skin and again once the overflow mod is linked.
     {
       method: "GET",
       path: "/Core/Item/Data",

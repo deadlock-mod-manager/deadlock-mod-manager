@@ -25,6 +25,7 @@ type SeasonalSettingsCardProps = {
   onChange: (patch: Partial<ThemeSettings>) => void;
 };
 
+/** Lets players opt out of seasonal themes; only visible while the server enables them. */
 export const SeasonalSettingsCard = ({
   settings,
   onChange,

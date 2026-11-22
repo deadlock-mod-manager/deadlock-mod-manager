@@ -12,6 +12,10 @@ pub(super) struct Decoded {
   pub encoding: Kv3Encoding,
 }
 
+// Cache only successful authoritative parses, by exact DATA bytes. A process
+// restart after parser/rule changes naturally invalidates every entry.
+// The current hero registry charges about 44 MiB including encoding metadata.
+// Keep it reusable across model checks without retaining unbounded parse trees.
 const MAX_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ENTRIES: usize = 16;
 
@@ -53,6 +57,7 @@ impl ParseCache {
   }
 }
 
+/// Conservatively charge both the value and parallel encoding allocations.
 fn charge(value: &Kv3Value) -> usize {
   256usize.saturating_add(match value {
     Kv3Value::String(value) => value.capacity(),
@@ -118,6 +123,8 @@ mod tests {
     let key = |bytes: &[u8]| -> [u8; 32] {
       Sha256::digest(Resource::parse(bytes).unwrap().data_block().unwrap()).into()
     };
+    // Other decoder tests may legitimately evict a process-cache entry between
+    // calls. Test reuse in an isolated cache and decoded values through the API.
     let mut cache = ParseCache::default();
     cache.insert(key(&first), Arc::clone(&decoded));
     assert!(Arc::ptr_eq(&decoded, &cache.get(&key(&first)).unwrap()));

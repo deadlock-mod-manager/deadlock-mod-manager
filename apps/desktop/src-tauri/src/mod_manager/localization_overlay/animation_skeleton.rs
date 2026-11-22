@@ -87,6 +87,8 @@ pub(super) fn prepare(
   Ok(output)
 }
 
+/// Retain authored masks while inheriting the current sampled bone layout.
+/// A changed bind pose, hierarchy or unsupported metadata prevents repair.
 fn repair_resource(source: &[u8], base: &[u8]) -> Option<(Vec<u8>, RepairKind)> {
   repair_with_evidence(source, base, None)
 }
@@ -99,6 +101,8 @@ fn repair_with_evidence(
   let (_, old, old_encoding) = decode_compiled_data(source, "mod animation skeleton").ok()?;
   let (format, mut current, mut current_encoding) =
     decode_compiled_data(base, "current animation skeleton").ok()?;
+  // Bones the game added are safe only when no enabled mod ships animations
+  // that sample the old layout, which is when no evidence is required.
   let extension = evidence.is_none();
   if equivalent_rigs(&old, &current, extension) == Some(true) {
     return Some((base.to_vec(), RepairKind::AnimationSkeleton));
@@ -131,6 +135,8 @@ fn repair_with_evidence(
   Some((bytes, RepairKind::AnimationSkeletonRebased))
 }
 
+/// Whether the current skeleton has bones the old one lacks, other than the
+/// known root attachment.
 fn added_bones(old: &Kv3Value, current: &Kv3Value) -> Option<bool> {
   let old_names = old
     .get("m_boneIDs")?
@@ -188,6 +194,10 @@ fn equivalent_rigs(old: &Kv3Value, current: &Kv3Value, extension: bool) -> Optio
   )
 }
 
+/// Compare semantic rig data rather than index order and compiler float noise.
+/// Unknown metadata, changed hierarchy, and poses outside the drift bounds fail closed.
+/// `extension` accepts bones the current game added below retained joints,
+/// as leaves or whole branches.
 fn equivalent_layout(old: &Kv3Value, current: &Kv3Value, extension: bool) -> Option<bool> {
   equivalent_layout_with_evidence(old, current, None, extension)
 }
@@ -254,6 +264,7 @@ fn equivalent_layout_with_evidence(
       names.get(usize::try_from(parent).ok()?).cloned()
     }
   };
+  // Only known terminal helpers can disappear; hierarchy joints and custom bones stay protected.
   for (name, index) in &old_indices {
     if current_indices.contains_key(name) {
       continue;
@@ -281,6 +292,8 @@ fn equivalent_layout_with_evidence(
         .iter()
         .any(|value| value.as_int() == Some(*index as i64))
     {
+      // Every removed branch must end at a surviving ancestor; no retained sample
+      // may depend on it. The named-parent comparison below protects retained joints.
       let mut ancestor = parent;
       while ancestor != -1 {
         let index = usize::try_from(ancestor).ok()?;
@@ -301,11 +314,14 @@ fn equivalent_layout_with_evidence(
   for (name, current_index) in &current_indices {
     let current_index = *current_index;
     let Some(&old_index) = old_indices.get(name) else {
+      // Added world attachment is a non-deforming leaf anchored to an unchanged root.
       let parent = current_parents.get(current_index)?.as_int()?;
       let root = usize::try_from(parent).ok()?;
       let parent = current_names.get(root)?;
       let known_root_attachment =
         name == "attachWorld" && current_parents.get(root)?.as_int()? == -1;
+      // Retained joints keep their names, parents and poses below, so an added
+      // leaf or branch only extends the rig.
       let mut ancestor = root;
       while !old_indices.contains_key(current_names.get(ancestor)?) {
         let Ok(next) = usize::try_from(current_parents.get(ancestor)?.as_int()?) else {
@@ -380,6 +396,8 @@ fn equivalent_layout_with_evidence(
     "m_maskDefinitions",
     "m_numBonesToSampleAtLowLOD",
   ];
+  // Current compiler/schema additions are inherited. Existing unknown metadata
+  // must still match so a custom rig cannot be mistaken for an old vanilla export.
   for (name, value) in old_fields {
     if !INDEXED_FIELDS.contains(&name.as_str()) && !runtime_values_equal(value, current.get(name)?)
     {
@@ -406,6 +424,7 @@ pub(super) fn equivalent_pose(old: &Kv3Value, current: &Kv3Value) -> Option<bool
     .iter()
     .zip(&current[..4])
     .all(|(a, b)| (a - b).abs() <= 0.001);
+  // q and -q describe the same rotation.
   let rotations_match = [1.0, -1.0].iter().any(|sign| {
     old[4..]
       .iter()
@@ -1184,6 +1203,8 @@ mod tests {
     ]);
     let base = compiled_fixture(current);
     let source = compiled_fixture(old);
+    // Without bundled animations the game's added bone is accepted structurally;
+    // the evidence path below still has to prove it unused.
     assert!(repair_resource(&source, &base).is_some());
     let evidence = animation_model_evidence::ModelEvidence::from_models(
       &model,

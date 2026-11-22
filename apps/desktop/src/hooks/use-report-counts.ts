@@ -9,7 +9,7 @@ export const useReportCounts = (modId: string) => {
       return await invoke("get_report_counts", { modId });
     },
     enabled: !!modId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

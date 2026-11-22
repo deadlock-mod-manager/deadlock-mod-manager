@@ -1,18 +1,36 @@
+//! Addon VPK sharding.
+//!
+//! The Source 2 engine only loads up to 99 `pak##_dir.vpk` files per search-path
+//! directory. To let a profile hold more enabled mods than that, we spread the
+//! enabled VPKs across sibling `citadel/addonsN` directories and register one
+//! `Game citadel/addonsN/<...>` search-path line per shard in `gameinfo.gi`.
+//!
+//! Layout for a profile named `profile_x`:
+//!   - Shard 1 is `citadel/addons/profile_x`.
+//!   - Shard k >= 2 is `citadel/addons<k>/profile_x`.
+//!
+//! Disabled (prefixed `{mod_id}_*.vpk`) files and the `.dmm.json` manifest always
+//! live in the base dir regardless of which shard a mod's enabled VPKs occupy.
+
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
+/// Max enabled `pak##_dir.vpk` files the engine loads per search-path directory.
 pub const SHARD_CAPACITY: u32 = 99;
 
+/// Max number of shard roots per profile (`addons`, `addons2` ..= `addons10`).
 pub const MAX_SHARDS: u32 = 10;
 
+/// A 1-based shard index, always within `1..=MAX_SHARDS`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
 pub struct ShardIndex(u32);
 
 impl ShardIndex {
+  /// The profile base directory; always exists when the profile does.
   pub const FIRST: ShardIndex = ShardIndex(1);
 
   pub fn new(value: u32) -> Result<Self, Error> {
@@ -34,6 +52,7 @@ impl ShardIndex {
       .filter(|shard| *shard != Self::FIRST)
   }
 
+  /// `addons` for shard 1, `addonsN` otherwise.
   pub fn root_name(self) -> String {
     if self.0 <= 1 {
       "addons".to_string()
@@ -42,6 +61,7 @@ impl ShardIndex {
     }
   }
 
+  /// The `gameinfo.gi` search-path line for this shard.
   pub fn search_path(self, profile_folder: Option<&str>) -> String {
     let root = self.root_name();
     match profile_folder {
@@ -77,14 +97,19 @@ impl std::fmt::Display for ShardIndex {
   }
 }
 
+/// Every shard index, ascending. Cheap; does not touch the filesystem.
 pub fn all_shards() -> impl Iterator<Item = ShardIndex> {
   (1..=MAX_SHARDS).map(ShardIndex)
 }
 
+/// A profile's root directory, validated to be shaped like `citadel/addons` or
+/// `citadel/addons/<profile>`. Validating the shape here is what lets
+/// [`ProfileBase::shard_dir`] resolve any shard without a fallback.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProfileBase {
   path: PathBuf,
   citadel_dir: PathBuf,
+  /// `None` for the default profile (base *is* `citadel/addons`).
   profile_folder: Option<PathBuf>,
 }
 
@@ -93,6 +118,8 @@ impl ProfileBase {
     Self::from_path(path.into(), true)
   }
 
+  /// Build the same shard mapping for a backup snapshot whose shard roots are
+  /// intentionally stored outside a directory named `citadel`.
   pub(crate) fn from_snapshot(path: impl Into<PathBuf>) -> Result<Self, Error> {
     Self::from_path(path.into(), false)
   }
@@ -146,6 +173,7 @@ impl ProfileBase {
     &self.path
   }
 
+  /// On-disk directory holding this shard's enabled pak files.
   pub fn shard_dir(&self, shard: ShardIndex) -> PathBuf {
     if shard == ShardIndex::FIRST {
       return self.path.clone();
@@ -157,18 +185,22 @@ impl ProfileBase {
     }
   }
 
+  /// Every shard directory, ascending, whether or not it exists on disk.
   pub fn shards(&self) -> impl Iterator<Item = (ShardIndex, PathBuf)> + '_ {
     all_shards().map(|shard| (shard, self.shard_dir(shard)))
   }
 
+  /// Only the shard directories that exist on disk, ascending.
   pub fn existing_shards(&self) -> impl Iterator<Item = (ShardIndex, PathBuf)> + '_ {
     self.shards().filter(|(_, dir)| dir.exists())
   }
 
+  /// The shard whose directory is `dir`, if any.
   pub fn shard_of_dir(&self, dir: &Path) -> Option<ShardIndex> {
     self.shards().find(|(_, path)| path == dir).map(|(s, _)| s)
   }
 
+  /// Resolve a locator against this profile.
   pub fn locator_path(&self, locator: &ShardLocator) -> PathBuf {
     self.shard_dir(locator.shard).join(&locator.filename)
   }
@@ -188,6 +220,9 @@ impl AsRef<Path> for ProfileBase {
   }
 }
 
+/// A shard-qualified VPK filename in the `addonsN/file.vpk` wire format shared
+/// with the frontend. Shard 1 is written bare (`file.vpk`) so the format stays
+/// backwards compatible with pre-sharding clients.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardLocator {
   pub shard: ShardIndex,
@@ -202,6 +237,9 @@ impl ShardLocator {
     }
   }
 
+  /// Parse the wire format. Rejects anything that is not exactly `file.vpk` or
+  /// `addonsN/file.vpk` with `N` in `2..=MAX_SHARDS` — shard 1 must be bare, so
+  /// there is exactly one spelling per file.
   pub fn parse(value: &str) -> Result<Self, Error> {
     let invalid = || Error::InvalidInput(format!("Invalid VPK shard locator: {value}"));
 
@@ -227,6 +265,10 @@ impl ShardLocator {
     })
   }
 
+  /// Interpret a name that may predate the wire format (a bare filename from
+  /// the in-memory repository, a frontend path with backslashes, or a nested
+  /// relative path). Anything unrecognized resolves to its basename in shard 1,
+  /// which is where pre-sharding installs put every file.
   pub fn from_legacy_name(value: &str) -> Self {
     let normalized = value.replace('\\', "/");
     Self::parse(&normalized).unwrap_or_else(|_| Self {
@@ -244,6 +286,11 @@ impl ShardLocator {
   }
 }
 
+/// The filename a VPK carries while it sits in a staging directory.
+///
+/// Encodes the shard the file came from so any interrupted operation can be
+/// recovered by the same code path, and appends `.pending` so a staged file is
+/// never mistaken for a live VPK by a recursive scan.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StagedName {
   pub shard: ShardIndex,
@@ -264,6 +311,8 @@ impl StagedName {
     format!("s{}__{}{STAGED_SUFFIX}", self.shard, self.filename)
   }
 
+  /// Parse a staged filename. The `.pending` suffix is optional on read so
+  /// staging directories written by an older build still recover.
   pub fn parse(name: &str) -> Result<Self, Error> {
     let invalid = || Error::ModInvalid(format!("Invalid VPK staging file: {name}"));
 
@@ -290,6 +339,8 @@ impl StagedName {
   }
 }
 
+/// Names inside a profile directory that belong to an in-progress or crashed
+/// internal operation rather than to the user's addons.
 pub fn is_internal_artifact(name: &str) -> bool {
   name == ".dmm.json.tmp"
     || name == crate::mod_manager::conflicts::IGNORES_TEMP_FILENAME
@@ -311,6 +362,13 @@ fn file_name_of(value: &str) -> String {
     .unwrap_or_else(|| value.to_string())
 }
 
+/// Delete every existing shard directory for a profile `base` transactionally.
+///
+/// Each existing shard is first moved aside to a sibling staging name; only once
+/// *all* shards have been staged are the staged directories removed. If staging
+/// any shard fails, the already-staged shards are renamed back so a partial
+/// failure leaves the profile intact rather than half-deleted. Returns whether
+/// any shard existed.
 pub fn remove_profile_shards(base: &Path) -> std::io::Result<bool> {
   let base = ProfileBase::new(base)
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, error.to_string()))?;
@@ -336,6 +394,10 @@ pub fn remove_profile_shards(base: &Path) -> std::io::Result<bool> {
   let removed = !staged.is_empty();
   for (index, (_, staging)) in staged.iter().enumerate() {
     if let Err(err) = fs::remove_dir_all(staging) {
+      // Restore the shard that failed to delete along with every shard we
+      // haven't processed yet, so their canonical paths reappear and a later
+      // deletion attempt can discover and retry them. The original delete error
+      // is preserved and returned.
       restore(&staged[index..]);
       return Err(err);
     }
@@ -343,6 +405,7 @@ pub fn remove_profile_shards(base: &Path) -> std::io::Result<bool> {
   Ok(removed)
 }
 
+/// Pick a unique sibling staging path for a shard directory about to be deleted.
 fn shard_delete_staging(dir: &Path) -> PathBuf {
   let file_name = dir
     .file_name()
@@ -385,6 +448,12 @@ pub fn is_valid_search_path(path: &str) -> bool {
   }
 }
 
+/// Profile/server folder names are interpolated verbatim into `Game
+/// citadel/addonsN/<profile>` lines in gameinfo.gi. Restrict them to a strict
+/// allowlist so characters that are safe path components but unsafe in the KV
+/// syntax (spaces, quotes, braces, control chars) can never reach that file.
+/// Unicode letters stay allowed: profiles created before folder names were
+/// limited to ASCII still carry them.
 fn is_gameinfo_safe_profile(profile: &str) -> bool {
   !profile.is_empty()
     && profile
@@ -403,6 +472,8 @@ mod tests {
 
   #[test]
   fn shard_dir_resolves_sibling_addon_folders() {
+    // Default profile: base is `citadel/addons`; shard N is the sibling
+    // `citadel/addonsN`.
     let base = ProfileBase::new("/game/citadel/addons").unwrap();
     assert_eq!(base.shard_dir(ShardIndex::FIRST), Path::new(base.path()));
     assert_eq!(base.shard_dir(shard(2)), Path::new("/game/citadel/addons2"));
@@ -411,6 +482,7 @@ mod tests {
       Path::new("/game/citadel/addons10")
     );
 
+    // Named profile: shard N lives under `citadel/addonsN/<profile>`.
     let profile = ProfileBase::new("/game/citadel/addons/profile_x").unwrap();
     assert_eq!(profile.shard_dir(ShardIndex::FIRST), profile.path());
     assert_eq!(
@@ -457,6 +529,7 @@ mod tests {
 
   #[test]
   fn locator_parsing_rejects_ambiguous_and_out_of_range_spellings() {
+    // Shard 1 has exactly one spelling: the bare filename.
     assert!(ShardLocator::parse("addons1/pak01_dir.vpk").is_err());
     assert!(ShardLocator::parse("addons11/pak01_dir.vpk").is_err());
     assert!(ShardLocator::parse("addons2/nested/pak01_dir.vpk").is_err());
@@ -481,6 +554,7 @@ mod tests {
     let staged = StagedName::new(shard(4), "pak07_dir.vpk");
     assert_eq!(staged.encode(), "s4__pak07_dir.vpk.pending");
     assert_eq!(StagedName::parse(&staged.encode()).unwrap(), staged);
+    // Written by a build that omitted the suffix.
     assert_eq!(StagedName::parse("s4__pak07_dir.vpk").unwrap(), staged);
 
     assert!(StagedName::parse("pak01_dir.vpk").is_err());
@@ -488,6 +562,8 @@ mod tests {
     assert!(StagedName::parse("s1__../escape.vpk").is_err());
   }
 
+  /// Deleting a profile has to take every shard with it; a leftover `addons2`
+  /// folder would keep loading mods for a profile the user removed.
   #[test]
   fn removing_a_profile_deletes_all_of_its_shards() {
     let temp = tempfile::tempdir().unwrap();
@@ -498,6 +574,7 @@ mod tests {
       fs::create_dir_all(&dir).unwrap();
       fs::write(dir.join("pak01_dir.vpk"), b"vpk").unwrap();
     }
+    // A sibling profile must survive untouched.
     let other = citadel.join("addons2").join("profile_y");
     fs::create_dir_all(&other).unwrap();
 
@@ -536,14 +613,16 @@ mod tests {
 
   #[test]
   fn valid_search_paths_reject_unsafe_or_out_of_range() {
-    assert!(!is_valid_search_path("citadel/addons/evil profile"));
-    assert!(!is_valid_search_path("citadel/addons/pro\"file"));
-    assert!(!is_valid_search_path("citadel/addons/pro{file}"));
-    assert!(!is_valid_search_path("citadel/addons/../escape"));
-    assert!(!is_valid_search_path("citadel/addons/a/b"));
-    assert!(!is_valid_search_path("citadel/addons11/profile"));
-    assert!(!is_valid_search_path("citadel/addons1/profile"));
-    assert!(!is_valid_search_path("other/addons/profile"));
+    // Hardened allowlist: characters that survive `Path::components()` but break
+    // gameinfo.gi KV syntax must be rejected.
+    assert!(!is_valid_search_path("citadel/addons/evil profile")); // space
+    assert!(!is_valid_search_path("citadel/addons/pro\"file")); // quote
+    assert!(!is_valid_search_path("citadel/addons/pro{file}")); // braces
+    assert!(!is_valid_search_path("citadel/addons/../escape")); // traversal
+    assert!(!is_valid_search_path("citadel/addons/a/b")); // nested
+    assert!(!is_valid_search_path("citadel/addons11/profile")); // shard > MAX
+    assert!(!is_valid_search_path("citadel/addons1/profile")); // shard 1 must be "addons"
+    assert!(!is_valid_search_path("other/addons/profile")); // wrong root
     assert!(!is_valid_search_path(
       "citadel/dmm_localization_unsafe-name"
     ));

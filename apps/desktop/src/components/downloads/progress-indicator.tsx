@@ -72,6 +72,8 @@ export const ProgressProvider = ({ children }: { children: ReactNode }) => {
     setProcessingBytes(bytes ?? null);
   };
 
+  // A loading toast shows the status on every page, including drops that
+  // start outside Add Mods.
   useEffect(() => {
     if (!isProcessing) {
       toast.dismiss(PROGRESS_TOAST_ID);

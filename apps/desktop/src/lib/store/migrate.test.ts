@@ -144,15 +144,19 @@ describe("safeMigrate", () => {
       proxyConfig: { enabled: true, host: "myhost", port: 1234 },
     };
     const result = safeMigrate(state, 18) as Record<string, unknown>;
+    // v15->v16 step should NOT have run, leaving the user's proxy intact.
     expect(result.proxyConfig).toEqual({
       enabled: true,
       host: "myhost",
       port: 1234,
     });
+    // v18->v19 should have added the new field.
     expect(result.heroParserIntervalSeconds).toBe(30);
   });
 
   it("preserves user values when re-running idempotent steps after version bump", () => {
+    // Real-world scenario: user is at v15 with populated state. The persist
+    // version bump 18->19 means steps 16-19 run on this state.
     const state = {
       proxyConfig: {
         enabled: true,
@@ -277,6 +281,10 @@ describe("safeMigrate", () => {
   });
 
   it("snapshot+revert: a malformed value that breaks one step doesn't poison later steps", () => {
+    // Force the v9->v10 step to encounter a non-plain `localMods` entry. We
+    // can do that by giving `localMods` a wrong shape that the guarded code
+    // skips. To actually exercise the catch path, we monkey-patch one step's
+    // apply() to throw and verify state is reverted.
     const stepIndex = MIGRATION_STEPS.findIndex(
       (s) => s.label === "add-backup-settings",
     );
@@ -295,8 +303,11 @@ describe("safeMigrate", () => {
         gamePath: "/games/deadlock",
       };
       const result = safeMigrate(state, 11) as Record<string, unknown>;
+      // The throwing step's partial mutation should have been reverted.
       expect(result.partialMutation).toBeUndefined();
+      // gamePath survives.
       expect(result.gamePath).toBe("/games/deadlock");
+      // Subsequent steps still ran.
       expect(result.fileserverPreference).toBe("default");
       expect(result.heroParserIntervalSeconds).toBe(30);
       expect(didThrow).toBe(true);
@@ -457,7 +468,9 @@ describe("safeMigrate", () => {
       };
       const result = safeMigrate(state, 8) as Record<string, unknown>;
       const filters = result.modsFilters as Record<string, unknown>;
+      // showNSFW renamed to hideNSFW=false (default), since user hadn't set hideNSFW.
       expect(filters.hideNSFW).toBe(false);
+      // hideOutdated user-value preserved.
       expect(filters.hideOutdated).toBe(false);
       expect(filters.showNSFW).toBeUndefined();
     });
@@ -468,6 +481,7 @@ describe("safeMigrate", () => {
       };
       const result = safeMigrate(state, 14) as Record<string, unknown>;
       const filters = result.modsFilters as Record<string, unknown>;
+      // v27 then folds the "exclude" quick filters into the Mods tab.
       expect(filters.contentType).toBe("mod");
       expect(filters.hideAudio).toBeUndefined();
       expect(filters.hideMap).toBeUndefined();

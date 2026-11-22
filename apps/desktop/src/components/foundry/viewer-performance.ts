@@ -7,6 +7,7 @@ const median = (values: number[]) => {
   return ordered[Math.floor(ordered.length / 2)] ?? null;
 };
 
+/** Bounded development measurements, readable through the desktop MCP bridge. */
 export function createViewerPerformance(renderer: THREE.WebGLRenderer) {
   const context = renderer.getContext();
   const gpu = "createQuery" in context ? createGpuFrameTimer(context) : null;

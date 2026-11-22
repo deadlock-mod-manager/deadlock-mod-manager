@@ -36,6 +36,7 @@ const TAB_ICONS = {
 const SIDE_PANEL_CLASS =
   "flex h-full shrink-0 flex-col overflow-hidden bg-card";
 
+/** The skin's identity: portrait, hero, counts and where it came from. */
 const SkinIdentity = () => {
   const { t } = useTranslation();
   const { manifest, skinOrigin, editedPaths } = useFoundry();
@@ -92,6 +93,7 @@ const SkinIdentity = () => {
   );
 };
 
+/** Assets, Paint, Cards and Sounds, each with how much of it the skin has. */
 const ModeTabs = () => {
   const { t } = useTranslation();
   const { activeTab, setActiveTab, manifest, paintParts } = useFoundry();
@@ -144,6 +146,7 @@ const ModeTabs = () => {
   );
 };
 
+/** The editor: skin header on top, the active mode's workspace below. */
 export const FoundryShell = () => {
   const { t } = useTranslation();
   const {

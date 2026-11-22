@@ -80,6 +80,7 @@ const disposeAssets = (assets: ParticleModelAssets) => {
   for (const bitmap of bitmaps) bitmap.close();
 };
 
+/** Dependencies are decoded once, before constructing drawables, never during playback. */
 export function useParticleModels(
   source: PreviewSource,
   effects: (PreviewParticles | null | undefined)[],
@@ -104,6 +105,7 @@ export function useParticleModels(
       const models = new Map<string, THREE.Object3D>();
       const assets: ParticleModelAssets = { models, materials: [] };
       try {
+        // Serial decoding bounds peak decompression/GLB memory on the webview.
         for (const path of paths) {
           signal.throwIfAborted();
           try {

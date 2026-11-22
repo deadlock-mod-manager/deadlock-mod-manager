@@ -21,6 +21,8 @@ const fn current_manifest_version() -> u32 {
   CURRENT_MANIFEST_VERSION
 }
 
+/// Shard index a mod's enabled VPKs live in when the entry predates sharding
+/// (manifest v1) or omits the field. Shard 1 is the profile base directory.
 const fn default_shard() -> ShardIndex {
   ShardIndex::FIRST
 }
@@ -41,10 +43,15 @@ pub struct ProfileVpkManifestEntry {
   pub enabled: bool,
   #[serde(default)]
   pub compatibility_enabled: bool,
+  /// The player chose this mod's original files over available fixes. Unlike
+  /// `compatibility_enabled = false`, which is also the default, this records a
+  /// decision that bulk fixes must respect.
   #[serde(default)]
   pub compatibility_opted_out: bool,
   #[serde(default)]
   pub order: Option<u32>,
+  /// 1-based shard index the enabled VPKs of this mod currently live in.
+  /// All VPKs of a mod always share one shard so multi-file mods stay together.
   #[serde(default = "default_shard")]
   pub shard: ShardIndex,
   #[serde(default)]
@@ -83,6 +90,7 @@ pub struct KeptChoices {
 }
 
 impl KeptChoices {
+  /// Gives the mod's new entry back what the player chose for the old one.
   pub fn restore_to(self, entry: &mut ProfileVpkManifestEntry) {
     entry.order = self.order.or(entry.order);
     entry.compatibility_enabled = self.compatibility_enabled;
@@ -129,6 +137,7 @@ impl Default for ProfileVpkManifest {
 }
 
 impl ProfileVpkManifest {
+  /// Whether committed or recoverable DMM metadata claims this profile folder.
   pub fn exists(addons_path: &Path) -> bool {
     addons_path.join(MANIFEST_FILENAME).is_file()
       || addons_path
@@ -136,6 +145,12 @@ impl ProfileVpkManifest {
         .is_file()
   }
 
+  /// Validate every manifest-backed profile in a shard-root snapshot, returning
+  /// the first problem of each invalid profile keyed by its folder relative to
+  /// `addons` (empty for the default profile).
+  ///
+  /// `root` contains sibling `addons`, `addons2`, ... directories, as used by
+  /// both the live `citadel` tree and addons backups.
   pub fn profile_failures(root: &Path) -> Result<BTreeMap<String, Error>, Error> {
     let addons_root = root.join("addons");
     if !addons_root.is_dir() {
@@ -222,6 +237,11 @@ impl ProfileVpkManifest {
       .unwrap_or(ShardIndex::FIRST)
   }
 
+  /// Read a profile's manifest without touching anything on disk.
+  ///
+  /// A crashed [`Self::save`] can leave the manifest only in the temp file; that
+  /// case is resolved in memory here so reads see the committed data, and the
+  /// files are reconciled by [`Self::open_for_write`].
   pub fn load(addons_path: &Path) -> Result<Self, Error> {
     let manifest_path = addons_path.join(MANIFEST_FILENAME);
     let temp_path = addons_path.join(format!("{MANIFEST_FILENAME}.tmp"));
@@ -266,6 +286,13 @@ impl ProfileVpkManifest {
     Ok(self)
   }
 
+  /// Read a profile's manifest and repair whatever a crashed operation left
+  /// behind: a half-committed manifest temp file and any staged VPKs still
+  /// parked in a staging directory.
+  ///
+  /// Only mutation entry points may call this. Reads must use [`Self::load`],
+  /// which never writes -- notably [`Self::profile_failures`], which walks backup
+  /// snapshots that must come out byte-identical.
   pub fn open_for_write(addons_path: &Path) -> Result<Self, Error> {
     crate::mod_manager::file_permissions::prepare_profile_for_write(addons_path)?;
     Self::reconcile_manifest_temp_file(addons_path)?;
@@ -274,6 +301,8 @@ impl ProfileVpkManifest {
     Ok(manifest)
   }
 
+  /// Repair a profile in place without keeping the manifest around, for entry
+  /// points that mutate the profile without reading it.
   pub fn recover_profile(addons_path: &Path) -> Result<(), Error> {
     Self::open_for_write(addons_path).map(|_| ())
   }
@@ -376,6 +405,8 @@ impl ProfileVpkManifest {
 
     crate::mod_manager::file_permissions::ensure_file_writable(&manifest_path)?;
     crate::mod_manager::file_permissions::ensure_file_writable(&temp_path)?;
+    // Flush before the rename: NTFS journals the rename and file size, so a
+    // power loss after an unsynced write leaves a manifest of NUL bytes.
     let mut temp_file = fs::File::create(&temp_path)?;
     temp_file.write_all(manifest_json.as_bytes())?;
     temp_file.sync_all()?;
@@ -429,6 +460,7 @@ impl ProfileVpkManifest {
     }
   }
 
+  /// Remove aliases of files deleted by a mutation, including old duplicate claims.
   pub fn forget_files(&mut self, base: &ProfileBase, removed: &[std::path::PathBuf]) {
     for entry in self.mods.values_mut() {
       let paths = entry.file_paths(base);
@@ -499,6 +531,9 @@ mod tests {
     base
   }
 
+  /// Byte-for-byte what the last pre-sharding release wrote: version 1, and no
+  /// `shard` key anywhere. Every existing install has a file shaped like this,
+  /// so upgrading it is the one path that cannot be allowed to break.
   const V1_MANIFEST: &str = r#"{
   "version": 1,
   "mods": {
@@ -540,6 +575,7 @@ mod tests {
     assert_eq!(loaded.version, CURRENT_MANIFEST_VERSION);
     assert_eq!(loaded.mods.len(), 2);
 
+    // Pre-sharding installs kept every enabled VPK in the profile base.
     let enabled = loaded.mods.get("123456").unwrap();
     assert_eq!(enabled.shard, ShardIndex::FIRST);
     assert!(enabled.enabled);
@@ -561,6 +597,7 @@ mod tests {
       vec!["local-abc_skin.vpk".to_string()]
     );
 
+    // A v1 entry resolves against the base directory, exactly where its files are.
     let profile = ProfileBase::new(&base).unwrap();
     assert_eq!(
       enabled.file_paths(&profile),
@@ -568,6 +605,8 @@ mod tests {
     );
   }
 
+  /// The upgrade is only in memory until something saves; the next write must
+  /// persist it so the file stops being re-upgraded on every load.
   #[test]
   fn saving_an_upgraded_v1_manifest_writes_the_current_version() {
     let temp = tempfile::tempdir().unwrap();
@@ -626,6 +665,8 @@ mod tests {
     assert!(manifest.migrate_mod_identity("42", "snd-42").is_err());
   }
 
+  /// A manifest written by a newer build must not be silently mis-parsed into
+  /// a shard layout this build does not understand.
   #[test]
   fn load_rejects_a_manifest_from_a_future_version() {
     let temp = tempfile::tempdir().unwrap();
@@ -644,6 +685,8 @@ mod tests {
     assert!(error.to_string().contains("unsupported version"));
   }
 
+  /// Shard indexes outside `1..=MAX_SHARDS` cannot address a real directory, so
+  /// a corrupted entry has to fail loudly rather than resolve to shard 1.
   #[test]
   fn load_rejects_an_out_of_range_shard() {
     let temp = tempfile::tempdir().unwrap();
@@ -781,9 +824,11 @@ mod tests {
     let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
     fs::write(&temp_path, serde_json::to_string_pretty(&manifest).unwrap()).unwrap();
 
+    // A read sees the committed data without moving the file...
     assert_eq!(ProfileVpkManifest::load(&base).unwrap(), manifest);
     assert!(temp_path.exists());
 
+    // ...and the write path is what reconciles it.
     let loaded = ProfileVpkManifest::open_for_write(&base).unwrap();
 
     assert_eq!(loaded, manifest);
@@ -830,6 +875,8 @@ mod tests {
     assert!(!staging.exists());
   }
 
+  /// Reads must never repair. Recovery relocates files across shards, so a read
+  /// that triggered it would mutate whatever tree it was pointed at.
   #[test]
   fn load_leaves_interrupted_staging_alone() {
     let temp = tempfile::tempdir().unwrap();
@@ -845,6 +892,9 @@ mod tests {
     assert!(!temp.path().join("citadel/addons2/pak01_dir.vpk").exists());
   }
 
+  /// Backups are validated by walking the snapshot. A snapshot taken mid-operation
+  /// contains staging directories by construction, and validating it must not
+  /// relocate or delete their contents.
   #[test]
   fn validate_tree_does_not_mutate_the_snapshot() {
     let temp = tempfile::tempdir().unwrap();

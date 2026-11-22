@@ -72,12 +72,16 @@ type SidebarItem = {
   dialog?: React.ComponentType;
   icon?: Icon;
   iconUrl?: string;
+  /** An external plugin's own glyph tile instead of an icon. */
   pluginTile?: Pick<ExternalPluginSummary, "icon" | "accent">;
   className?: string;
   group: string;
+  /** Shows a "New" badge until the user opens the page. */
   isNew?: boolean;
   hintId?: FeatureHintId;
+  /** Also active on pages nested under `url`, such as a single match under Stats. */
   activeOnChildren?: boolean;
+  /** Hidden while this optional feature is off. */
   feature?: OptionalFeature;
 };
 
@@ -278,6 +282,7 @@ const getSidebarItems = (
   ];
 };
 
+/** The sidebar dot for a plugin that needs the user: stopped, unset or waiting on an update. */
 const pluginAttentionColor = (plugin: ExternalPluginSummary) => {
   if (plugin.status === "quarantined") return TONE_COLOR.danger;
   if (plugin.status === "needsConsent") return TONE_COLOR.warn;
@@ -285,6 +290,7 @@ const pluginAttentionColor = (plugin: ExternalPluginSummary) => {
   return null;
 };
 
+// Group labels hide when the sidebar collapses to icons, so a short rule keeps sections apart.
 const CollapsedSeparator = () => (
   <Separator className='mx-auto mb-2 hidden w-4 bg-sidebar-border group-data-[collapsible=icon]:block' />
 );

@@ -1,3 +1,10 @@
+/**
+ * A small KeyValues (gameinfo.gi flavour) parser for the generator. It keeps
+ * line numbers and full-line comments so we can tell a commented-out key from a
+ * missing one, and it keeps duplicate keys (the engine reads the last
+ * occurrence of a scalar key; list sections repeat keys on purpose).
+ */
+
 export type KvNode =
   | { kind: "scalar"; key: string; value: string; line: number }
   | {
@@ -7,11 +14,13 @@ export type KvNode =
       line: number;
       endLine: number;
     }
+  /** A key with no value, which only broken files have. */
   | { kind: "empty"; key: string; line: number };
 
 interface KvComment {
   line: number;
   text: string;
+  /** The comment follows a token on the same line. */
   trailing: boolean;
 }
 
@@ -200,6 +209,7 @@ export const parseKv = (text: string): KvDocument => {
 
 const NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
 
+/** `true`/`false` become `1`/`0`, numbers are canonical, other text is lower-cased. */
 export const normalizeValue = (value: string): string => {
   const trimmed = value.trim();
   const lower = trimmed.toLowerCase();
@@ -217,6 +227,7 @@ export const isNumeric = (value: string): boolean => NUMBER.test(value.trim());
 const COMMENTED_PAIR =
   /^\s*"?([A-Za-z_][\w.]*)"?\s+(?:"([^"]*)"|([^\s"/]+))\s*(?:\/\/.*)?$/;
 
+/** A full-line comment that holds a single `key value` pair. */
 export const parseCommentedPair = (
   text: string,
 ): { key: string; value: string } | null => {

@@ -20,10 +20,15 @@ import { HISTORY_ENDPOINT } from "@/lib/stats/dashboard/presets/kit";
 import { useDashboardData } from "./dashboard-context";
 
 type BrokenReason =
+  /** The preset or panel id is gone from this version of the app. */
   | "unknownSource"
+  /** The request failed with an HTTP status. */
   | "endpoint"
+  /** The request never got an answer. */
   | "network"
+  /** The response no longer has the shape the widget reads. */
   | "schema"
+  /** Fields the chart was configured with are missing from the data. */
   | "fields"
   | "invalidPath"
   | "notAList";
@@ -35,6 +40,7 @@ export type WidgetDataState =
   | {
       status: "ready";
       dataset: Dataset;
+      /** Served from the disk cache after a failed refresh. */
       isStale: boolean;
     }
   | {
@@ -81,6 +87,10 @@ const brokenFrom = (
   return { status: "broken", reason: "network", endpoint };
 };
 
+/**
+ * What stands between a widget and the shared match history: no account, the
+ * history still loading, or its request having failed. `null` once it is there.
+ */
 export const useHistoryGate = (): WidgetDataState | null => {
   const { accountId, isAccountPending, stats } = useDashboardData();
   return useMemo((): WidgetDataState | null => {
@@ -103,6 +113,10 @@ export const useHistoryGate = (): WidgetDataState | null => {
   }, [accountId, isAccountPending, stats.isPending, stats.isError]);
 };
 
+/**
+ * Resolves a widget's source into a dataset, or into the reason it cannot show
+ * one. Panels never come through here: they render their own components.
+ */
 export const useWidgetData = (
   source: WidgetSource,
   view: WidgetView | undefined,

@@ -1,3 +1,4 @@
+/** Name (lower-case) to flags, from a DumpSource2 `convars.txt`. */
 export const parseConvarDump = (text: string): Map<string, Set<string>> => {
   const out = new Map<string, Set<string>>();
   for (const line of text.split("\n")) {
@@ -20,6 +21,15 @@ export interface DumpVersion {
   convars: Map<string, Set<string>>;
 }
 
+/**
+ * The build where a convar entered its current state, scanning the dump
+ * history oldest to newest. `blocked`: first build of the latest unbroken run
+ * with `gameinfo_cannot_override`. `removed`: first build of the latest run
+ * where the convar is absent.
+ *
+ * Only a change the history shows counts: when the oldest dump is already in
+ * the state, the change happened before the window and the build is unknown.
+ */
 export const statusSince = (
   name: string,
   status: "blocked" | "removed",

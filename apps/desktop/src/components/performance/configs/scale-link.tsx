@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { PerfTier } from "@/types/generated/PerfTier";
 
+/** What the pointer or keyboard focus is on, shared by the scale and the cards. */
 type ScaleFocus =
   | { kind: "config"; configId: string }
   | { kind: "tier"; tier: PerfTier }
@@ -37,6 +38,7 @@ export const useScaleLink = () => {
   return context;
 };
 
+/** Handlers that point the scale at `focus` while hovered or focused. */
 export const useScaleFocusHandlers = (focus: NonNullable<ScaleFocus>) => {
   const { setFocus } = useScaleLink();
   return {

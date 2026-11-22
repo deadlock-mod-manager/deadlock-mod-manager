@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 
 type Phase = "broken" | "reapplying" | "done";
 
+/** How long each step of the loop stays on screen, in ms. */
 const PHASES: { phase: Phase; duration: number }[] = [
   { phase: "broken", duration: 2800 },
   { phase: "reapplying", duration: 1300 },
@@ -18,6 +19,11 @@ const PHASES: { phase: Phase; duration: number }[] = [
 
 const LIBRARY = ["623518", "636266", "655209", "656796", "661996", "669234"];
 
+/**
+ * Plays the desktop app's gameinfo.gi bar on a loop while it's on screen:
+ * the warning, the "Re-applying" state, then the bar closing and the toast
+ * the app shows. Visitors who prefer reduced motion see the warning only.
+ */
 export const UpdateDemo = () => {
   const { t } = useTranslation("v2");
   const ref = useRef<HTMLDivElement>(null);

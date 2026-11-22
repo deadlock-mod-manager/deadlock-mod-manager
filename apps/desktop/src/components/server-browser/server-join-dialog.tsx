@@ -41,6 +41,8 @@ interface ServerJoinDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// The check and decompress steps report no byte progress of their own, so a
+// size here would always read as 0 B.
 const contentBytesLabel = (progress: DeadworksContentProgress): string => {
   if (progress.status !== "downloading") return "";
   if (progress.totalBytes <= 0)
@@ -151,6 +153,8 @@ const ServerJoinDialog = ({
     !server.password_protected || password.length > 0 || !!server.gateway_url;
   const staging = isStagingActive(stager.state.phase);
   const busy = staging || joinMutation.isPending;
+  // Deadworks servers advertise their maps and addons themselves instead of
+  // through `required_mods`, so they need staging either way.
   const needsMods = server.required_mods.length > 0 || server.managed_content;
 
   const handleJoin = () => {

@@ -9,6 +9,7 @@ import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import type { CatalogCollectionDetailDto } from "@/types/generated/CatalogCollectionDetailDto";
 import type { CatalogCollectionDto } from "@/types/generated/CatalogCollectionDto";
 
+// Read from the local catalog, which the catalog sync keeps current.
 export const COLLECTIONS_QUERY_KEY = ["collections"];
 
 export const collectionsQueryOptions = () =>
@@ -18,6 +19,7 @@ export const collectionsQueryOptions = () =>
       invoke<CatalogCollectionDto[]>("list_gamebanana_collections"),
   });
 
+/** The collection with its item remote ids, or null when the catalog doesn't have it. */
 export const collectionQueryOptions = (id: string) =>
   queryOptions({
     queryKey: [...COLLECTIONS_QUERY_KEY, id],
@@ -27,6 +29,11 @@ export const collectionQueryOptions = (id: string) =>
       }),
   });
 
+/**
+ * The collection's mods as the local catalog knows them, in collection order.
+ * Items the catalog lacks (removed, or not synced yet) are left out. Kept under
+ * the mods list key so catalog syncs refresh it and mod detail can read from it.
+ */
 export const collectionModsQueryOptions = (remoteIds: string[]) =>
   queryOptions({
     queryKey: [...MODS_LIST_QUERY_KEY, "collection", remoteIds],

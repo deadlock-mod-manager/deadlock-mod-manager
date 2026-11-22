@@ -42,6 +42,7 @@ import { getPreviewTheme } from "./themes";
 
 type NavItem = { screen: ScreenId; icon: Icon };
 
+// Mirrors the desktop sidebar (apps/desktop/src/components/layout/app-sidebar.tsx).
 const NAV_GROUPS = [
   {
     id: "general",
@@ -74,6 +75,7 @@ const NAV_GROUPS = [
   },
 ] as const satisfies readonly { id: string; items: readonly NavItem[] }[];
 
+// Mod Foundry is a product name and stays in English.
 const screenLabels = (t: TFunction<"preview">) =>
   ({
     dashboard: t("sidebar.items.dashboard"),
@@ -92,6 +94,7 @@ const screenLabels = (t: TFunction<"preview">) =>
 const sidebarButtonClassName =
   "flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&>svg]:size-5 [&>svg]:shrink-0";
 
+// Click feedback, same fill sweep as the desktop toolbar.
 const sweepClassName = (active: boolean) =>
   cn(
     "absolute inset-0 origin-left motion-reduce:transition-none",

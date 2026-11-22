@@ -94,6 +94,7 @@ const renderCard = (card: LocalAddonInfo) =>
 const addon: LocalAddonInfo = {
   filePath: "/game/citadel/addons2/pak01_dir.vpk",
   fileName: "pak01_dir.vpk",
+  // An overflow shard, so the locator differs from the file name.
   locator: "addons2/pak01_dir.vpk",
   hasEnabledVpkName: true,
   vpkParsed: {
@@ -247,6 +248,8 @@ describe("AddonSummaryCard identified addon", () => {
   });
 
   it("goes by the library, not by who owns the file", () => {
+    // A parked, prefix-named file belongs to its library mod without being
+    // one of its installed files.
     expect(renderIdentified(["900001"], false)).toContain("Added to Library");
     expect(renderIdentified(["other"], true)).toContain("Not in Library");
   });
@@ -261,6 +264,7 @@ describe("AddonSummaryCard GameBanana link", () => {
   };
   const LOCAL_ID = "local-550e8400-e29b-41d4-a716-446655440000";
 
+  // Analyze names a local mod from the profile's records when no hash matches.
   it("offers no GameBanana link for a local mod", () => {
     expect(
       renderIdentified({ remoteId: LOCAL_ID, manifestModId: LOCAL_ID }),

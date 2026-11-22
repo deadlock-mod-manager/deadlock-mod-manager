@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { HostStatus } from "@/components/plugins/page/host-status";
 import { tint } from "@/components/plugins/plugin-identity";
 
+/** The rounded status pill the plugin page's host bar draws next to the name. */
 export const HostStatusPill = ({ status }: { status: HostStatus }) => {
   const { t } = useTranslation();
   return (

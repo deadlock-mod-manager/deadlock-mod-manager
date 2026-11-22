@@ -79,6 +79,7 @@ export const PreviewStateProvider = ({
   const installsRef = useRef(installs);
   installsRef.current = installs;
 
+  // Fake download progress; finished mods install and enable themselves.
   useEffect(() => {
     if (!isDownloading) return;
     const interval = window.setInterval(() => {
@@ -174,6 +175,7 @@ export const useInstalledMods = () => {
   return PREVIEW_MODS.filter((mod) => installs[mod.id]?.status === "installed");
 };
 
+/** Counts and snapshot dates in the page's language. */
 export const usePreviewFormat = () => {
   const numberFormat = useNumberFormat();
   const locale = getLocaleConfig(useLocale()).hreflang;

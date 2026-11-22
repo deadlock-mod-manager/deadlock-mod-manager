@@ -6,6 +6,7 @@ import {
 
 export type CommandError = { code: string; message: string };
 
+/** Display values for what the user granted in DMM; not authority. */
 export type Grants = {
   file: { name: string } | null;
   profile: { folder: string } | null;
@@ -14,9 +15,11 @@ export type Grants = {
 export type BuildEntry = {
   hash: string;
   size: number;
+  /** VPK resource count; `null` for files that are not VPKs. */
   resources: number | null;
   stagedAt: string;
   deployed: boolean;
+  /** `null` when DMM's staging list could not be read. */
   available: boolean | null;
 };
 

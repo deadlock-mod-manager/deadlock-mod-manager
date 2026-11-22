@@ -1,3 +1,4 @@
+//! Opt-in measurements against an isolated profile backed by installed game archives.
 use super::*;
 use std::time::Instant;
 
@@ -81,6 +82,8 @@ fn measure_real_profile_merge_and_apply() {
   let expected = fs::read(&output).unwrap();
   let findings = || {
     let mut receipt = serde_json::to_value(receipt::load(&output).unwrap().unwrap()).unwrap();
+    // Library edits change input stamps, but every saved repair and diagnostic
+    // should agree with the cold analysis when the effective model data is unchanged.
     receipt.as_object_mut().unwrap().remove("key");
     receipt
   };

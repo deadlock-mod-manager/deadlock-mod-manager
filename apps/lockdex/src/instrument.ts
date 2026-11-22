@@ -5,7 +5,7 @@ import { SENTRY_OPTIONS } from "./lib/constants";
 
 Sentry.init({
   ...SENTRY_OPTIONS,
-  skipOpenTelemetrySetup: true,
+  skipOpenTelemetrySetup: true, // Skip OpenTelemetry setup, we'll use our own.
 });
 const sentryClient = Sentry.getClient<NodeClient>()!;
 const sdk = setupInstrumentation("lockdex", sentryClient);

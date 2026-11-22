@@ -19,6 +19,10 @@ export type ProfileBackupStatus =
 const byRemoteId = (left: { remoteId: string }, right: { remoteId: string }) =>
   left.remoteId.localeCompare(right.remoteId);
 
+/**
+ * Local mods only exist on this PC's disk, so they are counted but left out.
+ * Lists are sorted so toggling a mod off and on again doesn't read as a change.
+ */
 export const buildProfileBackupPayload = (
   profile: Pick<ModProfile, "enabledMods" | "modGroups" | "description">,
   mods: LocalMod[],
@@ -42,6 +46,8 @@ export const buildProfileBackupPayload = (
     disabledModCount: entries.filter(
       (entry) => !entry.enabled && canDownloadAgain(entry),
     ).length,
+    // `randomize` is left out when off, so backups saved before it existed
+    // still hash the same.
     modGroups: (profile.modGroups ?? []).map(
       ({ id, name, modIds, collapsed, randomize }) =>
         randomize
@@ -76,6 +82,10 @@ export const hashProfileBackup = async (hashInput: string): Promise<string> => {
   ).join("");
 };
 
+/**
+ * A link only counts while the account still has that backup, so signing in
+ * with another account or deleting the backup elsewhere reads as "none".
+ */
 export const getProfileBackupStatus = (
   link: CloudBackupLink | undefined,
   backupsById: ReadonlyMap<string, ProfileBackupSummary>,

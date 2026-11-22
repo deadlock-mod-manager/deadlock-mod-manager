@@ -21,11 +21,14 @@ type ForgeInstallRequest = {
 
 const VPK_SUFFIX = /\.vpk$/i;
 
+// The site sends the built filename; the suffix suits the file, not the label.
 const toDisplayName = (name: string, fallback: string): string =>
   name.replace(VPK_SUFFIX, "").trim() || fallback;
 
 const finishInstall = async (path: string): Promise<void> => {
   try {
+    // Unguarded on purpose: this only clears the staged payload, and a block
+    // here would strand the bridge's in-flight slot.
     await invoke("finish_forge_install", { path });
   } catch (error) {
     logger.withError(error).warn("Failed to release the forge install slot");
@@ -43,6 +46,7 @@ export const useForgeInstall = () => {
     (state) => state.forgeInstallEnabled,
   );
 
+  // Registered once, so it must read current values rather than captured ones.
   const enabledRef = useRef(forgeInstallEnabled);
   enabledRef.current = forgeInstallEnabled;
   const processRef = useRef(processMod);
@@ -54,6 +58,8 @@ export const useForgeInstall = () => {
       async (event) => {
         const request = event.payload;
 
+        // The bridge only runs while the setting is on, but a request already
+        // in flight when it is switched off must not slip through.
         if (!enabledRef.current) {
           await finishInstall(request.path);
           return;

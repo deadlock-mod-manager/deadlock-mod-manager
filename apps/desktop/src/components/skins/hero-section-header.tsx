@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 interface HeroSectionHeaderProps {
   title: string;
+  /** Omitted for sections whose size says nothing, such as store picks. */
   count?: number;
   hint: string;
   action?: ReactNode;

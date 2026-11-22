@@ -22,9 +22,11 @@ import { ModsGrantCard } from "./mods-grant-card";
 
 type PermissionGrantCardsProps = {
   plugin: ExternalPluginSummary;
+  /** Called before leaving for the plugin's setup page, e.g. to close a sheet. */
   onNavigate?: () => void;
 };
 
+/** One card per request the plugin needs, with the value granted and a way to change it. */
 export const PermissionGrantCards = ({
   plugin,
   onNavigate,

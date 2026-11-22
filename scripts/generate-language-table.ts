@@ -38,6 +38,9 @@ interface CrowdinProgressResponse {
 
 const CROWDIN_API_BASE = "https://api.crowdin.com/api/v2";
 
+// Crowdin uses its own language identifiers that mostly match BCP-47 but drop
+// the region for languages where only one variant exists. Map our languages.json
+// codes to what Crowdin reports in its /languages/progress response.
 const CROWDIN_LANGUAGE_ID_OVERRIDES: Record<string, string> = {
   "fr-FR": "fr",
   "de-DE": "de",

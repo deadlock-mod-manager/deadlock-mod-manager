@@ -19,6 +19,7 @@ const migrationsFolder = fileURLToPath(
 const baselineEntry = journal.entries.find((entry) => entry.idx === 53);
 const testDatabaseUrl = process.env.MIGRATION_TEST_DATABASE_URL;
 
+// Uses a fresh database on the explicitly supplied test server, never DATABASE_URL.
 describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
   const databaseName = `migration_test_${randomUUID().replaceAll("-", "")}`;
   const admin = new Client({ connectionString: testDatabaseUrl });
@@ -38,6 +39,8 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
     url.pathname = `/${databaseName}`;
     pool = new Pool({ connectionString: url.toString() });
 
+    // Reconstruct the affected legacy tables from the released snapshot. Other
+    // tables (including pgvector tables) are not involved in this migration.
     const baseline = {
       ...baselineSnapshot,
       tables: {
@@ -178,6 +181,7 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
       { provider: "gamebanana", submission_type: "mod", submission_id: "123" },
     ]);
 
+    // Rows the previous API and Lockdex write during the rollout window.
     const database = drizzle(pool, { schema });
     const reports = new ReportRepository(database);
     expect(await reports.backfillLegacyIdentities()).toBe(1);
@@ -320,6 +324,7 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
   });
 });
 
+// Reviewed drops of tables that only existed to roll back a later migration.
 const reviewedDestructiveMigrations = new Set([
   "0063_drop_oauth_legacy_tables",
 ]);
@@ -333,6 +338,7 @@ it("keeps all pending migrations free of destructive legacy changes", async () =
     expect(sql).not.toMatch(
       /DROP\s+(?:TABLE|COLUMN|CONSTRAINT|INDEX)|SET\s+NOT\s+NULL/i,
     );
+    // Backfills (UPDATE) are allowed; removing data is not.
     expect(sql).not.toMatch(/(?:^|\n)\s*(?:DELETE|TRUNCATE)\b/im);
   }
 });

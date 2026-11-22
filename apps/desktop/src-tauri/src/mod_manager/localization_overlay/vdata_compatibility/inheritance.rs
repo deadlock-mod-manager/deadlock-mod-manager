@@ -40,6 +40,7 @@ pub(in super::super) fn rebase_inherited(
     {
       continue;
     }
+    // Multiple same-class parents have uncertain precedence in flattened data.
     if donor.is_some() {
       return Ok(InheritedRebase::Ambiguous);
     }

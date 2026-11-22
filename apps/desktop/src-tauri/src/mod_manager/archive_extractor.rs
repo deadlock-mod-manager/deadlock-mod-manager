@@ -6,7 +6,12 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
+/// How far an archive may expand. Archives come from remote sites, so a small
+/// one must not be able to fill the disk. Popular GameBanana mods expand about
+/// 3x and at most 26x, while a zip bomb expands thousands of times.
 const MAX_EXPANSION_RATIO: u64 = 100;
+/// Small archives always get this much, so a tiny mod that compresses well
+/// never trips the ratio.
 const MIN_EXTRACTED_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_EXTRACTED_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 
@@ -20,6 +25,8 @@ pub(super) fn too_large() -> std::io::Error {
   std::io::Error::other("Archive expands beyond the extraction size limit")
 }
 
+/// Counts bytes against the archive's budget as they are written, so the
+/// limit holds whatever sizes the archive's headers claim.
 struct Budgeted<'a, R> {
   inner: R,
   remaining: &'a mut u64,
@@ -36,6 +43,7 @@ impl<R: Read> Read for Budgeted<'_, R> {
   }
 }
 
+/// Handles extraction of different archive formats
 pub struct ArchiveExtractor;
 
 impl ArchiveExtractor {
@@ -43,9 +51,12 @@ impl ArchiveExtractor {
     Self
   }
 
+  /// Extract archive based on file extension
   pub fn extract_archive(&self, archive_path: &Path, output_dir: &Path) -> Result<(), Error> {
     log::info!("Extracting archive: {archive_path:?} to {output_dir:?}");
 
+    // `sanitize_path` canonicalizes the output directory, so it has to exist before the
+    // first entry is resolved.
     fs::create_dir_all(output_dir)?;
 
     let budget = extraction_budget(fs::metadata(archive_path)?.len());
@@ -65,6 +76,7 @@ impl ArchiveExtractor {
     self.validate_extracted_files(output_dir)
   }
 
+  /// Resolve an archive entry name into a path inside `output_dir`.
   fn sanitize_path(&self, entry_name: &str, output_dir: &Path) -> Result<PathBuf, Error> {
     let resolved = output_dir.join(relative_entry_path(entry_name)?);
     self.assert_within_directory(&resolved, output_dir)?;
@@ -72,6 +84,8 @@ impl ArchiveExtractor {
     Ok(resolved)
   }
 
+  /// Confirm `resolved` lands inside `output_dir`. A relative path can still escape when
+  /// one of the directories it sits under is a symlink or junction.
   fn assert_within_directory(&self, resolved: &Path, output_dir: &Path) -> Result<(), Error> {
     let canonical_output = output_dir
       .canonicalize()
@@ -101,6 +115,7 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Extract ZIP archive
   fn extract_zip(
     &self,
     archive_path: &Path,
@@ -113,6 +128,7 @@ impl ArchiveExtractor {
     for i in 0..archive.len() {
       let mut file = archive.by_index(i)?;
 
+      // Sanitize the file path to prevent Zip Slip attacks
       let outpath = self.sanitize_path(file.name(), output_dir)?;
 
       if let Some(parent) = outpath.parent() {
@@ -133,6 +149,7 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Extract RAR archive
   fn extract_rar(
     &self,
     archive_path: &Path,
@@ -144,6 +161,8 @@ impl ArchiveExtractor {
 
     while let Some(header) = archive.read_header()? {
       archive = if header.entry().is_file() {
+        // unrar writes the file itself and stops at the unpacked size it
+        // declares, so the budget is charged from the header.
         remaining = remaining
           .checked_sub(header.entry().unpacked_size)
           .ok_or_else(too_large)?;
@@ -164,6 +183,7 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Extract 7Z archive
   fn extract_7z(
     &self,
     archive_path: &Path,
@@ -174,6 +194,9 @@ impl ArchiveExtractor {
       sevenz_rust2::ArchiveReader::open(archive_path, sevenz_rust2::Password::empty())
         .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
 
+    // The header lists every entry, so the archive is rejected before anything is written.
+    // Checking afterwards cannot work: an escaped file is not under output_dir. Resolving
+    // here also keeps `UnauthorizedPath` intact, which extraction errors cannot carry.
     let destinations = reader
       .archive()
       .files
@@ -186,6 +209,7 @@ impl ArchiveExtractor {
       })
       .collect::<Result<HashMap<_, _>, Error>>()?;
 
+    // Write to the path we resolved rather than the one the library computes.
     reader
       .for_each_entries(|entry, reader| {
         let destination = destinations.get(entry.name()).ok_or_else(|| {
@@ -204,6 +228,10 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Validate that all extracted files are within the expected output directory. Entry names
+  /// are already checked before each write, so this only catches links an extraction library
+  /// creates on its own, which today means `unrar`. It runs for every format so a format added
+  /// later is covered by default.
   fn validate_extracted_files(&self, output_dir: &Path) -> Result<(), Error> {
     let canonical_output = output_dir
       .canonicalize()
@@ -213,6 +241,7 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Recursively validate that all files in a directory are within the allowed path
   fn validate_directory_recursive(&self, dir: &Path, allowed_root: &Path) -> Result<(), Error> {
     for entry in std::fs::read_dir(dir)? {
       let entry = entry?;
@@ -229,6 +258,7 @@ impl ArchiveExtractor {
         )));
       }
 
+      // `file_type` does not follow links, so a link cannot send this walk into a cycle.
       if entry.file_type()?.is_dir() {
         self.validate_directory_recursive(&path, allowed_root)?;
       }
@@ -236,6 +266,7 @@ impl ArchiveExtractor {
     Ok(())
   }
 
+  /// Check if a file is a supported archive format
   pub fn is_supported_archive(&self, path: &Path) -> bool {
     matches!(
       path.extension().and_then(|e| e.to_str()),
@@ -244,12 +275,17 @@ impl ArchiveExtractor {
   }
 }
 
+/// Interpret an archive entry name as a relative path built only from plain file and
+/// directory names. Backslashes count as separators on every platform, so a Windows-authored
+/// archive is validated the same way on Linux and macOS.
 pub(super) fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
   let normalized = entry_name.replace('\\', "/");
   let mut relative = PathBuf::new();
 
   for component in Path::new(&normalized).components() {
     match component {
+      // `C:` only parses as a prefix in leading position, and pushing it would discard
+      // everything already in the buffer, so reject a drive letter wherever it appears.
       Component::Normal(part) if starts_with_drive_letter(part.to_string_lossy().as_ref()) => {
         return Err(Error::UnauthorizedPath(format!(
           "Archive contains an absolute path: {entry_name}"
@@ -274,10 +310,12 @@ pub(super) fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
   Ok(relative)
 }
 
+/// Zip marks a directory entry only by its trailing slash.
 pub(super) fn is_zip_directory(entry_name: &str) -> bool {
   entry_name.ends_with('/')
 }
 
+/// Whether `component` starts with a Windows drive specifier such as `C:`.
 fn starts_with_drive_letter(component: &str) -> bool {
   let bytes = component.as_bytes();
   bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
@@ -344,6 +382,8 @@ mod tests {
     assert_rejected("C:evil.exe");
   }
 
+  /// `Path::components` only reports a drive letter as a prefix in leading position, and
+  /// `PathBuf::push` would then discard the output directory it is joined onto.
   #[test]
   fn rejects_drive_letters_in_any_position() {
     assert_rejected("mods/C:evil.exe");
@@ -400,6 +440,7 @@ mod tests {
     writer.finish().unwrap();
   }
 
+  /// A few hundred KB of zeros that expand past what the archive may unpack.
   #[test]
   fn stops_an_archive_that_expands_past_its_budget() {
     let workspace = tempfile::tempdir().unwrap();
@@ -520,6 +561,8 @@ mod tests {
     );
   }
 
+  /// A name made only of plain components still escapes when a directory it sits under is a
+  /// link, which is the one thing `relative_entry_path` cannot see.
   #[cfg(unix)]
   #[test]
   fn rejects_entries_resolving_through_a_symlinked_directory() {

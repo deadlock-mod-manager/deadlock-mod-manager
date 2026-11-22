@@ -57,6 +57,8 @@ fn delta(old: &[f64; 8], current: &[f64; 8]) -> Option<PoseDelta> {
   })
 }
 
+/// Bound local changes and the displacement they can propagate along a parent transform.
+/// Accepted poses are copied from the mod, rather than replaced with current game values.
 pub(super) fn compatible(
   old: &Kv3Value,
   current: &Kv3Value,
@@ -114,6 +116,8 @@ pub(super) fn compatible(
   )
 }
 
+/// Validate each sampled world pose against its own parent and local transform.
+/// This is required before using model bind poses as evidence for larger changes.
 pub(super) fn self_consistent(rig: &Kv3Value) -> Option<bool> {
   let local = rig.get(POSE_FIELDS[0])?.as_array()?;
   let world = rig.get(POSE_FIELDS[1])?.as_array()?;

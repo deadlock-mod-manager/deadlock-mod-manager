@@ -48,6 +48,11 @@ type AddRequest = {
   resolve: (source: NativeSourceSummary | null) => void;
 };
 
+/**
+ * Handles `sources/add` and `sources/install` links from a source's website.
+ * Adding always goes through the reviewed add dialog; an install from a source
+ * the user already added starts without asking, like a GameBanana 1-click.
+ */
 export const NativeSourceLinkHandler = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -158,6 +163,7 @@ export const NativeSourceLinkHandler = () => {
       return;
     }
 
+    // Files list the release's artifacts in order, so they share an index.
     const linked = release?.artifacts.findIndex(({ id }) => id === artifactId);
     const selected =
       linked !== undefined && linked >= 0
@@ -233,12 +239,16 @@ export const NativeSourceLinkHandler = () => {
     }
   };
 
+  // Registered once, so it must read current values rather than captured ones.
   const handleRef = useRef(handleLink);
   handleRef.current = handleLink;
 
+  // One link at a time: the add dialog holds a single request.
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
+    // Rust holds the links, so one that started the app is not lost before
+    // this listener exists.
     const drain = () => {
       queueRef.current = queueRef.current.then(async () => {
         try {

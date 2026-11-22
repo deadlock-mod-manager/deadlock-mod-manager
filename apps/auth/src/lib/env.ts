@@ -12,20 +12,17 @@ export const envSchema = z.object({
       "https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200",
     ),
   POD_NAME: z.string().optional(),
-  CORS_ORIGIN: z
-    .array(z.string())
-    .optional()
-    .default([
-      "https://deadlockmods.com",
-      "https://deadlockmods.app",
-      "https://api.deadlockmods.app",
-      "https://auth.deadlockmods.app",
-      "http://tauri.localhost",
-      "http://localhost:1420",
-      "http://localhost:3003",
-      "http://localhost:3004",
-      "http://localhost:9000",
-    ]),
+  CORS_ORIGIN: z.array(z.string()).optional().default([
+    "https://deadlockmods.com",
+    "https://deadlockmods.app",
+    "https://api.deadlockmods.app",
+    "https://auth.deadlockmods.app",
+    "http://tauri.localhost", // Tauri production build
+    "http://localhost:1420", // Tauri dev server
+    "http://localhost:3003", // Local web server
+    "http://localhost:3004", // Local auth server
+    "http://localhost:9000", // Local API server
+  ]),
   BETTER_AUTH_SECRET: z
     .string()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters long"),

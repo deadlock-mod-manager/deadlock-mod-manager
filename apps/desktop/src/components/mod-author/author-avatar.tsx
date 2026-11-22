@@ -11,6 +11,7 @@ import { pickStable } from "@/lib/mods/stable-pick";
 import { getTopHero } from "@/lib/mods/top-hero";
 import { cn } from "@/lib/utils";
 
+// GameBanana serves this placeholder for members without an uploaded avatar.
 const isGameBananaDefaultAvatar = (url: string) =>
   url.includes("gamebanana.com/static/img/defaults/");
 
@@ -47,7 +48,9 @@ const SIZES = {
 
 interface AuthorAvatarProps {
   name: string;
+  /** Absent while the profile loads; the hero fallback still renders. */
   author?: AuthorAvatarSource;
+  /** Mods used to pick the hero shown when the author has no avatar. */
   mods?: Pick<ModDto, "hero">[];
   size?: keyof typeof SIZES;
 }
@@ -69,6 +72,7 @@ export const AuthorAvatar = ({
     });
   const heroPortrait = namedPortrait ?? pickStable(fallbackPortraits, name);
   const sizes = SIZES[size];
+  // useId output contains colons, which break the url(#id) reference.
   const duotoneId = `author-duotone-${useId().replace(/:/g, "")}`;
 
   return (
@@ -80,6 +84,8 @@ export const AuthorAvatar = ({
           sizes.initials,
         )}>
         {heroPortrait ? (
+          // Duotone via an SVG filter: CSS masks would need CORS headers the
+          // deadlock-api asset bucket does not send.
           <>
             <svg aria-hidden='true' className='absolute h-0 w-0'>
               <filter colorInterpolationFilters='sRGB' id={duotoneId}>

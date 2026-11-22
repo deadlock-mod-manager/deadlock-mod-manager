@@ -12,6 +12,8 @@ export const Route = createFileRoute("/discord")({
         "Join the Deadlock Mod Manager Discord community for support, discussions, and updates.",
       noindex: true,
     }),
+  // Redirect on the server so crawlers and no-JS clients get a real 302.
+  // The component below only runs on client-side navigation.
   server: {
     handlers: {
       GET: () =>

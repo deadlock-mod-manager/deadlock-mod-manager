@@ -1,8 +1,15 @@
+//! Bounded scanner for model metadata text (`m_modelInfo.m_keyValueText`).
+//! It is not a KV3 serializer: it preserves authored text verbatim and
+//! declines unsupported syntax.
 use std::{
   collections::{BTreeMap, BTreeSet},
   ops::Range,
 };
 
+/// The `name = value` assignments of an object and the offset of its closing
+/// brace. A KV3 header comment is recognized only at the start of the text, and
+/// only whitespace or comments may follow the closing brace. Names that differ
+/// only in case are ambiguous and decline the scan.
 pub(super) fn root_fields(text: &str) -> Option<(usize, BTreeMap<String, Range<usize>>)> {
   let mut cursor = TextCursor {
     text: text.as_bytes(),
@@ -48,6 +55,7 @@ pub(super) fn root_fields(text: &str) -> Option<(usize, BTreeMap<String, Range<u
   }
 }
 
+/// The range of a field whose name matches case-insensitively.
 pub(super) fn field<'a>(
   fields: &'a BTreeMap<String, Range<usize>>,
   name: &str,
@@ -58,10 +66,12 @@ pub(super) fn field<'a>(
     .map(|(_, range)| range)
 }
 
+/// The value text of a `name = value` assignment.
 pub(super) fn assigned_value(assignment: &str) -> Option<&str> {
   assignment.split_once('=').map(|(_, value)| value.trim())
 }
 
+/// The item texts of an array value such as `[ { a = 1 } { a = 2 } ]`.
 pub(super) fn array_items(value: &str) -> Option<Vec<&str>> {
   let mut cursor = TextCursor {
     text: value.as_bytes(),
@@ -84,6 +94,7 @@ pub(super) fn array_items(value: &str) -> Option<Vec<&str>> {
   cursor.peek().is_none().then_some(items)
 }
 
+/// The path of a `resource:"path"` reference.
 pub(super) fn resource_name(item: &str) -> Option<String> {
   let quoted = item.trim().strip_prefix("resource:")?;
   serde_json::from_str(quoted).ok()
@@ -129,6 +140,7 @@ impl TextCursor<'_> {
       }
     }
   }
+  // Multiline `"""` strings have different escaping rules; decline them.
   fn quoted(&mut self) -> Option<()> {
     if self.text.get(self.position..self.position + 3) == Some(b"\"\"\"") {
       return None;

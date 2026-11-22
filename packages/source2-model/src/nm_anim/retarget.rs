@@ -23,6 +23,8 @@ fn build_model_matrices(local: &[BoneTransform], parents: &[i32]) -> Vec<[f32; 1
     models
 }
 
+/// The bone a duplicate rig copies: `spine_1_001` and `spine_1.001` (the
+/// names Blender gives a second armature) follow `spine_1`.
 fn twin_name(name: &str) -> Option<&str> {
     let (stem, suffix) = name.rsplit_once(['_', '.'])?;
     (suffix.len() == 3 && suffix.bytes().all(|b| b.is_ascii_digit()) && !stem.is_empty())
@@ -36,6 +38,7 @@ fn lowercase_index<'a>(names: impl Iterator<Item = &'a str>) -> HashMap<String, 
         .collect()
 }
 
+/// The earlier target bone a renamed copy of the rig follows.
 fn twin_index(
     name: &str,
     source: &HashMap<String, usize>,
@@ -43,6 +46,7 @@ fn twin_index(
     before: usize,
 ) -> Option<usize> {
     let twin = twin_name(name)?.to_ascii_lowercase();
+    // Only a bone the clip drives; `Bone_007` must not chase a helper `Bone`.
     if !source.contains_key(&twin) {
         return None;
     }
@@ -52,6 +56,9 @@ fn twin_index(
         .filter(|index| *index < before)
 }
 
+/// The target bones a pose retargeted from a clip with `source_names` can move:
+/// the bones it names and their renamed twins. Every other bone keeps its bind
+/// transform under its parent.
 pub fn retargeted_bones(source_names: &[String], target: &Skeleton) -> Vec<bool> {
     let source = lowercase_index(source_names.iter().map(String::as_str));
     let target_index = lowercase_index(target.bones.iter().map(|bone| bone.name.as_str()));
@@ -66,6 +73,9 @@ pub fn retargeted_bones(source_names: &[String], target: &Skeleton) -> Vec<bool>
         .collect()
 }
 
+/// Project a sampled NM pose onto a model skeleton in component space. NM
+/// clips can contain staging-only parents such as `root_motion`; projecting
+/// globals preserves their effect while collapsing bones absent from the model.
 pub fn retarget_nm_pose(
     animation: &NmAnimation,
     sampled: &[BoneTransform],
@@ -82,6 +92,9 @@ pub fn retarget_nm_pose(
             .get(&bone.name.to_ascii_lowercase())
             .and_then(|index| source_pose.get(*index))
             .copied();
+        // Some skins weight the mesh to a renamed copy of the hero's rig that
+        // no clip animates; the game shows it following the original bones.
+        // The copy keeps its own proportions and turns as its twin does.
         let twin = own
             .is_none()
             .then(|| twin_index(&bone.name, &source, &target_index, target_models.len()))
@@ -132,6 +145,7 @@ pub fn retarget_nm_pose(
     target_pose
 }
 
+/// `position`'s translation and scale with `rotation`'s orientation.
 fn with_rotation_of(position: &[f32; 16], rotation: &[f32; 16]) -> [f32; 16] {
     let placed = decompose_trs(position);
     let turned = decompose_trs(rotation);

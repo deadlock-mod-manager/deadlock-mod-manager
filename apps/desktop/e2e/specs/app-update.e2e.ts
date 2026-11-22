@@ -34,6 +34,7 @@ describe("application updater", () => {
         response.metadata.rid,
       );
       await install.click();
+      // An unsigned fixture must download but never install onto the test host.
       await expect($("p=Could not install the update")).toBeDisplayed();
       await expect(install).toBeEnabled();
     }

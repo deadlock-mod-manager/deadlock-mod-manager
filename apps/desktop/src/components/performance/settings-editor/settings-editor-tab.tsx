@@ -29,6 +29,10 @@ import { ConfigPicker } from "./editor-header";
 const NO_PRESETS: PresetSummary[] = [];
 const NO_CATEGORIES: CategoryInfo[] = [];
 
+/**
+ * Typed editor for one config's settings. Opens on the applied config unless
+ * the user picked another one; Apply saves the tweaks and applies that config.
+ */
 export const SettingsEditorTab = () => {
   const { t } = useTranslation();
   const { editorConfigId, openEditor, setTab } = usePerformanceUi();

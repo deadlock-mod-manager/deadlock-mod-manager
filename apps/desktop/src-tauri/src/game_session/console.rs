@@ -1,3 +1,7 @@
+//! The clean-shutdown lines Deadlock prints to `game/citadel/console.log` when
+//! it quits normally. The log only exists with `-condebug`, and the next
+//! launch truncates it.
+
 use std::path::Path;
 
 use chrono::{DateTime, Utc};
@@ -6,16 +10,23 @@ pub use deadlock_discord_presence::console_log_path;
 
 const TAIL_BYTES: u64 = 8 * 1024;
 
+/// engine2.dll prints these as the last lines of a normal quit
+/// (`ShutdownSource2Logging` is the very last).
 const SHUTDOWN_MARKERS: [&str; 2] = ["ShutdownSource2Logging", "Source2Shutdown"];
 
 fn has_shutdown_marker(tail: &str) -> bool {
   SHUTDOWN_MARKERS.iter().any(|marker| tail.contains(marker))
 }
 
+/// `None` when the log is missing; `Some(false)` when it ends without the
+/// shutdown lines.
 pub fn ended_cleanly(path: &Path) -> Option<bool> {
   super::read_tail(path, TAIL_BYTES).map(|tail| has_shutdown_marker(&tail))
 }
 
+/// Whether a run that started at `started_at` wrote the shutdown lines. The
+/// game truncates the log a few seconds after its process appears, so until
+/// then the log still ends with the previous run's clean shutdown.
 pub fn run_ended_cleanly(path: &Path, started_at: DateTime<Utc>) -> bool {
   let written_by_run = std::fs::metadata(path)
     .and_then(|metadata| metadata.modified())

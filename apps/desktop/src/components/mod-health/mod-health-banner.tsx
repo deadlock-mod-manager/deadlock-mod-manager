@@ -37,6 +37,7 @@ export const ModHealthBanner = ({
   const progress = useModHealthProgress((state) => state.progress);
   const gameRunning = useGameRunning();
   const fix = useFixMods();
+  // Null when closed; a list of ids narrows the details to those mods.
   const [details, setDetails] = useState<readonly string[] | "all" | null>(
     null,
   );
@@ -60,12 +61,17 @@ export const ModHealthBanner = ({
       .filter((health) => isHeldBack(health) && installedIds.has(health.modId))
       .map((health) => health.modId) ?? [];
   const heldBackIds = heldBackIn(report.data);
+  // Partly fixable mods still need an author update after fixing, so the
+  // message says the fix may only be partial.
   const somePartly = fixable.some(
     (health) => health.status === "partlyFixable",
   );
   const messageKey = gameUpdatedSinceLastCheck(report.data)
     ? "gameUpdated"
     : "olderVersion";
+  // Held-back mods need a look before fixing, so the review opens once the
+  // safe fixes are done. The fix can repair them too when they were chosen
+  // before, so the refreshed report decides which still need it.
   const fixAll = () => {
     const review = (ids: string[]) => {
       if (ids.length > 0) setDetails(ids);
@@ -90,6 +96,7 @@ export const ModHealthBanner = ({
   };
   const checking =
     isChecking && progress && progress.total > 0 ? progress : null;
+  // Fixing from the open dialog can empty the banner; the dialog stays open.
   const dialog = (
     <ModHealthDialog
       open={details !== null}

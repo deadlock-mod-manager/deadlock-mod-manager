@@ -24,12 +24,14 @@ export const isPerformanceTab = (value: string): value is PerformanceTab =>
 type PerformanceUi = {
   tab: PerformanceTab;
   setTab: (tab: PerformanceTab) => void;
+  /** Config whose details sheet is open (`preset:<id>`, `user:<uuid>` or `community:<id>`). */
   detailsConfigId: string | null;
   openDetails: (configId: string | null) => void;
   importSource: ImportSource | null;
   importOpen: boolean;
   openImport: (source?: ImportSource) => void;
   closeImport: () => void;
+  /** Config the settings editor shows; `null` follows the applied config. */
   editorConfigId: string | null;
   openEditor: (configId?: string | null) => void;
 };

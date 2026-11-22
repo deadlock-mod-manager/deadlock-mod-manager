@@ -66,6 +66,10 @@ const CandidateRow = ({
   );
 };
 
+/**
+ * Puts a mod on a hero's list by hand: the way back for anything removed from
+ * one, and the way in for anything no hero could be detected for.
+ */
 export const AssignModDialog = ({
   hero,
   mods,

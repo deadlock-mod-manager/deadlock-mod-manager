@@ -2,10 +2,12 @@ FROM oven/bun:1.4.4 AS builder
 
 WORKDIR /usr/src/app
 
+# Install system dependencies for building
 RUN apt-get -y update && \
     apt-get -y install curl build-essential && \
     rm -rf /var/lib/apt/lists/*
 
+# Install Node.js and pnpm
 ARG NODE_VERSION=24.22.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
@@ -14,8 +16,10 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     corepack enable && \
     corepack prepare pnpm@11.18.0 --activate
 
+# Copy package configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
+# Copy all source code (monorepo structure requires all packages for dependency resolution)
 COPY packages ./packages
 COPY tools ./tools
 COPY scripts ./scripts
@@ -23,22 +27,28 @@ COPY apps/auth ./apps/auth
 
 RUN pnpm install --frozen-lockfile
 
+# Build the client application
 RUN pnpm --filter @deadlock-mods/auth build
 
+# Runtime stage - Minimal image with only runtime dependencies
 FROM oven/bun:1.4.4-slim AS runtime
 
+# Create non-root user first
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
+# Create app directory and pnpm directories with correct ownership from the start
 RUN mkdir -p /usr/src/app && chown appuser:appuser /usr/src/app && \
     mkdir -p /home/appuser/.local/share/pnpm && \
     chown -R appuser:appuser /home/appuser
 
 WORKDIR /usr/src/app
 
+# Install only runtime system dependencies
 RUN apt-get -y update && \
     apt-get -y install curl && \
     rm -rf /var/lib/apt/lists/*
 
+# Install Node.js and pnpm (needed for runtime)
 ARG NODE_VERSION=24.22.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
@@ -47,18 +57,23 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     corepack enable && \
     corepack prepare pnpm@11.18.0 --activate
 
+# Switch to non-root user before copying files
 USER appuser
 
+# Set pnpm home directory to ensure proper permissions
 ENV PNPM_HOME="/home/appuser/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
+# Copy package files with correct ownership
 COPY --chown=appuser:appuser package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
+# Copy built application and dependencies from builder stage with correct ownership
 COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/scripts ./scripts
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/auth ./apps/auth
 
+# Ensure the dist/client directory exists and has correct ownership
 RUN mkdir -p /usr/src/app/apps/auth/dist/client && \
     chown -R appuser:appuser /usr/src/app/apps/auth/dist
 

@@ -38,6 +38,7 @@ import { PageButton } from "./page-button";
 import { ProfileSelect } from "./profile-select";
 import { usePluginActions } from "./use-plugin-actions";
 
+/** Before a plugin first runs: pick what it asked for, then turn it on. */
 export const FinishSetup = ({ plugin }: { plugin: ExternalPluginSummary }) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

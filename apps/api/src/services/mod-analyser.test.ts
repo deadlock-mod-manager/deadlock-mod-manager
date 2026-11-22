@@ -31,11 +31,14 @@ const cachedVpk = (
   updatedAt: new Date(0),
 });
 
+// The first candidate's file count equals the queried byte size, which the
+// old count-versus-bytes comparison treated as an exact match.
 const contentMatches = [
   cachedVpk("vpk_count_collision", 9_000_000, 4096),
   cachedVpk("vpk_closest_size", 4100, 12),
 ];
 
+// Bun module mocks persist across files; isolate the database mock from other suites.
 if (process.env.DMM_MOD_ANALYSER_TEST_CHILD !== "1") {
   it("ranks hash-only matches with an isolated database mock", () => {
     const result = Bun.spawnSync([process.execPath, "test", import.meta.path], {

@@ -3,6 +3,10 @@ import { foundrySkinPalette } from "@/lib/foundry";
 import logger from "@/lib/logger";
 import type { FoundryPaintPart } from "@/types/foundry";
 
+/**
+ * The colors the skin's paintable sections already wear, read from their
+ * original color maps, so the brush can offer them.
+ */
 export const useSkinPalette = (
   filePath: string | null,
   parts: readonly FoundryPaintPart[],

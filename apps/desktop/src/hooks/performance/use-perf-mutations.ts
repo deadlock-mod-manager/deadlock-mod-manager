@@ -31,15 +31,18 @@ import type { PerfStatus } from "@/types/generated/PerfStatus";
 import type { VideoOutcome } from "@/types/generated/VideoOutcome";
 import { refreshPerfCatalogNow } from "./use-perf-queries";
 
+/** One toast at a time, so an older toast's Undo can't revert a newer change. */
 const APPLIED_TOAST_ID = "performance-config-applied";
 
 type ApplyStart = AnalyticsOperations["performance_config_apply"]["start"];
 
 type ApplyPerfConfigVariables = {
   request: PerfApplyRequest;
+  /** Also remove Grimoire's, DeadTune's or another tool's overlay. */
   removeForeign?: boolean;
   source: ApplyStart["source"];
   entryPoint: ApplyStart["entry_point"];
+  /** Show the "Applied" toast with Undo. Off when the caller shows its own. */
   notify?: boolean;
 };
 
@@ -113,6 +116,10 @@ export const useRemovePerfConfig = () => {
   });
 };
 
+/**
+ * Puts the player's own video.txt back. The backend also stops writing video
+ * settings for the applied config, so its saved choice follows.
+ */
 export const useRestoreVideoBackup = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -149,6 +156,10 @@ export const useRestoreVideoBackup = () => {
   });
 };
 
+/**
+ * Makes the current video.txt the player's own base, so the next config can
+ * leave it as it is. The chosen config stops writing video settings.
+ */
 export const useAdoptVideo = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -184,6 +195,11 @@ export const useAdoptVideo = () => {
   });
 };
 
+/**
+ * Applies a config, saves its tweaks as the config's own, records it in
+ * History, and offers Undo, which goes back to whatever was applied before (or
+ * to no config).
+ */
 export const useApplyPerfConfig = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -238,6 +254,8 @@ export const useApplyPerfConfig = () => {
     onMutate: () =>
       queryClient.getQueryData<PerfStatus>(perfQueryKeys.status()),
     onSuccess: (result, { request, notify = true }, previous) => {
+      // Undo and History re-apply older tweaks; the cards and the editor
+      // compare against these, so they must follow what was applied.
       setPerfOverrides(request.configId, request.overrides);
       setPerfIncludeEngineSections(
         request.configId,
@@ -263,6 +281,8 @@ export const useApplyPerfConfig = () => {
         return;
       }
       const previousRequest = previous?.desired?.request ?? null;
+      // Applying is blocked while the game runs unless the user overrides it,
+      // so only that path needs the restart prompt.
       void isGameRunning()
         .catch(() => false)
         .then((gameRunning) => {
@@ -318,6 +338,10 @@ export const useApplyPerfConfig = () => {
 
 type VideoChoice = "useConfig" | "keep";
 
+/**
+ * Settles video.txt settings changed in game: writes the config's value back,
+ * or keeps the player's. Either way History records it.
+ */
 export const useResolveVideoChanges = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

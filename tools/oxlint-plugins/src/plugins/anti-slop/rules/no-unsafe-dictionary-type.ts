@@ -96,6 +96,7 @@ const unsafeDictionaryToReport = (
   return unsafe;
 };
 
+/** Disallow object-dictionary contracts whose direct value type is an unsafe escape hatch. */
 export const noUnsafeDictionaryTypeRule = defineRule({
   meta: {
     type: "problem",

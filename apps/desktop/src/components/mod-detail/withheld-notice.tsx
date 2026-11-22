@@ -11,6 +11,7 @@ import type { WithholdNoticeDto } from "@/types/generated/WithholdNoticeDto";
 
 const LABEL = "text-muted-foreground text-xs uppercase";
 
+/** Takes the place of the download footer while GameBanana staff withhold the mod. */
 export const WithheldNotice = ({
   notice,
   remoteUrl,

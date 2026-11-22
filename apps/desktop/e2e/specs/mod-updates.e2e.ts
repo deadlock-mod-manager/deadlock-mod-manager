@@ -62,6 +62,7 @@ async function exerciseUpdateChoice(world: string) {
   await assertReliabilityDisk(world, { [PRIMARY.id]: "red" }, "chosen-update");
 }
 
+// The lone installed file is gone and the only upload has a different name.
 async function exerciseRenamedFile(world: string) {
   await checkUpdates(1);
   await $("button=1 update available").click();

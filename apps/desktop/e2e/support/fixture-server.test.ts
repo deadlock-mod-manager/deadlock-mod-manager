@@ -151,6 +151,7 @@ describe("fixture network", () => {
         contentRange: "bytes 2-4/10",
         body: body.subarray(2, 5),
       });
+      // The first entry answers twice, so this one is still served honestly.
       expect((await get("bytes=4-6")).contentRange).toBe("bytes 4-6/10");
       expect(await get("bytes=4-6")).toEqual({
         status: 206,

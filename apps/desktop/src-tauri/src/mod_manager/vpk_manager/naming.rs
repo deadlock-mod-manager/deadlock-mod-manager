@@ -2,6 +2,7 @@ use super::*;
 use crate::providers::SubmissionRef;
 
 impl VpkManager {
+  /// Count enabled `pak##_dir.vpk` files directly inside `dir` (non-recursive).
   pub fn count_enabled_vpks(dir: &Path) -> u32 {
     let Ok(entries) = fs::read_dir(dir) else {
       return 0;
@@ -32,6 +33,7 @@ impl VpkManager {
     })
   }
 
+  /// Extract mod ID from a prefixed VPK filename.
   pub fn extract_mod_id_from_prefix(filename: &str) -> Option<String> {
     if Self::is_enabled_vpk_name(filename) {
       return None;
@@ -73,10 +75,12 @@ impl VpkManager {
   }
 }
 
+/// The filename the engine loads as the `number`-th addon of a directory.
 pub(super) fn enabled_vpk_name(number: u32) -> String {
   format!("pak{number:02}_dir.vpk")
 }
 
+/// Lowest unused `pak##_dir.vpk` names in `dir`, filling gaps left by disabled mods.
 pub(crate) fn allocate_enabled_vpk_names(dir: &Path, count: usize) -> Result<Vec<String>, Error> {
   let mut used = std::collections::HashSet::new();
   if dir.exists() {
@@ -110,6 +114,8 @@ pub(crate) fn allocate_enabled_vpk_names(dir: &Path, count: usize) -> Result<Vec
   Ok(names)
 }
 
+/// Lowest `pak##_dir.vpk` name not yet taken in `dir`, filling gaps left by
+/// disabled mods.
 pub(super) fn next_free_enabled_vpk_name(dir: &Path) -> Result<String, Error> {
   if !dir.exists() {
     return Ok(enabled_vpk_name(1));

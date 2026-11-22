@@ -418,6 +418,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
   const isAutoexecEnabled = useFeatureEnabled("autoexec");
   const isSkinsEnabled = useFeatureEnabled("skins");
   const minimalMode = usePersistedStore((s) => s.minimalMode);
+  // A link or search can still point at the autoexec tab after it was hidden.
   const visibleTab =
     activeTab === "autoexec" && !isAutoexecEnabled
       ? "launch-options"
@@ -441,6 +442,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
       return;
     }
     setActiveTab(tab);
+    // Radix mounts a newly selected tab's content one render late.
     requestAnimationFrame(() => {
       const content = contentRef.current;
       const section = sectionId
@@ -465,9 +467,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
     });
   };
 
+  // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
 
+  // Track settings tab changes
   useEffect(() => {
     analytics.trackPageViewed(`settings-${activeTab}`, {
       tab: activeTab,

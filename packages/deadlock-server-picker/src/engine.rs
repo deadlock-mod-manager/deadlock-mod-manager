@@ -22,9 +22,14 @@ struct Inner {
   latencies: Vec<ServerPickerLatency>,
   preferred_relays: BTreeMap<String, String>,
   warning: Option<String>,
+  /// Rules the elevated helper read back after this process's last apply or
+  /// reset. Linux can't read nftables unprivileged, so without this every
+  /// refresh would report "not verified" right after a verified apply.
   verified_rules: Option<Vec<FirewallRule>>,
 }
 
+/// Owns preferences and serializes mutations. The host supplies only its storage
+/// directory and the resolved game executable when applying restrictions.
 pub struct ServerPicker {
   directory: PathBuf,
   client: reqwest::Client,
@@ -38,6 +43,7 @@ pub struct ServerPicker {
 
 impl ServerPicker {
   pub fn new(directory: PathBuf) -> Result<Self, PickerError> {
+    // Corrupt saved data must never prevent offline restoration of owned rules.
     let mut warning = None;
     let preferences =
       persistence::read::<Preferences>(&directory.join("preferences.json"), 256 * 1024)
@@ -213,6 +219,8 @@ impl ServerPicker {
     Ok(self.snapshot(Ok(observed)).await)
   }
 
+  /// Requires neither the catalog nor intact preferences; ownership is resolved
+  /// from the platform firewall itself.
   pub async fn reset(&self) -> Result<ServerPickerState, PickerError> {
     let _operation = self.operation.lock().await;
     self.inner.lock().await.verified_rules = None;
@@ -250,6 +258,8 @@ impl ServerPicker {
         "Preset names must contain 1–100 characters".into(),
       ));
     }
+    // Presets are local preferences and must remain editable while a
+    // separate firewall operation waits for system authorization.
     let mut inner = self.inner.lock().await;
     let mut preferences = inner.preferences.clone();
     let selection = normalize_selection(blocked_locations);

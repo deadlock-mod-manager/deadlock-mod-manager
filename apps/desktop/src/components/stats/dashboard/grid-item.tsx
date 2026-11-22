@@ -76,6 +76,8 @@ export const GridItem = ({
       width: item.offsetWidth,
       height: item.offsetHeight,
     };
+    // A narrow window renders a responsive span instead of the stored width,
+    // so a resize there only touches the height.
     const widthLocked = responsiveSpan(widget.w, gridWidth) !== widget.w;
     setResizing(true);
 

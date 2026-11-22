@@ -6,8 +6,14 @@ import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import type { StatsScope } from "@/lib/stats/scope";
 
+/**
+ * What every widget on the Stats page reads: the selected account and the one
+ * match-history load the whole page shares. Widgets fetch anything beyond that
+ * themselves, so a widget nobody placed costs nothing.
+ */
 export interface DashboardData {
   accountId: number | null;
+  /** The saved accounts are still loading, so no account is selected yet. */
   isAccountPending: boolean;
   account: SteamAccount | null;
   accounts: SteamAccount[];

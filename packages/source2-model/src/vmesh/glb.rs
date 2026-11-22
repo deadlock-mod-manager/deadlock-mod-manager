@@ -122,6 +122,9 @@ fn mask_bits(mask: u64, count: usize) -> Vec<u32> {
         .collect()
 }
 
+/// `mesh_groups` tags each primitive with the groups it belongs to and lists
+/// the groups on the scene, so a viewer can switch body groups. Masks become
+/// bit lists because JSON numbers cannot hold 64 bits.
 pub(crate) fn build_glb(
     primitives: &[GlbPrimitive<'_>],
     textures: &[PreviewTexture],
@@ -224,6 +227,8 @@ pub(crate) fn build_glb(
             }));
             attributes["TEXCOORD_0"] = json!(accessor_index);
         }
+        // glTF multiplies COLOR_0 into every material's base colour, so only
+        // export it where the Source 2 material actually reads vertex colours.
         let material_reads_colors = primitive
             .material
             .checked_sub(1)
@@ -489,12 +494,19 @@ pub(crate) fn build_glb(
                 "roughnessFactor": 0.8
             },
             "doubleSided": texture.double_sided,
+            // The color map, so the Foundry can pick and paint single
+            // sections. three.js copies material extras into `material.userData`.
             "extras": { "colorTexture": texture.name }
         });
         if let Some(normal) = normal {
             material["normalTexture"] = json!({ "index": normal });
         }
         if let Some(orm) = orm {
+            // The packed texture drives occlusion (R) and roughness (G) detail, but
+            // its blue channel is not reliably glTF-style metalness for Source 2 hero
+            // "mask" textures. Keep metalness at the material's declared value (0 for
+            // non-metals) so metalness = metallicFactor * B stays 0 and skin/cloth no
+            // longer reads as oily chrome. See ValveResourceFormat GltfModelExporter.
             material["occlusionTexture"] = json!({ "index": orm });
             material["pbrMetallicRoughness"]["metallicRoughnessTexture"] = json!({ "index": orm });
             material["pbrMetallicRoughness"]["metallicFactor"] = json!(texture.metalness_factor);

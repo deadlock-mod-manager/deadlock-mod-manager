@@ -99,6 +99,8 @@ describe("buildPersistMerge", () => {
     };
     const merged = merge(persisted, defaults as never) as unknown as FakeState;
     expect(merged.gamePath).toBe("/games/deadlock");
+    // profiles is shallow-replaced (no `default` survives), proving user-keyed
+    // records aren't accidentally deep-merged.
     expect(merged.profiles).toEqual({
       custom: { id: "custom", mods: ["a", "b"] },
     });
@@ -106,6 +108,7 @@ describe("buildPersistMerge", () => {
 
   it("deep-merges opted-in nested objects so new defaults survive", () => {
     const merge = buildPersistMerge(new Set(["proxyConfig"]));
+    // Simulate a persisted state from before `port` was added to proxyConfig.
     const persisted = {
       gamePath: "",
       proxyConfig: { enabled: true, host: "10.0.0.1" },
@@ -114,7 +117,7 @@ describe("buildPersistMerge", () => {
     expect(merged.proxyConfig).toEqual({
       enabled: true,
       host: "10.0.0.1",
-      port: 8080,
+      port: 8080, // picked up from defaults
     });
   });
 

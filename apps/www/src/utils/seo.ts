@@ -21,6 +21,11 @@ const DEFAULT_OG_IMAGE = {
   alt: "Deadlock Mod Manager logo with the tagline Download, Install & Manage Deadlock Mods",
 };
 
+/**
+ * Indexable public pages, listed in the sitemap. Redirect routes (/docs,
+ * /discord, /status), the per-platform download shortcuts, auth and
+ * dashboard pages are left out on purpose.
+ */
 export const INDEXABLE_PATHS = [
   "/",
   "/download",
@@ -48,9 +53,14 @@ export const INDEXABLE_PATHS = [
 export const absoluteUrl = (path: string) =>
   path === "/" ? `${SITE_URL}/` : `${SITE_URL}${path}`;
 
+/** Absolute URL of a page in a given language. */
 export const localizedUrl = (path: string, locale: Locale) =>
   absoluteUrl(localizePath(path, locale));
 
+/**
+ * hreflang alternates for a translated page: one per language plus
+ * x-default, which points at English.
+ */
 export const alternateUrls = (path: string) =>
   isLocalizedPath(path)
     ? [
@@ -80,13 +90,21 @@ const xHandle = `@${X_URL.split("/").pop()}`;
 export interface SeoOptions {
   title: string;
   description?: string;
+  /** Site-relative path, e.g. "/download". Drives the canonical link and og:url. */
   path?: string;
   keywords?: string;
   type?: "website" | "article";
   noindex?: boolean;
+  /** Language the page renders in; drives the canonical URL and hreflang. */
   locale?: Locale;
 }
 
+/**
+ * Per-page head tags. TanStack Router keeps the deepest route's meta when
+ * names collide but does not dedupe links, so site-wide tags live in
+ * `siteHead()` on the root route and only page tags (plus the canonical
+ * link) come from here.
+ */
 export const seo = ({
   title,
   description = DEFAULT_DESCRIPTION,
@@ -134,6 +152,7 @@ export const seo = ({
   return { meta, links };
 };
 
+/** Site-wide head tags, used only by the root route. */
 export const siteHead = () => ({
   meta: [
     { charSet: "utf-8" },

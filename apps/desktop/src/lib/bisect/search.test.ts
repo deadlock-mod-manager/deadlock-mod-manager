@@ -10,6 +10,7 @@ import {
 const mods = (count: number) =>
   Array.from({ length: count }, (_, index) => `mod-${index}`);
 
+/** Plays every round against `breaks`, as a user answering honestly would. */
 const run = (
   candidates: string[],
   breaks: (enabled: Set<string>) => BisectOutcome,

@@ -3,6 +3,10 @@ import type { FixtureRequest } from "./fixture-server";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
 import type { CreatedWorld } from "./world";
 
+/**
+ * Two hand-installed addons nobody has published, both named `pak01_dir.vpk`:
+ * one in the base folder and one in the `addons2` overflow shard.
+ */
 export const UNKNOWN_ADDONS = [
   { locator: "pak01_dir.vpk", root: "addons", name: "Base addon" },
   { locator: "addons2/pak01_dir.vpk", root: "addons2", name: "Overflow addon" },

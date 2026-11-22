@@ -1,3 +1,18 @@
+//! Reads the match currently being played out of the game's `console.log`.
+//!
+//! Deadlock logs a line when it joins a lobby and another when that lobby goes
+//! away, so the newest `created` without a matching `destroyed` is the live match:
+//!
+//! ```text
+//! 12:03:37 Lobby 174072581626958477 for Match 96996563 created
+//! 12:35:54 Lobby 174072581626958477 for Match 96996563 destroyed
+//! ```
+//!
+//! This needs `-condebug`, which the app already passes when launching the game.
+//!
+//! With the live bridge HUD mod installed, the same log also carries the
+//! scoreboard; [`crate::live_bridge::protocol`] reads those lines.
+
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
@@ -81,6 +96,13 @@ fn console_log_path(game_path: &Path) -> PathBuf {
 
 static GAME_PATH: LazyLock<Mutex<Option<PathBuf>>> = LazyLock::new(Mutex::default);
 
+/// The install behind the console log, resolved at most once per app run.
+///
+/// Resolving it walks the Steam library folders behind the global mod-manager
+/// lock, which is far more than a poll running every couple of seconds should
+/// cost - and it would contend with whatever the mod library is doing. The
+/// install does not move while the app is open, so it is only looked up again
+/// once the directory stops being there.
 pub fn cached_game_path(resolve: impl FnOnce() -> Option<PathBuf>) -> Option<PathBuf> {
   let mut cached = GAME_PATH.lock().ok()?;
   if cached.as_deref().is_some_and(|path| !path.is_dir()) {
@@ -92,14 +114,23 @@ pub fn cached_game_path(resolve: impl FnOnce() -> Option<PathBuf>) -> Option<Pat
   cached.clone()
 }
 
+/// Matches from this session are worth remembering even after the lobby closes:
+/// deadlock-api ingests with a day of delay, so they are exactly the ones its
+/// history is missing.
 const RECENT_LIMIT: usize = 20;
 
+/// What the log says the player is doing right now.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct LivePhase {
+  /// When matchmaking started, in Unix milliseconds, while still queued.
   pub queued_since: Option<i64>,
   pub current: Option<LiveMatch>,
+  /// Every match id seen this session, newest last, capped at `RECENT_LIMIT`.
   pub recent_match_ids: Vec<String>,
+  /// What the bridge reported, dropped when the next lobby is created.
   bridge: Option<BridgeState>,
+  /// Taken from the bridge when a started match's lobby closes, and dropped
+  /// once the player queues or joins another lobby.
   last_match: Option<FinishedMatch>,
 }
 
@@ -110,9 +141,12 @@ impl LivePhase {
   }
 }
 
+/// A line of `console.log` the live tab cares about.
 enum LogEvent<'a> {
   Bridge(BridgeLine),
+  /// The match's game state changed, e.g. to `GameInProgress`.
   GameState(&'a str),
+  /// Matchmaking started, at this Unix millisecond.
   QueueStarted(i64),
   QueueStopped,
   LobbyCreated {
@@ -124,6 +158,8 @@ enum LogEvent<'a> {
   },
 }
 
+/// What `line` means, if anything. Most of a log is engine chatter, so each
+/// kind is ruled out with a substring check before anything costlier runs.
 fn classify(line: &str) -> Option<LogEvent<'_>> {
   static RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
@@ -132,9 +168,14 @@ fn classify(line: &str) -> Option<LogEvent<'_>> {
     .expect("invalid regex")
   });
 
+  // Checked first: a bridge line carries player names, which must never read
+  // as one of the game's own lines.
   if let Some(bridge) = protocol::parse_line(line) {
     return Some(LogEvent::Bridge(bridge));
   }
+  // The hideout's local server logs `ChangeGameState: HeroSelection (3)`; in
+  // a match the client logs `OnGameStateChanged: GameInProgress (7)`. Only a
+  // lobby's states count, so the hideout's never stand in for a match's.
   if let Some((_, rest)) = line
     .split_once("OnGameStateChanged: ")
     .or_else(|| line.split_once("ChangeGameState: "))
@@ -146,6 +187,7 @@ fn classify(line: &str) -> Option<LogEvent<'_>> {
     return None;
   }
   let capture = RE.captures(line)?;
+  // The matchmaking arm has no lobby id; the alternation tells them apart.
   let Some(lobby_id) = capture.get(1) else {
     return Some(if &capture[4] == "Start" {
       let at = protocol::line_time_ms(line).unwrap_or_else(|| Local::now().timestamp_millis());
@@ -165,6 +207,20 @@ fn classify(line: &str) -> Option<LogEvent<'_>> {
   })
 }
 
+/// Folds the matchmaking, lobby and live bridge lines of `log` onto an
+/// already-known phase.
+///
+/// A single match writes several hundred kilobytes of engine chatter, so reading
+/// a fixed-size tail is not safe - the `created` line of a running match is
+/// already ~600 KB from the end by the time it finishes. Callers therefore keep
+/// the phase and feed only what was appended since the last call.
+///
+/// The lines, in the order the game writes them:
+/// ```text
+/// 13:05:21 [GCClient] Send msg 9010 (k_EMsgClientToGCStartMatchmaking), 263 bytes
+/// 13:06:06 Lobby 102014987589037612 for Match 97003070 created
+/// 13:38:12 Lobby 102014987589037612 for Match 97003070 destroyed
+/// ```
 pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
   fold_observing(log, previous, |_, _| {})
 }
@@ -175,6 +231,8 @@ fn fold_observing(
   mut observe: impl FnMut(&LivePhase, &LivePhase),
 ) -> LivePhase {
   let mut phase = previous;
+  // Line by line, because a lobby line resets the board and has to be seen in
+  // order with the bridge lines around it.
   for event in log.lines().filter_map(classify) {
     let before = phase.clone();
     match event {
@@ -205,8 +263,11 @@ fn fold_observing(
         phase.bridge = None;
         phase.last_match = None;
       }
+      // Only clear when the teardown belongs to the lobby we are tracking; an
+      // unrelated line must not hide a running match.
       LogEvent::LobbyDestroyed { lobby_id } => {
         if let Some(live) = phase.current.take_if(|live| live.lobby_id == lobby_id) {
+          // A lobby left during hero selection never became a match.
           if live.phase != GamePhase::Pregame {
             phase.last_match = phase.bridge.as_ref().map(|bridge| FinishedMatch {
               match_id: live.match_id,
@@ -224,7 +285,12 @@ fn fold_observing(
 #[derive(Default)]
 struct ScanState {
   path: Option<PathBuf>,
+  /// When the log we folded was created. The game overwrites it on every start,
+  /// so a different value means a new session and everything we know about the
+  /// old one - the offset, and a match whose teardown line we will never see
+  /// because the game was closed on it - is stale.
   created: Option<std::time::SystemTime>,
+  /// How far into the log we have folded, always on a line boundary.
   offset: u64,
   phase: LivePhase,
 }
@@ -244,6 +310,9 @@ pub(crate) fn seed_observation() {
   crate::external_plugins::events::game::observe_live(&LivePhase::default(), &state.phase, false);
 }
 
+/// Reads whatever was appended since the last call and folds it in. The first
+/// call walks the whole log, which is what makes starting the app in the middle
+/// of a match work; later calls only touch the new bytes.
 pub fn status(game_path: &Path) -> LiveMatchStatus {
   let path = console_log_path(game_path);
   if !path.is_file() {
@@ -266,6 +335,9 @@ fn phase(path: &Path) -> Option<LivePhase> {
 
   let mut state = STATE.lock().ok()?;
 
+  // A different install, or a log that belongs to a different run of the game,
+  // starts over. Truncation alone is not enough to notice the latter: a fresh
+  // log can already be past where the last one was read by the time we look.
   let metadata = std::fs::metadata(path).ok()?;
   let len = metadata.len();
   let created = metadata.created().ok();
@@ -285,6 +357,7 @@ fn phase(path: &Path) -> Option<LivePhase> {
   let mut buf = Vec::with_capacity((len - state.offset) as usize);
   file.read_to_end(&mut buf).ok()?;
 
+  // Stop at the last complete line so a half-written one is re-read next time.
   let Some(end) = buf.iter().rposition(|byte| *byte == b'\n') else {
     return Some(state.phase.clone());
   };
@@ -346,6 +419,7 @@ mod tests {
     );
   }
 
+  /// Folding a whole log at once, the way the first scan of a session does.
   fn fold_matches_from(log: &str) -> Option<LiveMatch> {
     fold_phase(log, LivePhase::default()).current
   }
@@ -385,6 +459,8 @@ mod tests {
 
   #[test]
   fn carries_state_across_chunks_so_a_long_match_is_not_lost() {
+    // The `created` line scrolls far out of any fixed tail window while the
+    // match runs; folding chunk by chunk keeps it.
     let live = fold_phase(CREATED, LivePhase::default());
     let still_live = fold_phase(&"engine noise\n".repeat(50_000), live);
 
@@ -461,6 +537,7 @@ mod tests {
   #[test]
   fn gives_players_the_accounts_the_versus_screen_listed() {
     let roster = r#"10/28 04:30:01 [PanoramaScript] [DMM-LIVE-ROSTER] {"v":2,"teams":[{"players":[{"n":"Okaza","id":"76561198276744320"},{"n":"Bot0","id":null}]},{"players":[{"n":"Rival","id":"1234"}]}]}"#;
+    // The roster comes before the top bar exists, and must still apply to it.
     let board = board(&fold_phase(
       &format!("{roster}\n{FRIENDLY}\n{ENEMY}\n"),
       LivePhase::default(),
@@ -472,11 +549,13 @@ mod tests {
 
   #[test]
   fn follows_the_game_state_of_the_match_not_the_hideout() {
+    // The hideout runs straight through every state to GameInProgress.
     let hideout =
       "04:25:53 ChangeGameState: HeroSelection (3)\n04:25:53 ChangeGameState: GameInProgress (7)\n";
     let in_hideout = fold_phase(hideout, LivePhase::default());
     assert!(in_hideout.current.is_none());
 
+    // Captured from a real match: the client logs OnGameStateChanged.
     let joined = fold_phase(&format!("{CREATED}\n"), in_hideout);
     assert_eq!(joined.current.as_ref().unwrap().phase, GamePhase::Pregame);
     let intro = fold_phase(
@@ -497,6 +576,7 @@ mod tests {
 
   #[test]
   fn the_local_players_team_is_friendly_whichever_slot_it_is_in() {
+    // Captured from a real match: the local player sat in the `TeamEnemy` slot.
     let enemy_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"enemy","clock":null,"players":[{"n":"Snôòpy","hid":null,"hn":"Wraith","s":"2.0<span class=\"demote\">k</span>","l":4,"k":0,"d":0,"a":0,"o":9,"me":true,"dead":false}]}"#;
     let friendly_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"friendly","clock":null,"players":[{"n":"Paige","hid":null,"hn":"Paige","s":"1.2<span class=\"demote\">k</span>","l":2,"k":0,"d":0,"a":0,"o":0,"me":false,"dead":false}]}"#;
 
@@ -509,8 +589,10 @@ mod tests {
     assert_eq!(first.friendly[0].name, "Snôòpy");
     assert_eq!(first.friendly[0].souls, Some(2_000));
     assert_eq!(first.enemy[0].name, "Paige");
+    // Statlocker showed this player on the Archmother.
     assert_eq!(first.team, Team::Archmother);
 
+    // A later report for the other slot must not move the teams around.
     let later = board(&fold_phase(friendly_slot, phase));
     assert_eq!(later.friendly[0].name, "Snôòpy");
     assert_eq!(later.enemy[0].name, "Paige");
@@ -522,6 +604,7 @@ mod tests {
       &format!("{CREATED}\n{FRIENDLY}\n{DESTROYED}\n"),
       LivePhase::default(),
     );
+    // The finished match stays readable until the next one forms.
     assert!(played.bridge.is_some());
 
     let next = fold_phase("Lobby 2 for Match 333 created\n", played);

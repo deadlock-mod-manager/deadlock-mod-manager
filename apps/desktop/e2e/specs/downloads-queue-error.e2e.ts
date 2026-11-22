@@ -12,6 +12,7 @@ import { navigate, openModTab, waitForDisplayed } from "../support/ui";
 
 const errorToasts = () => $$('[data-sonner-toast][data-type="error"]');
 
+// Each phase downloads through a different caller of the queue.
 const downloadFrom = {
   "download-button": async () => {
     await $('button[aria-label="Download Mod"]').click();
@@ -40,9 +41,13 @@ describe("download queue errors", () => {
       "download a file GameBanana removed",
       async () => {
         await downloadFrom[phase]();
+        // Every toast for the refusal is raised in the same callback, so they
+        // render together.
         await browser.waitUntil(async () => (await errorToasts().length) > 0, {
           timeoutMsg: "The refused download showed no error",
         });
+        // Pointer movement over the stack fans it out and holds the toasts for
+        // the screenshot. WebDriver's pointer doesn't reach Sonner in WebKitGTK.
         await browser.execute(
           (toaster: HTMLElement) => {
             toaster.dispatchEvent(
@@ -51,6 +56,8 @@ describe("download queue errors", () => {
           },
           await $("[data-sonner-toaster]"),
         );
+        // Sonner slides and fades toasts in. WebKitGTK's element location
+        // ignores the slide, so the fade must finish too.
         let previous = "";
         await browser.waitUntil(
           async () => {

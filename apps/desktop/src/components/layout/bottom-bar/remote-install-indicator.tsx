@@ -39,6 +39,9 @@ export function RemoteInstallIndicator() {
           aria-disabled={queue.isFetching}
           className='flex cursor-pointer items-center gap-1 p-0.5 aria-disabled:cursor-default'
           onClick={(event) => {
+            // Radix closes the tooltip on click and a disabled button never
+            // reports the pointer leaving, which left it closed for good.
+            // Keep it open so the check's progress stays visible.
             event.preventDefault();
             if (!queue.isFetching) void queue.refetch();
           }}

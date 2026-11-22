@@ -15,6 +15,7 @@ const patchThemeSettings = (
   state.setPluginSettings("themes", { ...current, ...patch(current) });
 };
 
+/** New Year's window crosses into January, so its progress stays on the year it started. */
 const seasonYear = (themeId: SeasonalThemeId, now = new Date()) =>
   themeId === "seasonal-new-year" && now.getMonth() === 0
     ? now.getFullYear() - 1

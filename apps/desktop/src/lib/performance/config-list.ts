@@ -38,6 +38,7 @@ export type PresetListItem = {
   configId: string;
   name: string;
   tier: PerfTier;
+  /** Track position from `presetPosition`, not the catalog's raw score. */
   cutScore: number;
   preset: PresetSummary;
 };
@@ -49,6 +50,7 @@ export type CommunityListItem = {
   tier: PerfTier;
   cutScore: number;
   community: CommunityConfigSummary;
+  /** The user's own copy, when they already downloaded and imported it. */
   imported: UserPerfConfig | null;
 };
 
@@ -56,6 +58,7 @@ export type UserListItem = {
   kind: "user";
   configId: string;
   name: string;
+  /** Known when the config descends from a preset or a GameBanana config, or is the active one. */
   tier: PerfTier | null;
   cutScore: number | null;
   config: UserPerfConfig;
@@ -63,6 +66,7 @@ export type UserListItem = {
 
 export type ConfigListItem = PresetListItem | CommunityListItem | UserListItem;
 
+/** GameBanana configs have no entries until imported, so they get their own id namespace. */
 const communityConfigId = (communityId: string) => `community:${communityId}`;
 
 type ParsedConfigId =
@@ -80,6 +84,7 @@ export const parseConfigId = (configId: string): ParsedConfigId | null => {
   return null;
 };
 
+/** GameBanana configs reach the user through the import review, never directly. */
 export const gameBananaImportSource = (
   community: CommunityConfigSummary,
 ): ImportSource => ({
@@ -88,9 +93,11 @@ export const gameBananaImportSource = (
   file_id: community.fileId,
 });
 
+/** Settings in a config that the current game build doesn't read. */
 export const unusedCount = (counts: ResolvedCounts) =>
   counts.blocked + counts.removed + counts.notConvar;
 
+/** The newest of the user's imports of a GameBanana submission. */
 const findImportedCommunityConfig = (
   userConfigs: UserPerfConfig[],
   gamebananaId: number,
@@ -150,6 +157,11 @@ const placementOf = (
 
 type ActivePlacement = { configId: string; cutScore: number };
 
+/**
+ * Presets, GameBanana configs and the user's own configs as one list. User
+ * configs inherit the tier of the preset or GameBanana config they came from;
+ * the active config uses its resolved cut score when it has nothing better.
+ */
 export const buildConfigList = (
   catalog: CatalogSummary | undefined,
   userConfigs: Record<string, UserPerfConfig>,
@@ -220,6 +232,10 @@ const matchesSource = (
   }
 };
 
+/**
+ * "All" leaves out the user's copy of a GameBanana config, because that
+ * config's card already offers to apply it.
+ */
 export const filterConfigs = (
   items: ConfigListItem[],
   { source, tier }: { source: ConfigSourceFilter; tier: PerfTier | null },
@@ -249,6 +265,11 @@ const KIND_ORDER = {
 const byName = (a: ConfigListItem, b: ConfigListItem) =>
   a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 
+/**
+ * Presets have no download counts: they keep their catalog order (recommended
+ * first) ahead of GameBanana configs, and the user's own configs come last,
+ * newest first.
+ */
 const byDownloads = (a: ConfigListItem, b: ConfigListItem) => {
   if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
   if (a.kind === "preset" && b.kind === "preset") {
@@ -284,6 +305,7 @@ export const sortConfigs = (
   sort: ConfigSort,
 ): ConfigListItem[] => [...items].sort(COMPARATORS[sort]);
 
+/** A config with entries we can apply: a preset or one of the user's own. */
 export type ApplicableConfig =
   | { kind: "preset"; preset: PresetSummary }
   | { kind: "user"; config: UserPerfConfig };
@@ -304,6 +326,10 @@ export const applyRequestFor = (
 type ApplySource =
   AnalyticsOperations["performance_config_apply"]["start"]["source"];
 
+/**
+ * How analytics labels a config being applied. A user config that no longer
+ * exists counts as "custom", like a fork, since its origin is unknown.
+ */
 export const applySourceFor = (
   configId: string,
   userConfigs: Record<string, UserPerfConfig>,

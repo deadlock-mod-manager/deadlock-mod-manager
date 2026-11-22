@@ -136,6 +136,7 @@ export const PlayerCareerOverview = ({
               <span className='font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.12em]'>
                 {t("stats.player.recentFormLabel", { count: recent.length })}
               </span>
+              {/* Newest first in the data; drawn right to left so it reads oldest to latest. */}
               <div
                 aria-hidden
                 className='flex h-5 flex-row-reverse items-end justify-end gap-[3px]'>

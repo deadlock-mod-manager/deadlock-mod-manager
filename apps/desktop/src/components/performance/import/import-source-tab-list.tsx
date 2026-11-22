@@ -2,6 +2,7 @@ import { TabsList, TabsTrigger } from "@deadlock-mods/ui/components/tabs";
 import { useTranslation } from "react-i18next";
 import { SOURCE_TABS } from "./source-tabs";
 
+/** Rendered by the dialog across both columns; must sit inside its `Tabs` root. */
 export const ImportSourceTabList = () => {
   const { t } = useTranslation();
   return (

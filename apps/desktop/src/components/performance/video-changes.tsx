@@ -9,9 +9,14 @@ import { DetailsSection } from "./details/details-parts";
 
 const SETTLED_MS = 4000;
 
+/**
+ * Settings the player changed in game since the config wrote them, each with
+ * the config's value and theirs: keep theirs, or put the config's back.
+ */
 export const VideoChanges = ({ changes }: { changes: VideoChange[] }) => {
   const { t } = useTranslation();
   const resolve = useResolveVideoChanges();
+  // Settling the last change says so for a moment instead of just vanishing.
   const [settled, setSettled] = useState(false);
   useEffect(() => {
     if (!settled) return;

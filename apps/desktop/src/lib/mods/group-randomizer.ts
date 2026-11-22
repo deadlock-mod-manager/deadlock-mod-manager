@@ -18,10 +18,13 @@ type GroupRandomizableMod = Pick<
 
 export type GroupRandomizerPool<T> = {
   group: ModGroup;
+  /** Members the launch can install without asking anything. */
   pool: T[];
+  /** Members installed right now, randomizable or not. */
   active: T[];
 };
 
+/** Every mod in a group that rolls on launch, by remoteId. */
 export const randomizedGroupModIds = (
   groups: readonly ModGroup[],
 ): Set<string> =>
@@ -29,6 +32,13 @@ export const randomizedGroupModIds = (
     groups.filter((group) => group.randomize).flatMap((group) => group.modIds),
   );
 
+/**
+ * The randomized groups that have something to choose between. Every installed
+ * member is listed as active so the roll takes off whatever the group had on,
+ * including members that can't be rolled themselves. Map mods never roll: the
+ * launch has just offered to take them off. `manifest` lets a variant mod whose
+ * installed VPKs were cleared on disable roll with the selection it had.
+ */
 export function groupRandomizerPools<T extends GroupRandomizableMod>(
   groups: readonly ModGroup[],
   mods: readonly T[],

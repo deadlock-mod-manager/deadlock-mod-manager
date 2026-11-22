@@ -17,6 +17,7 @@ type AuthorSearchResultsProps = {
   collection: ModsCollection;
 };
 
+/** Authors whose name matches the store search, linking to their profiles. */
 export const AuthorSearchResults = ({
   query,
   collection,
@@ -59,6 +60,8 @@ const AuthorResult = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const authorId = `gamebanana:${author.authorRemoteId}`;
+  // The catalog has no avatars, so each shown author loads the same profile
+  // the author page reads. Opening it afterwards is then instant.
   const { data: profile } = useQuery({
     ...modAuthorQueryOptions(authorId),
     retry: 1,

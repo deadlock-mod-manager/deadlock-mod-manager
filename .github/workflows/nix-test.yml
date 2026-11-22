@@ -18,6 +18,8 @@ permissions:
   contents: write
   pull-requests: write
 
+# A newer main commit supersedes the build and the hash PR update, so drop the older run.
+# Build jobs keep the default if: an always() gate survives the cancel and makes the newer run wait.
 concurrency:
   group: nix-test-${{ github.ref }}
   cancel-in-progress: true
@@ -62,6 +64,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     outputs:
       hashes_updated: ${{ steps.update.outputs.updated }}
+      # Builds use the hash PR branch, since main only gets it once the PR merges.
       ref: ${{ steps.update.outputs.updated == 'true' && 'chore/nix-hashes' || github.sha }}
     steps:
       - name: Get bot token
@@ -99,6 +102,8 @@ jobs:
           set -euo pipefail
           UPDATED="false"
 
+          # nightly and default point at the same package.nix, so
+          # only "default" needs to be run to refresh it.
           ATTRS=(default vpk-parser kv-parser dmodpkg)
 
           for attr in "${ATTRS[@]}"; do
@@ -135,6 +140,7 @@ jobs:
     runs-on: depot-ubuntu-24.04-8
     needs: update-hashes
     steps:
+      # Not nothing-but-nix: it's GitHub-hosted-only and leaves / with 2GB, which ENOSPCs the runner.
       - name: Free disk space
         run: |
           echo "Disk usage before cleanup:"
@@ -158,6 +164,7 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
+      # The only job that pushes, so the cache holds nightly builds rather than CI tooling.
       - name: Use Cachix binary cache
         uses: cachix/cachix-action@v17
         with:

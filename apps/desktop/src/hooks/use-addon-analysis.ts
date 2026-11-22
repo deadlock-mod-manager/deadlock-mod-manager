@@ -42,6 +42,7 @@ export const useAddonAnalysis = () => {
   const setAnalysisTarget = usePersistedStore(
     (state) => state.setAnalysisTarget,
   );
+  // The target this hook's run published, so a newer analysis isn't touched.
   const publishedTarget = useRef<AnalysisTarget | null>(null);
   const setDialogOpen = usePersistedStore(
     (state) => state.setAnalysisDialogOpen,
@@ -67,10 +68,11 @@ export const useAddonAnalysis = () => {
           setShowProgressToast(true);
 
           if (progressData.step === "complete") {
+            // Hide progress toast after a longer delay when complete
             setTimeout(() => {
               setShowProgressToast(false);
               setProgress(null);
-            }, 3000);
+            }, 3000); // 3 seconds to let user see completion
           }
         },
       );
@@ -92,9 +94,14 @@ export const useAddonAnalysis = () => {
       profileFolder: string | null;
       profileId: ProfileId | undefined;
     }) => {
+      // Bring back the mods the profile's manifest still records, as startup
+      // does. After Clear Mods State the library is empty, but every file DMM
+      // installed is still assigned to its mod there.
       notifyRemovedMods(
         await usePersistedStore.getState().restoreModsFromManifest(),
       );
+      // Reconciliation restores the profile active when it ran. If that is no
+      // longer the one being analyzed, its files were never restored.
       if ((getActiveProfile()?.folderName ?? null) !== profileFolder) {
         logger
           .withMetadata({ profileFolder })
@@ -114,6 +121,8 @@ export const useAddonAnalysis = () => {
       publishedTarget.current = target;
       setAnalysisTarget(target);
 
+      // Taken after manifest reconciliation and before anything is registered,
+      // so mods added below can't change which files count as leftovers.
       const libraryIds = new Set(
         (profileId
           ? usePersistedStore.getState().profiles[profileId]?.mods
@@ -123,6 +132,7 @@ export const useAddonAnalysis = () => {
       const shouldShowDialog = needsAnalysisReview(data, libraryIds);
       setDialogOpen(shouldShowDialog);
 
+      // Group addons by remoteId so multi-VPK mods are processed together
       let processedIdentifiedCount = 0;
       const registrationErrors: string[] = [];
 
@@ -151,6 +161,8 @@ export const useAddonAnalysis = () => {
             processedIdentifiedCount++;
             continue;
           }
+          // Reconciliation drops its restore when the library changed meanwhile
+          // (switching profiles and back, a download finishing).
           const description = t("addons.restoreFromRecordsInterrupted");
           registrationErrors.push(
             t("addons.registrationErrorDetail", {
@@ -163,12 +175,19 @@ export const useAddonAnalysis = () => {
           });
           continue;
         }
+        // Only files the game loads become the mod's enabled files; its
+        // disabled `<id>_` files (parked copies, unselected variants) stay
+        // out.
         const activeAddons = groupAddons.filter(
           (addon) => addon.hasEnabledVpkName,
         );
         const hasMatchInfo = activeAddons.some((a) => a.matchInfo);
+        // A name-only match registers nothing, and the library already has
+        // the mod, so its details would be discarded.
         if (!hasMatchInfo && inLibrary(remoteId)) continue;
         try {
+          // Neither page needs the other, so both load at once; mods are
+          // still registered one at a time.
           const [details, files] = await Promise.allSettled([
             getMod(remoteId),
             activeAddons.some((addon) => addon.matchInfo?.fileId)
@@ -299,7 +318,9 @@ export const useAddonAnalysis = () => {
           }),
         );
       } else {
+        // Show different messages based on what happened
         if (processedIdentifiedCount > 0 && shouldShowDialog) {
+          // Some identified, some need attention
           toast.success(
             t("addons.analysisSuccessWithIdentified", {
               count: data.totalCount,
@@ -307,6 +328,7 @@ export const useAddonAnalysis = () => {
             }),
           );
         } else if (processedIdentifiedCount > 0 && !shouldShowDialog) {
+          // All identified successfully
           toast.success(
             t("addons.analysisSuccessAllIdentified", {
               count: data.totalCount,
@@ -314,6 +336,7 @@ export const useAddonAnalysis = () => {
             }),
           );
         } else {
+          // No identification, but no errors
           toast.success(
             t("addons.analysisSuccess", { count: data.totalCount }),
           );
@@ -356,8 +379,10 @@ export const useAddonAnalysis = () => {
     setProgress(null);
   };
 
+  // Create a safe setDialogOpen that clears analysis when closing
   const safeSetDialogOpen = (open: boolean) => {
     if (!open) {
+      // Clear both dialog and analysis result when dialog is explicitly closed
       clearAnalysisDialog();
     } else {
       setDialogOpen(open);

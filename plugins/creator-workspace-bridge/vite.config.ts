@@ -6,6 +6,7 @@ export default defineConfig({
   base: "./",
   plugins: [react()],
   resolve: {
+    // The SDK is linked from packages/plugin-sdk; bundle one copy of React.
     dedupe: ["react", "react-dom"],
   },
   build: {

@@ -49,6 +49,7 @@ const PLATFORMS = {
 const contactKey = (contact: ModAuthorContactDto) =>
   `${contact.type}:${contact.url ?? contact.value}`;
 
+/** Discord usernames have no link, so they're copied instead of opened. */
 const DiscordContact = ({ contact }: { contact: ModAuthorContactDto }) => {
   const { t } = useTranslation();
   const inviteUrl =

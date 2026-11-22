@@ -55,6 +55,7 @@ export const useMatchSync = () => {
     queryFn: (): Promise<MatchSyncStatus> =>
       invoke<MatchSyncStatus>("get_match_sync_status"),
     enabled: isMatchSyncBuilt(),
+    // Poll while a full sync is running so the quota/progress stay current.
     refetchInterval: (query) =>
       query.state.data?.fullSyncRunning ? 2000 : false,
   });

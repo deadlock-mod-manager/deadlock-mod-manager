@@ -15,6 +15,7 @@ import {
 import type { TFunction } from "i18next";
 import { type SettingsSectionId } from "./store";
 
+// Copy comes from the desktop app's English locale (settings.*).
 export const NAV: {
   id: "game" | "application" | "advanced";
   items: { id: SettingsSectionId; icon: Icon }[];
@@ -47,6 +48,7 @@ export const NAV: {
   },
 ];
 
+// The file name and Discord stay as they are in every language.
 export const sectionLabels = (t: TFunction<"preview">) =>
   ({
     "launch-options": t("settings.nav.launchOptions"),

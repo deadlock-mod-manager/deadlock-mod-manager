@@ -7,8 +7,16 @@ import { perfQueryKeys } from "@/lib/performance/query-keys";
 import { usePersistedStore } from "@/lib/store";
 import { refreshPerfCatalogInBackground } from "./use-perf-queries";
 
+/** Window focus fires in bursts (alt-tab, dialogs); one check is enough. */
 const MIN_SYNC_INTERVAL_MS = 10_000;
 
+/**
+ * Puts the chosen performance config back into gameinfo.gi when a game update
+ * or reset replaced it: at app start and when the window gets focus, after the
+ * hourly catalog check so new statuses apply. Launches re-apply too; this
+ * covers starting Deadlock from Steam after the mod manager has run. The
+ * status is read again after each check.
+ */
 export const usePerfBackgroundSync = () => {
   const queryClient = useQueryClient();
   const gamePath = usePersistedStore((state) => state.gamePath);
@@ -29,6 +37,9 @@ export const usePerfBackgroundSync = () => {
       }
     };
 
+    // Coming back from the game is when its video.txt changes show up, and
+    // the window never stops being visible on alt-tab, so React Query's own
+    // focus refetch doesn't fire.
     const onFocus = () =>
       refreshPerfCatalogInBackground(queryClient)
         .then(sync)

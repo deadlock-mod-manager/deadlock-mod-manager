@@ -43,6 +43,9 @@ export class HeroRegistry {
     return this.heroFromCategoryPath(path) ?? this.guess(modName);
   }
 
+  // Skins nest as Skins > hero > style (e.g. Faithful/Vanilla+), so the hero is
+  // the category or its parent. Profiles omit the root; no other root has
+  // hero-named children, so a parent naming a hero is enough on its own.
   private heroFromCategoryPath({
     root,
     parent,

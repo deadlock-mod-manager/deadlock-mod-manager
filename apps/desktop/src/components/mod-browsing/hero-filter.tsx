@@ -43,6 +43,8 @@ const HeroFilter = ({
   const { t } = useTranslation();
   const isHeroAvailable = useIsHeroAvailable();
 
+  // Always offer the full roster (plus anything selected) so the list doesn't
+  // shrink to the current selection when `mods` is already hero-filtered.
   const modHeroes = useMemo(() => {
     const heroes = new Set<string>(
       Object.values(DeadlockHeroes).filter(isHeroAvailable),

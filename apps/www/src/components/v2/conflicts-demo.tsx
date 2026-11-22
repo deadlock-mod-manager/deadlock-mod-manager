@@ -2,6 +2,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+/** Two real GameBanana skins for the same hero, as they'd clash in game. */
 const MODS = [
   { id: "691863", name: "Yamato remodel" },
   { id: "599927", name: "Yamato redesign (NEW ICONS and COLORS!)" },
@@ -9,6 +10,10 @@ const MODS = [
 
 const ROW_HEIGHT = 60;
 
+/**
+ * A Conflicts group from My Mods that actually works: "Load first" swaps
+ * which skin the game uses, the way it does in the app.
+ */
 export const ConflictsDemo = () => {
   const { t } = useTranslation("v2");
   const [order, setOrder] = useState(MODS.map((mod) => mod.id));

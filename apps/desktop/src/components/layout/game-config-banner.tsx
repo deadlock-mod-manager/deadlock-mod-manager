@@ -33,6 +33,8 @@ export const GameConfigBanner = () => {
   const { t } = useTranslation();
   const { alert, enabledModsCount, acknowledgeUpdate, reapply } =
     useGameConfigAlert();
+  // Hidden until restart; the update side is acknowledged instead, so
+  // dismissing one half never resurfaces the other.
   const [detachedDismissed, setDetachedDismissed] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
 
@@ -67,6 +69,8 @@ export const GameConfigBanner = () => {
       <div
         role={broken ? "alert" : "status"}
         className={cn(
+          // z-20 keeps the fixed backdrop geometry from painting over it,
+          // the same layer the titlebar sits on.
           "relative z-20 flex shrink-0 items-center gap-3 border-b py-1.5 pr-1.5 pl-4",
           "motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:animate-in motion-safe:duration-500 motion-safe:ease-[var(--ease-dmm-smooth)]",
           broken ? "border-primary/15 bg-secondary" : "border-border bg-card",

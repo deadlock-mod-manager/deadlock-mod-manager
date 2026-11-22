@@ -15,6 +15,8 @@ import {
 } from "./kit";
 import { gameStatsSchema, itemWinsSchema } from "./player";
 
+/** Presets about everyone's matches; no account needed. */
+
 const analyticsHeroSchema = z.object({
   hero_id: z.number(),
   bucket: z.number(),
@@ -88,6 +90,8 @@ export const GLOBAL_PRESETS: PresetDef[] = [
         `/v1/analytics/hero-stats?min_unix_timestamp=${sinceParam(params)}`,
         analyticsHeroSchema,
       );
+      // Twelve heroes per match, so the hero-matches total over 12 is the
+      // number of games.
       const games =
         heroes.reduce((total, hero) => total + hero.matches, 0) / 12;
       return tabulate(heroes, [

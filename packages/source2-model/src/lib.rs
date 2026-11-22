@@ -39,6 +39,7 @@ pub use vmesh::{ModelGlb, PreviewTexture, RenderMaterial, RenderModel, RenderPri
 use vpk_extract::VpkArchive;
 pub use vtex::{DecodedTexture, VtexFormat, VtexHeader};
 
+/// A decoded texture ready to hand to the UI.
 pub struct TexturePng {
     pub width: u32,
     pub height: u32,
@@ -119,11 +120,13 @@ fn encode_png_bytes(decoded: &DecodedTexture, max_side: u32) -> Result<Vec<u8>> 
     Ok(png)
 }
 
+/// Decode a `.vtex_c` entry inside a VPK to a PNG.
 pub fn decode_texture_png(vpk_path: &Path, entry_path: &str) -> Result<TexturePng> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
     decode_texture_png_bytes(bytes, false)
 }
 
+/// Decode a `.vtex_c` file that is already available as raw bytes to a PNG.
 pub fn decode_texture_png_bytes(bytes: Vec<u8>, opaque: bool) -> Result<TexturePng> {
     let res = Resource::parse(bytes)?;
     let header = VtexHeader::parse(&res)?;
@@ -131,10 +134,12 @@ pub fn decode_texture_png_bytes(bytes: Vec<u8>, opaque: bool) -> Result<TextureP
     encode_png(decoded, opaque)
 }
 
+/// Decode a standalone `.vtex_c` file on disk to a PNG.
 pub fn decode_texture_file(path: &Path) -> Result<TexturePng> {
     decode_texture_png_bytes(std::fs::read(path)?, false)
 }
 
+/// Decode a `.vmesh_c` entry inside a VPK to a binary GLB for the live preview.
 pub fn decode_mesh_glb(vpk_path: &Path, entry_path: &str) -> Result<ModelGlb> {
     let archive = VpkArchive::open(vpk_path)?;
     decode_mesh_glb_from_archive(&archive, entry_path)
@@ -148,11 +153,16 @@ fn decode_mesh_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Resul
     vmesh::decode_mesh_glb_from_resource(&res, &preview_textures)
 }
 
+/// Decode a `.vmesh_c`, or assemble every mesh a `.vmdl_c` references, into one
+/// GLB. A model's meshes are separate resources sharing the model's skeleton, so
+/// the whole character is stitched together here rather than previewing a part.
 pub fn decode_model_glb(vpk_path: &Path, entry_path: &str) -> Result<ModelGlb> {
     let archive = VpkArchive::open(vpk_path)?;
     decode_model_glb_from_archive(&archive, entry_path)
 }
 
+/// Decode a model with an unpacked workspace tree shadowing the archive, so the
+/// preview shows the user's edited textures rather than the packed originals.
 pub fn decode_model_glb_with_overlay(
     vpk_path: &Path,
     entry_path: &str,
@@ -231,6 +241,9 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
     vmesh::decode_embedded_model_glb_from_resource(&res, &preview_textures)
 }
 
+/// The materials a model draws in the 3D preview (LOD0, every body group the
+/// preview can switch to), in draw order and without duplicates. These are the
+/// parts the preview shows, so they are what the Foundry can paint.
 pub fn model_materials(archive: &VpkArchive, entry_path: &str) -> Result<Vec<String>> {
     let res = Resource::parse(archive.extract_entry(entry_path)?)?;
     if entry_path.ends_with(".vmesh_c") {
@@ -260,6 +273,7 @@ fn dedup_in_order(paths: Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// Decode a `.vmesh_c`, or resolve a `.vmdl_c`, into renderer-friendly mesh data.
 pub fn decode_model_render_model(vpk_path: &Path, entry_path: &str) -> Result<RenderModel> {
     let archive = VpkArchive::open(vpk_path)?;
     decode_model_render_model_from_archive(&archive, entry_path)
@@ -344,6 +358,7 @@ fn decode_model_render_model_from_archive(
     vmesh::decode_embedded_model_render_model_from_resource(&res, &preview_textures)
 }
 
+/// Parse only the texture header (dimensions / format / mips) without decoding.
 pub fn inspect_texture(vpk_path: &Path, entry_path: &str) -> Result<(u32, u32, String)> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
     let res = Resource::parse(bytes)?;
@@ -355,14 +370,30 @@ pub fn inspect_texture(vpk_path: &Path, entry_path: &str) -> Result<(u32, u32, S
     ))
 }
 
+/// Load only the model skeleton from a `.vmdl_c`.
 pub fn load_model_skeleton(vpk_path: &Path, entry_path: &str) -> Result<Option<Skeleton>> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
     let res = Resource::parse(bytes)?;
     skeleton::parse_model_skeleton(&res)
 }
 
+/// The name of the game's neutral standing clip. Every hero has one, and it is
+/// the pose Deadlock shows a hero in outside of combat: upright, weapon held in
+/// the right hand.
 const REST_POSE_CLIP: &str = "weapon_stand_idle";
 
+/// Stand a decoded model in the game's idle rest pose.
+///
+/// A `.vmdl_c` on its own is in bind pose — arms out, weapon floating wherever
+/// its own bind transform puts it — which is not how the hero ever looks. The
+/// base game ships the idle as an NM clip beside the model, so the Foundry
+/// samples its **first frame only** and bakes those bone transforms into the
+/// glTF skeleton. Nothing is played back: this is one still pose, chosen so the
+/// weapon sits in the hand and the silhouette reads like the real character.
+///
+/// Returns the model unchanged when the game isn't installed, the model has no
+/// skeleton, or no idle clip resolves — a posed preview is an improvement, not a
+/// requirement.
 pub fn pose_model_at_rest(
     model: ModelGlb,
     base: &VpkArchive,
@@ -386,11 +417,14 @@ fn try_pose_model_at_rest(
     skin: &VpkArchive,
     entry_path: &str,
 ) -> Result<Option<ModelGlb>> {
+    // The skin's own VPK carries the skeleton when it ships the model; a
+    // default-hero load reads it from the base game instead.
     let resource = Resource::parse(skin.extract_entry(entry_path)?)?;
     let Some(skeleton) = skeleton::parse_model_skeleton(&resource)? else {
         return Ok(None);
     };
 
+    // Use the base catalog to locate the clip, then honor a mod's explicit override.
     let mut pose = match nm_anim::resolve_nm_clip_from_archive(
         base,
         entry_path,
@@ -403,6 +437,8 @@ fn try_pose_model_at_rest(
             let frame = animation.sample_frame(0)?;
             nm_anim::retarget_nm_pose(&animation, &frame, &skeleton)
         }
+        // No gameplay clips yet: borrow a menu pose, with the weapon put back
+        // in front of the hero and in the hands the menu camera never needed.
         None => match rest_pose::menu_pose(base, entry_path, &skeleton)? {
             Some(pose) => pose,
             None => return Ok(None),

@@ -3,6 +3,10 @@ use crate::errors::Error;
 use crate::staged_files;
 use std::path::{Component, Path, PathBuf};
 
+/// Moves a staged file into a mod's folder. Kept out of the renderer: bytes
+/// cross the IPC boundary as a JSON number array, so a large mod would cost
+/// gigabytes there. Unguarded: it only touches app data, and the later install
+/// into the game is guarded.
 #[tauri::command]
 pub async fn place_staged_file(
   app_handle: AppHandle,
@@ -14,6 +18,7 @@ pub async fn place_staged_file(
   let destination = contained_destination(&mods_root, &destination)?;
   resolves_within(&mods_root, &destination)?;
 
+  // Rename and copy both replace an existing file, such as another mod's metadata.
   if tokio::fs::try_exists(&destination).await? {
     return Err(Error::InvalidInput(format!(
       "{} already exists",
@@ -32,6 +37,8 @@ pub async fn place_staged_file(
   Ok(())
 }
 
+/// Checked rather than trusted, since it comes from the renderer. Traversal is
+/// refused outright rather than normalised away.
 fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf, Error> {
   let destination = PathBuf::from(destination);
 
@@ -46,6 +53,8 @@ fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf,
   Ok(destination)
 }
 
+/// A symlink or junction inside the mods folder passes the lexical check while
+/// pointing elsewhere, so the deepest folder that exists is resolved as well.
 fn resolves_within(mods_root: &Path, destination: &Path) -> Result<(), Error> {
   let unauthorized = || Error::UnauthorizedPath(destination.display().to_string());
   let root = mods_root.canonicalize().map_err(|_| unauthorized())?;

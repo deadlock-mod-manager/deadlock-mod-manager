@@ -8,6 +8,8 @@ pub(super) struct Reference {
   pub(super) inheritance: bool,
 }
 
+// These are VData references. Native `_class` names, resource paths and CSS classes
+// have different lookup rules and must not be treated as table rows.
 pub(super) fn references(value: &Kv3Value, file: &str) -> Vec<Reference> {
   fn walk(value: &Kv3Value, file: &str, path: &mut Vec<Kv3Seg>, out: &mut Vec<Reference>) {
     match value {

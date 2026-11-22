@@ -3,6 +3,7 @@ import { useRefreshPerfCatalog } from "@/hooks/performance/use-perf-mutations";
 import { InfoIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
+/** The game updated past the catalog's convar list; it catches up with the next catalog update. */
 export const CatalogBehindNotice = () => {
   const { t } = useTranslation();
   const behind = useCatalogBehind();

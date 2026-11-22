@@ -1,3 +1,7 @@
+//! A loopback HTTP/1.1 server for downloader tests: every reply is scripted, so
+//! a test can send a wrong `Content-Range`, cut a body short or slow it down,
+//! and count the connections the downloader really opens.
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -12,6 +16,7 @@ pub struct Request {
 }
 
 impl Request {
+  /// `bytes=a-b` or `bytes=a-` as `(a, Some(b) | None)`.
   pub fn byte_range(&self) -> Option<(u64, Option<u64>)> {
     let spec = self.range.as_deref()?.strip_prefix("bytes=")?;
     let (start, end) = spec.split_once('-')?;
@@ -27,9 +32,12 @@ pub struct Reply {
   pub status: u16,
   pub headers: Vec<(String, String)>,
   pub body: Vec<u8>,
+  /// Bytes per write; each write after the first waits `chunk_delay`.
   pub chunk: usize,
   pub chunk_delay: Duration,
+  /// Close the connection after this many body bytes.
   pub disconnect_after: Option<usize>,
+  /// Leave out `Content-Length`, so the body ends when the connection closes.
   pub close_delimited: bool,
 }
 
@@ -57,6 +65,8 @@ impl Reply {
     self
   }
 
+  /// What a Range-capable server sends for `file`: a 206 for a satisfiable
+  /// range, the whole file otherwise.
   pub fn serve(file: &[u8], request: &Request) -> Self {
     let total = file.len() as u64;
     match request.byte_range() {
@@ -80,6 +90,7 @@ pub struct TestServer {
 }
 
 impl TestServer {
+  /// The handler gets each request and how many came before it.
   pub async fn start(handler: impl Fn(&Request, usize) -> Reply + Send + Sync + 'static) -> Self {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let origin = format!("http://{}", listener.local_addr().unwrap());
@@ -129,6 +140,7 @@ impl TestServer {
     self.requests.lock().unwrap().clone()
   }
 
+  /// Most requests the server was answering at the same moment.
   pub fn peak_connections(&self) -> usize {
     self.peak.load(Ordering::SeqCst)
   }

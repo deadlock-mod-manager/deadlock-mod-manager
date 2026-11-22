@@ -43,6 +43,9 @@ export const prepareInstallPreparationFailureWorld = async (
       archive_name: `${name}.zip`,
     });
   }
+  // Retained import sources make install_mod capable of installing if the
+  // frontend ignores preparation's missing archive. They are not archives or
+  // extracted files, and there are no prefixed VPKs for preparation to reuse.
   const mod: LocalMod = {
     ...fixtureMod(PREPARATION_MOD, 0),
     name: PREPARATION_NAME,

@@ -6,6 +6,8 @@ interface MarkdownContentProps {
   content: string;
 }
 
+// Images stay out: source media loads go through the source's declared media
+// origins, which an inline Markdown image would bypass.
 const DISALLOWED_ELEMENTS = ["img"];
 
 export const MarkdownContent = ({ content }: MarkdownContentProps) => (

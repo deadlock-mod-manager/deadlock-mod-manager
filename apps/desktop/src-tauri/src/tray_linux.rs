@@ -1,3 +1,7 @@
+//! Linux builds have no tray (see Cargo.toml). The commands stay so the
+//! frontend can call them, but the window is never hidden, since nothing
+//! could bring it back.
+
 use tauri::{Window, WindowEvent};
 
 use crate::app_runtime::AppRuntime;

@@ -70,6 +70,8 @@ const readHealth = async (): Promise<Record<string, string>> => {
   );
 };
 
+// Mirrors `localization_overlay_search_path`: the first 8 bytes of the folder
+// name's SHA-256.
 const OVERLAY = `dmm_localization_${createHash("sha256")
   .update(IDENTIFY.folder)
   .digest("hex")
@@ -79,6 +81,7 @@ const receiptSchema = z.object({
   data_repairs: z.array(z.object({ modId: z.string() })),
 });
 
+/** What a game started from Steam would load for the profile. */
 const readRepairs = async (world: string) => {
   const citadel = await citadelOf(world);
   const raw = await readFile(
@@ -173,10 +176,12 @@ describe("compatibility fix identification", () => {
           CATALOG_MOD_ID in state.mods && !(PLACEHOLDER_MOD in state.mods),
       );
       assert.deepEqual(Object.keys(manifest.mods), [CATALOG_MOD_ID]);
+      // The choice as saved by the registration itself, before any refresh.
       return manifest.mods[CATALOG_MOD_ID];
     });
 
     await step("the identified mod stays fixed", async () => {
+      // Analyze clears the repair package; the refresh rebuilds it.
       const settled = await observeUntil(
         "identified mod fixed and its repair rebuilt",
         async () => ({
@@ -193,6 +198,7 @@ describe("compatibility fix identification", () => {
         choice: (await readManifest(world)).mods[CATALOG_MOD_ID],
         health: (await readHealth())[CATALOG_MOD_ID],
         repairs: await readRepairs(world),
+        // The card follows the report once the window refetches it.
         badge: await observeUntil(
           "library card reads Fixed for this patch",
           () => badgeStatus(CATALOG_MOD_NAME),

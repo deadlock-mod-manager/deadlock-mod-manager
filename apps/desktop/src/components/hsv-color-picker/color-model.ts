@@ -33,6 +33,10 @@ export function normalizeHex(hex: string, fallbackHex: string): string {
   return `#${full.toLowerCase()}`;
 }
 
+/**
+ * Parses `#rgb` or `#rrggbb` into channel values.
+ * Returns `null` if the string (after optional `#`) is not exactly 3 or 6 hex digits.
+ */
 export function hexToRgb(hexStr: string): Rgb | null {
   const m = hexStr.replace("#", "");
   if (!/^[0-9A-Fa-f]+$/.test(m) || (m.length !== 3 && m.length !== 6)) {

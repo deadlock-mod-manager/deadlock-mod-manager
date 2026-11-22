@@ -9,6 +9,10 @@ use sysinfo::{Process, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind
 
 const DEADLOCK_PROCESS_NAME: &str = "deadlock.exe";
 
+/// Name, start time and command line are all we read. On Linux, sysinfo
+/// lists every thread as a process of its own unless tasks are left out, and
+/// the game's threads share its command line.
+/// Proton replaces its launcher's command line in place during startup.
 fn refresh_processes(system: &mut System) {
   system.refresh_processes_specifics(
     ProcessesToUpdate::All,
@@ -25,6 +29,8 @@ fn is_game_process(process: &Process, e2e_game: Option<&Path>) -> bool {
     && !is_exiting(process.pid().as_u32())
 }
 
+/// In E2E builds only the world's own stand-in counts, by its exact argv[0];
+/// everywhere else, Deadlock by name.
 fn matches_game(name: &OsStr, command: &[OsString], e2e_game: Option<&Path>) -> bool {
   match e2e_game {
     Some(expected) => command
@@ -34,6 +40,9 @@ fn matches_game(name: &OsStr, command: &[OsString], e2e_game: Option<&Path>) -> 
   }
 }
 
+/// A process stuck in teardown (a driver holding it across sleep, say) stays
+/// listed with almost no memory and can't be killed, even from an elevated
+/// prompt. It isn't the game anymore, so it must not block installs.
 #[cfg(windows)]
 fn is_exiting(pid: u32) -> bool {
   use crate::game_session::waiter::windows_process::ProcessHandle;
@@ -57,6 +66,7 @@ fn is_deadlock_executable(path: &str) -> bool {
     .is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
 }
 
+/// Matches on the process name or argv[0]'s file name, wherever they were read.
 pub(crate) fn is_deadlock_command(name: &str, argv0: Option<&str>) -> bool {
   is_deadlock_executable(name) || argv0.is_some_and(is_deadlock_executable)
 }
@@ -68,13 +78,16 @@ fn is_deadlock_process(name: &OsStr, command: &[std::ffi::OsString]) -> bool {
   )
 }
 
+/// A running Deadlock process as the OS reports it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameProcess {
   pub pid: u32,
+  /// Seconds since the Unix epoch.
   pub start_time: u64,
   pub command: Vec<String>,
 }
 
+/// Manages game process lifecycle
 pub struct GameProcessManager {
   system: System,
 }
@@ -86,6 +99,7 @@ impl GameProcessManager {
     }
   }
 
+  /// Check if the Deadlock game is currently running
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
     Ok(!self.game_processes()?.is_empty())
   }
@@ -114,6 +128,7 @@ impl GameProcessManager {
     Ok(processes)
   }
 
+  /// Check if game is running and return error if it is (for operations that require game to be closed)
   pub fn ensure_game_not_running(&mut self) -> Result<(), Error> {
     if self.is_game_running()? {
       log::debug!("Game is running");
@@ -124,6 +139,7 @@ impl GameProcessManager {
     }
   }
 
+  /// Stop the running game processes
   pub fn stop_game(&mut self) -> Result<(), Error> {
     if !self.is_game_running()? {
       log::info!("Game is not running");
@@ -150,6 +166,8 @@ impl GameProcessManager {
       }
     }
 
+    // Wait for the OS to fully reap the killed processes before returning,
+    // so the next is_game_running() call won't see stale entries.
     thread::sleep(Duration::from_millis(500));
     if self.is_game_running()? {
       return Err(Error::GameStopFailed);

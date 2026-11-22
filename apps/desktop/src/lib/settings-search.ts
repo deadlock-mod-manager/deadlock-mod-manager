@@ -25,6 +25,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
 
 type SettingsTab = keyof typeof SETTINGS_TAB_LABEL_KEYS;
 
+/** Former settings tabs that now have their own page; their results open it. */
 const SETTINGS_TAB_ROUTES = new Map<SettingsTab, string>([
   ["plugin", "/plugins/manage"],
 ]);
@@ -32,10 +33,12 @@ const SETTINGS_TAB_ROUTES = new Map<SettingsTab, string>([
 type SearchableText = {
   titleKey: string;
   descriptionKey?: string;
+  /** Platforms that render this setting. Omitted when every platform does. */
   platforms?: Platform[];
 };
 
 export type SettingsSearchSection = SearchableText & {
+  /** Anchor rendered by `<Section searchId>`; omitted when the tab is the target. */
   id?: string;
   tab: SettingsTab;
   settings?: SearchableText[];
@@ -43,6 +46,7 @@ export type SettingsSearchSection = SearchableText & {
 
 export type SettingsSearchResult = {
   tab: SettingsTab;
+  /** Set when the result lives on another page instead of a settings tab. */
   route?: string;
   sectionId?: string;
   titleKey: string;
@@ -650,6 +654,11 @@ const rank = (title: string, query: string) => {
   return 2;
 };
 
+/**
+ * Matches every query word against a setting's title, description, and the
+ * tab/section it lives in. Title matches rank above description-only matches.
+ * With `platform`, settings the settings page hides there are skipped.
+ */
 export const searchSettings = (
   query: string,
   translate: (key: string) => string,

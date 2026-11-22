@@ -10,6 +10,7 @@ const logger = mainLogger.child().withContext({
   service: "forum-lifecycle-messages-listener",
 });
 
+/** Reopens a closed post when its author replies, and marks staff replies on open posts. */
 export class ForumLifecycleMessagesListener extends Listener {
   public constructor(
     context: Listener.LoaderContext,

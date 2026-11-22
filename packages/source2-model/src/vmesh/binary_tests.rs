@@ -39,6 +39,7 @@ fn mesh_group_masks_past_32_bits_still_hide_optional_meshes() {
     use super::meshdata::mesh_is_enabled;
     use crate::kv3::KvValue;
 
+    // Rat King's real default mask: base body plus groups up to bit 37.
     let masks = (183_240_753_217_u64, vec![63, 10, 28, 1 << 26]);
     let mesh =
         |index: i64| KvValue::Object([("m_nMeshIndex".to_string(), KvValue::Int(index))].into());
@@ -71,6 +72,7 @@ fn legacy_meshopt_vertex_buffers_decode_and_reject_truncated_streams() {
 
 #[test]
 fn compressed_buffers_with_oversized_headers_are_rejected_before_allocating() {
+    // u32::MAX vertices of 256 bytes would ask the decoder for about 1 TiB.
     let mut block = vec![0u8; 24];
     block[0..4].copy_from_slice(&u32::MAX.to_le_bytes());
     block[4..8].copy_from_slice(&256u32.to_le_bytes());

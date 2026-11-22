@@ -1,5 +1,12 @@
 #!/usr/bin/env bun
 
+/**
+ * Script to calculate total size of all mod downloads
+ *
+ * Usage:
+ * pnpm --filter api calculate-mod-sizes
+ */
+
 import { db, ModDownloadRepository } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 

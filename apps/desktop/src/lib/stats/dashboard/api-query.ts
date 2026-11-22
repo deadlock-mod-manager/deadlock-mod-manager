@@ -8,6 +8,13 @@ import type {
   FieldFormat,
 } from "./dataset";
 
+/**
+ * Custom widgets that read any deadlock-api endpoint. The user writes a path, the
+ * response is flattened into rows and every field becomes something a chart can
+ * plot. Requests stay on deadlock-api: the path is appended to its origin and
+ * may not carry a scheme, a host or a parent segment.
+ */
+
 const DAY_S = 24 * 60 * 60;
 
 export const API_PLACEHOLDERS = [
@@ -18,6 +25,10 @@ export const API_PLACEHOLDERS = [
   "since_90d",
 ] as const;
 
+/**
+ * Starting points for the API query editor. `pnpm check:dashboard-endpoints`
+ * loads every one of them against the live API.
+ */
 export const API_EXAMPLES = [
   {
     id: "globalHeroes",
@@ -81,6 +92,7 @@ const PATH_PATTERN = /^\/v[12]\/[\w\-./{}]*(\?[\w\-.,=&{}%]*)?$/;
 
 const dayAligned = (unix: number) => Math.floor(unix / DAY_S) * DAY_S;
 
+/** Fills the placeholders and rejects anything that is not a plain API path. */
 export const resolveApiPath = (
   template: string,
   accountId: number | null,
@@ -97,6 +109,7 @@ export const resolveApiPath = (
           throw new ApiQueryError("needsAccount");
         }
         return String(accountId);
+      // Aligned, so every mount asks for - and caches - the same URL.
       case "now":
         return String(Math.floor(nowUnix / 60) * 60);
       case "since_7d":
@@ -131,6 +144,7 @@ const toCell = (value: JsonValue): CellValue | undefined => {
   if (typeof value === "boolean") {
     return value ? 1 : 0;
   }
+  // Short id lists (a hero duo) still read as a label; anything else is noise.
   if (
     Array.isArray(value) &&
     value.length <= 6 &&
@@ -143,6 +157,7 @@ const toCell = (value: JsonValue): CellValue | undefined => {
 
 /* oxlint-enable anti-slop/no-runtime-typeof */
 
+/** One level of nesting is flattened to `parent.child`; deeper trees are skipped. */
 const flattenRow = (entry: JsonObject): DatasetRow => {
   const row: DatasetRow = {};
   for (const [key, value] of Object.entries(entry)) {
@@ -172,6 +187,11 @@ const atPath = (value: JsonValue, path: string): JsonValue | undefined =>
       value,
     );
 
+/**
+ * Turns a response into rows: a list is used as is, an object of objects (the
+ * metrics endpoint) becomes one row per key, a flat object a single row. Without
+ * an explicit path the first top-level list holding objects is used.
+ */
 const responseRows = (payload: JsonValue, listPath: string): DatasetRow[] => {
   const target = listPath ? atPath(payload, listPath) : payload;
   if (target === undefined) {
@@ -207,9 +227,12 @@ const responseRows = (payload: JsonValue, listPath: string): DatasetRow[] => {
 
 const HERO_KEYS = /(^|_)hero_ids?\d?$/;
 const TIME_KEYS = /(start_time|unix_timestamp|last_played|last_updated)$/;
+// Five-plus digit buckets are timestamps (start_time_day and friends); small ones
+// are badges or hero ids and stay numbers.
 const MIN_TIMESTAMP = 1_000_000_000;
 
 /* oxlint-disable anti-slop/no-runtime-typeof -- Format inference distinguishes the string and number members of validated dataset cells. */
+/** Best-effort format for a field nobody declared, from its name and values. */
 export const guessFormat = (key: string, values: CellValue[]): FieldFormat => {
   const present = values.filter((value) => value !== null);
   if (present.length === 0) {

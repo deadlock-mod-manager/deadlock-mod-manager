@@ -23,8 +23,11 @@ pub const EVENT_NATIVE_SOURCE_LINK: &str = "native-source-link-requested";
 pub const PATH_OIDC_CALLBACK: &str = "//auth/callback";
 pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
 
+/// Fired by deadlockforge.net when its 1-click button cannot find the bridge.
+/// Brings the app up and asks whether to turn 1-click installs on.
 pub const PATH_FORGE_LAUNCH: &str = "//forge/launch";
 
+/// GameBanana's Pair button sends `registerKey,{memberID},{secretKey}`.
 pub const REMOTE_INSTALL_PAIR_PREFIX: &str = "registerKey,";
 
 pub const GAMEBANANA_DOMAIN: &str = "gamebanana.com";
@@ -93,6 +96,8 @@ pub fn on_second_instance(app_handle: &AppHandle, argv: Vec<String>, _cwd: Strin
   }
 }
 
+/// Validate and parse mod installation deep link data
+/// Returns (download_url, mod_type, mod_id) if valid, None otherwise
 pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String)> {
   let parts: Vec<&str> = data_part.split(',').collect();
 
@@ -119,6 +124,7 @@ pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String
   Some((download_url.to_string(), mod_type, mod_id))
 }
 
+/// Returns (member_id, secret_key) for a GameBanana Remote Install pair link.
 pub fn parse_remote_install_pair(data_part: &str) -> Option<(u32, String)> {
   let (member_id, secret_key) = data_part
     .trim_start_matches('/')
@@ -130,6 +136,7 @@ pub fn parse_remote_install_pair(data_part: &str) -> Option<(u32, String)> {
   is_valid_remote_install_key(secret_key).then(|| (member_id, secret_key.to_string()))
 }
 
+/// The key becomes a path segment of the queue URL, so only URL-safe characters pass.
 fn is_valid_remote_install_key(secret_key: &str) -> bool {
   (1..=128).contains(&secret_key.len())
     && secret_key
@@ -327,6 +334,8 @@ mod tests {
 
   #[test]
   fn recognises_the_forge_launch_url_the_site_fires() {
+    // The site hardcodes this URL, so a change to either the scheme list or
+    // the path silently stops the 1-click button from waking the app.
     let stripped =
       strip_scheme("deadlock-mod-manager://forge/launch").expect("scheme should be recognised");
     assert!(stripped.starts_with(PATH_FORGE_LAUNCH));

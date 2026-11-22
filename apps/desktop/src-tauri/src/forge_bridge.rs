@@ -1,3 +1,10 @@
+//! Loopback HTTP bridge for 1-click installs from DeadlockForge.
+//!
+//! The site builds VPKs in the browser, so there is no URL to hand the deep
+//! link flow. It posts the bytes here instead. Trust is the Origin header:
+//! browsers set it themselves, and the install route is deliberately a
+//! non-simple request so a preflight always precedes it.
+
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::staged_files::{self, Stager};
@@ -18,16 +25,21 @@ use tokio::sync::oneshot;
 
 const FORGE_PROTOCOL_VERSION: u32 = 1;
 
+/// Distinct from Grimoire's 43110-43114 so both managers can run at once.
 const FORGE_PORTS: [u16; 5] = [43120, 43121, 43122, 43123, 43124];
 
+/// Lets the site tell managers apart if one answers in the other's range.
 const FORGE_APP_ID: &str = "deadlock-mod-manager";
 
 const EVENT_FORGE_INSTALL_REQUESTED: &str = "forge-install-requested";
 
 const ALLOWED_ORIGINS: &[&str] = &["https://deadlockforge.net", "https://www.deadlockforge.net"];
 
+/// Sound builds run large: roughly 16 KB per second of audio per replaced
+/// sound, so 600 sounds from a 30 second clip approaches 300 MB.
 const MAX_BODY_BYTES: usize = 512 * 1024 * 1024;
 
+/// Below this a payload cannot carry a VPK header.
 const MIN_BODY_BYTES: usize = 32;
 
 const VPK_SIGNATURE: u32 = 0x55AA_1234;
@@ -36,6 +48,8 @@ const PROTOCOL_HEADER: &str = "x-forge-protocol";
 const NAME_HEADER: &str = "x-forge-name";
 const AUTHOR_HEADER: &str = "x-forge-author";
 
+/// Every header the site sends. One missing here is not ignored: the browser
+/// refuses to send the request at all, which looks like an unreachable app.
 const ALLOWED_REQUEST_HEADERS: &str =
   "content-type, x-forge-protocol, x-forge-name, x-forge-type, x-forge-author";
 const CONTENT_TYPE: &str = "application/octet-stream";
@@ -47,10 +61,16 @@ struct BridgeHandle {
 
 static BRIDGE: Mutex<Option<BridgeHandle>> = Mutex::new(None);
 
+/// One install may await an answer at a time, so a page cannot stack dialogs.
+/// An instant rather than a flag, so a dialog that never reports back cannot
+/// hold the slot for the rest of the session.
 static IN_FLIGHT_SINCE: Mutex<Option<Instant>> = Mutex::new(None);
 
+/// How long an unanswered install keeps the slot before another may take it.
 const INSTALL_ANSWER_TIMEOUT: Duration = Duration::from_secs(300);
 
+/// Serialises start and stop; two concurrent starts would otherwise bind
+/// separate ports and only the handle stored last could be closed.
 static LIFECYCLE: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[derive(Serialize, Clone)]
@@ -96,6 +116,7 @@ fn allowed_origin(origin: Option<&str>) -> Option<&str> {
     .copied()
 }
 
+/// Requires a loopback literal, which is what stops a DNS rebind.
 fn host_is_loopback(host: Option<&str>) -> bool {
   let Some(host) = host else {
     return false;
@@ -112,6 +133,8 @@ fn is_plausible_vpk(bytes: &[u8]) -> bool {
   signature == VPK_SIGNATURE
 }
 
+/// Percent encoded in transit, and stripped of anything path-like because this
+/// becomes a filename.
 fn decode_mod_name(raw: Option<&str>) -> String {
   let decoded = raw
     .and_then(|value| urlencoding::decode(value).ok())
@@ -281,6 +304,8 @@ async fn read_and_dispatch(
   )
 }
 
+/// Split from the response building so the trust rules can be tested without
+/// standing up a window.
 #[derive(Debug, PartialEq, Eq)]
 enum Decision<'a> {
   Reject(StatusCode, &'static str),
@@ -443,6 +468,8 @@ pub async fn stop() {
   }
 }
 
+/// Takes the slot, or `None` if held. A slot past the timeout is taken over,
+/// returning whatever the abandoned install staged so it can be deleted.
 fn claim_install_slot() -> Option<Vec<PathBuf>> {
   let mut guard = IN_FLIGHT_SINCE.lock().ok()?;
 
@@ -582,6 +609,7 @@ mod tests {
 
   #[test]
   fn takes_over_a_slot_whose_answer_never_came() {
+    // Without the timeout a lost dialog would refuse installs all session.
     let stale = std::env::temp_dir().join("deadlockforge-abandoned.vpk");
     staged_files::remember(Stager::Forge, &stale);
     *IN_FLIGHT_SINCE.lock().expect("lock") =
@@ -598,6 +626,8 @@ mod tests {
 
   #[test]
   fn allows_every_header_the_site_sends_on_an_install() {
+    // Regression: omitting x-forge-type and x-forge-author made the browser
+    // refuse the POST, which looked like the app being unreachable.
     for header in [
       "content-type",
       PROTOCOL_HEADER,

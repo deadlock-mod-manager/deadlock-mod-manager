@@ -4,6 +4,11 @@ import type { ReactNode } from "react";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { cn } from "@/lib/utils";
 
+/**
+ * Loading stand-ins shaped like each panel's cards, so the page keeps its
+ * layout while match history loads instead of jumping when it lands.
+ */
+
 const Shell = ({
   className,
   children,

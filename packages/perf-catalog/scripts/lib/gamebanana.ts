@@ -16,6 +16,7 @@ import type { CommunityDefinition } from "../../curated/community";
 import { decodeText, fetchJson, fetchPinned } from "./fetch";
 import type { CommunityPin } from "./sources";
 
+/** GameBanana's field names, mapped to ours as the response is parsed. */
 const profileFileSchema = z
   .object({
     _idRow: z.number().int(),
@@ -70,6 +71,7 @@ const profilePageSchema = z
 
 type ProfileFile = z.infer<typeof profileFileSchema>;
 
+/** `aFlattenedFileList()` answers with one list of paths per requested file. */
 const archiveListingSchema = z.array(z.array(z.string()));
 
 const isoDate = (seconds: number | undefined): string | null =>
@@ -84,6 +86,7 @@ const archiveListing = async (fileId: number): Promise<string[]> => {
 const matchesHint = (path: string, hint: string): boolean =>
   path.replace(/\\/g, "/").toLowerCase().endsWith(hint.toLowerCase());
 
+/** Current metadata and the file to pin for one GameBanana config. */
 export const refreshCommunityPin = async (
   definition: CommunityDefinition,
 ): Promise<CommunityPin> => {
@@ -157,6 +160,7 @@ const listFiles = (dir: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
+/** Archives can carry read-only folders, which would make the cleanup fail. */
 const makeWritable = (dir: string) => {
   chmodSync(dir, 0o755);
   for (const name of readdirSync(dir)) {
@@ -165,6 +169,11 @@ const makeWritable = (dir: string) => {
   }
 };
 
+/**
+ * Downloads the pinned file (md5-verified, cached), extracts it to a temporary
+ * folder and returns the text of the variant, and whether the archive also
+ * ships VPKs. Nothing extracted is kept.
+ */
 export const readCommunityVariant = async (
   pin: CommunityPin,
   variantHint: string,

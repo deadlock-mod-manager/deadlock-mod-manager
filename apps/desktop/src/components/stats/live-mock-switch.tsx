@@ -18,6 +18,7 @@ const storedScenario = (): LiveMockScenario | null => {
   return isScenario(value) ? value : null;
 };
 
+// The fixture's board always counts as just reported, so it never goes stale.
 const toSource = (mock: LiveMock): LiveSource => ({
   status: {
     ...mock.status,
@@ -70,6 +71,11 @@ const MockPicker = ({
   </div>
 );
 
+/**
+ * Development builds only, and only ever loaded through a dynamic import, so
+ * the fixtures stay out of production bundles. Switches the Live tab between
+ * the running game and a fixture for each state, remembered in localStorage.
+ */
 export const LiveMockSwitch = ({
   heroIdOf,
   live,
@@ -90,6 +96,7 @@ export const LiveMockSwitch = ({
   return (
     <>
       <MockPicker onChange={setScenario} scenario={scenario} />
+      {/* A new fixture remounts the view, so no state leaks between them. */}
       {mock ? (
         <Fragment key={scenario}>{renderView(toSource(mock))}</Fragment>
       ) : (

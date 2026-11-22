@@ -6,6 +6,7 @@ const KB = 1024;
 const MB = KB * 1024;
 const GB = MB * 1024;
 
+/** "812 B", "38 KB", "14.2 MB": whole kilobytes, one decimal above that. */
 export const formatPluginSize = (bytes: number) => {
   if (bytes < KB) return `${bytes} B`;
   if (bytes < MB) return `${Math.round(bytes / KB)} KB`;
@@ -18,6 +19,7 @@ const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
+/** Compact past times as the plugin designs write them: "2 s ago", "1 h ago", "yesterday". */
 export const formatRelativeTime = (t: TFunction, iso: string, now: number) => {
   const elapsed = Math.max(0, now - new Date(iso).getTime());
   if (elapsed < MINUTE) {
@@ -42,6 +44,7 @@ export const formatRelativeTime = (t: TFunction, iso: string, now: number) => {
   return t("plugins.time.years", { count: Math.floor(days / 365) });
 };
 
+/** The current time, refreshed every `intervalMs` so relative labels keep up. */
 export const useNow = (intervalMs = 15_000) => {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -51,22 +54,26 @@ export const useNow = (intervalMs = 15_000) => {
   return now;
 };
 
+/** Formats past times relative to a clock that ticks while mounted. */
 export const useRelativeTime = () => {
   const { t } = useTranslation();
   const now = useNow();
   return (iso: string) => formatRelativeTime(t, iso, now);
 };
 
+/** "Oct 31" */
 export const formatShortDate = (language: string, iso: string) =>
   new Intl.DateTimeFormat(language, { month: "short", day: "numeric" }).format(
     new Date(iso),
   );
 
+/** "Oct 31, 2026, 10:42" */
 export const formatDateTime = (language: string, iso: string) =>
   new Intl.DateTimeFormat(language, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso));
 
+/** "sha256 9f3c…a1e0" */
 export const shortHash = (hash: string) =>
   hash.length > 8 ? `${hash.slice(0, 4)}…${hash.slice(-4)}` : hash;

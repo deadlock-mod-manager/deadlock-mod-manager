@@ -18,6 +18,14 @@ export type SteamAssertionCheck =
   | { ok: true; steamId: string; nonce: string }
   | { ok: false; reason: string };
 
+/**
+ * Checks that an OpenID positive assertion was issued by Steam, for this server, and is not
+ * being replayed. Steam's `check_authentication` only proves the signature is genuine; it does
+ * not prove the assertion was meant for our realm, so an attacker could obtain one for their
+ * own site and relay it here. These checks run before that round trip. The caller records the
+ * returned nonce with `NonceStore.record` once Steam confirms the signature, so a transient
+ * Steam failure leaves the assertion retryable and unverified callbacks fill no memory.
+ */
 export function checkSteamAssertion(
   params: SteamAssertion,
   expectedReturnTo: string,
@@ -73,6 +81,11 @@ export function checkSteamAssertion(
   return { ok: true, steamId, nonce: nonce.data };
 }
 
+/**
+ * Steam signs `openid.return_to`, which carries our own query (`callbackURL`, `email`,
+ * `linkAccount`...). The request query is what the browser sent, which an attacker can edit.
+ * Every value we act on must be the signed one.
+ */
 export function signedQueryMatches(
   signedReturnTo: string,
   requestQuery: Record<string, string | undefined>,
@@ -94,6 +107,7 @@ export function signedQueryMatches(
   return true;
 }
 
+/** Same scheme, host, port and path. The query is compared separately by `signedQueryMatches`. */
 function sameEndpoint(actual: string, expected: string): boolean {
   try {
     const a = new URL(actual);
@@ -104,6 +118,12 @@ function sameEndpoint(actual: string, expected: string): boolean {
   }
 }
 
+/**
+ * Remembers nonces until they expire. Steam nonces carry their issue time and we only accept
+ * them for five minutes, so an in-process set bounded by that window is enough to stop replay
+ * on a single instance. Multiple replicas each keep their own set, which still limits a replay
+ * to one use per replica inside the window.
+ */
 export class NonceStore {
   private readonly expiresAt = new Map<string, number>();
 

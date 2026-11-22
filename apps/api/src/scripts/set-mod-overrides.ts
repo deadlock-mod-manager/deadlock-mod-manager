@@ -1,5 +1,20 @@
 #!/usr/bin/env bun
 
+/**
+ * Script to set or clear manual overrides on a mod.
+ * Overrides persist across sync runs and take precedence over synced data.
+ *
+ * Usage:
+ *   pnpm --filter api set-mod-overrides -- <remoteId> <json-overrides>
+ *   pnpm --filter api set-mod-overrides -- <remoteId> --clear
+ *
+ * Examples:
+ *   pnpm --filter api set-mod-overrides -- 12345 '{"metadata":{"mapName":"my_custom_map"}}'
+ *   pnpm --filter api set-mod-overrides -- 12345 '{"category":"Maps","isMap":true}'
+ *   pnpm --filter api set-mod-overrides -- 12345 '{"downloads":[{"url":"https://example.com/fixed.zip","file":"fixed.zip"}]}'
+ *   pnpm --filter api set-mod-overrides -- 12345 --clear
+ */
+
 import { db, PolicyRuleRepository } from "@deadlock-mods/database";
 import {
   type PolicyMetadataCorrection,

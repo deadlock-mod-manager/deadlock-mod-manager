@@ -5,6 +5,7 @@ use crate::{
   types::{FirewallRule, ServerPickerCapability},
 };
 
+// Compile the nftables planner tests on Windows too; they never invoke nft.
 #[cfg(any(target_os = "linux", test))]
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod linux;

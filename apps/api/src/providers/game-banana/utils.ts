@@ -22,6 +22,8 @@ export {
 
 const GB_MOD_URL_RE = /^https?:\/\/(?:www\.)?gamebanana\.com\/mods\/(\d+)/i;
 
+// GameBanana's Required/Recommended dropdown. The profile endpoint spells it out,
+// the base endpoint sends a number
 const MODALITY_BY_CODE: Record<string, ModDependency["level"]> = {
   "1": "required",
   "2": "recommended",
@@ -31,6 +33,8 @@ const MODALITY_BY_LABEL: Record<string, ModDependency["level"]> = {
   recommended: "recommended",
 };
 
+// The state dropdown is 1-indexed with ten options, and its five negative ones
+// ("uninstalled", "absent" ...) mean the mods clash, which is why these are the evens
 const NEGATIVE_STATE_CODES = new Set(["2", "4", "6", "8", "10"]);
 const NEGATIVE_STATE_LABELS = new Set([
   "uninstalled",
@@ -47,6 +51,15 @@ const POSITIVE_STATE_LABELS = new Set([
   "true",
 ]);
 
+/**
+ * Turns a mod's GameBanana requirements into the dependencies we store. Anything
+ * that flags a conflict is dropped, the rest are kept. The link can be empty, and
+ * when it points at another mod we pull out that mod's id.
+ *
+ * Rows arrive in two layouts, words from the profile page and numbers from the base
+ * endpoint, so the columns after label and url are read by what they say, not where
+ * they sit.
+ */
 export const parseRequirements = (
   raw: string[][] | null | undefined,
 ): ModDependency[] => {
@@ -71,6 +84,8 @@ export const parseRequirements = (
         typeof value === "string" ? value.trim().toLowerCase() : "",
       );
 
+    // Nothing in the response tells us which layout we got, so work it out from
+    // whether any of the trailing columns are words we recognise
     const isLabelShape = meta.some(
       (token) =>
         token in MODALITY_BY_LABEL ||
@@ -87,10 +102,12 @@ export const parseRequirements = (
         NEGATIVE_STATE_LABELS.has(token),
       );
     } else {
+      // In the number layout modality comes first and state second
       level = MODALITY_BY_CODE[meta[0] ?? ""] ?? null;
       isIncompatibility = NEGATIVE_STATE_CODES.has(meta[1] ?? "");
     }
 
+    // The author wants the other mod gone, so there is nothing to offer installing
     if (isIncompatibility) {
       continue;
     }
@@ -105,6 +122,11 @@ export const parseRequirements = (
   return dependencies;
 };
 
+/**
+ * Classify if a GameBanana mod contains NSFW content
+ * @param profile GameBanana content ratings and initial visibility
+ * @returns boolean indicating if the mod is NSFW
+ */
 export const classifyNSFW = (profile: {
   _aContentRatings?: Record<string, string> | null;
   _sInitialVisibility?: string | null;
@@ -117,6 +139,12 @@ export const classifyNSFW = (profile: {
   );
 };
 
+/**
+ * GameBanana sometimes sends null or zero timestamps even though its schema
+ * promises a number. `new Date(null * 1000)` is an Invalid Date, and drizzle
+ * throws a RangeError while encoding it, which silently drops the whole mod
+ * from the sync.
+ */
 export const gameBananaTimestampToDate = (
   seconds: number | null | undefined,
 ): Date | null => {
@@ -131,6 +159,11 @@ export const gameBananaTimestampToDate = (
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+/**
+ * `mod.remoteAddedAt` and `mod.remoteUpdatedAt` are NOT NULL, so a missing
+ * timestamp falls back to its sibling and then to the epoch. The epoch rather
+ * than now() keeps undated mods from surfacing as recently updated.
+ */
 export const resolveRemoteTimestamps = (
   addedAtSeconds: number | null | undefined,
   updatedAtSeconds: number | null | undefined,
@@ -145,6 +178,11 @@ export const resolveRemoteTimestamps = (
   };
 };
 
+/**
+ * Whether an index listing moved since the sync last saw it. Submissions with
+ * no recorded index time, new ones included, always sync, and so do listings
+ * without a usable timestamp.
+ */
 export const indexListingChanged = (
   listedModifiedAt: Date | null,
   storedModifiedAt: Date | null | undefined,
@@ -181,6 +219,8 @@ export const buildDownloadSignatureFromPayload = (
     .join(";");
 };
 
+// Block tags end a line, so "<br>map queue<br>" reads as a command on its own
+// line while "<br>Map has lots of jumps" stays prose.
 const BLOCK_TAG_RE = /<\/?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>/gi;
 const INLINE_TAG_RE = /<[^>]*>/g;
 const HTML_ENTITIES: Record<string, string> = {
@@ -194,6 +234,7 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 const HTML_ENTITY_RE = /&(?:quot|#39|apos|nbsp|lt|gt|amp);/g;
 
+// "map_" also matches, because authors write "map_dl_bearpit" for "map dl_bearpit".
 const MAP_COMMAND_RE = /\bmap([^\S\n]+|_)([a-z][a-z0-9_]{2,})\b/gi;
 const QUOTED_PREFIX_RE = /["'`‘’“”]\s*$/;
 const INSTRUCTION_PREFIX_RE = /\b(?:type|typing|command|run)\b\W*(?:\w+\W+)?$/i;
@@ -207,6 +248,14 @@ function descriptionToText(description: string): string {
     .replace(HTML_ENTITY_RE, (entity) => HTML_ENTITIES[entity]);
 }
 
+/**
+ * Finds the console map name in a GameBanana description. Every "map <name>"
+ * is a candidate. A candidate written as a command (quoted, after "type" or
+ * "command", or alone on its line) wins over one that only looks like a map
+ * identifier (has an underscore or digit). Prose such as "this map features"
+ * is neither, so it never matches. Keep in sync with `extract_map_name` in the
+ * desktop GameBanana normalizer; both run the shared `map-names.json` fixture.
+ */
 export function extractMapName(description: string): string | undefined {
   if (!description) return undefined;
 
@@ -248,6 +297,8 @@ export const mapGameBananaFileserverState = (
       return "down";
   }
 };
+
+// --- Donation link extraction ---
 
 const DONATION_HOST_ALLOWLIST = new Set([
   "ko-fi.com",
@@ -397,6 +448,8 @@ export function buildMetadata({
     description,
   });
 
+  // The upsert merges metadata keys into the stored object, so `videos` is
+  // always sent: an empty list clears videos the author has since removed.
   const metadata: ModMetadata = {
     videos: parseEmbeddedVideos(embeddedMedia),
   };

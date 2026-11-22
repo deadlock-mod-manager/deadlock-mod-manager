@@ -10,6 +10,7 @@ interface PlayedPresetChipProps {
   onLoad: () => void;
 }
 
+/** Built-in preset from match history: keeps only locations the player used. */
 export const PlayedPresetChip = ({
   blockedLocations,
   selected,

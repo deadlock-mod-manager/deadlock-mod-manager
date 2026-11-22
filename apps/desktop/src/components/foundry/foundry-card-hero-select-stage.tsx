@@ -2,6 +2,7 @@ import { DEFAULT_FOUNDRY_SKINS } from "@/lib/foundry-default-skins";
 import type { FoundryCardPreview } from "@/types/foundry";
 import { useFoundry } from "./foundry-context";
 
+/** The selected card in a hero-select lineup, the way players will see it. */
 export const HeroSelectStage = ({ card }: { card: FoundryCardPreview }) => {
   const { manifest } = useFoundry();
   const hero = manifest?.heroDisplay ?? manifest?.hero ?? "";

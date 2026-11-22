@@ -9,22 +9,44 @@ import { PermanentIngestionError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { getTempDir } from "@/lib/temp-dir";
 
+/** Client errors other than timeouts and rate limits will not change on retry */
 const isPermanentHttpStatus = (status: number) =>
   status >= 400 && status < 500 && status !== 408 && status !== 429;
 
 export interface DownloadOptions {
+  /**
+   * Timeout in milliseconds (default: 5 minutes)
+   */
   timeout?: number;
 
+  /**
+   * Maximum file size in bytes (default: 256 MiB)
+   */
   maxFileSize?: number;
 
+  /**
+   * Progress callback interval in bytes (default: 1MB)
+   */
   progressInterval?: number;
 
+  /**
+   * Custom filename (default: extracted from URL)
+   */
   filename?: string;
 
+  /**
+   * Custom temporary directory (default: auto-generated)
+   */
   tempDir?: string;
 
+  /**
+   * Number of retry attempts (default: 3)
+   */
   retryAttempts?: number;
 
+  /**
+   * Delay between retries in milliseconds (default: 1000)
+   */
   retryDelay?: number;
 }
 
@@ -32,8 +54,8 @@ export interface DownloadProgress {
   totalBytes: number;
   downloadedBytes: number;
   percentage: number;
-  speed: number;
-  estimatedTimeRemaining: number;
+  speed: number; // bytes per second
+  estimatedTimeRemaining: number; // seconds
 }
 
 export interface DownloadResult {
@@ -62,6 +84,9 @@ export class DownloadService {
     return DownloadService.instance;
   }
 
+  /**
+   * Download a file from URL with progress tracking and error handling
+   */
   async downloadFile(
     url: string,
     options: DownloadOptions = {},
@@ -119,7 +144,9 @@ export class DownloadService {
 
         try {
           await rm(filePath, { force: true });
-        } catch {}
+        } catch {
+          // Ignore cleanup errors
+        }
 
         if (error instanceof PermanentIngestionError) {
           await this.cleanup(tempDir);
@@ -138,6 +165,9 @@ export class DownloadService {
     );
   }
 
+  /**
+   * Perform the actual download with progress tracking using streaming
+   */
   private async performDownload(
     url: string,
     filePath: string,
@@ -239,13 +269,16 @@ export class DownloadService {
     }
   }
 
+  /**
+   * Log download progress
+   */
   private logProgress(
     downloadedBytes: number,
     totalBytes: number,
     startTime: number,
   ): void {
-    const elapsed = (Date.now() - startTime) / 1000;
-    const speed = downloadedBytes / elapsed;
+    const elapsed = (Date.now() - startTime) / 1000; // seconds
+    const speed = downloadedBytes / elapsed; // bytes per second
     const speedMBps = (speed / 1024 / 1024).toFixed(2);
 
     if (totalBytes > 0) {
@@ -266,6 +299,9 @@ export class DownloadService {
     }
   }
 
+  /**
+   * Extract filename from URL
+   */
   private extractFilenameFromUrl(url: string): string {
     try {
       const urlObj = new URL(url);
@@ -279,11 +315,15 @@ export class DownloadService {
       const timestamp = Date.now();
       return `download-${timestamp}.bin`;
     } catch {
+      // Invalid URL, generate a filename
       const timestamp = Date.now();
       return `download-${timestamp}.bin`;
     }
   }
 
+  /**
+   * Create a temporary directory for downloads
+   */
   private async createTempDir(): Promise<string> {
     const baseTempDir = await getTempDir();
     const tempDirPath = await mkdtemp(join(baseTempDir, "mod-download-"));
@@ -291,6 +331,9 @@ export class DownloadService {
     return tempDirPath;
   }
 
+  /**
+   * Clean up temporary directory
+   */
   private async cleanup(tempDir: string): Promise<void> {
     try {
       await rm(tempDir, { recursive: true, force: true });
@@ -302,10 +345,16 @@ export class DownloadService {
     }
   }
 
+  /**
+   * Delay execution for specified milliseconds
+   */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /**
+   * Download multiple files concurrently
+   */
   async downloadFiles(
     downloads: Array<{ url: string; options?: DownloadOptions }>,
     concurrency = 3,
@@ -317,6 +366,7 @@ export class DownloadService {
     const results: DownloadResult[] = [];
     const errors: Error[] = [];
 
+    // Process downloads in batches
     for (let i = 0; i < downloads.length; i += concurrency) {
       const batch = downloads.slice(i, i + concurrency);
 

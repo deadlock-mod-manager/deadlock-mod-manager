@@ -1,3 +1,8 @@
+/**
+ * Link preview cards, keyed by page path. `pnpm og:generate` renders each one
+ * to `public/og/<slug>.png`; pages without a card share `/og-image.png`.
+ * Cards are English-only, so translated pages reuse the English image.
+ */
 export interface OgCard {
   slug: string;
   eyebrow: string;

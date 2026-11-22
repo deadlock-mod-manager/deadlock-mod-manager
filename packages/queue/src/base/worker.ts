@@ -38,6 +38,10 @@ export class BaseWorker<T extends BaseJobData> {
     this.setupEventListeners();
   }
 
+  /**
+   * Only for workers constructed with `autorun: false`. `run()` resolves when
+   * the worker stops, so it is deliberately not awaited.
+   */
   start(): void {
     void this.worker.run().catch((error) => {
       this.lastError =
@@ -46,6 +50,10 @@ export class BaseWorker<T extends BaseJobData> {
     });
   }
 
+  /**
+   * BullMQ clears its running flag when the run loop exits for any reason, so
+   * this tells a process that is still consuming from one that is only alive.
+   */
   isRunning(): boolean {
     return this.worker.isRunning();
   }

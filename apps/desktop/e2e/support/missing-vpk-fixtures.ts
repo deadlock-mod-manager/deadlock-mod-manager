@@ -10,13 +10,24 @@ import {
 } from "./profile-fixtures";
 import { collectFileInventory, type CreatedWorld } from "./world";
 
+/**
+ * One Alpha mod per situation a user can leave behind by deleting files, plus
+ * Beta as a profile that is not active while it happens.
+ */
 export const MISSING = {
+  /** Enabled; its only VPK is deleted. */
   enabled: "local-alpha-enabled",
+  /** Disabled; its only parked VPK is deleted. */
   parked: "local-alpha-parked",
+  /** Enabled and never touched. */
   intact: "local-alpha-intact",
+  /** Enabled with two VPKs; only the second is deleted. */
   pair: "local-alpha-pair",
+  /** Enabled local import; its VPK is deleted but the mods store still has it. */
   stored: "local-alpha-stored",
+  /** Enabled in the inactive Beta profile; its only VPK is deleted. */
   betaEnabled: "local-beta-enabled",
+  /** Enabled in Beta and never touched. */
   betaIntact: "local-beta-intact",
 } as const;
 
@@ -32,10 +43,12 @@ export const BETA_MISSING_MODS: readonly string[] = [
   MISSING.betaIntact,
 ];
 
+/** Mods whose every file is gone: these must leave the library. */
 export const REMOVED_ALPHA_MODS: readonly string[] = [
   MISSING.enabled,
   MISSING.parked,
 ];
+/** Mods that keep something to install from: these must stay. */
 export const KEPT_ALPHA_MODS: readonly string[] = [
   MISSING.intact,
   MISSING.pair,
@@ -46,6 +59,7 @@ export const PARKED_VPK = `${MISSING.parked}_${MISSING.parked}.vpk`;
 export const PAIR_SECOND_PAYLOAD = `${MISSING.pair}-second`;
 export const STORED_SOURCE = `${MISSING.stored}.vpk`;
 
+// Slot 5 stays free for the pair's second VPK.
 const ALPHA_SLOTS = [1, 2, 3, 4, 6];
 
 export const profileDirectory = (gameRoot: string, folder: string) =>
@@ -54,13 +68,14 @@ export const profileDirectory = (gameRoot: string, folder: string) =>
 const modsStoreDirectory = (appData: string, modId: string) =>
   path.join(appData, "mods", modId, "files");
 
+/** Alpha files the offline case deletes before DMM ever starts. */
 const OFFLINE_ALPHA_DELETIONS = [
-  "pak01_dir.vpk",
-  PARKED_VPK,
-  "pak05_dir.vpk",
-  "pak06_dir.vpk",
+  "pak01_dir.vpk", // enabled
+  PARKED_VPK, // parked
+  "pak05_dir.vpk", // pair, second VPK
+  "pak06_dir.vpk", // stored
 ];
-const OFFLINE_BETA_DELETIONS = ["pak01_dir.vpk"];
+const OFFLINE_BETA_DELETIONS = ["pak01_dir.vpk"]; // betaEnabled
 
 const modSchema = z.looseObject({
   remoteId: z.string(),
@@ -88,6 +103,11 @@ const manifestSchema = z.object({
   ),
 });
 
+/**
+ * Turns the all-enabled profile recipe into the mixed Alpha library: one mod
+ * parked as a prefixed VPK, one spread over two VPKs, and one local import
+ * whose source still sits in the mods store.
+ */
 const mixAlphaLibrary = async (world: CreatedWorld): Promise<void> => {
   const { roots } = world.configuration;
   const alpha = profileDirectory(roots.game, ALPHA.folder);
@@ -188,6 +208,8 @@ export const prepareMissingVpkWorld = async (
     ALPHA.id,
   );
   await mixAlphaLibrary(world);
+  // The inventory is taken before any deletion: the oracle subtracts the
+  // deleted payloads itself, so it also holds after DMM renames files.
   await recordInitialInventories(world);
 
   if (world.configuration.caseId !== "missing-vpks-offline") return;

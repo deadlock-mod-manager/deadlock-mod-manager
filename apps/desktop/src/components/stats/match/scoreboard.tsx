@@ -30,6 +30,7 @@ interface ScoreboardProps {
   onSelectPlayer: (accountId: number) => void;
 }
 
+/** Both teams, the player's row tinted, the lobby's best in each stat crowned. */
 export const Scoreboard = ({
   match,
   meId,

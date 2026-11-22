@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  /* Embedded in DMM, the host theme arrives as --dmm-* (see onHostContext).
+     The fallbacks are DMM's dark theme, for opening the page on its own. */
   --background: var(--dmm-background, #110f0e);
   --surface: var(--dmm-card, #171412);
   --raised: var(--dmm-muted, #1e1a18);
@@ -28,6 +30,8 @@ body {
   margin: 0;
 }
 
+/* Embedded in DMM: its backdrop shows through, and DMM's bar above the frame
+   already shows the plugin's name and description. */
 :root[data-embedded] {
   background: transparent;
 }
@@ -124,6 +128,8 @@ svg {
   }
 }
 
+/* Strokes sit inside the box as in the DMM designs: cards use an inset
+   shadow, and a 1px top border comes out of the padding above the content. */
 .card {
   display: flex;
   flex-direction: column;

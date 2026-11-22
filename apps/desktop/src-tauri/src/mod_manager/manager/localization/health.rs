@@ -12,11 +12,13 @@ use std::sync::Arc;
 
 static CHECK_LOCK: Mutex<()> = Mutex::new(());
 
+/// Paths needed to check a profile's mods without holding the mod manager.
 pub struct ModHealthContext {
   citadel: PathBuf,
   base: ProfileBase,
   app_data: PathBuf,
   overlay_path: PathBuf,
+  /// The install's observed game data, which every repair receipt digests.
   history: Option<PathBuf>,
 }
 
@@ -60,6 +62,13 @@ impl ModManager {
     })
   }
 
+  /// Turns compatibility on for exactly the listed mods, clearing any earlier
+  /// choice of original files, and captures what the repair package needs.
+  /// Fixing is an explicit choice, so it also accepts the mods' own asset and
+  /// data findings for their current files. The choices stay saved when
+  /// something else still needs review. Returns `None` when the package is
+  /// already current; otherwise build the plan without the lock and pass it
+  /// to [`Self::finish_fix_mods`].
   pub fn begin_fix_mods(
     &mut self,
     profile_folder: Option<&str>,
@@ -76,6 +85,9 @@ impl ModManager {
     Ok(refresh)
   }
 
+  /// Writes the repair package from a plan built by [`ModFixRefresh::build`].
+  /// Mods that changed during the build send the player to the review, which
+  /// analyses them again.
   pub fn finish_fix_mods(
     &mut self,
     refresh: ModFixRefresh,
@@ -93,6 +105,8 @@ impl ModManager {
       Err(error) => return Err(error),
     };
     let current_revision = self.config_manager.search_paths_revision();
+    // begin_fix_mods saves the fix choice before capturing this revision, so
+    // even a later mount of the same profile already includes its repair path.
     if current_revision == search_paths_revision {
       self.apply_profile_gameinfo(profile_folder)?;
     } else {
@@ -103,6 +117,8 @@ impl ModManager {
     Ok(FixModsResult { status })
   }
 
+  /// Fixes the listed mods in one step. `manager` is called before and after
+  /// the plan build, so the slow build can run without the mod manager lock.
   pub fn fix_mods<M: DerefMut<Target = ModManager>>(
     manager: impl Fn() -> Result<M, Error>,
     profile_folder: Option<&str>,
@@ -130,6 +146,7 @@ impl ModManager {
 }
 
 impl ModHealthContext {
+  /// Saves the combined analysis's findings for the opted-in mods.
   pub(super) fn record_launch(&self, analysis: &LocalizationOverlayAnalysis) -> Result<(), Error> {
     let entries = self
       .installed()?
@@ -156,6 +173,7 @@ impl ModHealthContext {
     self.base.to_string_lossy().into_owned()
   }
 
+  /// Every manifest mod whose files exist, enabled or not.
   fn installed(&self) -> Result<Vec<InstalledMod>, Error> {
     let game_build = history::version(&self.citadel);
     let mut installed = Vec::new();
@@ -193,6 +211,9 @@ impl ModHealthContext {
     health.report(
       history::version(&self.citadel),
       installed.iter().map(|installed| {
+        // The game only loads enabled mods, so only their repairs must be in
+        // the package. A disabled mod keeps its saved choice; enabling it
+        // rebuilds the package with its repairs.
         let choice = match installed.choice {
           CompatibilityChoice::Enabled if installed.enabled && !applied.contains(&installed.id) => {
             CompatibilityChoice::Unset
@@ -228,6 +249,9 @@ impl ModHealthContext {
     ))
   }
 
+  /// Analyses each selected mod on its own against the installed game. Without
+  /// `force`, mods with a current cache entry are skipped. A mod that cannot be
+  /// analysed is logged and left unchecked rather than labelled.
   pub fn check(
     &self,
     mod_ids: Option<&[String]>,
@@ -273,10 +297,17 @@ impl ModHealthContext {
         total,
       });
     }
+    // Enabling, disabling or reordering a mod renames its files, and a read of
+    // the old name mid-analysis fails as if the mod were broken. The key
+    // ignores names, so such a result would stick: save only results whose
+    // files are still where they were read, and drop what was cached for the
+    // rest. The change that moved them schedules another check.
     let (entries, moved): (Vec<_>, Vec<_>) = entries.into_iter().partition(|(installed, _)| {
       HealthKey::stamp(&installed.vpks, game_build, REPAIR_REVISION)
         .is_ok_and(|key| key == installed.key)
     });
+    // Persist the batch once instead of reading and rewriting the whole cache
+    // for each mod. Progress events still describe every completed analysis.
     if !entries.is_empty() {
       mod_health::record(
         &self.app_data,
@@ -465,6 +496,7 @@ mod tests {
     )
     .unwrap();
     let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    // Downloaded but not turned on yet; its copy of the game text lacks a token.
     write_vpk(
       &base.join("text_download.vpk"),
       &[(
@@ -491,6 +523,7 @@ mod tests {
         .join(OVERLAY_VPK_NAME),
       history: Some(temp.path().join("cache/vdata-history.bin")),
     };
+    // A wrong verdict an earlier check saved for these files.
     let key = HealthKey::stamp(&[base.join("text_download.vpk")], None, REPAIR_REVISION).unwrap();
     mod_health::record(
       &context.app_data,
@@ -503,6 +536,7 @@ mod tests {
     )
     .unwrap();
 
+    // Progress fires after the mod's analysis and before the batch is saved.
     let report = context
       .check(None, true, |update| {
         if update.checked == 1 {
@@ -577,6 +611,8 @@ mod tests {
     assert!(history.is_file());
     assert!(!check(), "the same table is already known");
 
+    // History can't be saved over a directory, so the check must not report a
+    // change it didn't persist.
     fs::remove_file(&history).unwrap();
     fs::create_dir(&history).unwrap();
     assert!(!check(), "a failed save is not a history change");

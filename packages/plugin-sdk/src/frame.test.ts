@@ -12,6 +12,7 @@ describe("parseFrameMessage", () => {
     expect(parseFrameMessage(encodeMessage(call))).toEqual(call);
   });
 
+  // The app page relays whatever this accepts, so anything else must be dropped.
   it("ignores messages that are not frame protocol calls", () => {
     for (const data of [
       { type: "call", id: 1, command: "status", payloadJson: "{}" },

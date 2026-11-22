@@ -2,6 +2,8 @@ import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 
+// Rendered outside ModContextMenu so events from the portalled dialog don't
+// bubble into the card's context menu trigger.
 export const LazyModOptionsDialog = ({
   modOptions,
   modName,

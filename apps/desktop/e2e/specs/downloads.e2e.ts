@@ -88,6 +88,7 @@ const downloadRequests = async (world: string, file = DOWNLOAD_FILE) => {
     .requests.filter(({ url }) => url === `/downloads/${file}`);
 };
 const queueBehindFirst = async (world: string): Promise<void> => {
+  // The downloader handles one mod at a time, so the second waits in its queue.
   await step("queue a second download behind the first", async () => {
     await observeUntil(
       "Download request did not reach the server",
@@ -201,6 +202,8 @@ const cancelWhileConnecting = async (world: string): Promise<void> => {
     await expect(card().$("button=Retry")).toBeDisplayed();
     await assertDownloadDisk(world, "cancelled", "failedToDownload");
   });
+  // The downloader handles one mod at a time, so a cancelled request that is
+  // still waiting holds back the retry.
   await step("retry reaches the server", async () => {
     await retry();
     await observeUntil(
@@ -213,6 +216,8 @@ const cancelWhileConnecting = async (world: string): Promise<void> => {
   await waitStatus(world, "downloaded");
 };
 
+// The cancelled transfer reports its end only when it next checks its token,
+// which can be after the user has already pressed Retry.
 const retryBeforeCancellationArrives = async (world: string): Promise<void> => {
   await step("cancel while the transfer is running", async () => {
     await waitStatus(world, "downloading");
@@ -263,6 +268,7 @@ const enableSegmentedDownloads = async (world: string): Promise<void> => {
     () => readSettings(world),
     (state) => state.segmentedDownloads === true,
   );
+  // The switch's thumb animates after its state changes.
   await browser.pause(500);
   await browser.saveScreenshot(
     path.join(world, "artifacts", "segmented-setting.png"),
@@ -270,6 +276,7 @@ const enableSegmentedDownloads = async (world: string): Promise<void> => {
   await navigate("downloads");
   await card().waitForDisplayed();
 };
+// Segmented cases replay the single-stream flow they're named after.
 const flowOf = (scenario: string | undefined) =>
   scenario?.replace(
     /^downloads-segmented-(pause|cancel|restart|corrupt)$/,
@@ -396,6 +403,8 @@ describe("real Rust downloads", () => {
             expect.stringContaining("{{message}}"),
           );
         }
+        // The seed is already failed. Wait for this attempt's UI result before
+        // accepting the same status from the asynchronous persisted store.
         await expect(card().$("button=Retry")).toBeDisplayed();
         await waitStatus(world, "failedToDownload");
         const directory = await downloadDirectory(world);

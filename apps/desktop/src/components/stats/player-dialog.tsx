@@ -35,6 +35,7 @@ import {
 import { rankProgress } from "@/lib/stats/rank";
 
 interface PlayerDialogProps {
+  /** Whose card to show. `null` closes the dialog. */
   accountId: number | null;
   profile: SteamProfile | undefined;
   heroesById: Map<number, DeadlockHero>;
@@ -44,12 +45,19 @@ interface PlayerDialogProps {
 }
 
 type DialogTab = "overview" | "matches";
+/**
+ * Every bit of card state, tagged with whose card it is. The dialog stays mounted
+ * between players - the squad tab keeps it around and swaps the account - so state
+ * held loose would follow one player's card into the next one's.
+ */
 type DialogView = {
   accountId: number;
   tab: DialogTab;
   matchId: number | null;
+  /** Narrows the match list to one hero; null shows every match. */
   heroFilter: number | null;
   isRankOpen: boolean;
+  /** The hero whose breakdown is open, if any. */
   divedHero: number | null;
 };
 
@@ -62,6 +70,7 @@ const initialView = (accountId: number): DialogView => ({
   divedHero: null,
 });
 
+/** Career view and on-demand match analysis for one player. */
 export const PlayerDialog = ({
   accountId,
   profile,
@@ -85,6 +94,11 @@ export const PlayerDialog = ({
   const selectedMatchId =
     activeView.matchId ?? card.matches[0]?.match_id ?? null;
 
+  /**
+   * The career view can hand over a match on any hero, so a filter left from a
+   * hero focus has to give way - otherwise the explorer would drop the match
+   * that was just asked for and open an unrelated one instead.
+   */
   const selectMatch = (matchId: number) => {
     const match = card.matches.find((entry) => entry.match_id === matchId);
     const keepsFilter =
@@ -97,12 +111,20 @@ export const PlayerDialog = ({
     });
   };
 
+  /**
+   * Jumps to the match list with only that hero's games in it. The selected
+   * match is dropped so the list opens on the newest game on the hero rather
+   * than on whatever was picked before.
+   */
   const focusHero = (heroId: number | null) => {
     update({ tab: "matches", matchId: null, heroFilter: heroId });
   };
 
   return (
     <>
+      {/* Tagging the state by account is not enough on its own: reopening the
+          same player's card would otherwise come back with whatever deep dive
+          was on screen when it was closed. */}
       <Dialog
         onOpenChange={(open) => {
           if (!open) {
@@ -124,6 +146,9 @@ export const PlayerDialog = ({
                   {profile?.personaname ?? `#${accountId}`}
                 </div>
                 <div className='mt-1 flex flex-wrap items-center gap-3 font-normal text-xs'>
+                  {/* The badge is a doorway, not a label: the ranking system
+                      tracks progress, placements and demotion protection that a
+                      tier name cannot show. */}
                   <button
                     className='group -mx-1 flex items-center gap-1.5 rounded px-1 font-semibold text-foreground/85 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                     onClick={() => update({ isRankOpen: true })}

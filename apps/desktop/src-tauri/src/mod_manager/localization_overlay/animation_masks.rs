@@ -74,6 +74,7 @@ pub(super) fn rebase(
     values.push(value);
     encodings.push(encoding);
   }
+  // Extra mod masks remain available, with obsolete bone references removed.
   for (id, index) in old_indices {
     if current_indices.contains_key(&id) {
       continue;

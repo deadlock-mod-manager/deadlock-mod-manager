@@ -58,16 +58,32 @@ type IdentifiedFile = Pick<
   "fileName" | "remoteId" | "matchInfo" | "manifestModId"
 >;
 
+/**
+ * A file that can be one of its identified mod's files: one the game loads, or
+ * that mod's own disabled `<id>_` file (a parked copy, an unselected variant).
+ */
 export const canBelongToIdentifiedMod = (
   addon: Pick<LocalAddonInfo, "fileName" | "remoteId" | "hasEnabledVpkName">,
 ): boolean =>
   addon.hasEnabledVpkName ||
   (!!addon.remoteId && addon.fileName.startsWith(`${addon.remoteId}_`));
 
+/**
+ * A file the game doesn't load that isn't DMM's either: not its mod's disabled
+ * file, and not one the profile's manifest records. A hand-placed
+ * `coolskin.vpk`, even when its contents match a mod, is never one of that
+ * mod's enabled files.
+ */
 export const isIgnoredByGame = (
   addon: IdentifiedFile & Pick<LocalAddonInfo, "hasEnabledVpkName">,
 ): boolean => !canBelongToIdentifiedMod(addon) && addon.manifestModId == null;
 
+/**
+ * True when only the file's `<id>_` name prefix identifies it: no hash match,
+ * and no manifest entry records the file. Such a parked copy is DMM's only when
+ * its mod is still in the library; a mod whose installed files were deleted
+ * outside DMM leaves its Mod Options variants behind like this.
+ */
 export const isIdentifiedByNameOnly = <T extends IdentifiedFile>(
   addon: T,
 ): addon is T & { remoteId: string } =>
@@ -76,6 +92,10 @@ export const isIdentifiedByNameOnly = <T extends IdentifiedFile>(
   addon.manifestModId == null &&
   addon.fileName.startsWith(`${addon.remoteId}_`);
 
+/**
+ * A parked file whose mod is no longer in the profile's library. Analyze asks
+ * the user what to do with it instead of putting the mod back.
+ */
 export const isUnrecordedLeftover = (
   addon: IdentifiedFile,
   libraryIds: ReadonlySet<string>,
@@ -94,6 +114,12 @@ export const needsAnalysisReview = (
       isIgnoredByGame(addon),
   );
 
+/**
+ * True when the profile's manifest already assigns every file in this group to
+ * the mod they were identified as. Manifest reconciliation restores such mods
+ * with their recorded files, order and enabled state, so registering them again
+ * would only cost catalog requests and could overwrite what DMM recorded.
+ */
 export const isRecordedInManifest = (
   remoteId: string,
   addons: readonly Pick<LocalAddonInfo, "manifestModId">[],

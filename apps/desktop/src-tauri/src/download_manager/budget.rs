@@ -1,14 +1,24 @@
+//! How many download requests the app has open at once. Segmented downloads
+//! open four connections per file and the manager starts every file of a mod
+//! together, so while they're on, every request the download engine sends
+//! waits for room here. While they're off nothing waits: the counts are kept,
+//! so the caps apply from the moment the setting is turned on.
+
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard, PoisonError};
 use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
 
+/// Requests open at once across the app.
 pub const GLOBAL_LIMIT: usize = 8;
+/// Requests open at once to one server, the four a segmented file uses.
 pub const ORIGIN_LIMIT: usize = 4;
 
 #[derive(Default)]
 struct Counts {
   segmented_enabled: bool,
+  /// Segmented downloads still running, which keep the caps on after the
+  /// setting is turned off.
   opted_in: usize,
   global: usize,
   per_origin: HashMap<String, usize>,
@@ -41,10 +51,12 @@ pub struct TransferBudget {
 
 static APP_BUDGET: LazyLock<Arc<TransferBudget>> = LazyLock::new(Arc::default);
 
+/// The budget every download in the app shares.
 pub fn app_budget() -> Arc<TransferBudget> {
   Arc::clone(&APP_BUDGET)
 }
 
+/// The `scheme://host:port` a request is counted against.
 pub fn origin_of(url: &str) -> String {
   reqwest::Url::parse(url)
     .map(|url| url.origin().ascii_serialization())
@@ -65,6 +77,7 @@ impl TransferBudget {
     self.counts().segmented_enabled
   }
 
+  /// Held for the whole of a segmented download, fallback included.
   pub fn opt_in(self: &Arc<Self>) -> OptIn {
     self.counts().opted_in += 1;
     OptIn {
@@ -72,12 +85,15 @@ impl TransferBudget {
     }
   }
 
+  /// Waits for room for one request to `origin`. `None` if `cancel_token`
+  /// fires first.
   pub async fn admit(
     self: &Arc<Self>,
     origin: &str,
     cancel_token: &CancellationToken,
   ) -> Option<Admission> {
     loop {
+      // Registered before the counts are read, so a release in between still wakes us.
       let released = self.released.notified();
       tokio::pin!(released);
       released.as_mut().enable();
@@ -100,12 +116,16 @@ impl TransferBudget {
   }
 }
 
+/// One open request; dropping it makes room for the next.
 pub struct Admission {
   budget: Arc<TransferBudget>,
   origin: String,
 }
 
 impl Admission {
+  /// Counts the request against `origin` instead, once a redirect has shown
+  /// which server it reached. `false` when that server is full: the caller
+  /// should close the response and wait its turn.
   pub fn retarget(&mut self, origin: &str) -> bool {
     if origin == self.origin {
       return true;
@@ -213,6 +233,7 @@ mod tests {
       admits_within(&budget, node).await.is_none(),
       "the moved request no longer counts towards its file server"
     );
+    // The address it was asked for has its place back.
     let others: Vec<_> = futures::future::join_all(
       (0..ORIGIN_LIMIT).map(|_| admits_within(&budget, "https://gamebanana.com")),
     )
@@ -246,6 +267,7 @@ mod tests {
           .expect("a download waited although the setting is off"),
       );
     }
+    // Turning it on doesn't drop them, but new requests wait until there's room.
     budget.set_segmented_enabled(true);
     assert!(admits_within(&budget, "https://other.test").await.is_none());
     held.truncate(GLOBAL_LIMIT - 1);

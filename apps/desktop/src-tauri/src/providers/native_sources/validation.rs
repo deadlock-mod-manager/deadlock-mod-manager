@@ -96,6 +96,8 @@ pub(super) fn validate_descriptor(
       }
     }
   }
+  // Optional capabilities DMM has not implemented are ignored rather than
+  // rejected, so sources can advertise newer operations to newer clients.
   if let Some(capabilities) = &descriptor.capabilities {
     if capabilities
       .search

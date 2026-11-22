@@ -8,6 +8,11 @@ import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { AnimatedModelPreview } from "./animated-model-preview";
 import { ModelLoadingStage } from "./model-loading-stage";
 
+/**
+ * The result surface in the middle of the Foundry: the live 3D turntable while a
+ * model is selected, the decoded texture for a card, and a particle figure that
+ * assembles itself while either is still being decoded.
+ */
 export const FoundryPreview = () => {
   const { t } = useTranslation();
   const {
@@ -47,6 +52,7 @@ export const FoundryPreview = () => {
       ),
     [paintParts],
   );
+  // The paint tab labels the sections it is about to paint on the model.
   const callouts = useMemo(
     () =>
       activeTab === "paint" && paintSelection.kind === "parts"
@@ -61,6 +67,8 @@ export const FoundryPreview = () => {
     (texture: string) => labels.get(texture.toLowerCase()),
     [labels],
   );
+  // Sections removed from the game stay hidden on every tab; the paint tab
+  // also hides the ones put aside to paint what is behind them.
   const hiddenTextures = useMemo(() => {
     const previewed =
       activeTab === "paint" ? primaryModelPath : selectedEntryPath;
@@ -74,12 +82,17 @@ export const FoundryPreview = () => {
     selectedEntryPath,
   ]);
 
+  // Only the asset browser and the paint tab have a 3D surface; cards render
+  // their texture, and sounds have nothing to show.
   const showModel = activeTab === "assets" || activeTab === "paint";
   const imageUrl = activeTab === "cards" ? texturePreview.dataUrl : null;
   const model = showModel ? modelPreview.model : null;
   const decodingTexture = texturePreview.status === "loading";
+  // A paint bake only rewrites color maps, which the viewer swaps in place, so
+  // the hero stays on screen through it.
   const rebuildingModel = showModel && modelPreview.status === "loading";
 
+  // The paint tab shows the primary model, the one its sections belong to.
   const modelPath =
     activeTab === "paint" ? primaryModelPath : selectedEntryPath;
   if (model && !rebuildingModel && manifest && modelPath) {
@@ -95,6 +108,7 @@ export const FoundryPreview = () => {
           hiddenTextures={hiddenTextures}
           silhouetteHero={manifest.heroDisplay ?? manifest.hero ?? undefined}
           callouts={callouts}
+          // Sections are only picked where they can be painted.
           onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
           partLabel={partLabel}
           textureRefresh={textureRefresh}
@@ -114,6 +128,8 @@ export const FoundryPreview = () => {
     );
   }
 
+  // While the model is being built, the empty stage stands in for it so the
+  // panel never sits empty.
   if (rebuildingModel) {
     return (
       <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>

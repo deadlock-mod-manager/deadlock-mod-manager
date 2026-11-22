@@ -43,6 +43,10 @@ export type OneClickInstall = (
   onAccepted?: (slug: string) => void,
 ) => Promise<void>;
 
+/**
+ * Downloads and installs a GameBanana 1-click link into the active profile.
+ * Mount once: the returned function is stable and de-duplicates by mod.
+ */
 export const useOneClickInstall = (): OneClickInstall => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -72,6 +76,7 @@ export const useOneClickInstall = (): OneClickInstall => {
       return;
     }
 
+    // Prevent duplicate processing of the same mod
     if (!startOneClickInstall(slug, entryPoint)) {
       logger
         .withMetadata({ remoteId: slug })
@@ -84,8 +89,11 @@ export const useOneClickInstall = (): OneClickInstall => {
     try {
       onAccepted?.(slug);
 
+      // Fetch mod details from the API
       const modData = await getMod(slug);
 
+      // Record the file as the download dialog would, under the name the
+      // mod's file list and Manage files know it by.
       const { downloads } = await queryClient.fetchQuery({
         ...modDownloadsQueryOptions(modData.remoteId),
         staleTime: 0,
@@ -98,6 +106,7 @@ export const useOneClickInstall = (): OneClickInstall => {
       }
       const archiveNames = downloads.map((download) => download.name);
 
+      // Check if mod is already installed BEFORE downloading
       const currentMods = usePersistedStore.getState().localMods;
       const existingMod = currentMods.find(
         (m) => m.remoteId === modData.remoteId,
@@ -111,10 +120,12 @@ export const useOneClickInstall = (): OneClickInstall => {
           toast.success(
             t("mods.deepLinkAlreadyInstalled", { name: modData.name }),
           );
+          // Remove from processing set since we're done
           finishOneClickInstall(slug);
           return;
         }
 
+        // Another file of an installed mod is added, as Manage files would.
         const names = { file: requested.name, name: modData.name };
         toast.success(t("mods.deepLinkAddingFile", names));
         const selection = {
@@ -152,8 +163,10 @@ export const useOneClickInstall = (): OneClickInstall => {
 
       const downloadFiles = [requested];
 
+      // Add mod to local store with download info
       addMod(modData, { downloads, selectedDownloads: downloadFiles });
 
+      // Start direct download and installation using the provided URL
       toast.success(t("mods.deepLinkStarting"));
 
       const activeProfile = getActiveProfile();
@@ -181,12 +194,14 @@ export const useOneClickInstall = (): OneClickInstall => {
             .info("Download completed, starting auto-installation for mod");
           toast.success(t("mods.deepLinkDownloaded", { name: modData.name }));
 
+          // Create a local mod object for installation
           const localMod = {
             ...modData,
             path,
             status: ModStatus.Downloaded,
           };
 
+          // Automatically start installation
           try {
             await install(localMod, {
               analyticsEntryPoint: entryPoint,
@@ -198,6 +213,8 @@ export const useOneClickInstall = (): OneClickInstall => {
               },
               onComplete: (mod, result) => {
                 setModStatus(mod.remoteId, ModStatus.Installed);
+                // The install lists its files without their archives; keep
+                // the ones the download recorded, which Manage files reads.
                 const downloaded = usePersistedStore
                   .getState()
                   .localMods.find(
@@ -217,6 +234,7 @@ export const useOneClickInstall = (): OneClickInstall => {
                 logger
                   .withMetadata({ remoteId: mod.remoteId })
                   .info("Auto-installation completed for mod");
+                // Remove from processing set when fully complete
                 finishOneClickInstall(slug);
               },
               onCancel: (mod) => {
@@ -235,6 +253,7 @@ export const useOneClickInstall = (): OneClickInstall => {
                   .withMetadata({ remoteId: mod.remoteId })
                   .withError(error)
                   .error("Auto-installation failed for mod");
+                // Remove from processing set on error
                 finishOneClickInstall(slug);
               },
             });
@@ -243,6 +262,7 @@ export const useOneClickInstall = (): OneClickInstall => {
             toast.error(
               t("mods.deepLinkInstallStartError", { name: modData.name }),
             );
+            // Remove from processing set on error
             finishOneClickInstall(slug);
           }
         },
@@ -260,12 +280,14 @@ export const useOneClickInstall = (): OneClickInstall => {
             .withMetadata({ remoteId: modData.remoteId })
             .withError(error)
             .error("Direct download failed for mod");
+          // Remove from processing set on error
           finishOneClickInstall(slug);
         },
       });
     } catch (error) {
       logger.withError(error).error("Failed to process deep link");
       toast.error(t("mods.deepLinkError"));
+      // Remove from processing set on error
       finishOneClickInstall(slug);
     }
   };
@@ -281,6 +303,8 @@ export const useOneClickInstall = (): OneClickInstall => {
 };
 
 export const useDeepLink = (installFromLink: OneClickInstall) => {
+  // useNavigate changes identity on every route change; reading it through a
+  // ref keeps the listener registered once.
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
@@ -292,6 +316,7 @@ export const useDeepLink = (installFromLink: OneClickInstall) => {
       try {
         logger.debug("Setting up deep link listener");
 
+        // A clicked link shows its mod, unlike background Remote Installs.
         unlisten = await listen<DeepLinkData>("deep-link-received", (event) =>
           installFromLink(event.payload, "deep_link", (slug) =>
             navigateRef.current(`/mods/${slug}`),
@@ -304,6 +329,7 @@ export const useDeepLink = (installFromLink: OneClickInstall) => {
 
     setupDeepLinkListener();
 
+    // Cleanup function
     return () => {
       if (unlisten) {
         unlisten();

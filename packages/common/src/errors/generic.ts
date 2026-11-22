@@ -11,6 +11,7 @@ export abstract class BaseError extends Error {
     if (originalError instanceof Error && originalError?.stack) {
       this.stack = originalError.stack;
     } else if (Error.captureStackTrace) {
+      // Capture stack trace at caller's location
       Error.captureStackTrace(this, this.constructor);
     }
   }

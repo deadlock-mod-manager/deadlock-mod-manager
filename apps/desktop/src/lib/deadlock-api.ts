@@ -14,10 +14,16 @@ import { runtimeServiceOrigin } from "./runtime-bootstrap";
 
 export type { DeadlockHero, DeadlockItem };
 
+// assets.deadlock-api.com was retired; the asset routes now live under /v1/assets.
 export const ASSETS_BASE_URL = "https://api.deadlock-api.com";
 export const assetsBaseUrl = (): string =>
   runtimeServiceOrigin("assets", ASSETS_BASE_URL);
 
+/**
+ * Every deadlock-api failure, on the app's shared error hierarchy. Lives here
+ * rather than in `stats/api.ts` so the asset and the stats client can both throw
+ * it without importing each other.
+ */
 export class DeadlockApiError extends ProviderError {
   constructor(
     readonly status: number,
@@ -27,6 +33,7 @@ export class DeadlockApiError extends ProviderError {
   }
 }
 
+/** Every playable hero, for id -> name/portrait lookups. Changes only per patch. */
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const res = await fetch(
     `${assetsBaseUrl()}/v1/assets/heroes?only_active=true`,
@@ -37,6 +44,11 @@ export const getHeroes = async (): Promise<DeadlockHero[]> => {
   return parseList(deadlockHeroSchema, await res.json(), "/v1/assets/heroes");
 };
 
+/**
+ * Buyable upgrades only. The raw asset list is ~5.7 MB of abilities and weapons
+ * too, none of which show up in build statistics, so it is trimmed before it
+ * ever reaches the cache.
+ */
 export const getItems = async (): Promise<DeadlockItem[]> => {
   const res = await fetch(
     `${assetsBaseUrl()}/v1/assets/items?only_active=true`,
@@ -60,12 +72,15 @@ export const getItems = async (): Promise<DeadlockItem[]> => {
 
 export interface HeroAbility {
   name: string;
+  /** The ability's class name without the `citadel_ability_` prefix. */
   className: string;
   image: string | null;
 }
 
 export interface HeroAbilitySet {
+  /** Folder holding the hero's base model, e.g. `models/heroes_wip/abrams/`. */
   modelDirectory: string;
+  /** The four signature abilities, in key order. */
   abilities: HeroAbility[];
 }
 
@@ -80,6 +95,11 @@ const fetchList = async <T>(
   return parseList(schema, await res.json(), path);
 };
 
+/**
+ * Each hero's signature abilities with their icons, keyed by the folder of the
+ * hero's model so a decoded skin can find its hero. The raw ability list is
+ * ~4 MB, so only the four slots of every hero are kept.
+ */
 export const getHeroAbilities = async (): Promise<HeroAbilitySet[]> => {
   const [heroes, abilities] = await Promise.all([
     fetchList("/v1/assets/heroes?only_active=true", heroLoadoutSchema),

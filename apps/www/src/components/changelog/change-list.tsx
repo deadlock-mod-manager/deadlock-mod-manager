@@ -12,6 +12,7 @@ export const KINDS: {
   kind: ChangeKind;
   label: string;
   icon: Icon;
+  /** Text and bar colour for the kind. */
   tone: string;
   bar: string;
 }[] = [
@@ -45,11 +46,13 @@ export const KINDS: {
   },
 ];
 
+/** Entries shown per group before the rest fold under "Show more". */
 const VISIBLE_CHANGES = 6;
 
 const escapeRegExp = (text: string) =>
   text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/** Wraps every occurrence of the (lowercase) search query in <mark>. */
 const Highlight = ({ text, query }: { text: string; query: string }) => {
   if (!query) return text;
   let offset = 0;
@@ -68,6 +71,10 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
   });
 };
 
+/**
+ * Changesets only use `code` for inline markup. Parts are keyed by where they
+ * start in the text, which stays unique even when a code span repeats.
+ */
 const Inline = ({ text, query }: { text: string; query: string }) =>
   [...text.matchAll(/`[^`]+`|[^`]+|`/g)].map(({ 0: part, index }) =>
     part.length > 2 && part.startsWith("`") && part.endsWith("`") ? (
@@ -121,6 +128,7 @@ export const ChangeGroup = ({
     icon: KindIcon,
     tone,
   } = KINDS.find((entry) => entry.kind === kind) ?? KINDS[0];
+  // Search results are short and the point is to see them all.
   const visible = query ? changes : changes.slice(0, VISIBLE_CHANGES);
   const folded = query ? [] : changes.slice(VISIBLE_CHANGES);
 
@@ -158,6 +166,7 @@ export const ChangeGroup = ({
   );
 };
 
+/** The release's mix of entry kinds as one thin bar. */
 export const CompositionBar = ({ changes }: { changes: Change[] }) => {
   const counts = KINDS.map(({ kind, label, bar }) => ({
     kind,

@@ -19,6 +19,10 @@ type ConnectProgress = {
 
 const TOAST_ID = "server-connect-progress";
 
+/**
+ * Surfaces what the Rust connect watchdog is doing. The join dialog closes as
+ * soon as the game is launched, so this lives on the page instead.
+ */
 export const useServerConnectProgress = () => {
   const { t } = useTranslation();
 
@@ -27,6 +31,8 @@ export const useServerConnectProgress = () => {
       "server-connect-progress",
       ({ payload }) => {
         switch (payload.status) {
+          // Both are silent by design: the join dialog is still up and already
+          // showing its own progress while the game starts.
           case "waiting-for-game":
           case "waiting-for-client":
             toast.dismiss(TOAST_ID);

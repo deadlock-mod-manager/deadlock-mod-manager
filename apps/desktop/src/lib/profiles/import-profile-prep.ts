@@ -12,6 +12,8 @@ import type {
 } from "@/lib/profiles/types";
 import type { ModDownloadItem } from "@/types/mods";
 
+/** The catalog entry of each file the import fetches. A file only the share
+ *  still names keeps its name, URL and size, without catalog metadata. */
 const toSelectedDownloads = (
   downloadFiles: ProfileImportDownloadFile[],
   availableDownloads: ModDownloadItem[],

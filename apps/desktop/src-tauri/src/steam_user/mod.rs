@@ -1,3 +1,9 @@
+//! Identifies the Steam account the user is currently signed in with, without any
+//! credentials: `loginusers.vdf` lists the remembered accounts, and the mtime of
+//! `userdata/<account_id>/config/localconfig.vdf` tells which of them Steam is
+//! actively writing for. Both paths exist verbatim on Windows, Linux and macOS, so
+//! there is a single code path (no registry lookup).
+
 use std::path::Path;
 
 use keyvalues_parser::{Value, Vdf};
@@ -8,17 +14,25 @@ const DEADLOCK_APP_ID: u32 = 1_422_450;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SteamAccountDto {
+  /// Steam3 account id - the id deadlock-api takes as `account_id`.
   pub account_id: u32,
+  /// A SteamID64 exceeds `Number.MAX_SAFE_INTEGER`, so it crosses the bridge as text.
   pub steam_id64: String,
   pub account_name: String,
   pub persona_name: Option<String>,
+  /// True for exactly one account: the best guess at "signed in right now".
   pub is_active: bool,
+  /// Whether this account has local Deadlock user data.
   pub has_deadlock: bool,
+  /// Unix seconds of the most recent sign of life, `None` when nothing is known.
   pub last_seen: Option<i64>,
 }
 
+/// What the filesystem knows about one account, split out so the ranking can be
+/// unit-tested without a Steam installation.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct AccountActivity {
+  /// mtime of `userdata/<account_id>/config/localconfig.vdf`, in unix seconds.
   pub local_config_mtime: Option<i64>,
   pub has_deadlock: bool,
 }
@@ -31,13 +45,18 @@ fn child<'a>(value: &'a Value<'a>, key: &str) -> Option<&'a Value<'a>> {
   value.get_obj()?.get(key)?.first()
 }
 
+/// One entry of `loginusers.vdf`, with the fields Steam uses to mark which account
+/// is the one currently signed in.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RememberedAccount {
   pub steam_id64: u64,
+  /// As written by Steam; lowercase it before using it as a ConnectCache key.
   pub account_name: String,
   pub persona_name: Option<String>,
+  /// Older Steam builds write `MostRecent`, current ones only `AutoLogin`.
   pub most_recent: bool,
   pub auto_login: bool,
+  /// Unix seconds of the last login, `0` when Steam wrote no `Timestamp`.
   pub timestamp: i64,
 }
 
@@ -84,6 +103,8 @@ pub fn remembered_accounts(steam_dir: &Path) -> Result<Vec<RememberedAccount>, S
   Ok(accounts)
 }
 
+/// Sorts by "who did Steam touch last", then falls back to the flags Steam writes
+/// into `loginusers.vdf`. The first entry is marked active.
 pub fn rank_accounts(
   accounts: Vec<RememberedAccount>,
   activity: impl Fn(u32) -> AccountActivity,
@@ -93,6 +114,8 @@ pub fn rank_accounts(
     .map(|account| {
       let account_id = account_id_of(account.steam_id64);
       let probe = activity(account_id);
+      // The session file is written while signed in, the vdf timestamp only at
+      // login - whichever is newer is the better "last seen".
       let last_seen = probe
         .local_config_mtime
         .into_iter()
@@ -148,6 +171,9 @@ fn probe_activity(steam_dir: &Path, account_id: u32) -> AccountActivity {
   }
 }
 
+/// Every remembered Steam account, most recently used first. Empty when Steam or
+/// `loginusers.vdf` cannot be read - the UI then asks for an account id instead of
+/// showing an error.
 pub fn list_accounts() -> Vec<SteamAccountDto> {
   let steam = match steamlocate::SteamDir::locate() {
     Ok(steam) => steam,
@@ -203,6 +229,7 @@ mod tests {
         },
       ],
       |account_id| AccountActivity {
+        // Alice is signed in right now, even though Bob holds the AutoLogin flag.
         local_config_mtime: (account_id == account_id_of(ALICE)).then_some(9_000),
         has_deadlock: true,
       },
@@ -212,6 +239,7 @@ mod tests {
     assert!(ranked[0].is_active);
     assert_eq!(ranked[0].last_seen, Some(9_000));
     assert!(!ranked[1].is_active);
+    // Bob has no session file, so his login timestamp stands in for it.
     assert_eq!(ranked[1].last_seen, Some(2_000));
   }
 

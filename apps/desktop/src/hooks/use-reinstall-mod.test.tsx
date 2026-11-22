@@ -135,6 +135,8 @@ const storedMod = () =>
     .getState()
     .localMods.find((entry) => entry.remoteId === mod.remoteId);
 
+// Status and VPK updates go through the active profile's mods, so the mod has
+// to be there as well as in the library view.
 const seedMods = (mods: LocalMod[]) => {
   const { activeProfileId, profiles } = usePersistedStore.getState();
   const profile = profiles[activeProfileId];

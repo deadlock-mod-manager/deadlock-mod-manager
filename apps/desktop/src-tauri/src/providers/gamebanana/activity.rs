@@ -2,6 +2,8 @@ use super::models::PageMetadata;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
+/// Shared shape of the `Posts` and `Updates` endpoints. Records stay raw so one
+/// malformed entry cannot discard the rest of the page.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ActivityPage {
   #[serde(rename = "_aMetadata", default)]

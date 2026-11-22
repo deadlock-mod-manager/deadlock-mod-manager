@@ -17,6 +17,11 @@ import { BisectSetupDialog } from "./bisect-setup-dialog";
 
 const GAME_POLL_MS = 2000;
 
+/**
+ * Follows the game through each round: launching moves a ready round to
+ * playing, closing the game asks for an answer, and a crash answers for the
+ * user. Everything lives in the persisted session, so a restart resumes here.
+ */
 const useRoundTracking = () => {
   const { t } = useTranslation();
   const session = usePersistedStore((state) => state.bisectSession);
@@ -44,6 +49,8 @@ const useRoundTracking = () => {
 
   const crashDetected = session?.crashDetected ?? false;
   const round = session?.round;
+  // One automatic answer per round: if it fails, the user is asked instead
+  // of the step retrying in a loop.
   const autoAnsweredRound = useRef<number | null>(null);
   useEffect(() => {
     if (stage !== "judging" || !crashDetected || isPending) return;
@@ -61,6 +68,7 @@ export const BisectRenderer = () => {
   const [resultHidden, setResultHidden] = useState(false);
   const showingResult = session?.stage === "result";
 
+  // Each new result opens again, even after the last one was closed.
   useEffect(() => {
     if (showingResult) setResultHidden(false);
   }, [showingResult]);
@@ -69,6 +77,7 @@ export const BisectRenderer = () => {
     <>
       {session &&
         (isCurrentBisectSession(session) ? (
+          // A bug here must never take the app down or strand the mods.
           <ErrorBoundary
             fallback={<BisectRecoveryBanner reason='error' />}
             onError={(error) =>

@@ -1,3 +1,4 @@
+/* Editor dark palette: deep slate surfaces, accent primary (terminal green by default), cyan focus. */
 :root.coding-theme-active {
   color-scheme: dark;
   --background: 222 24% 7%;
@@ -36,6 +37,7 @@
   --sidebar-ring: 199 89% 60%;
 }
 
+/* Let the grid show through the sidebar, like Gridline. */
 .coding-theme-active
   :is(
     [data-sidebar="sidebar"],
@@ -49,6 +51,8 @@
   background-color: transparent;
 }
 
+/* Monospace headings and code; body text and the brand wordmark keep their fonts,
+   since the sidebar is too narrow for the app name in a monospace face. */
 .coding-theme-active :is(h1, h2, h3, kbd, code, pre) {
   font-family: "Geist Mono Variable", monospace;
   letter-spacing: -0.01em;

@@ -1,7 +1,9 @@
+# prod
 dist/
 /build
 /out/
 
+# dev
 .yarn/
 !.yarn/patches
 !.yarn/plugins
@@ -17,16 +19,19 @@ dist/
 /.next/
 .vercel
 
+# deps
 node_modules/
 /node_modules
 /.pnp
 .pnp.*
 
+# env
 .env*
 .env.production
 !.env.example
 .dev.vars
 
+# logs
 logs/
 *.log
 npm-debug.log*
@@ -35,10 +40,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# misc
 .DS_Store
 *.pem
 
+# local db
 *.db*
 
+# typescript
 *.tsbuildinfo
 next-env.d.ts

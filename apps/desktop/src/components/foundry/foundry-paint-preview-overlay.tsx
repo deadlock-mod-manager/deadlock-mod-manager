@@ -16,8 +16,10 @@ const blockerHints = {
   applied: "foundry.paint.previewAlreadyApplied",
 } as const;
 
+/** The live-preview switch over the viewport, and the compare hint above the dock. */
 export const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
+  // The hint would sit on the loading card until the hero is on screen.
   const { viewerReady } = useFoundry();
   const title = useSelectionTitle();
   if (brush.nothingSelected) return null;

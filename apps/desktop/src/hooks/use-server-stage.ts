@@ -63,6 +63,8 @@ export type StageServerOptions = {
 
 const ALLOWED_EXTENSION_RE = /\.(vpk|zip|7z|rar)$/i;
 
+// Synthesize a name when the URL doesn't end in a recognized archive
+// extension so we never write something like `index.html` into addons.
 const fileNameFromUrl = (url: string, requirementId: string): string => {
   try {
     const parsed = new URL(url);
@@ -221,6 +223,8 @@ export const useServerStage = () => {
       }
       let files = downloads.downloads;
 
+      // Multi-download mods need a user pick — installing every variant
+      // would duplicate VPKs and can conflict.
       if (files.length > 1) {
         const selection = await awaitFileSelection(requirement.mod.name, files);
         if (!selection || selection.length === 0) {
@@ -280,6 +284,8 @@ export const useServerStage = () => {
 
         if (resolvedGB.length > 0) {
           setState((s) => ({ ...s, phase: "downloading-mods" }));
+          // Sequential: the download manager serializes per-mod progress
+          // callbacks and GameBanana rate-limits parallel pulls.
           for (const req of resolvedGB) {
             setState((s) => ({
               ...s,
@@ -366,6 +372,8 @@ export const useServerStage = () => {
             { address, acceptMismatch: [] },
           );
           if (result.mismatched.length > 0) {
+            // The hash is a build id, not authentication: a mismatch means the
+            // host is stale, which only the server's host can fix.
             if (!(await awaitMismatchConfirmation(result.mismatched))) {
               throw new Error(t("servers.staging.mismatchDeclined"));
             }
@@ -420,6 +428,8 @@ export const useServerStage = () => {
           .withError(error)
           .error("Failed to stage server");
 
+        // Eviction won't pick up folders that were never recorded in
+        // stagedServers, so clean up the orphan ourselves.
         if (folderName) {
           try {
             await invokeGuarded("delete_server_addons_folder", {

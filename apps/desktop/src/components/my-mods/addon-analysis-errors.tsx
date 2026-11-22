@@ -6,6 +6,7 @@ export const ErrorsList = ({ errors }: { errors: string[] }) => {
 
   if (errors.length === 0) return null;
 
+  // The same message can repeat (a file name in two shards), so number repeats.
   const seen = new Map<string, number>();
   const rows = errors.map((error) => {
     const occurrence = (seen.get(error) ?? 0) + 1;

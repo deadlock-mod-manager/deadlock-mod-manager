@@ -5,6 +5,10 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAdoptVideo } from "@/hooks/performance/use-perf-mutations";
 import { usePerfStatus } from "@/hooks/performance/use-perf-queries";
 
+/**
+ * Keeps the video.txt a config wrote as the player's own, so another config
+ * can be applied without writing over it.
+ */
 export const AdoptVideoButton = ({ name }: { name: string }) => {
   const { t, i18n } = useTranslation();
   const confirm = useConfirm();

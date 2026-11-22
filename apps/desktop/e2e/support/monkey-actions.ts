@@ -37,6 +37,7 @@ export const waitMonkeyStatus = (world: string, id: string, status: string) =>
       return (
         local?.status === status &&
         profile?.status === status &&
+        // The enabled flag is written just after the status.
         (active.enabledMods[id]?.enabled ?? false) ===
           (status === "installed") &&
         (status !== "downloaded" ||
@@ -156,6 +157,7 @@ export const updateMonkeyMod = async (
   await dialog.waitForDisplayed();
   await dialog.$("button=Update Mod").click();
   if (failure) {
+    // A failed update stays in the dialog with its details and a retry button.
     await dialog
       .$('[data-testid="batch-update-failure"]')
       .waitForDisplayed({ timeout: 30_000 });
@@ -213,6 +215,7 @@ export const deleteMonkeyFile = async (
   await reveal(reinstall);
   await reinstall.click();
   await $('[role="alertdialog"]').$("button=Reinstall").click();
+  // Earlier steps' success toasts can still be on screen.
   await browser.waitUntil(
     async () => {
       for (const toast of await $$('[data-sonner-toast][data-type="success"]'))

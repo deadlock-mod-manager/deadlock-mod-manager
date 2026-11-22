@@ -52,12 +52,15 @@ export class ProfileBackupRepository {
     return result[0] ?? null;
   }
 
+  /** Returns null when the user already keeps `limit` backups. */
   async createWithinLimit(
     userId: string,
     fields: ProfileBackupFields,
     limit: number,
   ): Promise<ProfileBackupRow | null> {
     return await this.db.transaction(async (transaction) => {
+      // Locking the user row serializes concurrent creates, so two saves can't
+      // both pass the count check.
       await transaction
         .select({ id: user.id })
         .from(user)
@@ -78,6 +81,7 @@ export class ProfileBackupRepository {
     });
   }
 
+  /** Returns null when the backup is missing or has moved past `expectedRevision`. */
   async updateAtRevision(
     id: string,
     userId: string,

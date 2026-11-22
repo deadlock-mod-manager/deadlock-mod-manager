@@ -12,6 +12,15 @@ program
   )
   .version(VERSION);
 
+// TODO: Import and register commands
+// import { initCommand } from "./commands/init";
+// import { packCommand } from "./commands/pack";
+// import { extractCommand } from "./commands/extract";
+// import { infoCommand } from "./commands/info";
+// import { validateCommand } from "./commands/validate";
+// import { migrateCommand } from "./commands/migrate";
+
+// Placeholder commands - to be implemented
 const notImplemented = (command: string) => () => {
   program.error(`dmodpkg ${command}: not implemented yet`);
 };
@@ -70,6 +79,7 @@ program
   .option("--template <name>", "Use migration template")
   .action(notImplemented("migrate"));
 
+// Bundle commands
 const bundle = program
   .command("bundle")
   .description("Manage mod bundles (not implemented)");

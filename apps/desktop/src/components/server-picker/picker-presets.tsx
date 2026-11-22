@@ -12,6 +12,7 @@ interface PickerPresetsProps {
   presets: ServerPickerPreset[];
   blockedLocations: string[];
   appliedLocations: string[] | null;
+  /** Blocks every location without recent matches; null without history. */
   playedPreset: string[] | null;
   disabled: boolean;
   loadDisabled: boolean;

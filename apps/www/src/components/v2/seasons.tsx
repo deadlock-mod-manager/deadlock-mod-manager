@@ -9,11 +9,16 @@ type SeasonId =
   | "lunarNewYear"
   | "easter";
 
+/** A fixed yearly window as month * 100 + day, both days included. */
 interface FixedWindow {
   start: number;
   end: number;
 }
 
+/**
+ * Windows match the desktop app's lib/seasonal-themes.ts. Lunar New Year and
+ * Easter move every year, so they have none and are never marked in season.
+ */
 const SEASONS: { id: SeasonId; color: string; window?: FixedWindow }[] = [
   {
     id: "halloween",
@@ -28,6 +33,7 @@ const SEASONS: { id: SeasonId; color: string; window?: FixedWindow }[] = [
 
 const inWindow = (now: Date, { start, end }: FixedWindow) => {
   const today = (now.getMonth() + 1) * 100 + now.getDate();
+  // New Year's window wraps past December 31.
   return start <= end
     ? today >= start && today <= end
     : today >= start || today <= end;
@@ -36,6 +42,7 @@ const inWindow = (now: Date, { start, end }: FixedWindow) => {
 const currentSeason = (now: Date) =>
   SEASONS.find(({ window }) => window && inWindow(now, window))?.id;
 
+/** One bat, once, the way the Halloween theme lets them loose. */
 const Bat = () => (
   <svg
     aria-hidden='true'
@@ -50,6 +57,10 @@ const Bat = () => (
   </svg>
 );
 
+/**
+ * The five seasonal themes and when they switch on. Which one is in season
+ * is worked out after hydration, from the visitor's own clock.
+ */
 export const Seasons = () => {
   const { t } = useTranslation("v2");
   const [season, setSeason] = useState<SeasonId>();

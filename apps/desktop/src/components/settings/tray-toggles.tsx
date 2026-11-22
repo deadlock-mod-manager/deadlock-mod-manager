@@ -28,6 +28,7 @@ export const TrayToggles = () => {
   const update = (change: Partial<TrayBehavior>) =>
     toggleMutation.mutate({ minimizeToTray, closeToTray, ...change });
 
+  // The Linux build has no tray, see tray_linux.rs
   if (platform() === "linux") return null;
 
   return (

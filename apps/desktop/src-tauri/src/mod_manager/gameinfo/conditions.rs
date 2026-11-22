@@ -1,3 +1,5 @@
+/// Engine symbols for Deadlock's Windows client, including when run under
+/// Proton. The manager's host OS does not select the game's search paths.
 pub(crate) fn client_symbol(name: &str) -> Option<bool> {
   match name.to_ascii_uppercase().as_str() {
     "WIN32" | "WIN64" | "WINDOWS" => Some(true),

@@ -90,6 +90,7 @@ const modeOf = (widget: DashboardWidget): SourceMode => {
   }
 };
 
+/** The view a match query reads best as; its metrics are always the series. */
 const viewForQuery = (query: MatchQuery, color = 0): WidgetView => {
   const chart = chartForGroup(query.groupBy);
   return defaultView(chart, {
@@ -157,6 +158,7 @@ const Section = ({
   </section>
 );
 
+/** Fits the view to whatever the source now returns, once data is there. */
 const useViewAutofit = (
   widget: DashboardWidget | undefined,
   update: (widget: DashboardWidget) => void,
@@ -184,6 +186,8 @@ const useViewAutofit = (
         view: adapted.y.length > 0 ? adapted : suggestView(dataset),
       });
     }
+    // Only a change in the available fields should re-fit; reacting to every
+    // view edit would undo the user's own choices.
   }, [fieldKeys]);
 
   return { state, dataset };
@@ -191,6 +195,7 @@ const useViewAutofit = (
 
 interface WidgetEditorProps {
   open: boolean;
+  /** `null` creates a new widget. */
   initial: DashboardWidget | null;
   onOpenChange: (open: boolean) => void;
   onSave: (widget: DashboardWidget) => void;
@@ -207,6 +212,8 @@ export const WidgetEditor = ({
   const [mode, setMode] = useState<SourceMode>(
     initial ? modeOf(initial) : "presets",
   );
+  // One draft per source type, so peeking at another type and coming back
+  // does not throw away what was set up there.
   const [drafts, setDrafts] = useState<
     Partial<Record<SourceMode, DashboardWidget>>
   >(initial ? { [modeOf(initial)]: initial } : {});
@@ -223,6 +230,8 @@ export const WidgetEditor = ({
     if (drafts[next]) {
       return;
     }
+    // Editing keeps the widget's id whichever source it ends up with, so
+    // saving replaces it instead of adding a second widget.
     if (next === "matches") {
       setDrafts((current) => ({
         ...current,
@@ -241,6 +250,8 @@ export const WidgetEditor = ({
     ? presetById(presetSource.preset)
     : undefined;
 
+  // A path that can never be requested would only ever render as broken; the
+  // view left over from the previous path must not make it look savable.
   const invalidPath =
     state.status === "broken" && state.reason === "invalidPath";
   const canSave =
@@ -271,6 +282,8 @@ export const WidgetEditor = ({
         </DialogHeader>
 
         <div className='grid min-h-0 flex-1 gap-6 md:grid-cols-[minmax(320px,420px)_1fr]'>
+          {/* Block flow, not flex: a height-capped flex column shrinks its
+              children instead of scrolling them, and the cards overlap. */}
           <div className='min-h-0 space-y-6 overflow-y-auto pr-2'>
             <Section step={1} title={t("stats.dashboard.editor.stepData")}>
               <div className='grid grid-cols-4 gap-1 rounded-lg bg-muted/60 p-1'>

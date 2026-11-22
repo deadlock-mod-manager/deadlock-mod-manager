@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+/** One bar and its gap. */
 const BAR_PITCH_PX = 4;
 
 export const Waveform = ({
@@ -24,6 +25,8 @@ export const Waveform = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  // Each bar takes the loudest peak in its span, so a quiet gap between two
+  // hits never hides one of them.
   const values = useMemo(() => {
     if (!peaks) return Array.from({ length: bars }, () => 0.08);
     const span = peaks.length / Math.max(bars, 1);

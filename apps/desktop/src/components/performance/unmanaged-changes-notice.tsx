@@ -4,6 +4,7 @@ import { InfoIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { usePerformanceUi } from "./performance-context";
 
+/** Edits no config or known tool made, offered as a config of their own. */
 export const UnmanagedChangesNotice = ({ count }: { count: number }) => {
   const { t } = useTranslation();
   const { openImport } = usePerformanceUi();

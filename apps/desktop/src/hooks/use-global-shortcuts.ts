@@ -12,6 +12,7 @@ interface GlobalShortcut {
 export const useGlobalShortcuts = (shortcuts: GlobalShortcut[]) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger shortcuts when user is typing in inputs
       if (
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement ||
@@ -21,16 +22,19 @@ export const useGlobalShortcuts = (shortcuts: GlobalShortcut[]) => {
         return;
       }
 
+      // Build the shortcut string
       const modifiers: string[] = [];
       if (event.ctrlKey) modifiers.push("Ctrl");
       if (event.altKey) modifiers.push("Alt");
       if (event.shiftKey) modifiers.push("Shift");
       if (event.metaKey) modifiers.push("Meta");
 
+      // Normalize key to uppercase to match shortcut registration format
       const key = event.key.toUpperCase();
 
       const shortcutString = [...modifiers, key].join("+");
 
+      // Find matching shortcut
       const shortcut = shortcuts.find((s) => s.key === shortcutString);
       if (shortcut) {
         event.preventDefault();

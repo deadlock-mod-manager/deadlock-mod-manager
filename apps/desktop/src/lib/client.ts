@@ -8,6 +8,7 @@ export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       const skipGlobalError = query.meta?.skipGlobalErrorHandler;
+      // A mod GameBanana hid is an expected state the screens render, not a failure.
       const isHiddenMod =
         isTauriError(error) && error.kind === "providerSubmissionUnavailable";
       if (skipGlobalError || isHiddenMod) {

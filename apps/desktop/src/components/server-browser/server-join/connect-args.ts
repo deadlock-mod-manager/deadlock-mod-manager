@@ -1,9 +1,14 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 
+// Whatever we build here is appended to `steam://run/<appid>//<args>` and
+// handed to Steam as launch options, so a connect code or password carrying
+// spaces or quotes could smuggle in extra launch options. Everything is
+// validated against a strict shape instead of escaped.
 const IPV4_PORT_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3}):(\d{1,5})$/;
 const HOSTNAME_PORT_RE =
   /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+:(\d{1,5})$/i;
 const LOBBY_ID_RE = /^\[?(\d{6,20})\]?$/;
+// Printable ASCII minus Source/Steam token delimiters (quotes, semicolon, plus).
 const SAFE_PASSWORD_RE = /^[\x21-\x7e]+$/;
 const UNSAFE_PASSWORD_CHARS_RE = /["';+]/;
 
@@ -15,6 +20,10 @@ const isValidPort = (port: string): boolean => {
   return Number.isInteger(value) && value > 0 && value <= 65535;
 };
 
+/**
+ * Returns the connect code in the form Deadlock's `connect` command expects,
+ * or null when it isn't something we're willing to pass to Steam.
+ */
 export const normalizeConnectCode = (
   raw: string | undefined,
 ): string | null => {
@@ -44,6 +53,7 @@ export const normalizeConnectCode = (
 export type ConnectArgs = {
   code: string;
   args: string;
+  /** The password could not be passed as a launch option and was dropped. */
   passwordSkipped: boolean;
 };
 

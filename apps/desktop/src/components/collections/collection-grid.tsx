@@ -31,8 +31,10 @@ import { CollectionCard, CollectionCardSkeleton } from "./collection-card";
 const GRID_CLASS =
   "grid grid-cols-2 gap-4 px-1 pr-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
 
+// Same fuzziness as the local mod search.
 const COLLECTION_SEARCH_THRESHOLD = 0.35;
 
+// Item-count ranges; collections under 10 items aren't listed at all.
 const SIZE_RANGES = {
   any: [0, Infinity],
   small: [10, 24],
@@ -75,6 +77,7 @@ export const CollectionGrid = () => {
       ({ itemCount }) => itemCount >= min && itemCount <= max,
     );
     if (heroes.length === 0) return sized;
+    // Collections built around a picked hero come before ones that merely include them.
     const heroRank = (collection: CatalogCollectionDto) =>
       Math.min(
         ...heroes.map((hero) => {
@@ -88,6 +91,8 @@ export const CollectionGrid = () => {
       .sort((a, b) => a.rank - b.rank)
       .map(({ collection }) => collection);
   }, [visible, size, heroes]);
+  // Shares the store's query with the other sections, so a search carries
+  // over when switching tabs.
   const { query, setQuery } = useSearchQueryState();
   const debouncedQuery = useDebouncedValue(query, 300).trim();
   const fuse = useMemo(

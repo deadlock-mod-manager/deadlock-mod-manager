@@ -7,6 +7,10 @@ import { prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
+// The catalog mod `detectedModRoutes` identifies every analyzed file as, and
+// the only mod in the profile, so no other enabled mod keeps the repair
+// package mounted.
+
 export const REENABLE = {
   id: "profile_440_reenable",
   folder: "profile_440_reenable_reenable",
@@ -17,6 +21,7 @@ export const REENABLED_MOD = CATALOG_MOD_ID;
 
 const TEXT_FILE = "resource/localization/e2e_reenable/e2e_reenable_english.txt";
 
+/** Fixable: its copy of a game text file lacks a game token. */
 const reenabledModVpk = () =>
   buildSyntheticVpk([
     { path: TEXT_FILE, contents: localizationText({ e2e_kept: "Kept" }) },
@@ -43,6 +48,7 @@ export const prepareReenabledFixWorld = async (
   );
 };
 
+// Analyze's hash lookup, plus the report counts the mod's page asks for.
 export const reenabledFixRoutes = async () => {
   const detected = await detectedModRoutes();
   return (origin: string): FixtureRoute[] => [

@@ -1,3 +1,15 @@
+//! Removing sections of a hero from the game: a hat, a cape, a weapon charm.
+//!
+//! A section is the same unit the paint tab works in (every material drawing
+//! one color map). Removing it empties the draw calls that use those materials
+//! in the model and in every mesh it references, LODs included, via
+//! [`vpkmanager::hide_draw_calls`].
+//!
+//! Each call takes the model's complete set of removed sections and rebuilds
+//! its files from the packed originals, the way a paint pass re-reads the
+//! originals: putting a section back is then just a call without it, and no
+//! emptied draw call ever has to be un-emptied.
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -11,6 +23,8 @@ use super::workspace::{
   revert_workspace_file, workspace_files_dir, write_journal, write_workspace_entry,
 };
 
+/// Beside `files/`, the sections removed from each model, so a reopened skin
+/// still shows them removed and knows which files the removal rewrote.
 pub(super) const REMOVED_JOURNAL: &str = "removed.json";
 
 fn read_removed_journal(workspace_root: &Path) -> BTreeMap<String, FoundryRemovedParts> {
@@ -20,6 +34,7 @@ fn read_removed_journal(workspace_root: &Path) -> BTreeMap<String, FoundryRemove
     .collect()
 }
 
+/// The model whose removed sections rewrote `entry_path`, if any.
 pub(crate) fn removal_owner(workspace_root: &Path, entry_path: &str) -> Option<String> {
   read_removed_journal(workspace_root)
     .into_values()
@@ -32,10 +47,18 @@ pub(crate) fn removal_owner(workspace_root: &Path, entry_path: &str) -> Option<S
     .map(|removed| removed.model_path)
 }
 
+/// Every model's removed sections, for a reopened workspace.
 pub(crate) fn removed_parts_list(workspace_root: &Path) -> Vec<FoundryRemovedParts> {
   read_removed_journal(workspace_root).into_values().collect()
 }
 
+/// Remove exactly `textures`' sections of `model_path` from the game, putting
+/// back any section removed earlier and no longer listed. An empty list
+/// restores the model.
+///
+/// The requested maps are checked against the model's own sections, and every
+/// file is rewritten in memory before the first write, so a bad request leaves
+/// the workspace untouched.
 pub(crate) fn remove_parts(
   workspace_root: PathBuf,
   vpk_path: PathBuf,
@@ -54,6 +77,8 @@ pub(crate) fn remove_parts(
         .ok_or_else(|| Error::InvalidInput(format!("{texture} is not a part of {model_path}")))
     })
     .collect::<Result<Vec<_>, Error>>()?;
+  // The edit changes how this hero looks on every player in the user's games,
+  // so the body itself may not vanish: that would make enemies invisible.
   let body = parts
     .iter()
     .filter(|part| part.target == PaintTarget::Body)
@@ -82,6 +107,8 @@ pub(crate) fn remove_parts(
 
   let mut journal = read_removed_journal(&workspace_root);
   let previous = journal.remove(model_path).unwrap_or_default();
+  // A model or mesh edited some other way (a replaced model) would be silently
+  // overwritten by its packed original here.
   let edited = read_edit_journal(&workspace_root)
     .into_iter()
     .collect::<BTreeSet<_>>();

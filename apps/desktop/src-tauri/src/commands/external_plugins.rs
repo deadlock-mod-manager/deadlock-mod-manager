@@ -1,3 +1,7 @@
+//! External plugin administration and the relay for embedded plugin frames.
+//! Plugin frames cannot reach these: they have no IPC (see
+//! `external_plugins::frames`) and talk to the app page through `postMessage`.
+
 use crate::errors::Error;
 use crate::external_plugins::download;
 use dmm_plugin_runtime::{ExternalPluginActivity, ExternalPluginSummary, PluginHost};
@@ -76,6 +80,8 @@ pub async fn external_plugins_install(
   .await
 }
 
+/// Downloads a catalog archive over https and installs it once its SHA-256
+/// matches `sha256` (64 lowercase hex characters).
 #[tauri::command]
 pub async fn external_plugins_install_url(
   host: State<'_, Arc<PluginHost>>,
@@ -95,6 +101,8 @@ pub async fn external_plugins_install_url(
   blocking(move || host.install_catalog(&archive, &sha256).map_err(Error::from)).await
 }
 
+/// Installs the update waiting for permission approval; its requests become
+/// the grant.
 #[tauri::command]
 pub async fn external_plugins_apply_update(
   host: State<'_, Arc<PluginHost>>,
@@ -122,6 +130,7 @@ pub async fn external_plugins_discard_update(
   blocking(move || host.discard_update(&plugin_id).map_err(Error::from)).await
 }
 
+/// Newest first. `limit` is clamped to 1-100 and defaults to 100.
 #[tauri::command]
 pub async fn external_plugins_activity(
   host: State<'_, Arc<PluginHost>>,
@@ -148,6 +157,10 @@ pub async fn external_plugins_clear_data(
   blocking(move || host.clear_data(&plugin_id).map_err(Error::from)).await
 }
 
+/// Grants every required permission. `file_path` is the file or folder the
+/// user picked for `files`, `profile_folder` the profile picked for `mods`
+/// (`"default"` for the default profile); each is required exactly when the
+/// manifest asks for it.
 #[tauri::command]
 pub async fn external_plugins_grant(
   host: State<'_, Arc<PluginHost>>,
@@ -210,6 +223,8 @@ pub async fn external_plugins_remove(
   blocking(move || host.remove(&plugin_id).map_err(Error::from)).await
 }
 
+/// Opens the plugin's current view and returns the token its frame URL and
+/// relayed calls carry.
 #[tauri::command]
 pub async fn external_plugins_open_view(
   host: State<'_, Arc<PluginHost>>,
@@ -220,6 +235,9 @@ pub async fn external_plugins_open_view(
   blocking(move || Ok(host.view(&plugin_id)?.token)).await
 }
 
+/// Relays a call from an embedded plugin frame. The embedding page names the
+/// view token of the frame element it created, never anything from the
+/// frame's message, so calls stop when the plugin updates.
 #[tauri::command]
 pub async fn external_plugins_frame_call(
   host: State<'_, Arc<PluginHost>>,

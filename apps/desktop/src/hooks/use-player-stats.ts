@@ -60,9 +60,11 @@ type StatsQueryOptions = {
   key: string;
   ttl: number;
   enabled?: boolean;
+  /** Asks again this often (ms) while the request keeps failing. */
   retryEvery?: number;
 };
 
+/** Options for a cached stats request, for `useQuery` and `useQueries` alike. */
 const statsQueryOptions = <T>(
   { key, ttl, enabled = true, retryEvery }: StatsQueryOptions,
   fetcher: () => Promise<T>,
@@ -78,6 +80,7 @@ const statsQueryOptions = <T>(
       ? retryEvery
       : false,
   enabled,
+  // The page renders its own inline error/stale state instead of a toast.
   meta: { skipGlobalErrorHandler: true },
 });
 
@@ -86,6 +89,7 @@ export const useStatsQuery = <T>(
   fetcher: () => Promise<T>,
 ) => useQuery(statsQueryOptions(options, fetcher));
 
+/** A per-account query keyed like `usePlayerScopedQuery`, so caches are shared. */
 export const playerQueryOptions = <T>(
   accountId: number,
   { key, ttl }: { key: string; ttl: number },
@@ -96,6 +100,11 @@ export const playerQueryOptions = <T>(
     () => fetcher(accountId),
   );
 
+/**
+ * A query that only means anything for a known account. The guard is what lets
+ * the fetchers take a plain `number` - every caller would otherwise assert the
+ * nullable id away behind the `enabled` flag.
+ */
 export const usePlayerScopedQuery = <T>(
   accountId: number | null,
   { key, ttl, enabled = true }: { key: string; ttl: number; enabled?: boolean },
@@ -117,10 +126,12 @@ export const usePlayerScopedQuery = <T>(
 
 type HeroCatalogIndex = {
   byId: Map<number, DeadlockHero>;
+  /** Accepts any registry alias ("Mo & Krill", "The Doorman") or an asset codename ("hero_krill"). */
   heroByName: (name: string) => DeadlockHero | undefined;
 };
 
 const NO_HEROES: DeadlockHero[] = [];
+// Keyed on the query payload so every HeroIcon on screen shares one index.
 const heroCatalogIndexes = new WeakMap<DeadlockHero[], HeroCatalogIndex>();
 
 const indexHeroCatalog = (heroes: DeadlockHero[]): HeroCatalogIndex => {
@@ -156,6 +167,11 @@ export const useHeroCatalog = () => {
   return { heroesById: byId, heroByName, isPending: query.isPending };
 };
 
+/**
+ * A hero missing from a catalog cached in an earlier session is usually a new
+ * release, so that catalog is refetched. One fetched this session that still
+ * misses a hero means the hero isn't out yet, and refetching would not help.
+ */
 export const useRefreshHeroCatalogOnMiss = (missing: boolean) => {
   const queryClient = useQueryClient();
   const fetchedAt = useHeroCatalogQuery().data?.fetchedAt;
@@ -178,6 +194,12 @@ export const useRefreshHeroCatalogOnMiss = (missing: boolean) => {
 const hasPortrait = (hero: DeadlockHero): boolean =>
   Boolean(hero.images.icon_image_small_webp || hero.images.icon_image_small);
 
+/**
+ * Whether a hero picker should offer `name`. The enum can know heroes Valve
+ * hasn't released yet; the active catalog only lists them once they are
+ * playable and have a portrait, so they appear on their own. With no catalog
+ * yet - loading or offline - every hero is offered.
+ */
 export const useIsHeroAvailable = (): ((name: string) => boolean) => {
   const { heroesById, heroByName } = useHeroCatalog();
   const hasCatalog = heroesById.size > 0;
@@ -191,6 +213,7 @@ export const useIsHeroAvailable = (): ((name: string) => boolean) => {
     },
     [hasCatalog, heroByName],
   );
+  // A week-old catalog would keep a hero hidden long after its release.
   useRefreshHeroCatalogOnMiss(
     Object.values(DeadlockHeroes).some((hero) => !isAvailable(hero)),
   );
@@ -224,6 +247,7 @@ export const useItemCatalog = (active = true) => {
   };
 };
 
+/** The player's item performance against everyone else's. */
 export const useItemStats = (
   accountId: number | null,
   active = true,
@@ -258,6 +282,8 @@ export const useItemStats = (
     itemsById: catalog.itemsById,
     isPending:
       enabled && (mine.isPending || global.isPending || catalog.isPending),
+    // Cached data outlives a failed refetch; only a request with nothing to
+    // show would otherwise fall through to the empty state.
     isError:
       enabled &&
       ((mine.isError && !mine.data) ||
@@ -269,6 +295,11 @@ export const useItemStats = (
   };
 };
 
+/**
+ * Where the player sits on the current ladder. Both payloads are global and
+ * account-independent, so they are fetched once and shared by every card that
+ * wants to place a badge - and only once something actually opens.
+ */
 export const useRankInsights = (active = true) => {
   const distribution = useStatsQuery(
     {
@@ -287,10 +318,18 @@ export const useRankInsights = (active = true) => {
   return {
     distribution: distribution.data?.data ?? [],
     seasons: seasons.data?.data ?? [],
+    // Both, or the card renders a season-less summary the moment the histogram
+    // lands and then pops the season panel in underneath it.
     isPending: active && (distribution.isPending || seasons.isPending),
   };
 };
 
+/**
+ * The player's numbers placed among everyone in their rank tier. Unranked
+ * players are compared with the whole population instead, which the response
+ * reports as `tier: null`. One global request per tier and scope, shared by
+ * every account in that tier.
+ */
 export const useBracketBenchmark = (
   stats: Pick<ReturnType<typeof usePlayerStats>, "matches" | "heroes" | "rank">,
   scope: StatsScope,
@@ -321,6 +360,10 @@ export const useBracketBenchmark = (
   };
 };
 
+/**
+ * The per-hero deep dive: who the player beats on that hero and what they build
+ * on it. Two analytics requests, made only once a hero card is opened.
+ */
 export const useHeroDeepDive = (
   accountId: number | null,
   heroId: number | null,
@@ -341,6 +384,8 @@ export const useHeroDeepDive = (
 
   const catalog = useItemCatalog(enabled);
 
+  // One request covers every hero the player has faced; the card only wants the
+  // rows for the hero it is showing.
   const matchups = useMemo(
     () =>
       (counters.data?.data ?? [])
@@ -361,12 +406,15 @@ export const useHeroDeepDive = (
     matchups,
     build,
     itemsById: catalog.itemsById,
+    // The catalog counts: `build` drops every item it cannot name, so reporting
+    // ready while it loads would show the hero as having no build at all.
     isPending:
       enabled && (counters.isPending || items.isPending || catalog.isPending),
     isError: counters.isError || items.isError || catalog.isError,
   };
 };
 
+/** Detailed data for one selected match, never fetched for the closed tab. */
 export const useMatchDetails = (
   matchId: number | null,
   accountId: number | null,
@@ -375,6 +423,7 @@ export const useMatchDetails = (
   const enabled = active && matchId !== null && accountId !== null;
   const metadata = useStatsQuery(
     {
+      // v2 keeps slots, deaths, MVP and lane; older entries were trimmed without them.
       key: `match:${matchId}:metadata:v2`,
       ttl: STATS_TTL.matchMetadata,
       enabled,
@@ -398,12 +447,16 @@ export const useMatchDetails = (
     player,
     itemsById: catalog.itemsById,
     isPending: enabled && (metadata.isPending || catalog.isPending),
+    // A missing catalog is an error, not an empty build: the timeline resolves
+    // every purchase through it, so without it the match reads as though the
+    // player never bought anything.
     isError: metadata.isError || catalog.isError,
     isFetching: metadata.isFetching,
     refetch: metadata.refetch,
   };
 };
 
+/** Personas and avatars for everyone in one match: a single batched request. */
 export const useMatchProfiles = (matchId: number, accountIds: number[]) => {
   const ids = useMemo(
     () => [...accountIds].sort((a, b) => a - b),
@@ -426,6 +479,10 @@ export const useMatchProfiles = (matchId: number, accountIds: number[]) => {
   }, [query.data]);
 };
 
+/**
+ * The player's usual game on a hero: average buy time per item and souls over
+ * time. Fetched only once the build view opens.
+ */
 export const useHeroBaseline = (
   accountId: number | null,
   heroId: number,
@@ -457,6 +514,7 @@ export const useHeroBaseline = (
   };
 };
 
+/** Shared matches as teammates, premades, and record against each enemy. */
 const usePlayerEncounters = (accountId: number | null, active: boolean) => {
   const mates = usePlayerScopedQuery(
     accountId,
@@ -476,6 +534,10 @@ const usePlayerEncounters = (accountId: number | null, active: boolean) => {
   return { mates, party, enemies };
 };
 
+/**
+ * Who the player has met before, keyed for lookup. Shares its queries with the
+ * Squad tab, so either one warms the other.
+ */
 export const usePlayerHistory = (accountId: number | null, active: boolean) => {
   const { mates, party, enemies } = usePlayerEncounters(accountId, active);
   return useMemo(
@@ -492,6 +554,10 @@ export const usePlayerHistory = (accountId: number | null, active: boolean) => {
   );
 };
 
+/**
+ * Everything the Overview and Heroes tabs need. One match-history request feeds
+ * most of it; the rest is derived locally.
+ */
 export const usePlayerStats = (
   accountId: number | null,
   scope: StatsScope = ALL_STATS_SCOPE,
@@ -528,6 +594,8 @@ export const usePlayerStats = (
     () => getAnalyticsHeroStats(scope.since, scope.mode),
   );
 
+  // Today's matches come from the Game Coordinator; the API has not ingested
+  // them yet. Silent by design - it either adds matches or it does not.
   const local = useQuery({
     queryKey: ["local-match-history", accountId],
     queryFn: () => {
@@ -544,6 +612,8 @@ export const usePlayerStats = (
     meta: { skipGlobalErrorHandler: true },
   });
 
+  // Computed once and reused: the same gap fills the history and the per-hero
+  // aggregates, which lag by the same day.
   const localOnly = useMemo(
     () =>
       filterStatsMatches(
@@ -561,6 +631,8 @@ export const usePlayerStats = (
     () => filterStatsMatches(allMatches, scope),
     [allMatches, scope],
   );
+  // The per-hero aggregates the API returns, topped up with today's local-only
+  // matches. Shared by the Heroes table and the per-hero benchmark.
   const mergedHeroStats = useMemo(
     () => mergeHeroStats(heroStats.data?.data ?? [], localOnly),
     [heroStats.data, localOnly],
@@ -609,6 +681,14 @@ export const usePlayerStats = (
   };
 };
 
+/**
+ * Everything the player card still needs, fetched only once the card opens - a
+ * lobby of twelve must not pull twelve histories up front.
+ *
+ * Roster views seed data they already have. Remaining requests reuse the keys
+ * from `usePlayerStats`, so opening your own card or the same player twice is
+ * free while the cache is fresh.
+ */
 export interface PlayerCardSeed {
   heroStats?: PlayerHeroStats[];
   rank?: PlayerRank;
@@ -654,6 +734,7 @@ export const usePlayerCard = (
   };
 };
 
+/** Mates, enemies and their Steam personas for the Squad tab. */
 export const useSquadStats = (
   accountId: number | null,
   matches: ReturnType<typeof usePlayerStats>["matches"],
@@ -681,6 +762,7 @@ export const useSquadStats = (
     [enemies.data],
   );
 
+  // One batched request covers every persona and avatar on the tab.
   const profileIds = useMemo(
     () =>
       [
@@ -692,6 +774,9 @@ export const useSquadStats = (
     [mateInsights, enemyList],
   );
 
+  // The key has to identify the exact set of ids: a length-plus-sum digest
+  // collides (swap two mates for two others summing the same and the cache would
+  // hand back the wrong personas).
   const profileIdsKey = useMemo(() => profileIds.join(","), [profileIds]);
 
   const profiles = useStatsQuery(
@@ -736,6 +821,11 @@ export const useSquadStats = (
   };
 };
 
+/**
+ * Manual refresh: drops the player entries from the disk cache and refetches, so
+ * the button actually hits the network instead of re-reading the cache. Locked
+ * for a minute afterwards to stay polite to the shared API.
+ */
 export const REFRESH_COOLDOWN_MS = 60_000;
 
 export const useStatsRefresh = () => {

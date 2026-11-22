@@ -30,6 +30,8 @@ export const prepareAnalyzeErrorsWorld = async (world: CreatedWorld) => {
     await writeFile(path.join(addons, name), analyzeFileBytes(name));
 };
 
+// The service fails the first lookup and answers "no match" for the second,
+// so one readable file can't be checked and the other is genuinely unknown.
 export const analyzeErrorsRoutes = async () => (): readonly FixtureRoute[] => [
   {
     method: "POST",
@@ -57,6 +59,8 @@ export const assertAnalyzeErrorsNetwork = (
     (request) =>
       request.method === "POST" && request.url.includes(ANALYSE_PATH),
   );
+  // Lookups overlap, so the journal (by arrival) needn't match the order the
+  // sequence answered them in.
   const statuses = lookups
     .map((request) => request.responseStatus ?? 0)
     .sort((a, b) => a - b);

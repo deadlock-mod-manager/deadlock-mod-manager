@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 interface HeroModActionsMenuProps {
   hero: string;
   disabled: boolean;
+  /** Takes it off this hero's list without touching the download. */
   onRemove: () => void;
   onDelete: () => void;
   variant: "secondary" | "ghost";

@@ -45,6 +45,12 @@ const rememberHeldBack = (mods: readonly ModHealth[]) => {
   window.localStorage.setItem(ASKED_STORAGE_KEY, JSON.stringify([...asked]));
 };
 
+/**
+ * Fixes enabled mods made for an older game version before a modded launch,
+ * asking first unless the player turned on automatic fixes. Mods that
+ * automatic fixes skip are asked about once per game build and finding set.
+ * Resolves false when the player backs out, so the launch stops.
+ */
 export const useLaunchFixes = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -111,6 +117,8 @@ export const useLaunchFixes = () => {
       });
       return outcome !== "cancelled";
     } catch (error) {
+      // The mods still load with their original files, so a failed fix
+      // should not cost the player their launch.
       logger.withError(error).error("Could not fix mods before launch");
       toast.error(t("modHealth.fixFailed"), {
         description: getErrorMessage(error),

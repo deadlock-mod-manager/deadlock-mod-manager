@@ -5,6 +5,8 @@ use std::sync::LazyLock;
 #[command(name = "deadlock-mod-manager")]
 #[command(about = "A tool for managing Deadlock game modifications")]
 #[command(version)]
+// Packagers add flags in launch wrappers (Nix adds --disable-auto-update), so
+// a flag the user passes again must not abort startup.
 #[command(args_override_self = true)]
 pub struct CliArgs {
   /// Disable automatic updates
@@ -23,8 +25,10 @@ pub struct CliArgs {
   pub _trailing: Vec<String>,
 }
 
+/// Global CLI arguments instance
 static CLI_ARGS: LazyLock<CliArgs> = LazyLock::new(CliArgs::parse);
 
+/// Get the parsed CLI arguments
 pub fn get_cli_args() -> &'static CliArgs {
   &CLI_ARGS
 }

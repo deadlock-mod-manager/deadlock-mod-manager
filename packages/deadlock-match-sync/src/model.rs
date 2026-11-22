@@ -5,9 +5,16 @@ pub const DEADLOCK_APP_ID: u32 = 1422450;
 pub const FETCH_QUOTA_LIMIT: usize = 40;
 pub const FETCH_QUOTA_WINDOW_SECS: i64 = 24 * 60 * 60;
 
+// Quota slots the background pass keeps free from global backfill, so a user's own
+// freshly-played matches (fetched first, and not subject to this reserve) always have
+// headroom against a bottomless global to-fetch list. Sized for ~4 matches/day plus
+// margin for two sessions straddling the rolling 24h window.
 pub const BACKFILL_QUOTA_RESERVE: usize = 8;
 
+// GetMatchHistory has its own per-account Steam limit; friend lookups stay well below it
+// so the user's own history pages keep headroom.
 pub const FRIEND_HISTORY_QUOTA_LIMIT: usize = 20;
+// The per-account 24h caps on GC requests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QuotaKind {
   Salts,
@@ -23,15 +30,27 @@ impl QuotaKind {
   }
 }
 
+// Friend history lookups per account per background pass, on top of the 24h history
+// quota, so one pass doesn't spend the whole day's budget at once.
 pub const MAX_FRIEND_HISTORIES_PER_PASS: usize = 5;
+// After a friend's history was looked up (by any account), leave them alone for a while;
+// a private history won't become public soon.
 pub const FRIEND_COOLDOWN_SECS: i64 = 6 * 60 * 60;
 pub const PRIVATE_FRIEND_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
+// A friend whose new matches weren't all dealt with (budget, quota or a failure) comes
+// back soon, but not every pass: each lookup spends the friend history quota.
 pub const UNFINISHED_FRIEND_COOLDOWN_SECS: i64 = 60 * 60;
 
+// The background pass asks for the account's own to-fetch list at most this often once it
+// came back empty: the newest history page already covers the user's new matches, so the list
+// only ever holds older ones, which the server's global list hands out too.
 pub const ACCOUNT_LIST_INTERVAL_SECS: i64 = 24 * 60 * 60;
 
+// Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";
 
+// refresh_token is a live account credential: in-memory only, never
+// logged/persisted/sent. Debug is hand-written to keep it out of logs.
 #[derive(Clone)]
 pub struct AuthContext {
   pub account_name: String,
@@ -40,6 +59,7 @@ pub struct AuthContext {
 }
 
 impl AuthContext {
+  // deadlock-api expects the 32-bit Steam3 account id, not the SteamID64.
   pub fn account_id(&self) -> u32 {
     crate::steam_id::account_id_of(self.steam_id64)
   }
@@ -63,6 +83,8 @@ pub struct MatchSalts {
   pub replay_salt: Option<u32>,
 }
 
+// One element of the `POST /v1/matches/salts` body; field names/nullability must
+// match what the scraper already sends.
 #[derive(Serialize, Debug, Clone)]
 pub struct SaltPayload {
   pub match_id: u64,
@@ -84,29 +106,45 @@ impl From<&MatchSalts> for SaltPayload {
   }
 }
 
+/// A friend deadlock-api has seen play recently, with what it has stored for them.
 #[derive(Debug, Clone)]
 pub struct ActiveFriend {
   pub account_id: u32,
+  /// End of their newest stored match.
   pub last_end: i64,
+  /// Start times of their stored matches, newest first (as deadlock-api returns them).
   pub starts: Vec<i64>,
 }
 
+/// What deadlock-api stores for a list of match ids, checked in order until enough
+/// are found missing. Ids in neither list weren't checked.
 #[derive(Debug, Default)]
 pub struct SaltsCheck {
+  /// Ids deadlock-api has no salts for.
   pub missing: Vec<u64>,
+  /// Ids it already has salts for.
   pub stored: Vec<u64>,
 }
 
+/// How an attempt at a match from the global to-fetch list ended, as reported when the
+/// list is released. deadlock-api only counts Steam's refusals against a match, so a match
+/// that wasn't tried, or got no answer, is handed out again.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AttemptResult {
+  /// The GC answered with salts, and they were posted.
   Fetched,
+  /// The GC doesn't know the match.
   Invalid,
+  /// The GC won't show the match to this account.
   NoPermission,
+  /// The GC says the match is still in progress.
   InFlight,
+  /// No answer about the match: a timeout, a rate limit, a failed post.
   Failed,
 }
 
+/// One element of the release report's `attempts`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Attempt {
   pub match_id: u64,
@@ -116,9 +154,14 @@ pub struct Attempt {
 #[derive(Debug, Clone, Copy)]
 pub enum FetchScope {
   Account(u32),
+  // How many ids to ask for: the server claims every id it hands out.
   Global(usize),
 }
 
+/// A match as Valve's Game Coordinator reports it. The field names deliberately
+/// mirror deadlock-api's `match-history` entries so the frontend can merge the
+/// two without a translation layer - the GC knows about today's matches hours
+/// before the API has ingested them.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct LocalMatch {
   pub match_id: u64,
@@ -136,13 +179,21 @@ pub struct LocalMatch {
   pub last_hits: u32,
   pub match_duration_s: u32,
   pub match_result: u32,
+  /// Valve's pinned history proto exposes `not_scored`, before the newer
+  /// `player_match_outcome` enum. Five is the API's NotScored outcome.
   pub player_match_outcome: u32,
   pub team_abandoned: Option<bool>,
   pub abandoned_time_s: Option<u32>,
   pub objectives_mask_team0: u64,
   pub objectives_mask_team1: u64,
+  // No ranked_display_badge/ranked_delta: Valve added them as fields 27-30 of
+  // the GC history message, which the pinned `valveprotos` revision predates.
+  // Locally synced matches therefore carry no badge, and the rank chart picks
+  // them up once deadlock-api has ingested them.
 }
 
+// One page of the GC `GetMatchHistory` response. `next_cursor` is the continuation
+// token for the next (older) page, or None when history is exhausted.
 #[derive(Debug, Clone, Default)]
 pub struct MatchHistoryPage {
   pub matches: Vec<LocalMatch>,
@@ -150,11 +201,13 @@ pub struct MatchHistoryPage {
 }
 
 impl MatchHistoryPage {
+  /// The ids alone, for the sync engine - it only ever walks the page by id.
   pub fn match_ids(&self) -> Vec<u64> {
     self.matches.iter().map(|m| m.match_id).collect()
   }
 }
 
+// Off until the user turns it on and accepts the consent dialog.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MatchSyncConfig {
@@ -172,6 +225,7 @@ impl MatchSyncConfig {
 #[serde(rename_all = "camelCase")]
 pub struct AccountStatus {
   pub steam_id64: u64,
+  // Steam3 id: the SteamID64 doesn't fit a JS number, so the UI addresses accounts by this.
   pub account_id: u32,
   pub account_name: String,
   pub quota_limit: u32,

@@ -26,6 +26,7 @@ const reportError = (title: string) => (error: Error) => {
   toast.error(title, { description: getErrorMessage(error) });
 };
 
+/** Grant edits, data clearing, revoking, removing and switching a plugin on or off. */
 export const usePluginActions = (plugin: ExternalPluginSummary) => {
   const { t } = useTranslation();
   const confirm = useConfirm();

@@ -31,6 +31,7 @@ import { nativeComponentDownloads } from "@/lib/mods/native-update-selection";
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
 type QueueModDownloadOptions = {
+  /** Every file the mod offers, kept so the selection can be changed later. */
   allFiles: ModDownloadItem[];
   profileFolder: string | null;
   analyticsEntryPoint?: ModEntryPoint;
@@ -39,6 +40,11 @@ type QueueModDownloadOptions = {
   onError?: (error: Error) => void;
 };
 
+/**
+ * Adds a mod to the library and queues its selected files. Library status,
+ * progress, and hero detection follow the download; callers only add their
+ * own feedback.
+ */
 export const queueModDownload = (
   mod: ModDto & { source?: NativeSourceProvenance },
   selectedFiles: ModDownloadItem[],
@@ -69,6 +75,8 @@ export const queueModDownload = (
     source,
   });
 
+  // Archives install in the mod's download order, which sets the default
+  // load order of their VPKs.
   const fileNames = allFiles.map((file) => file.name);
   const orderedFiles = [...selectedFiles].sort(
     (a, b) => fileNames.indexOf(a.name) - fileNames.indexOf(b.name),
@@ -134,6 +142,11 @@ export const useDownload = (
 
   const downloadSelectedFiles = async (
     selectedFiles: ModDownloadItem[],
+    /**
+     * The retry path pins the profile it cleaned up for: switching profiles
+     * while the purge runs would otherwise queue the download into a folder
+     * that was never cleared.
+     */
     pinnedProfileFolder?: string | null,
     allFiles: ModDownloadDto[] = availableFiles,
     operationKind: "download" | "retry" = "download",
@@ -185,6 +198,10 @@ export const useDownload = (
     });
   };
 
+  /**
+   * `files` lets callers that fetch the file list on click pass it straight
+   * through, since the hook's `availableFiles` only catches up on the next render.
+   */
   const initiateDownload = async (files: ModDownloadDto[] = availableFiles) => {
     if (!mod) {
       toast.error(t("downloads.retryFetchError"));
@@ -204,10 +221,12 @@ export const useDownload = (
       }
     }
 
+    // If only one file, download directly without showing dialog
     if (files.length === 1) {
       return downloadSelectedFiles(files, undefined, files);
     }
 
+    // Multiple files - show selection dialog
     setIsDialogOpen(true);
   };
 
@@ -246,6 +265,20 @@ export const useDownload = (
     }
   };
 
+  /**
+   * Starts the download over from nothing. What a failed attempt leaves on disk
+   * - a truncated archive, a stale `.partial`, a half-extracted folder - is what
+   * makes a plain re-queue fail in the same place again, which is why the way
+   * out used to be deleting the mod and downloading it a second time. The store
+   * entry stays, so the file selection and the mod's place in the library do too.
+   *
+   * The exception is a mod that already has files in the game: that is a failed
+   * update, and clearing the slate there would take the working version with it.
+   * Those retry the way they always have, on top of what is installed.
+   *
+   * `loadFallbackFiles` is only called when the mod has no persisted file
+   * selection, so callers can defer a network fetch until it is needed.
+   */
   const retryDownload = async (
     loadFallbackFiles: () => Promise<ModDownloadDto[]> = async () =>
       availableFiles,

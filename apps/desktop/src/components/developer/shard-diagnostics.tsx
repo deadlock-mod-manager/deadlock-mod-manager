@@ -73,6 +73,7 @@ const StatTile = ({
   </div>
 );
 
+// A shard directory only matters once it holds files; empty ones are noise.
 const isRelevant = (shard: ShardInfo) =>
   shard.exists || shard.enabledVpks > 0 || shard.manifestMods > 0;
 
@@ -272,6 +273,8 @@ const ShardDiagnostics = () => {
                     {shard.inGameinfo ? (
                       <CheckCircle className='h-4 w-4 text-green-600 dark:text-green-500' />
                     ) : (
+                      // A missing search path only matters for a shard that
+                      // actually holds files.
                       <XCircle
                         className={cn(
                           "h-4 w-4",

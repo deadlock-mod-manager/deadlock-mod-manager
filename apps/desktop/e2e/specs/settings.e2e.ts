@@ -45,6 +45,7 @@ const applicationSystemToggles = [
 ];
 const modsSystemToggles = [
   { id: "auto-reapply-mods", value: true },
+  // Pagination defaults to enabled on Linux; flip it away from the default.
   { id: "mods-store-pagination", value: process.platform !== "linux" },
   { id: "hero-conflict-warning", value: false },
   { id: "map-mods-launch-warning", value: false },

@@ -1,3 +1,9 @@
+//! The live gameinfo.gi as values by path, with our own overlay stripped.
+//!
+//! Comparisons are case-insensitive on section and key names and normalise
+//! values (`true`/`1`, `false`/`0`, `0.500`/`0.5`), so a config that writes
+//! `true` where stock writes `1` is not a change.
+
 use std::collections::{HashMap, HashSet};
 
 use super::catalog::Catalog;
@@ -6,12 +12,19 @@ use super::types::ConfigEntry;
 use crate::errors::Error;
 
 pub struct LiveGameinfo {
+  /// File text with our overlay removed, LF line endings.
   pub text: String,
   values: HashMap<String, String>,
   sections: HashSet<String>,
 }
 
 impl LiveGameinfo {
+  /// Parses a gameinfo.gi (any line endings). Our own overlay is stripped
+  /// first, so values are what the file holds without us.
+  ///
+  /// Every scalar below the root block counts, nested ones included
+  /// (`ConVars/rate/max`). For a key that appears more than once the last
+  /// occurrence wins, as it does in the engine.
   pub fn parse(text: &str) -> Result<Self, Error> {
     let (stripped, _) = patch::strip_overlay(text);
     let text = stripped.replace("\r\n", "\n");
@@ -29,6 +42,8 @@ impl LiveGameinfo {
     })
   }
 
+  /// The catalog's newest stock file, standing in for a live file we don't
+  /// have (previews before setup).
   pub fn latest_stock(catalog: &Catalog) -> Self {
     Self::from_entries(
       catalog
@@ -55,6 +70,7 @@ impl LiveGameinfo {
     }
   }
 
+  /// Last value at `path`, the one the engine uses.
   pub fn value(&self, path: &[String]) -> Option<&str> {
     self.values.get(&path_key(path)).map(String::as_str)
   }
@@ -64,6 +80,7 @@ impl LiveGameinfo {
   }
 }
 
+/// Lower-case, `/`-joined path used as a map key.
 pub fn path_key(path: &[String]) -> String {
   path
     .iter()
@@ -72,6 +89,8 @@ pub fn path_key(path: &[String]) -> String {
     .join("/")
 }
 
+/// Canonical form for comparing values: booleans as `1`/`0`, numbers without
+/// redundant zeros, everything else trimmed and lower-cased.
 pub fn normalize_value(value: &str) -> String {
   let trimmed = value.trim();
   match trimmed.to_ascii_lowercase().as_str() {

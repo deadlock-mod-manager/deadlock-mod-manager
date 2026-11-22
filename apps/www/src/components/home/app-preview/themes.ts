@@ -12,15 +12,22 @@ export type PreviewThemeId =
 
 export type PreviewTheme = {
   id: PreviewThemeId;
+  /**
+   * English name, for pages that aren't translated yet. Translated names and
+   * descriptions live in the preview namespace (themes.<id>).
+   */
   name: string;
   preview: string;
   icon?: string;
+  /** HSL triplets, same tokens and values as the desktop app's themes. */
   vars: Record<string, string>;
   backdrop?: CSSProperties;
+  /** Themes with a backdrop let it show through the sidebar and titlebar. */
   transparentChrome?: boolean;
   hideGeometry?: boolean;
 };
 
+// Desktop defaults differ from the website's in a few places (card, sidebar).
 const BASE_VARS = {
   "--background": "20 9% 6%",
   "--foreground": "38 65% 97%",
@@ -165,6 +172,8 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
     id: "arcane",
     name: "Arcane",
     preview: "/home/app/theme-arcane.webp",
+    // The desktop derives these from the accent picker; values are for the
+    // default accent (#E8416F).
     vars: {
       ...BASE_VARS,
       "--background": "0 0% 4%",
@@ -236,6 +245,7 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
     id: "oled",
     name: "OLED",
     preview: "/home/app/theme-oled.webp",
+    // Desktop default accent (#D8C497).
     vars: {
       ...BASE_VARS,
       "--background": "0 0% 0%",
@@ -268,6 +278,11 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
 export const getPreviewTheme = (id: PreviewThemeId) =>
   PREVIEW_THEMES.find((theme) => theme.id === id) ?? PREVIEW_THEMES[0];
 
+/**
+ * Inline style for the preview root. Tailwind's `--color-*` aliases resolve
+ * `hsl(var(--x))` on :root, so they're re-declared here to pick up the
+ * theme's values instead of the website's.
+ */
 export const themeStyle = (theme: PreviewTheme): CSSProperties => ({
   ...theme.vars,
   ...Object.fromEntries(

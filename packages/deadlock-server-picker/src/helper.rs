@@ -1,3 +1,6 @@
+//! The elevated entry point only accepts relay restrictions and removal of owned rules.
+//! Requests travel over a short-lived authenticated loopback connection; the helper
+//! never reads or writes caller-selected files and never evaluates shell commands.
 use std::{path::PathBuf, time::Duration};
 
 use serde::{Deserialize, Serialize};
@@ -30,6 +33,8 @@ struct Response {
   error: Option<String>,
 }
 
+/// Call before GUI initialization. A helper invocation always terminates here,
+/// including malformed arguments, and must never fall through to normal startup.
 pub fn run_if_requested() -> Option<i32> {
   let arguments: Vec<_> = std::env::args_os().skip(1).collect();
   if arguments.first().is_none_or(|value| value != FLAG) {
@@ -106,6 +111,8 @@ async fn process(request: Request) -> Result<Vec<FirewallRule>, PickerError> {
         return firewall::apply_privileged(&[], None);
       }
       let executable = validate_executable(game_executable)?;
+      // Independently obtain Valve's allowlist at the privilege boundary;
+      // a compromised caller cannot turn the helper into a general firewall editor.
       let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .no_proxy()
@@ -238,6 +245,8 @@ impl HelperProcess {
         System::Threading::{GetExitCodeProcess, WaitForSingleObject},
       };
       let handle = HANDLE(self.handle.as_raw_handle());
+      // OwnedHandle keeps the process object valid across worker threads;
+      // a zero wait observes completion without blocking the async executor.
       match unsafe { WaitForSingleObject(handle, 0) } {
         WAIT_TIMEOUT => {}
         WAIT_OBJECT_0 => {
@@ -345,6 +354,7 @@ fn launch(executable: PathBuf, port: u16, token: String) -> Result<HelperProcess
     nShow: SW_HIDE.0,
     ..Default::default()
   };
+  // `path` and `arguments` outlive the call.
   unsafe {
     ShellExecuteExW(&mut info).map_err(|error| {
       PickerError::Firewall(format!(
@@ -357,6 +367,8 @@ fn launch(executable: PathBuf, port: u16, token: String) -> Result<HelperProcess
       "Windows did not return a process handle for the firewall helper.".into(),
     ));
   }
+  // ShellExecuteExW transfers this handle to the caller with
+  // SEE_MASK_NOCLOSEPROCESS. OwnedHandle closes it after the exchange.
   let handle = unsafe { OwnedHandle::from_raw_handle(info.hProcess.0) };
   Ok(HelperProcess { handle })
 }
@@ -367,6 +379,7 @@ fn launch(executable: PathBuf, port: u16, token: String) -> Result<HelperProcess
   if !capability.supported {
     return Err(PickerError::Firewall(capability.reason.unwrap_or_default()));
   }
+  // Fixed system path avoids executing caller-controlled PATH entries as root.
   let child = std::process::Command::new("/usr/bin/pkexec")
     .arg(executable)
     .arg(FLAG)

@@ -3,6 +3,9 @@ import { useEffect, useRef } from "react";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
+/**
+ * Hook to initialize the ingest tool on app startup if enabled
+ */
 export const useIngestToolInit = (integrationEnabled = true) => {
   const ingestToolEnabled = usePersistedStore(
     (state) => state.ingestToolEnabled,

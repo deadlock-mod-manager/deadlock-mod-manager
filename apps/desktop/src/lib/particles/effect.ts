@@ -22,6 +22,7 @@ import { modelDrawable } from "./model-drawable";
 import { createControlPointMarkers } from "./control-point-markers";
 
 const PREWARM_SECONDS = 1.5;
+/** Source is Z-up; glTF is Y-up. This turns the former into the latter. */
 const SOURCE_TO_GLTF = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
 const MAX_SYSTEMS = 48;
@@ -37,6 +38,7 @@ type ParticleEffectContext = Pick<
   "scene" | "camera" | "model" | "sceneColor"
 >;
 
+/** Parse and bound all roots together; usable without a renderer for diagnostics. */
 export const compileParticleEffects = (data: ParticleEffectData) => {
   const diagnostics: ParticleDiagnostic[] = [];
   let remaining = MAX_SYSTEMS;
@@ -146,6 +148,7 @@ export const compileParticleEffects = (data: ParticleEffectData) => {
   return { roots, diagnostics };
 };
 
+/** Every system in a tree, so blocked parents still let children run. */
 const flatten = (system: CompiledSystem): CompiledSystem[] => [
   system,
   ...system.children.flatMap(flatten),
@@ -154,10 +157,13 @@ const flatten = (system: CompiledSystem): CompiledSystem[] => [
 export interface ParticlePreviewControls {
   charge: number;
   released: boolean;
+  /** Recorded preview-clock time; preserves manual release when seeking. */
   releaseTime?: number;
+  /** Target in model-local glTF coordinates; converted to the effect Source frame. */
   target: [number, number, number];
   markers: boolean;
   isolatedPath: string | null;
+  /** Bindings are preview overrides, not an assertion about every authored effect. */
   targetControlPoint?: number;
   chargeControlPoint?: number;
   inputsEnabled?: boolean;
@@ -165,7 +171,13 @@ export interface ParticlePreviewControls {
 
 export interface ParticleEffectOptions {
   onDiagnostics?: (diagnostics: ParticleDiagnostic[]) => void;
+  /**
+   * Run the systems for a moment on every reset so ambient effects start in
+   * full swing. Turn off for effects that should start with the animation,
+   * like an ability's cast burst. Defaults to true.
+   */
   prewarm?: boolean;
+  /** Assets decoded once by the caller, outside simulation/render hot paths. */
   modelAssets?: ReadonlyMap<string, THREE.Object3D>;
   controls?: () => ParticlePreviewControls;
   autoReplay?: boolean;
@@ -176,6 +188,7 @@ const releaseTexture = (texture: THREE.Texture) => {
   texture.source.data = null;
 };
 
+/** Unique bounded model dependencies, resolved before creating the effect. */
 export const particleModelPaths = (data: ParticleEffectData): string[] =>
   [
     ...new Set(
@@ -187,6 +200,10 @@ export const particleModelPaths = (data: ParticleEffectData): string[] =>
     ),
   ].slice(0, 12);
 
+/**
+ * Plays the model's preview particle effects, bound to its attachment points.
+ * Simulation runs in Source units and axes inside a group mapped onto the model.
+ */
 export const createParticleEffect =
   (data: ParticleEffectData, options: ParticleEffectOptions = {}) =>
   ({
@@ -501,6 +518,8 @@ export const createParticleEffect =
             dirty = true;
           }
         }
+        // Camera-facing expansion and atlas animation happen in shaders.
+        // Only alpha ordering needs the camera when the simulation is paused.
         camera.updateMatrixWorld();
         model.updateWorldMatrix(true, false);
         fx.matrix.multiplyMatrices(model.matrixWorld, SOURCE_TO_GLTF);

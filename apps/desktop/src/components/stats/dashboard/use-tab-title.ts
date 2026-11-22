@@ -4,6 +4,7 @@ import {
   type DashboardTab,
 } from "@/lib/stats/dashboard/layout";
 
+/** Built-in tabs keep following the app language until the user renames them. */
 export const useTabTitle = () => {
   const { t } = useTranslation();
   return (tab: DashboardTab): string =>

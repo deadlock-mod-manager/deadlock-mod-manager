@@ -115,6 +115,8 @@ const ServerPickerPage = () => {
       !latest || latency.measuredAt > latest ? latency.measuredAt : latest,
     null,
   );
+  // Last clicked row; shift-click applies the same state to every visible
+  // row between it and the clicked one.
   const anchor = useRef<string | null>(null);
   const changeLocations = (ids: string[], value: boolean) =>
     setDraft((current) =>

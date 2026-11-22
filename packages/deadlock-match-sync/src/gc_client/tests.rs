@@ -37,6 +37,7 @@ struct GcEnvelope {
 
 struct SteamState {
   playing: AtomicBool,
+  // How often the session started playing Deadlock.
   games_started: AtomicUsize,
   logged_off: AtomicBool,
   jobs: AtomicUsize,
@@ -50,7 +51,9 @@ struct SteamState {
 enum SteamAccount {
   Free,
   PlayingElsewhere,
+  // Another session starts a game during the GC handshake.
   LoggedOffAtHandshake,
+  // Another session starts a game after this one logged on.
   PlayingElsewhereLater,
 }
 
@@ -62,8 +65,11 @@ enum GcReplies {
 }
 
 const FRIEND_ID64: u64 = 76561197960265728 + 7;
+// More than the 32 messages steam-vent keeps for nobody.
 const LOGON_BURST: usize = 40;
 
+// The friends list Steam pushes right after logon: one friend, a pending invite and a
+// group.
 fn logon_friends_list() -> CMsgClientFriendsList {
   let entry = |id: u64, relationship: u32| Friend {
     ulfriendid: Some(id),
@@ -81,6 +87,7 @@ fn logon_friends_list() -> CMsgClientFriendsList {
   }
 }
 
+// Exercise steam-vent's real login and GC encoding over an in-memory CM transport.
 async fn fake_connection(
   account: SteamAccount,
   replies: GcReplies,
@@ -309,6 +316,7 @@ async fn launch_hold_blocks_cached_sessions_and_allows_requests_afterward() {
   assert!(!state.logged_off.load(Ordering::SeqCst));
 }
 
+// Steam counts every minute the session plays Deadlock as playtime.
 #[tokio::test]
 async fn plays_deadlock_only_during_gc_requests() {
   let _serial = TEST_LOCK.lock().await;
@@ -470,6 +478,7 @@ fn salts_results_are_classified_without_deciding_on_a_backoff() {
     salts_error(Some(EResult::KEResultRateLimited as i32)),
     Some(MatchSyncError::GcRateLimited)
   ));
+  // Waited out through the quotas, not a day-long backoff.
   assert!(!MatchSyncError::GcRateLimited.backs_off_gc());
   for (result, expected) in [
     (EResult::KEResultMatchInFlight, GcRefusal::InFlight),
@@ -546,7 +555,9 @@ fn persona_updates_add_to_what_earlier_ones_said() {
     ),
     &requested,
   );
+  // A later update that only carries some fields keeps what the first one said.
   merge_personas(&mut personas, update(7, Friend::default()), &requested);
+  // Updates nobody asked for are dropped.
   merge_personas(&mut personas, update(8, Friend::default()), &requested);
 
   let persona = personas[&7];

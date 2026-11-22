@@ -1,3 +1,7 @@
+//! Lifecycle and worker tests. Workers are real processes: this test binary
+//! re-runs itself with `worker_child_process` selected, which then serves the
+//! worker protocol exactly like the app binary in `--dmm-plugin-worker` mode.
+
 use super::*;
 use crate::adapter::tests::TestProfiles;
 use crate::package::tests::{full_permissions, plugin_archive, write_archive};
@@ -224,6 +228,8 @@ impl Fixture {
     self.host.apply_update(ID, &hash)
   }
 
+  /// Grants what the installed manifest asks for: the output file when it
+  /// requests `files`, the test profile when it requests a picked profile.
   fn enable(&self) -> u64 {
     let summary = self.host.summary(ID).unwrap();
     let asks = |id: &str| {
@@ -262,6 +268,7 @@ impl Fixture {
   }
 }
 
+/// An archive whose manifest requires exactly `permissions`.
 fn archive_with(fixture: &Fixture, version: &str, permissions: Value) -> PathBuf {
   let digest = scope_digest(&permissions);
   let archive = fixture
@@ -300,6 +307,7 @@ fn mods_install() -> Value {
   json!({ "id": "mods", "access": ["read", "install"], "profiles": "picked" })
 }
 
+/// The output file, a dedicated profile and storage.
 fn narrow() -> Value {
   json!([files_vpk(), mods_install(), { "id": "storage" }])
 }
@@ -473,6 +481,7 @@ fn snapshots_and_installs_through_hostcalls() {
   let first = fixture.hostcall(generation, "files.snapshot", Value::Null);
   assert_eq!(first["value"]["state"], "changing", "{first}");
   assert_eq!(first["value"]["fileName"], "output.vpk");
+  // Stage directly instead of sleeping through the stability window.
   let plugin = fixture.host.authorize(ID, generation).unwrap();
   let services = fixture.host.services(ID);
   let output = PathBuf::from(plugin.grant.file.as_deref().unwrap());
@@ -705,6 +714,7 @@ fn notifications_are_rate_limited_per_plugin() {
   assert_eq!(newest.kind, ExternalPluginActivityKind::Notified);
   assert_eq!(newest.reason.as_deref(), Some("Build 2"));
 
+  // Another plugin has its own allowance.
   assert!(fixture.host.allow_notification("example.other"));
 }
 
@@ -1264,6 +1274,9 @@ fn remove_deletes_package_and_private_data() {
   );
 }
 
+/// Installs a real package built outside this crate, e.g. the example
+/// plugin: `DMM_EXAMPLE_PLUGIN_ZIP=<zip> cargo test --lib -- --ignored
+/// tests::runs_an_external_package`.
 #[test]
 #[ignore = "needs DMM_EXAMPLE_PLUGIN_ZIP"]
 fn runs_an_external_package() {

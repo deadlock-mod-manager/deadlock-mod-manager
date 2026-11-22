@@ -1,6 +1,24 @@
+//! Per-ability sound classification.
+//!
+//! Deadlock ability sounds live at `sounds/abilities/<sound_codename>/...`, but
+//! the file names inside that folder are inconsistent: some mods keep the
+//! engine's `aN` slot token, some name files after the ability's lore name, and
+//! some use the internal dev token. The slot a file belongs to (1-3 plus 4 =
+//! ultimate) is therefore resolved per FILE, in priority order:
+//!
+//!   1. an `aN` token in the path (folder `a4_x/`, bare `a4/`, or infix `_a4_`),
+//!   2. a hand-curated dev-token override,
+//!   3. the ability's display name or internal token appearing in the path,
+//!   4. a bidirectional stem match between the file's dev token and a slot key.
+//!
+//! Anything that resolves to no slot still shows up, grouped into voice lines,
+//! weapon sounds or a catch-all bucket, so nothing in the VPK is hidden from the
+//! user.
+
 use super::hero::{ability_slots, canonical_sound_codename, curated_slot, sound_codename_for_hero};
 use super::types::{FoundryEntry, FoundrySoundGroup, FoundrySoundGroupKind};
 
+/// The `sounds/abilities/<codename>/` prefix, returning the codename.
 fn ability_codename(path: &str) -> Option<String> {
   let lower = path.to_ascii_lowercase();
   let rest = lower.strip_prefix("sounds/abilities/")?;
@@ -28,6 +46,7 @@ fn is_weapon_sound(path: &str) -> bool {
   lower.starts_with("sounds/weapons/") || lower.contains("/weapons/")
 }
 
+/// The `aN` slot token: folder `a4_name/`, bare folder `a4/`, or infix `_a4_`.
 fn an_token_slot(path: &str) -> Option<u8> {
   let bytes = path.as_bytes();
   for (index, window) in bytes.windows(3).enumerate() {
@@ -48,6 +67,8 @@ fn an_token_slot(path: &str) -> Option<u8> {
   None
 }
 
+/// The path segment after `sounds/abilities/<codename>/`, minus a leading
+/// codename and/or `aN` segment: the file's internal ability ("dev") token.
 fn dev_token(codename: &str, path: &str) -> String {
   let tail = ability_tail(path);
   let flattened = tail
@@ -65,6 +86,7 @@ fn dev_token(codename: &str, path: &str) -> String {
   first.to_string()
 }
 
+/// Everything after `sounds/abilities/<codename>/`.
 fn ability_tail(path: &str) -> String {
   let lower = path.to_ascii_lowercase();
   lower
@@ -74,6 +96,9 @@ fn ability_tail(path: &str) -> String {
     .unwrap_or(lower)
 }
 
+/// Per-slot match keys: the ability's internal token plus the words of its
+/// display name, both filtered to >= 4 characters so short generic words like
+/// "of" or "the" can't claim a file.
 fn slot_keys(codename: &str) -> Vec<(u8, Vec<String>)> {
   ability_slots(codename)
     .into_iter()
@@ -96,6 +121,8 @@ fn slot_keys(codename: &str) -> Vec<(u8, Vec<String>)> {
     .collect()
 }
 
+/// Resolve a `sounds/abilities/<codename>/...` path to an ability slot, or
+/// `None` when nothing matches (movement, generic or unmapped ability sounds).
 fn resolve_ability_slot(codename: &str, path: &str) -> Option<u8> {
   if let Some(slot) = an_token_slot(&path.to_ascii_lowercase()) {
     return Some(slot);
@@ -110,6 +137,8 @@ fn resolve_ability_slot(codename: &str, path: &str) -> Option<u8> {
 
   let keys = slot_keys(codename);
 
+  // Longest key first, so a specific ability token wins over a short word that
+  // happens to appear in several display names.
   let mut by_specificity = keys.clone();
   by_specificity
     .sort_by_key(|(_, keys)| std::cmp::Reverse(keys.iter().map(String::len).max().unwrap_or(0)));
@@ -119,6 +148,8 @@ fn resolve_ability_slot(codename: &str, path: &str) -> Option<u8> {
     }
   }
 
+  // Bidirectional stem: the file's dev token is contained in a slot key, or the
+  // other way round.
   for (slot, slot_keys) in &keys {
     for key in slot_keys {
       if token == *key
@@ -153,6 +184,9 @@ fn group_index(groups: &[FoundrySoundGroup], id: &str) -> Option<usize> {
   groups.iter().position(|group| group.id == id)
 }
 
+/// Group a skin's sound entries into ability slots, voice lines, weapon sounds
+/// and a catch-all, in the order the sound browser renders them. Groups with no
+/// entries are dropped, so the UI never shows an empty section.
 pub(crate) fn group_sounds(
   hero_display: Option<&str>,
   entries: &[FoundryEntry],
@@ -232,6 +266,8 @@ fn classify_sound(hero_codename: Option<&str>, entry: &FoundryEntry) -> String {
   }
 
   if let Some(codename) = ability_codename(&entry.path) {
+    // A skin VPK can carry a stray file for another hero; keep those out of the
+    // ability slots (which belong to the loaded hero) but still list them.
     if hero_codename.is_some_and(|hero| hero == codename)
       && let Some(slot) = resolve_ability_slot(&codename, &entry.path)
     {
@@ -251,6 +287,13 @@ fn classify_sound(hero_codename: Option<&str>, entry: &FoundryEntry) -> String {
   "other".to_string()
 }
 
+/// Extract a browser-playable MP3 payload from a compiled `.vsnd_c`.
+///
+/// A `.vsnd_c` is a resource container whose DATA block is followed by the raw
+/// encoded audio. Deadlock ships most clips as MP3, so the payload is found by
+/// skipping the resource header and scanning forward for the first MPEG frame
+/// sync. Clips in other codecs (ADPCM, PCM) return `None` — they simply have no
+/// preview rather than failing the whole sound tab.
 pub(crate) fn find_mp3_payload(bytes: &[u8]) -> Option<&[u8]> {
   if bytes.len() < 8 {
     return None;

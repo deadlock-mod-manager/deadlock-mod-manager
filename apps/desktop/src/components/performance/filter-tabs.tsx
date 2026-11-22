@@ -15,6 +15,7 @@ type FilterTabsProps<T extends string> = {
   value: T;
   onValueChange: (value: T) => void;
   ariaLabel?: string;
+  /** `underline` heads a list it filters; `segmented` stands on its own. */
   variant?: "segmented" | "underline";
 };
 

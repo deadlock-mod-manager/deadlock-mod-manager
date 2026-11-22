@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 const TOP_MATES = 10;
 const MAX_PIPS = 10;
+/** The lift bars scale to the largest gap, but never past this. */
 const MIN_SCALE = 0.15;
 
 const points = (delta: number) => {
@@ -120,6 +121,7 @@ const PlayerButton = ({
 const GRID =
   "grid grid-cols-[minmax(200px,1.6fr)_minmax(140px,1fr)_70px_100px_70px] items-center gap-4";
 
+/** Who the player plays with and against, and what it does to their winrate. */
 export const SquadTab = ({
   mates,
   partyIds,

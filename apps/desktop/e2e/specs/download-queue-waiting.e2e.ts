@@ -18,6 +18,7 @@ import {
 import { readDownloadState } from "../support/download-oracle";
 
 const TRANSFER = /[\d.]+ (KB|MB)\/s/;
+/** Ample for a pause, resume or queue IPC to reach the backend. */
 const SETTLE_MS = 2_000;
 const card = (name: string) => $(`[role="button"][aria-label="Open ${name}"]`);
 const subtitle = () => $("p*=total");
@@ -56,6 +57,7 @@ const waitTransferring = (name: string) =>
     timeoutMsg: `${name} never showed a transfer speed`,
   });
 
+/** The card, header and bottom bar while the download waits behind the blocker. */
 const expectWaiting = async (blocker: string) => {
   const text = await card(DOWNLOAD_NAME).getText();
   expect(text).toContain("Waiting");
@@ -71,6 +73,7 @@ const expectWaiting = async (blocker: string) => {
     expect.stringContaining("1 downloading"),
   );
   await expect(bottomBar()).toHaveText(expect.stringContaining("1 waiting"));
+  // The download holding the queue keeps its speed.
   expect(await card(blocker).getText()).toMatch(TRANSFER);
 };
 
@@ -152,6 +155,7 @@ describe("queued download waiting label", () => {
         await waitStatus(world, QUEUE_MOD, "downloading");
         await browser.pause(SETTLE_MS);
         expect(await card(QUEUE_NAME).getText()).toContain("Waiting");
+        // Pausing gives the queue to the blocker.
         await click(DOWNLOAD_NAME, "Pause");
         await waitStatus(world, DOWNLOAD_MOD, "paused");
         await waitTransferring(QUEUE_NAME);

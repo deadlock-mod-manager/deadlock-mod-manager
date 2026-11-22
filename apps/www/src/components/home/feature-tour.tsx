@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { AppPreview } from "./app-preview";
 import { SectionHeading } from "./section-heading";
 
+// Phones get readable crops of the same app instead of a shrunken preview.
 const SLIDES = [
   {
     id: "find",

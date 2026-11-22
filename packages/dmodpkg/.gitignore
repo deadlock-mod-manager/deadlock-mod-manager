@@ -1,15 +1,23 @@
+# Rust build artifacts
 target/
+# Cargo.lock is tracked for Nix reproducibility
+# Cargo.lock
 
+# TypeScript build
 dist/
 *.tsbuildinfo
 
+# Generated types
 src/generated/
 
+# Test coverage
 coverage/
 
+# IDE
 .vscode/
 .idea/
 
+# OS
 .DS_Store
 Thumbs.db
 

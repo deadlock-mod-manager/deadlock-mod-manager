@@ -9,6 +9,9 @@ import logger from "@/lib/logger";
 
 const LANGUAGE_STORAGE_KEY = "i18nextLng";
 
+// Migrate users who saved a short language code (e.g. "fr") before the
+// BCP-47 rename (e.g. "fr-FR"). Runs once per page load before i18next reads
+// localStorage via the detector.
 const LEGACY_LANGUAGE_MIGRATION: Record<string, string> = {
   fr: "fr-FR",
   ar: "ar-SA",
@@ -37,6 +40,8 @@ if (typeof localStorage !== "undefined") {
   }
 }
 
+// English is the fallback for every missing key, so it ships in the entry
+// chunk; i18next asks this backend for any other language before switching.
 const localeBackend: BackendModule = {
   type: "backend",
   init: () => {},
@@ -57,6 +62,7 @@ const localeBackend: BackendModule = {
   },
 };
 
+// Rendering waits for the detected language, so it shows from the first frame.
 // eslint-disable-next-line import/no-named-as-default-member
 await i18n
   .use(LanguageDetector)
@@ -69,7 +75,7 @@ await i18n
     returnEmptyString: false,
     supportedLngs: ["en", ...localeLoaders.keys()],
     interpolation: {
-      escapeValue: false,
+      escapeValue: false, // not needed for react as it escapes by default
     },
     detection: {
       order: ["localStorage", "navigator", "htmlTag"],

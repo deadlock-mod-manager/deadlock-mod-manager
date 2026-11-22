@@ -20,6 +20,8 @@ export const Route = createFileRoute("/403")({
   },
 });
 
+// Seeded rather than Math.random() so the server and the browser render the
+// same particles (and they stay put when the glitch timer re-renders).
 const seeded = (n: number) => {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
   x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);

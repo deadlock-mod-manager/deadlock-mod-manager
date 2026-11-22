@@ -11,12 +11,14 @@ export const findOverride = (
   return overrides.find((override) => pathKey(override.path) === key) ?? null;
 };
 
+/** Whether two requests carry the same tweaks, ignoring their order. */
 export const sameApplyOptions = (a: EditorDraft, b: EditorDraft) =>
   a.includeEngineSections === b.includeEngineSections &&
   a.writeVideo === b.writeVideo &&
   a.videoVariant === b.videoVariant &&
   sameOverrides(a.overrides, b.overrides);
 
+/** Replaces the override for `path`, or drops it when `action` is null. */
 export const withOverride = (
   overrides: EntryOverride[],
   path: string[],

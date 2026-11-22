@@ -112,6 +112,8 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
           mod={localMod}
         />
       ) : (
+        // The stage the model will load on, already holding the hero, so
+        // installing carries straight on into the preview.
         <div className='flex h-[640px] min-h-[360px] flex-col border-t'>
           <div className='relative min-h-0 flex-1'>
             <ModelLoadingStage

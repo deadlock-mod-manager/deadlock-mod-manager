@@ -112,9 +112,11 @@ it("answers catalog sync's category requests, after a case's own", async () => {
     });
     worlds.push(result.worldDirectory);
     expect(result.unexpectedRequests).toEqual([]);
+    // runE2eWorld catches the phase's failures, so check it got every answer.
     expect(bodies).toHaveLength(3);
     return bodies;
   };
   expect(await categories("about-smoke")).toEqual([[], [], []]);
+  // catalog-upgrade serves its own Mod tree.
   expect((await categories("gamebanana-legacy-catalog"))[0]).not.toEqual([]);
 });

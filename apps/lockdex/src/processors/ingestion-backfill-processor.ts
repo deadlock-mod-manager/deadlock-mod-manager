@@ -7,9 +7,15 @@ import { modFileProcessingQueue } from "@/services/queue";
 import type { IngestionBackfillJobData } from "@/types/jobs";
 import { MAX_FILE_SIZE } from "./mod-file-processor";
 
+// More than the workers finish between runs, so they never sit idle
 const TARGET_QUEUE_DEPTH = 300;
+// Live update events carry no priority, so BullMQ runs them before these
 const BACKFILL_PRIORITY = 10;
 
+/**
+ * Update events only cover files that change while Lockdex is listening, so
+ * this tops the queue up with every file that has no ingestion yet.
+ */
 class IngestionBackfillProcessor extends BaseProcessor<IngestionBackfillJobData> {
   private static instance: IngestionBackfillProcessor | null = null;
   private readonly vpkRepository = new VpkRepository(db);
@@ -32,6 +38,7 @@ class IngestionBackfillProcessor extends BaseProcessor<IngestionBackfillJobData>
         return this.handleSuccess({ unfinished, scheduled: 0 });
       }
 
+      // Already queued files come back too; their job ids make re-adding a no-op
       const downloads = await this.vpkRepository.findUningestedDownloads({
         limit: TARGET_QUEUE_DEPTH,
         maxSizeBytes: MAX_FILE_SIZE,

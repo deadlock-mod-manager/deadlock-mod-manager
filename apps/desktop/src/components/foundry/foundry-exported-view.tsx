@@ -15,6 +15,7 @@ export const ExportedView = ({
 }: {
   result: FoundryExportResult;
   changes: Change[];
+  /** The finished hero, captured from the viewer when the sheet opened. */
   heroStill: string | null;
   onClose: () => void;
 }) => {

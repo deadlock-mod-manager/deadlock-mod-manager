@@ -1,3 +1,4 @@
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -11,6 +12,7 @@ dist
 dist-ssr
 *.local
 
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -23,4 +25,5 @@ dist-ssr
 
 target
 
+# Local investigation notes and corpus results
 prototypes/

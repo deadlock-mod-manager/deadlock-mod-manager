@@ -25,6 +25,10 @@ import { VideoBackupNotice } from "./details/video-backup-notice";
 import { VideoSettings } from "./details/video-settings";
 import { VideoChanges } from "./video-changes";
 
+/**
+ * The applied config's video.txt: what changed in game since it was written,
+ * what it writes, the switch, and the way back to your own file.
+ */
 export const VideoTab = () => {
   const { t } = useTranslation();
   const { desired, activeItem } = usePerfConfigList();
@@ -66,6 +70,7 @@ export const VideoTab = () => {
         ? { kind: "user", config: activeItem.config }
         : null;
   const hasChanges = !sameApplyOptions(desired.request, options);
+  // What the file holds describes the applied choice, not a pending one.
   const changes =
     status && !hasChanges && desired.request.writeVideo
       ? status.video.changed

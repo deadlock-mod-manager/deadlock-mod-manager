@@ -13,6 +13,10 @@ import { prepareInstalledProfiles, profilePayload } from "./profile-fixtures";
 import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
+// A fixable GameBanana mod first in a three-mod load order, so Reinstall has
+// a fix choice and a place to keep. The other two are local imports, which
+// Reinstall, Nuke & Reinstall and the update check leave alone.
+
 export const CHOICES = {
   id: "profile_450_choices",
   folder: "profile_450_choices_choices",
@@ -31,10 +35,12 @@ const VPK_NAME = "choices.vpk";
 const FILE_NAME = "choices.zip";
 const FILE_ID = 910002;
 const DATE = 1_780_000_000;
+/** When the fixture says the mod was downloaded; a reinstall moves it on. */
 export const DOWNLOADED_AT = new Date(DATE * 1000);
 const PROFILE_URL = `https://gamebanana.com/mods/${REINSTALLED_MOD}`;
 const DESCRIPTION = "Synthetic reinstall choices fixture";
 
+// Fixable: its copy of a game text file lacks a game token.
 export const REINSTALLED_PAYLOAD = buildSyntheticVpk([
   { path: TEXT_FILE, contents: localizationText({ e2e_kept: "Kept" }) },
 ]);
@@ -71,6 +77,8 @@ export const prepareReinstallChoicesWorld = async (
     CHOICES.id,
   );
 
+  // Turn the reinstalled mod into a GameBanana download, as a player's would
+  // be, so Reinstall has something to download.
   const storePath = path.join(roots.appData, "state.json");
   const outer = z
     .object({ "local-config": z.string() })
@@ -132,6 +140,7 @@ export const prepareReinstallChoicesWorld = async (
       ]),
     ),
     autoUpdateEnabled: false,
+    // Nothing may change the choice behind the case's back.
     autoFixMods: false,
   };
   await writeFile(

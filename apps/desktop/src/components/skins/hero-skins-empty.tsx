@@ -13,6 +13,10 @@ interface HeroSkinsEmptyProps {
   onAssignMod: () => void;
 }
 
+/**
+ * A hero without skins still wears something: the default look stays on the
+ * page, next to the two ways of getting a skin and the store's popular picks.
+ */
 export const HeroSkinsEmpty = ({
   hero,
   disabled,

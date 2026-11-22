@@ -213,6 +213,8 @@ pub struct DiffStats {
     pub modified: usize,
 }
 
+// AST Node types
+
 /// Base node type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../src/generated/")]

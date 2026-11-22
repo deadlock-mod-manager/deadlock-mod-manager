@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+/** The current time in milliseconds, ticking once a second while mounted. */
 export const useNow = () => {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {

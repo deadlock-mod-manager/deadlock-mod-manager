@@ -1,6 +1,7 @@
 import type { InputContext } from "./inputs";
 import { type ParticleSystem } from "./system";
 
+/** Inputs evaluated once at compile time see a neutral particle. */
 export const STATIC_CONTEXT: InputContext = {
   age: 0,
   lifetime: 1,

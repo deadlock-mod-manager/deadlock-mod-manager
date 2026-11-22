@@ -1,3 +1,8 @@
+/**
+ * Languages the public site is translated into. English lives at unprefixed
+ * URLs; every other locale gets a path prefix (`/ru/mods`). `file` is the
+ * folder name under src/locales, which matches Crowdin's `%locale%` code.
+ */
 export const LOCALES = [
   {
     id: "en",
@@ -62,13 +67,16 @@ export type Locale = LocaleConfig["id"];
 
 export const DEFAULT_LOCALE = "en" satisfies Locale;
 
+/** Cookie that records an explicit language choice from the switcher. */
 export const LOCALE_COOKIE = "dmm_locale";
 
+/** The active language, owned by the router and read by routes. */
 export interface LocaleState {
   current: Locale;
 }
 
 export interface DelocalizedPath {
+  /** Null when the URL has no (valid) language prefix. */
   locale: Locale | null;
   path: string;
 }
@@ -76,6 +84,10 @@ export interface DelocalizedPath {
 export const getLocaleConfig = (id: Locale): LocaleConfig =>
   LOCALES.find((locale) => locale.id === id) ?? LOCALES[0];
 
+/**
+ * Pages that exist in every language. Legal pages, the dashboard, auth and
+ * redirect routes stay English-only at their unprefixed URLs.
+ */
 const LOCALIZED_PATHS = [
   "/",
   "/download",
@@ -106,6 +118,7 @@ const trimTrailingSlash = (path: string) =>
 export const isLocalizedPath = (path: string) =>
   localizedPathSet.has(trimTrailingSlash(path));
 
+/** `/mods` in `ru` becomes `/ru/mods`; `/` becomes `/ru`. */
 export const localizePath = (path: string, locale: Locale) => {
   const { prefix } = getLocaleConfig(locale);
   if (!prefix || !isLocalizedPath(path)) return path;
@@ -113,6 +126,11 @@ export const localizePath = (path: string, locale: Locale) => {
   return clean === "/" ? `/${prefix}` : `/${prefix}${clean}`;
 };
 
+/**
+ * Splits a public pathname into its locale and the route path. Returns a null
+ * locale when the path has no locale prefix, or when the prefix is followed by
+ * a page that isn't translated (that URL is a 404, not an English page).
+ */
 export const delocalizePath = (pathname: string): DelocalizedPath => {
   const [, first = "", ...rest] = pathname.split("/");
   const match = LOCALES.find(
@@ -124,6 +142,11 @@ export const delocalizePath = (pathname: string): DelocalizedPath => {
   return { locale: match.id, path };
 };
 
+/**
+ * Picks the best supported locale from an Accept-Language header, honouring
+ * q-values. Only exact language matches count: Ukrainian or Belarusian
+ * browsers are not sent to the Russian site.
+ */
 export const matchAcceptLanguage = (header: string | null | undefined) => {
   if (!header) return null;
   const ranked = header

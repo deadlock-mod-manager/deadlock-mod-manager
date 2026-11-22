@@ -75,6 +75,7 @@ export const DashboardScreen = () => {
                   }}
                 />
               </p>
+              {/* The mod's own description from GameBanana, left as written. */}
               <p className='line-clamp-2 max-w-xl text-muted-foreground text-sm'>
                 This redesign reimagines Yamato with a stronger focus on her
                 lore, emphasizing her role as the leader of a powerful criminal

@@ -121,6 +121,7 @@ describe("selected library actions", () => {
       await moveSelected("Selected cosmetics");
       await $('button[aria-label="Done selecting"]').click();
       await verify(world, []);
+      // Checkboxes stay hidden until a card is hovered or selection starts.
       await $(`[role="checkbox"][aria-label="Select ${first}"]`).moveTo();
       for (const id of [first, third])
         await $(`[role="checkbox"][aria-label="Select ${id}"]`).click();

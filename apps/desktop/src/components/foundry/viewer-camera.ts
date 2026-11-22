@@ -43,6 +43,8 @@ export const createViewerCamera = (
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     const radius = Math.max(sphere.radius, 0.01);
     const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+    // Source models face +X; fit their projected box rather than a sphere so
+    // wide viewports keep a useful amount of the character on screen.
     const direction = new THREE.Vector3(1, 0.04, 0.18).normalize();
     const right = new THREE.Vector3(0, 1, 0).cross(direction).normalize();
     const up = direction.clone().cross(right).normalize();

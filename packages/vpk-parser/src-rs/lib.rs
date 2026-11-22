@@ -11,6 +11,7 @@ pub use error::{Result, VpkError};
 pub use parser::VpkParser;
 pub use types::*;
 
+// Helper function to convert Rust string to C string
 fn to_c_string(s: String) -> *mut c_char {
     match CString::new(s) {
         Ok(c_str) => c_str.into_raw(),
@@ -18,6 +19,7 @@ fn to_c_string(s: String) -> *mut c_char {
     }
 }
 
+// Helper function to free C string
 /// Frees a string returned by this library.
 ///
 /// # Safety
@@ -31,6 +33,7 @@ pub unsafe extern "C" fn vpk_free_string(ptr: *mut c_char) {
     }
 }
 
+// Parse VPK from buffer with options as JSON string
 /// Parses a VPK buffer with optional JSON options.
 ///
 /// # Safety
@@ -57,6 +60,7 @@ pub unsafe extern "C" fn vpk_parse(
     parsed_to_c_string(VpkParser::parse(buffer_vec, options))
 }
 
+// Parse VPK from a file path, hashing it in chunks instead of loading it
 /// Parses a VPK file on disk with optional JSON options.
 ///
 /// # Safety
@@ -113,6 +117,7 @@ fn parsed_to_c_string(parsed: Result<VpkParsed>) -> *mut c_char {
     }
 }
 
+// Get VPK hashes only (faster)
 /// Returns the fingerprint of a VPK buffer.
 ///
 /// # Safety
@@ -159,6 +164,7 @@ pub unsafe extern "C" fn vpk_get_hashes(
     }
 }
 
+// Get basic VPK info (fastest)
 /// Returns basic information about a VPK buffer.
 ///
 /// # Safety

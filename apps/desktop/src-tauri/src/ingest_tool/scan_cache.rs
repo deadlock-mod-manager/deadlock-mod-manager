@@ -14,6 +14,7 @@ const MAX_BYTES_TO_READ: usize = 200;
 const SEARCH_SEQUENCE: &[u8; 10] = b".valve.net";
 const PATH_END_MARKERS: [u8; 6] = *b" '\0\n\r\"";
 
+/// Get the Steam HTTP cache directory using steamlocate
 pub fn get_cache_directory() -> Option<PathBuf> {
   let steam_dir = steamlocate::SteamDir::locate().ok()?;
   let steam_path = steam_dir.path();
@@ -60,7 +61,9 @@ fn extract_replay_url(path: &Path) -> Option<String> {
 
   let finder = memmem::Finder::new(SEARCH_SEQUENCE);
 
+  // Find all occurrences of .valve.net
   for i in finder.find_iter(data) {
+    // Extract Host
     let host_start = (0..i)
       .rev()
       .find(|&pos| !data[pos].is_ascii_alphanumeric() && data[pos] != b'.')
@@ -75,6 +78,7 @@ fn extract_replay_url(path: &Path) -> Option<String> {
       continue;
     }
 
+    // Extract Path
     let path_start = match memchr(b'/', &data[host_end..]) {
       Some(slash_pos) => host_end + slash_pos,
       None => continue,
@@ -92,6 +96,7 @@ fn extract_replay_url(path: &Path) -> Option<String> {
       continue;
     }
 
+    // Construct full URL
     return Some(format!("http://{host}{path}"));
   }
 
@@ -113,6 +118,7 @@ pub async fn initial_cache_dir_ingest(cache_dir: &Path) {
 
   match Salts::ingest_many(&salts).await {
     Ok(..) => {
+      // Mark all salts as successfully ingested in the shared cache
       for salt in &salts {
         ingestion_cache::mark_ingested(salt);
       }
@@ -131,11 +137,13 @@ pub async fn watch_cache_dir(
   watcher.watch(cache_dir, RecursiveMode::Recursive)?;
 
   loop {
+    // Check if we should stop
     if !running_flag.load(Ordering::Relaxed) {
       log::info!("Cache watcher stopping due to flag");
       break;
     }
 
+    // Use recv_timeout to periodically check the running flag
     match rx.recv_timeout(std::time::Duration::from_secs(10)) {
       Ok(Ok(event)) => {
         let is_data_modify = matches!(event.kind, EventKind::Modify(ModifyKind::Data(_)));
@@ -146,11 +154,13 @@ pub async fn watch_cache_dir(
         if !is_data_modify && !is_file_create {
           continue;
         }
+        // Wait 200ms for the file to be fully written
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         for path in event.paths {
           if let Some(url) = extract_replay_url(&path)
             && let Some(salts) = Salts::from_url(&url, LIVE_WATCHER_USERNAME)
           {
+            // Check if we've already ingested this salt using the shared cache
             let is_new_metadata =
               salts.metadata_salt.is_some() && !ingestion_cache::is_ingested(salts.match_id, true);
             let is_new_replay =
@@ -170,8 +180,8 @@ pub async fn watch_cache_dir(
           }
         }
       }
-      Ok(Err(_)) => continue,
-      Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+      Ok(Err(_)) => continue, // Watcher error, continue
+      Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue, // Timeout, check flag again
       Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
         log::warn!("Watcher channel disconnected");
         break;

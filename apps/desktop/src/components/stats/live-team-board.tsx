@@ -39,6 +39,7 @@ const COLUMNS =
 const bySouls = (a: ResolvedPlayer, b: ResolvedPlayer) =>
   (b.player.souls ?? 0) - (a.player.souls ?? 0);
 
+/** One team's board, sorted by souls, with each player's record behind it. */
 export const LiveTeamBoard = ({
   board,
   lobby,
@@ -160,7 +161,9 @@ const BoardRow = ({
 }: {
   entry: ResolvedPlayer;
   color: string;
+  /** The most souls on the team, which fills the souls bar. */
   most: number;
+  /** Draw the hairline above; not under your own highlighted row. */
   separated: boolean;
   lobby: LiveLobby;
   rankAssets: RankAsset[];

@@ -4,6 +4,7 @@ import type { EntryOverride } from "@/types/generated/EntryOverride";
 import type { OverrideAction } from "@/types/generated/OverrideAction";
 import { sameValue } from "./values";
 
+/** The editor's working copy of a config's tweaks, before Apply saves it. */
 export type EditorDraft = {
   overrides: EntryOverride[];
   includeEngineSections: boolean;
@@ -17,6 +18,7 @@ export type DraftAction =
   | { kind: "reset"; path: string[] }
   | { kind: "includeEngineSections"; include: boolean };
 
+/** What the editor needs to know about an entry to turn a picked value into an override. */
 export type ValueTarget = {
   path: string[];
   configValue: string | null;
@@ -66,6 +68,7 @@ export const applyDraftAction = (
   return { ...draft, overrides };
 };
 
+/** Picking the config's own value drops the override instead of storing a no-op. */
 export const actionForValue = (
   target: ValueTarget,
   value: string,
@@ -88,6 +91,7 @@ const sameAction = (a: OverrideAction, b: OverrideAction) =>
     ? a.value === b.value
     : a.kind === b.kind;
 
+/** Per-path differences between saved and draft overrides; order doesn't matter. */
 export const diffOverrides = (
   saved: EntryOverride[],
   draft: EntryOverride[],

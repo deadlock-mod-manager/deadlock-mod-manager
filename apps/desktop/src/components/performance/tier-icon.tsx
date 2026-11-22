@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { PerfTier } from "@/types/generated/PerfTier";
 
+/**
+ * Each tier drawn with fewer sides than the last, the way a game drops
+ * level of detail: a smooth sphere, then an octagon, a hexagon, a diamond, and
+ * finally a low-poly potato. No triangle, which reads as a warning sign. Drawn on Phosphor's 256 grid with its 16px round
+ * stroke so they sit with the app's other icons.
+ */
 const TIER_GLYPHS = {
   pretty: (
     <>
@@ -35,6 +41,10 @@ const TIER_GLYPHS = {
   ),
 } satisfies Record<PerfTier, ReactNode>;
 
+/**
+ * Takes the surrounding text color. `draw` traces the outline in once, for the
+ * moment a config is applied.
+ */
 export const TierIcon = ({
   tier,
   className,

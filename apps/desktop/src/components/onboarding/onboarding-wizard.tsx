@@ -39,6 +39,8 @@ type StepConfig = {
   component: React.ComponentType<StepComponentProps>;
   requiresCompletion: boolean;
   requiresErrorHandler?: boolean;
+  // Left out of builds without match sync. Only the last step may set it, so the
+  // remaining steps stay numbered 1..n.
   requiresMatchSync?: boolean;
 };
 

@@ -66,6 +66,8 @@ type AppProps = {
   storage: StorageReadyStatus;
 };
 
+// Deep links install mods, which can open conflict and game-guard dialogs, so
+// the listener must mount inside their providers rather than in App itself.
 const DeepLinkListener = () => {
   const installFromLink = useOneClickInstall();
   useDeepLink(installFromLink);
@@ -166,11 +168,14 @@ const App = ({ runtime, storage }: AppProps) => {
       if (!activePendingFontInstall) return;
       const { modId } = activePendingFontInstall;
       try {
+        // Discarding only clears the stash in app data, so it is not guarded.
         await (command === "install_mod_fonts"
           ? invokeGuarded(command, { modId })
           : invoke(command, { modId }));
         dequeuePendingFontInstall();
       } catch (error) {
+        // The user declined the override: a choice, not a failure. The dialog
+        // stays up so they can install once the game is closed.
         if (isGameRunningError(error)) return;
         logger
           .withMetadata({ modId })

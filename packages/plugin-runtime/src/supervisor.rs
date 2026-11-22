@@ -1,3 +1,7 @@
+//! Runs each plugin backend in its own worker process and brokers its
+//! hostcalls. A worker that crashes, hangs or breaks the protocol is killed
+//! and restarted on the next call; repeated crashes quarantine the plugin.
+
 use super::protocol::{self, FromWorker, ToWorker};
 use super::registry::{ActivePlugin, SessionDenied};
 use super::{PluginHost, abi, host_api, lock, package, worker};
@@ -14,6 +18,8 @@ use std::time::{Duration, Instant};
 
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 const LOAD_TIMEOUT: Duration = Duration::from_secs(60);
+/// Wall-clock budget for guest execution in one call. Time the host spends
+/// serving hostcalls (hashing, deploying) does not count.
 const GUEST_TIMEOUT: Duration = Duration::from_secs(20);
 const CRASH_WINDOW: Duration = Duration::from_secs(600);
 const CRASHES_BEFORE_QUARANTINE: usize = 3;
@@ -28,6 +34,7 @@ pub struct WorkerLauncher {
 }
 
 impl WorkerLauncher {
+  /// The worker is this same executable started with [`worker::WORKER_ARG`].
   pub fn current_exe(cwd: PathBuf) -> std::io::Result<Self> {
     Ok(Self {
       program: std::env::current_exe()?,
@@ -46,6 +53,8 @@ impl WorkerLauncher {
       .stdin(Stdio::piped())
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
+    // Without SystemRoot some Windows system DLLs fail to initialise. Nothing
+    // else from the app's environment (tokens, API URLs, proxies) is passed.
     #[cfg(windows)]
     {
       use std::os::windows::process::CommandExt;
@@ -93,6 +102,8 @@ pub struct Supervisor {
   slots: Mutex<HashMap<String, Arc<Mutex<Slot>>>>,
   children: Mutex<HashMap<String, Arc<Mutex<Option<Child>>>>>,
   crashes: Mutex<HashMap<String, Vec<Instant>>>,
+  /// Local times of worker failures, for the summary's daily count. Unlike
+  /// `crashes`, re-enabling a plugin does not clear these.
   restarts: Mutex<HashMap<String, Vec<DateTime<Local>>>>,
 }
 
@@ -138,6 +149,8 @@ impl Supervisor {
     Arc::clone(slots.entry(id.to_owned()).or_default())
   }
 
+  /// Kills the plugin's worker, even mid-call. The interrupted call then
+  /// fails its session check instead of reporting a crash.
   pub fn terminate(&self, id: &str) {
     let child = lock(&self.children).remove(id);
     if let Some(child) = child {
@@ -145,6 +158,7 @@ impl Supervisor {
     }
   }
 
+  /// Kills the worker process behind the supervisor's back, as a crash would.
   #[cfg(test)]
   pub fn kill_process_for_test(&self, id: &str) {
     let children = self.children.lock().unwrap();
@@ -165,6 +179,7 @@ impl Supervisor {
     lock(&self.restarts).remove(id);
   }
 
+  /// Worker failures since local midnight.
   pub fn restarts_today(&self, id: &str) -> u32 {
     let today = Local::now().date_naive();
     lock(&self.restarts).get(id).map_or(0, |history| {
@@ -172,6 +187,8 @@ impl Supervisor {
     })
   }
 
+  /// Runs `f` once no call of the plugin is in progress, holding new calls
+  /// back until it returns.
   pub fn exclusive<T>(&self, id: &str, f: impl FnOnce() -> T) -> T {
     let slot = self.slot(id);
     let _slot = lock(&slot);
@@ -381,6 +398,8 @@ impl Supervisor {
     }
   }
 
+  /// Runs one guest command. `wait` false returns [`CallOutcome::Busy`]
+  /// instead of queueing behind a call already in progress.
   pub fn call(
     &self,
     host: &PluginHost,

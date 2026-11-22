@@ -105,6 +105,7 @@ impl IndexPage {
       .collect()
   }
 
+  /// Collection items in collection order, skipping anything that isn't a mod, sound, or WIP.
   pub fn collection_items(&self) -> Vec<SubmissionRef> {
     self
       .valid_records()
@@ -146,6 +147,7 @@ pub struct IndexCollection {
   pub preview_media: PreviewMedia,
   #[serde(rename = "_nItemCount", default)]
   pub item_count: u64,
+  // GameBanana omits the like count when it is zero.
   #[serde(rename = "_nLikeCount", default)]
   pub likes: u64,
   #[serde(rename = "_bHasContentRatings", default)]
@@ -171,6 +173,8 @@ pub struct CollectionDescription {
 }
 
 impl CollectionDescription {
+  /// Parses a `Core/Item/Data` response for `description,text`. A single item comes back
+  /// as a flat field array, several as an array of them; missing items are error objects.
   pub fn parse_many(value: serde_json::Value, requested: usize) -> Vec<Option<Self>> {
     let entries = match value {
       serde_json::Value::Array(values)
@@ -194,6 +198,7 @@ impl CollectionDescription {
   }
 }
 
+// Display-only Index fields must not discard the whole record when their shape is unexpected.
 fn lenient<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
   D: serde::Deserializer<'de>,
@@ -203,6 +208,7 @@ where
   Ok(serde_json::from_value(value).ok())
 }
 
+// GameBanana serializes PHP arrays as either JSON arrays or objects.
 fn deserialize_tags<'de, D>(deserializer: D) -> Result<Vec<Tag>, D::Error>
 where
   D: serde::Deserializer<'de>,
@@ -250,6 +256,7 @@ pub struct Category {
 }
 
 impl Category {
+  /// Index records name categories without `_idRow`; the id is in the profile URL.
   pub fn id(&self) -> Option<u64> {
     if self.remote_id > 0 {
       return Some(self.remote_id);
@@ -259,6 +266,7 @@ impl Category {
   }
 }
 
+/// One entry of `{Model}/Categories`, which lists a single level of the tree.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CategoryListing {
   #[serde(rename = "_idRow")]
@@ -309,6 +317,8 @@ pub struct PreviewImage {
   pub base_url: String,
   #[serde(rename = "_sFile", default)]
   pub file: String,
+  /// 530px-wide rendition. GameBanana only provides it for the cover image,
+  /// and points it at the original when the upload is already that small.
   #[serde(rename = "_sFile530", default)]
   pub file_530: Option<String>,
 }
@@ -349,6 +359,8 @@ impl PreviewMedia {
     self.images.iter().filter_map(PreviewImage::url).collect()
   }
 
+  /// Card-sized rendition of the cover image; full-size screenshots are
+  /// several hundred KB each and only the detail gallery needs them.
   pub fn thumbnail_url(&self) -> Option<String> {
     let cover = self.images.first()?;
     cover
@@ -386,6 +398,7 @@ pub struct SubmissionFile {
   pub is_archived: bool,
 }
 
+// A malformed file must not hide other usable downloads in the response.
 fn deserialize_files<'de, D>(deserializer: D) -> Result<Vec<SubmissionFile>, D::Error>
 where
   D: serde::Deserializer<'de>,
@@ -470,6 +483,7 @@ pub struct Profile {
   pub requirements: Vec<Vec<String>>,
   #[serde(rename = "_aGame", default)]
   pub game: Option<GameRef>,
+  /// Video page links (YouTube, Vimeo) shown on the submission page
   #[serde(rename = "_aEmbeddedMedia", default)]
   pub embedded_media: Vec<String>,
   #[serde(rename = "_sDevelopmentState", default)]
@@ -482,10 +496,12 @@ pub struct Profile {
   pub completion_percentage: Option<u8>,
   #[serde(rename = "_aWithholdNotice", default, deserialize_with = "lenient")]
   pub withhold_notice: Option<WithholdNotice>,
+  /// The author's note on an obsolete submission.
   #[serde(rename = "_sObsolescenceNotice", default)]
   pub obsolescence_notice: Option<String>,
 }
 
+/// Why GameBanana staff withheld a submission. `_sNotes` is staff-written HTML.
 #[derive(Debug, Clone, Deserialize)]
 pub struct WithholdNotice {
   #[serde(rename = "_tsDateWithheld", default)]
@@ -500,6 +516,7 @@ pub struct WithholdNotice {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct WithholdRule {
+  /// Like `R.17: Nonsense`.
   #[serde(rename = "_sCode", default)]
   pub code: String,
   #[serde(rename = "_sName", default)]
@@ -507,6 +524,8 @@ pub struct WithholdRule {
 }
 
 impl Profile {
+  /// Private, withheld, and trashed submissions still serve a profile, but GameBanana
+  /// hides them from everyone except their owner.
   pub fn is_hidden(&self) -> bool {
     self.is_private || self.is_withheld || self.is_trashed
   }
@@ -520,6 +539,7 @@ pub struct DownloadPage {
   pub is_withheld: bool,
   #[serde(rename = "_aFiles", default, deserialize_with = "deserialize_files")]
   pub files: Vec<SubmissionFile>,
+  // Superseded files the author archived; still downloadable and still listed on the profile.
   #[serde(
     rename = "_aArchivedFiles",
     default,
@@ -610,6 +630,7 @@ impl UpdateSnapshot {
   }
 }
 
+// Core returns files as an object keyed by file id, or an empty array when there are none.
 fn parse_update_files(value: &serde_json::Value) -> Vec<SubmissionFile> {
   match value {
     serde_json::Value::Array(files) => parse_file_entries(files.clone()),
@@ -618,6 +639,7 @@ fn parse_update_files(value: &serde_json::Value) -> Vec<SubmissionFile> {
   }
 }
 
+/// `Core/Item/Data` reports request-level failures as an HTTP 200 error object.
 pub fn core_error(value: &serde_json::Value) -> Option<String> {
   let fields = value.as_object()?;
   let code = fields.get("error_code").and_then(serde_json::Value::as_str);

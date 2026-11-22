@@ -23,6 +23,7 @@ import { compileOperator, compileForce } from "./operators";
 import { compileEmitter, compilePreEmission } from "./emission";
 import { compileRenderer } from "./renderers";
 
+/** Classes that would draw the effect wrong in a preview, so their system is skipped. */
 const BLOCKING = new Set([
   "C_INIT_InitSkinnedPositionFromCPSnapshot",
   "C_OP_SnapshotRigidSkinToBones",
@@ -49,6 +50,7 @@ export interface DefinitionFile {
   children: DefinitionFile[];
 }
 
+/** Compile the supported subset and retain every omitted class as diagnostics. */
 export const compileSystem = (file: DefinitionFile): CompiledSystem => {
   const definition = file.definition;
   const diagnostics: ParticleDiagnostic[] = [];

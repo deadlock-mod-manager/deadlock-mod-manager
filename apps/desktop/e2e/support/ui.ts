@@ -33,6 +33,8 @@ export const reveal = async (
     timeoutMsg: "Target did not become visible in the viewport",
   });
 };
+// A closing Radix dialog or menu keeps body pointer-events disabled until its
+// exit animation ends, so a trigger clicked meanwhile never opens.
 export const waitForOverlaysClosed = () =>
   browser.waitUntil(
     () =>
@@ -43,6 +45,9 @@ export const waitForOverlaysClosed = () =>
       ),
     { timeoutMsg: "A dialog or menu did not finish closing" },
   );
+// Look the element up again on every poll. The embedded WebKitGTK driver keeps
+// evaluating a node React has replaced instead of reporting it stale, so a
+// cached element's waitForDisplayed() can stay false although the page shows it.
 export const waitForDisplayed = (selector: string) =>
   browser.waitUntil(async () => (await $(selector)).isDisplayed(), {
     timeoutMsg: `${selector} was not displayed`,
@@ -119,10 +124,12 @@ export const openModTab = (value: string, name: string) =>
     }
     await expect(tab).toHaveAttribute("aria-selected", "true");
   });
+// The mod page keeps active files under its Files tab.
 export const openFilesTab = () => openModTab("files", "Files");
 export const installedFiles = () => $('[data-testid="installed-files"]');
 export const activeFiles = () => $('[data-testid="active-vpks"]');
 
+/** Radix menus open on keyboard input under the embedded driver. */
 export const openAddLocalMod = async () => {
   const menu = await $('[data-testid="interchange-import-menu"]');
   await menu.waitForClickable();
@@ -134,6 +141,10 @@ export const openAddLocalMod = async () => {
 export const ADD_MODS_DROP_AREA =
   '[role="button"][aria-label="Drop files/folders here, or click to select"]';
 
+/**
+ * Drops files on the open Add Mods dialog as file:// paths, which take the
+ * same route as files picked in the native dialog.
+ */
 export const dropFilePaths = async (filePaths: string[]) => {
   await $(ADD_MODS_DROP_AREA).waitForClickable();
   await browser.execute(

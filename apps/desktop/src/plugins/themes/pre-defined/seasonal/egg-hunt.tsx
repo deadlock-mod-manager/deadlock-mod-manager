@@ -104,6 +104,7 @@ export const EasterEgg = ({
   );
 };
 
+/** Five eggs peek out from the screen edges; the sidebar basket counts the ones found. */
 export const EggHunt = () => {
   const { t } = useTranslation();
   const round = useEggHunt((state) => state.round);

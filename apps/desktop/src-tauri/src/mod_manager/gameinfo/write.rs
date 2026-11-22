@@ -10,6 +10,7 @@ pub(crate) enum WriteError {
   Io(#[from] std::io::Error),
 }
 
+/// Read a byte snapshot, returning `None` when the file is missing.
 pub(crate) fn read(path: &Path) -> std::io::Result<Option<Vec<u8>>> {
   match fs::read(path) {
     Ok(content) => Ok(Some(content)),
@@ -18,11 +19,17 @@ pub(crate) fn read(path: &Path) -> std::io::Result<Option<Vec<u8>>> {
   }
 }
 
+/// Commit validated content at the file's target, keeping symlinks and permissions.
+/// `None` means the file was missing; creation never replaces an existing entry.
+/// Comparisons detect edits made while preparing the replacement. External
+/// editors do not share a lock with DMM: this is best-effort conflict detection,
+/// not a filesystem compare-and-swap guarantee.
 pub(crate) fn commit(
   path: &Path,
   expected: Option<&[u8]>,
   updated: &[u8],
 ) -> Result<(), WriteError> {
+  // Canonical paths also carry Windows' verbatim prefix for long game paths.
   let target = if expected.is_some() {
     path.canonicalize().map_err(|error| {
       if error.kind() == std::io::ErrorKind::NotFound {

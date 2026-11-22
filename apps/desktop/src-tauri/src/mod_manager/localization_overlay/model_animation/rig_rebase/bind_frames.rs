@@ -1,5 +1,7 @@
 use super::*;
 
+/// Keep existing model-space bind frames through a hierarchy change. New controls
+/// inherit their canonical local frame from the retained authored parent frame.
 pub(super) fn preserve(model: &mut Kv3Value, authored: &[Transform]) -> Option<()> {
   let canonical = worlds(model)?;
   let rig = model.get("m_modelSkeleton")?;
@@ -41,6 +43,7 @@ pub(super) fn preserve(model: &mut Kv3Value, authored: &[Transform]) -> Option<(
     })
     .collect::<Option<_>>()?;
   let rig = model.get_mut("m_modelSkeleton")?;
+  // Uniform float lanes are needed when a constant integer scale array changes.
   for (i, local) in locals.iter().enumerate() {
     replace_numbers(array_item_mut(rig, "m_bonePosParent", i)?, &local.position)?;
     replace_numbers(array_item_mut(rig, "m_boneRotParent", i)?, &local.rotation)?;
@@ -164,6 +167,7 @@ mod tests {
         .zip(authored[1].point([1., 0., 0.]))
         .all(|(a, b)| (a - b).abs() < 0.00001)
     );
+    // Bone order/remap indices remain stable despite the appended forward parent.
     assert_eq!(
       current
         .get("m_modelSkeleton")

@@ -16,8 +16,10 @@ export type FixtureRequest = {
   responseBytes?: number;
   closedBeforeHeaders?: boolean;
   error?: string;
+  /** The client's port, which tells connections apart. */
   remotePort?: number;
   endedAt?: string;
+  /** The request body, kept only for routes with `captureBody`. */
   body?: string;
 };
 
@@ -30,7 +32,12 @@ export type FixtureResponse = {
   chunkBytes?: number;
   chunkDelayMs?: number;
   disconnectAfterBytes?: number;
+  /** Consecutive requests this entry of a `sequence` answers. */
   repeat?: number;
+  /**
+   * A Range request starting at `at` (any Range request when `at` is left out)
+   * gets the bytes from `serveFrom`, labelled as such.
+   */
   rangeFrom?: { at?: number; serveFrom: number };
 };
 
@@ -40,6 +47,11 @@ export type FixtureRoute = FixtureResponse & {
   query?: Record<string, string | string[]>;
   sequence?: readonly FixtureResponse[];
   captureBody?: boolean;
+  /**
+   * Answer with the body of the latest captured request to another route,
+   * such as a profile just shared, or 404 before there is one. `select`
+   * picks the part to answer with.
+   */
   echoBodyOf?: {
     method: string;
     path: string;
@@ -54,6 +66,7 @@ export type FixtureServer = {
   close: (artifactsDirectory?: string) => Promise<void>;
 };
 
+// Ends early when the client closes the connection.
 const delay = (response: ServerResponse, ms: number): Promise<void> =>
   new Promise<void>((resolve) => {
     const done = () => {
@@ -134,6 +147,8 @@ const sendFixture = async (
     response.write(chunk);
     record.responseBytes += chunk.length;
     offset += chunk.length;
+    // No pause after the last chunk of a whole body, so `endedAt` marks its end.
+    // A cut keeps it: destroying the socket at once can drop unsent bytes.
     if (
       fixture.chunkDelayMs &&
       (offset < limit || fixture.disconnectAfterBytes !== undefined)
@@ -144,6 +159,7 @@ const sendFixture = async (
   else response.end();
 };
 
+// Each entry answers `repeat` requests in turn; the last one answers the rest.
 const pickInSequence = (
   sequence: readonly FixtureResponse[],
   index: number,
@@ -349,7 +365,10 @@ export const startFixtureServer = async (
     }
   };
   server.on("connect", (request, socket) => {
-    socket.on("error", () => {});
+    socket.on("error", () => {
+      // A blocked HTTPS client commonly resets the denied tunnel. The request
+      // remains recorded and the reset must not crash the supervisor.
+    });
     const record: FixtureRequest = {
       at: new Date().toISOString(),
       method: "CONNECT",

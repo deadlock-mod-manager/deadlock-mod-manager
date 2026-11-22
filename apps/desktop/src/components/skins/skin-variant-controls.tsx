@@ -26,6 +26,8 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
   const activeNames = [...modOptions.activeArchiveNames].join(", ");
 
   return (
+    // The dialog renders in a portal but still bubbles React events through
+    // here, so stop them before they reach the card's select handler.
     <div
       className='shrink-0'
       onClick={(e) => e.stopPropagation()}

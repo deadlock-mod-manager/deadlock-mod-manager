@@ -1,3 +1,14 @@
+//! Standing a hero that ships no gameplay clips.
+//!
+//! Heroes from a release vote arrive with only their menu clips (2026-10:
+//! Baba, Deadman Danny, Nurse Harrow, Solomon and Violet). Those clips are
+//! staged for a menu camera, not for a neutral preview: Violet's hero-picker
+//! clip is a jump with her brush parked two metres underground, and Danny's
+//! carries his flamethrower at his side with the off hand raised above it. So
+//! the clip is chosen by what the pose looks like, a weapon can be borrowed
+//! from a clip that holds it better, and the hands are then seated on the
+//! weapon's own grip points.
+
 use crate::error::Result;
 use crate::nm_anim;
 use crate::skeleton::{
@@ -5,6 +16,7 @@ use crate::skeleton::{
 };
 use crate::vpk_extract::VpkArchive;
 
+/// Menu clips worth trying, in order of preference when several pass.
 const MENU_POSE_CLIPS: [&str; 6] = [
     "ui_hero_select",
     "ui_hero_info",
@@ -14,12 +26,27 @@ const MENU_POSE_CLIPS: [&str; 6] = [
     "ui_matchmaking",
 ];
 
+/// Menu clips that hold a hero's weapon the way the game does, for heroes
+/// whose standing clip does not: model file stem → clip.
+///
+/// No pose measure tells these apart reliably — Danny's hero-picker weapon
+/// sits as far in front of his chest as Nurse Harrow's, which is held fine —
+/// so this is picked by eye. Danny's shop clip carries the flamethrower at his
+/// hip, barrel forward, but crouches, so only the weapon is taken from it.
+/// Entries go stale once the hero ships `weapon_stand_idle`, which wins.
 const WEAPON_HOLD_CLIPS: [(&str, &str); 1] = [("deadpack", "ui_shop")];
 
+/// How far above its bind height a foot may sit and still count as standing.
+/// Measured on the 2026-10 menu clips: standing poses stay within 8 units,
+/// jumps and crouches lift the lower foot by 18 or more.
 const GROUNDED_TOLERANCE: f32 = 8.0;
 
+/// How far the weapon bone may sit from the nearest hand and still count as
+/// held. Held weapons measured 5–10 units; parked ones 58 and more.
 const HELD_WEAPON_DISTANCE: f32 = 20.0;
 
+/// A hand further than this from its grip point is posed away on purpose
+/// (waving, pointing), so it is left alone rather than dragged across the body.
 const MAX_GRIP_CORRECTION: f32 = 30.0;
 
 type Mat4 = [f32; 16];
@@ -92,6 +119,7 @@ fn normalized(a: [f32; 3]) -> Option<[f32; 3]> {
     (len > 1e-5).then(|| scale(a, 1.0 / len))
 }
 
+/// The rotation turning `from` onto `to`, pivoting about `pivot`.
 fn rotation_about(pivot: [f32; 3], from: [f32; 3], to: [f32; 3]) -> Option<Mat4> {
     let from = normalized(from)?;
     let to = normalized(to)?;
@@ -99,6 +127,7 @@ fn rotation_about(pivot: [f32; 3], from: [f32; 3], to: [f32; 3]) -> Option<Mat4>
     let sin = length(axis);
     let cos = dot(from, to);
     if sin < 1e-6 {
+        // Already aligned; an exact flip cannot happen inside the reach clamp.
         return None;
     }
     let half = sin.atan2(cos) * 0.5;
@@ -117,6 +146,8 @@ fn rotation_about(pivot: [f32; 3], from: [f32; 3], to: [f32; 3]) -> Option<Mat4>
     Some(about)
 }
 
+/// Whether a menu pose reads as the hero standing with the weapon in hand.
+/// A check whose bones the rig lacks is skipped rather than failed.
 fn pose_is_neutral(skeleton: &Skeleton, pose: &[BoneTransform]) -> bool {
     let models = model_matrices(skeleton, pose);
 
@@ -161,6 +192,8 @@ fn load_menu_pose(
     )))
 }
 
+/// The topmost bone of the weapon's own chain (`weaponPivot` in every 2026-10
+/// rig): the ancestor of `weapon` that hangs directly off the skeleton root.
 fn weapon_root(skeleton: &Skeleton) -> Option<usize> {
     let mut bone = bone_index(skeleton, "weapon")?;
     loop {
@@ -184,8 +217,18 @@ fn descends_from(skeleton: &Skeleton, mut bone: usize, ancestor: usize) -> bool 
     }
 }
 
+/// The bone whose heading a borrowed weapon turns with: the chest, which the
+/// arms holding it hang from.
 const HEADING_BONE: &str = "spine_3";
 
+/// An upright frame at the pelvis, turned the way the chest faces.
+///
+/// Only the heading is taken from the chest: a crouching clip tilts the pelvis
+/// and chest, and a weapon placed relative to either inherits the tilt and
+/// points at the floor once the body stands up again. The feet are no guide
+/// to the heading in a menu pose — Danny stands with them splayed 45° apart —
+/// but in the bind pose they point straight ahead, so they fix which of the
+/// chest's own axes is forward.
 fn body_frame(skeleton: &Skeleton, models: &[Mat4]) -> Option<Mat4> {
     let pelvis = bone_index(skeleton, "pelvis")?;
     let chest = bone_index(skeleton, HEADING_BONE).unwrap_or(pelvis);
@@ -209,13 +252,14 @@ fn body_frame(skeleton: &Skeleton, models: &[Mat4]) -> Option<Mat4> {
     let side = cross(forward, [0.0, 1.0, 0.0]);
     let origin = position(&models[pelvis]);
     Some([
-        forward[0], forward[1], forward[2], 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        side[0], side[1], side[2], 0.0,
+        forward[0], forward[1], forward[2], 0.0, //
+        0.0, 1.0, 0.0, 0.0, //
+        side[0], side[1], side[2], 0.0, //
         origin[0], origin[1], origin[2], 1.0,
     ])
 }
 
+/// A direction through `matrix`, ignoring its translation.
 fn transform_vector(matrix: &Mat4, v: [f32; 3]) -> [f32; 3] {
     [
         matrix[0] * v[0] + matrix[4] * v[1] + matrix[8] * v[2],
@@ -224,6 +268,8 @@ fn transform_vector(matrix: &Mat4, v: [f32; 3]) -> [f32; 3] {
     ]
 }
 
+/// Move the weapon in `base` to where `donor` holds it relative to the body.
+/// The weapon's own bones (hoses, triggers) take the donor's pose with it.
 fn transplant_weapon(
     skeleton: &Skeleton,
     base: &mut [BoneTransform],
@@ -251,8 +297,12 @@ fn transplant_weapon(
     Some(())
 }
 
+/// How much of an arm's full length a hand may be asked to reach, so a seated
+/// arm keeps a slight bend instead of locking straight.
 const COMFORTABLE_REACH: f32 = 0.92;
 
+/// Where the wrist must be for the hand's grip point to land on the weapon's,
+/// with the shoulder it hangs from and how far that arm reaches.
 fn grip_reach(
     skeleton: &Skeleton,
     models: &[Mat4],
@@ -274,6 +324,10 @@ fn grip_reach(
     Some((wrist, shoulder, reach * COMFORTABLE_REACH))
 }
 
+/// Slide a borrowed weapon (without turning it) towards the body until both
+/// grips are within arm's reach. The donor clip's body is shaped differently —
+/// Danny's crouches — so its hold can leave a grip further out than the
+/// standing arm can stretch.
 fn pull_weapon_into_reach(skeleton: &Skeleton, pose: &mut [BoneTransform]) -> Option<()> {
     let root = weapon_root(skeleton)?;
     let parent = parent_of(skeleton, root)?;
@@ -305,6 +359,12 @@ fn pull_weapon_into_reach(skeleton: &Skeleton, pose: &mut [BoneTransform]) -> Op
     Some(())
 }
 
+/// Stand a hero in a menu pose with the weapon in hand.
+///
+/// The pose is the first menu clip whose first frame stands with the weapon in
+/// a hand, falling back to the first menu clip present — that still beats the
+/// bind pose. A hero listed in [`WEAPON_HOLD_CLIPS`] then takes its weapon
+/// from that clip instead, and the hands are seated on the weapon's grips.
 pub(crate) fn menu_pose(
     archive: &VpkArchive,
     entry_path: &str,
@@ -343,12 +403,20 @@ pub(crate) fn menu_pose(
         && transplant_weapon(skeleton, &mut pose, &donor).is_some()
     {
         pull_weapon_into_reach(skeleton, &mut pose);
+        // The weapon has moved away from the hands, so they follow it however far.
         max_correction = f32::MAX;
     }
     seat_hands_on_weapon(skeleton, &mut pose, max_correction);
     Ok(Some(pose))
 }
 
+/// Seat each hand on the weapon's grip point for it.
+///
+/// Deadlock rigs carry the grip twice: `attachHand_<side>` under the hand and
+/// `weaponAttachHand_<side>` under the weapon. The game's anim graph pulls the
+/// one onto the other at runtime; a sampled menu clip does not, so a two-bone
+/// IK on the arm does it here. Rigs without the pair are left untouched, and so
+/// is a hand further than `max_correction` from its grip.
 fn seat_hands_on_weapon(skeleton: &Skeleton, pose: &mut [BoneTransform], max_correction: f32) {
     for side in ["R", "L"] {
         seat_hand(skeleton, pose, side, max_correction);
@@ -371,6 +439,7 @@ fn seat_hand(
     let upper = parent_of(skeleton, lower)?;
     let models = model_matrices(skeleton, pose);
 
+    // Where the hand must be for its grip point to land on the weapon's.
     let target_hand = mat4_mul(
         &models[weapon_grip],
         &invert_affine(&local_matrix(&pose[grip])).ok()?,
@@ -393,6 +462,7 @@ fn seat_hand(
     );
     let wrist_target = add(shoulder, scale(direction, reach));
 
+    // Keep the elbow bending the way the clip bent it.
     let current_bend = sub(elbow, shoulder);
     let pole = normalized(sub(
         current_bend,
@@ -472,6 +542,8 @@ mod tests {
         }
     }
 
+    /// A shoulder → elbow → wrist arm with a grip under the hand, and a weapon
+    /// whose grip point sits `offset` away from the hand's.
     fn arm_holding_weapon(offset: [f32; 3]) -> (Skeleton, Vec<BoneTransform>) {
         let bones = [
             ("root_motion", -1),
@@ -506,6 +578,7 @@ mod tests {
         seat_hands_on_weapon(&skeleton, &mut pose, MAX_GRIP_CORRECTION);
         assert!(grip_gap(&skeleton, &pose) < 0.01);
 
+        // The arm keeps its bone lengths.
         let models = model_matrices(&skeleton, &pose);
         let upper = length(sub(position(&models[2]), position(&models[1])));
         let lower = length(sub(position(&models[3]), position(&models[2])));
@@ -533,6 +606,7 @@ mod tests {
             ("weaponPivot", 0),
             ("weapon", 6),
         ];
+        // The bind pose: pelvis at 50, feet pointing +x.
         let standing = |height: f32, pelvis_rotation: [f32; 4], pivot: [f32; 3]| {
             vec![
                 at([0.0; 3]),
@@ -549,6 +623,8 @@ mod tests {
             ]
         };
         let mut base = standing(50.0, IDENTITY, [0.0; 3]);
+        // Donor: crouched to 40 with the hips turned to face +z, weapon held 20
+        // in front of them.
         let half = std::f32::consts::FRAC_1_SQRT_2;
         let donor = standing(40.0, [0.0, -half, 0.0, half], [0.0, 40.0, 20.0]);
         let skeleton = skeleton_from(&bones, &base);
@@ -560,6 +636,8 @@ mod tests {
             close(position(&models[6]), [20.0, 50.0, 0.0]),
             "20 in front of the base pelvis"
         );
+        // The donor's weapon pointed along +x while facing +z, i.e. to its
+        // left; turned onto a body facing +x that is -z.
         assert!(close(position(&models[7]), [20.0, 50.0, -1.0]));
     }
 }

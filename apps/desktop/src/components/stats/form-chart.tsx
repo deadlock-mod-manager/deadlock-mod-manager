@@ -33,17 +33,20 @@ import {
 import { formatPercent } from "@/lib/stats/format";
 
 const DEFAULT_WINDOW = 20;
+/** Matches on the plot: enough for a trend, few enough that each bead reads. */
 const DEFAULT_SHOWN = 60;
 
 interface FormChartProps {
   matches: MatchHistoryEntry[];
   heroesById: Map<number, DeadlockHero>;
+  /** Matches in the rolling window; a short history wants a shorter one. */
   window?: number;
   shown?: number;
 }
 
 interface FormRow {
   index: number;
+  /** Percent, `null` until the rolling window has filled. */
   winrate: number | null;
   won: boolean;
   heroId: number;
@@ -69,6 +72,10 @@ const EndDot = ({ cx, cy }: { cx: number; cy: number }) => (
   </g>
 );
 
+/**
+ * The trailing winrate as a curve, with every match it is made of underneath as
+ * a bead. Losses are shorter beads, so the strip reads without colour too.
+ */
 export const FormChart = ({
   matches,
   heroesById,
@@ -126,6 +133,7 @@ export const FormChart = ({
                   <VerticalFade color='var(--color-winrate)' id={fillId} />
                 </defs>
                 <CartesianGrid vertical={false} />
+                {/* A band scale centres each point over its bead. */}
                 <XAxis dataKey='index' hide scale='band' />
                 <YAxis
                   axisLine={false}
@@ -201,6 +209,8 @@ export const FormChart = ({
                   isAnimationActive={false}
                   stroke='var(--color-winrate)'
                   strokeWidth={2}
+                  // The rolling winrate moves in 5% steps; a spline reads the
+                  // trend instead of drawing every step as a spike.
                   type='basis'
                 />
               </AreaChart>

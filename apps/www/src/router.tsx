@@ -21,6 +21,8 @@ import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
   const rqContext = TanstackQuery.getContext();
+  // One router per request on the server, one per page load in the browser,
+  // so the active language can live here without leaking between requests.
   const i18n = createI18n();
   const localeState: LocaleState = { current: DEFAULT_LOCALE };
 
@@ -28,15 +30,22 @@ export const getRouter = () => {
     if (locale === localeState.current) return;
     localeState.current = locale;
     i18n.changeLanguage(locale);
+    // Re-render once the language's chunk arrives; a no-op if it's loaded.
     void ensureLocale(i18n, locale).then(() => i18n.changeLanguage(locale));
   };
 
   const router = createRouter({
     routeTree,
     context: { ...rqContext, i18n, locale: localeState },
+    // Load the page's language before the first client render, so hydration
+    // matches the server HTML. The SSR query integration chains onto this.
     hydrate: async () => {
       await ensureLocale(i18n, localeState.current);
     },
+    // Routes are declared once without a language prefix. Incoming URLs like
+    // /ru/mods are matched as /mods with Russian active, and every link the
+    // router builds gets the active language's prefix back. Untranslated
+    // pages (legal, dashboard) keep their URL and the current language.
     rewrite: {
       input: ({ url }) => {
         const { locale, path } = delocalizePath(url.pathname);
@@ -53,7 +62,11 @@ export const getRouter = () => {
         return url;
       },
     },
+    // Hovering or focusing a link loads the route's code and data, so the
+    // click usually renders instantly.
     defaultPreload: "intent",
+    // React Query owns caching (see staleTime in root-provider); always hand
+    // preloads to the loaders and let the query cache decide what to refetch.
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: RouteErrorComponent,
     defaultNotFoundComponent: NotFoundComponent,

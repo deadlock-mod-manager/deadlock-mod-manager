@@ -12,6 +12,7 @@ export const catalogFacetQueryOptions = (
     queryKey: [...MODS_LIST_QUERY_KEY, "gamebanana-facets", query],
     queryFn: () => getGameBananaCatalogFacets(query),
     staleTime: STALE_TIME_API,
+    // Detail reads and sync batches can enrich SQLite before a full sync settles.
     refetchOnMount: "always",
     refetchInterval: syncing ? STALE_TIME_POLL : false,
   });

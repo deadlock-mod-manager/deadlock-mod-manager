@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import logger from "@/lib/logger";
 
+// A no-op if the user turned match sync off.
 export const MatchSyncRenderer = () => {
   useEffect(() => {
     invoke("resume_match_sync_monitoring").catch((error) => {

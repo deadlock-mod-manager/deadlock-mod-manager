@@ -36,6 +36,7 @@ describe("stats dashboard default layout", () => {
     await step(
       "the trend strip is computed from the match history",
       async () => {
+        // The fixture's 20 matches split evenly.
         await expect(widget("trends")).toHaveText(
           expect.stringContaining("50%"),
         );

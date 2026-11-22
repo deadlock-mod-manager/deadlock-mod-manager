@@ -65,6 +65,8 @@ interface SaveOrderResult {
 
 type FileOrders = Map<string, OrderedVpkFile[]>;
 
+// Files are only listed when the manifest names every enabled VPK; otherwise
+// there is no telling which pak holds which file.
 const toFileOrders = (entries: ModVpkFiles[], mods: LocalMod[]): FileOrders => {
   const modsById = new Map(mods.map((mod) => [mod.remoteId, mod]));
   const orders: FileOrders = new Map();
@@ -116,6 +118,7 @@ export const ModOrderingDialog = ({
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [droppedId, setDroppedId] = useState<string | null>(null);
+  // Only mods the player moved are marked; the ones they pushed aside are not.
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [handleFocused, setHandleFocused] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -156,6 +159,8 @@ export const ModOrderingDialog = ({
     setFileOrders(orders);
   }, [open, vpkFiles]);
 
+  // A moved row flashes and scrolls into view, so a jump to the top or bottom
+  // of a long list doesn't lose it.
   useEffect(() => {
     if (!droppedId) return;
     document
@@ -269,6 +274,8 @@ export const ModOrderingDialog = ({
 
   const saveOrderMutation = useMutation<SaveOrderResult, Error>({
     mutationFn: async () => {
+      // Each mod's VPKs go in their listed order; the backend keeps that order
+      // when it renumbers them.
       const modOrderData = orderedMods.map((mod, index) => [
         mod.remoteId,
         fileOrders.get(mod.remoteId)?.map((file) => file.vpk) ??
@@ -431,6 +438,8 @@ export const ModOrderingDialog = ({
                       })}
                     </ol>
                   </SortableContext>
+                  {/* The dialog is centered with a transform, which would
+                      offset a fixed overlay rendered inside it. */}
                   {createPortal(
                     <DragOverlay dropAnimation={null}>
                       {activeMod && (

@@ -52,6 +52,7 @@ const abilityName = (
   slot: number,
 ): string => abilities[slot - 1]?.name ?? t("abilities.fallback", { slot });
 
+/** Where in the skill order each of an ability's four steps comes. */
 const positionsBySlot = (steps: SkillStep[]) => {
   const positions = new Map<number, number[]>();
   steps.forEach((step, index) => {

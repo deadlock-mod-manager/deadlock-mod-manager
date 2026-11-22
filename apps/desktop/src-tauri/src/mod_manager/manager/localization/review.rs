@@ -1,3 +1,7 @@
+//! The player's applied compatibility review, kept apart from the repair
+//! package. Library changes discard the package and its receipt, but a review
+//! still answers the same questions while the inputs it covered are unchanged.
+
 use super::receipt::REPAIR_REVISION;
 use super::{LocalizationInputStamp, LocalizationOverlayPlanKey, LocalizationResolution};
 use crate::errors::Error;
@@ -19,12 +23,19 @@ use std::{
 
 const REVIEW_NAME: &str = "compatibility-review.json";
 
+/// What a review answered. Reuse requires every field to match, so a saved
+/// review never answers a question the player was not asked.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub(super) struct ReviewedInputs {
   revision: u32,
+  /// Digest of every finding that paused for review, without absolute load
+  /// priorities, so unrelated mods moving in the load order do not change it.
   subject: String,
+  /// Stamps of each mod the findings name; `None` when its files were missing.
   mods: BTreeMap<String, Option<Vec<LocalizationInputStamp>>>,
   base_game: Vec<LocalizationInputStamp>,
+  /// The game history compiled data was read against. The findings don't
+  /// capture it, so a change reopens the review. Unset for text-only reviews.
   compiled_history: Option<CompiledHistory>,
 }
 
@@ -56,6 +67,8 @@ struct Subject<'a> {
 struct TextConflict<'a> {
   key: &'a str,
   vanilla_value: Option<&'a str>,
+  /// In load order, which picks the recommended winner, so reordering these
+  /// mods reopens the review.
   candidates: Vec<(&'a str, &'a str, &'a str)>,
 }
 
@@ -67,6 +80,8 @@ struct CompiledConflict<'a> {
 }
 
 impl ReviewedInputs {
+  /// Describes what the review of `analysis` covers. `key` must be the plan's
+  /// key after the build, so its history digest includes anything it learned.
   pub fn new(
     analysis: &LocalizationOverlayAnalysis,
     key: &LocalizationOverlayPlanKey,
@@ -114,6 +129,9 @@ impl ReviewedInputs {
           .map(|baseline| baseline.mod_id.as_str()),
       )
       .collect();
+    // Model warnings name their other mods only in `detail` ("mod:archive" or
+    // "mod id:"), so take every library mod it mentions. A false match only
+    // adds a stamp: the review may reopen, but is never reused wrongly.
     for warning in &model_warnings {
       involved.extend(
         key
@@ -123,6 +141,8 @@ impl ReviewedInputs {
           .filter(|mod_id| warning.detail.contains(&format!("{mod_id}:"))),
       );
     }
+    // Every baseline of an involved mod, matched or not: learning can change
+    // how its compiled files are read without changing the findings above.
     let baselines: Vec<_> = analysis
       .baselines
       .iter()
@@ -208,6 +228,7 @@ fn mod_input_stamps(
 }
 
 impl SavedReview {
+  /// The saved choices when they were made for exactly these inputs.
   pub fn resolutions_for(self, inputs: &ReviewedInputs) -> Option<Vec<LocalizationResolution>> {
     (self.inputs == *inputs).then_some(self.resolutions)
   }
@@ -217,6 +238,9 @@ pub(super) fn path(overlay: &Path) -> PathBuf {
   overlay.with_file_name(REVIEW_NAME)
 }
 
+/// Loads the saved review. A missing or malformed file means the player has
+/// not reviewed these mods, so review is asked again. Other read errors fail,
+/// as they do for the receipt.
 pub(super) fn load(overlay: &Path) -> Result<Option<SavedReview>, Error> {
   match fs::read(path(overlay)) {
     Ok(bytes) => Ok(
@@ -630,6 +654,7 @@ mod tests {
   }
 }
 
+/// Saved reviews through the mod manager: applying, library changes and launch.
 #[cfg(test)]
 mod applied_review_tests {
   use super::super::tests::{
@@ -649,6 +674,8 @@ mod applied_review_tests {
     write_vpk(path, &[(REVIEW_LOCALE, text.as_bytes())]);
   }
 
+  /// Two fixed mods set the same game token differently, so fixing them needs
+  /// a review. A third, plain mod is unrelated to it.
   fn manager_with_conflict() -> (tempfile::TempDir, ModManager) {
     let temp = tempfile::tempdir().unwrap();
     let mut manager = manager_with_gameinfo(temp.path());
@@ -681,6 +708,8 @@ mod applied_review_tests {
     (temp, manager)
   }
 
+  /// Applies the review with `choice` (`load order`, `vanilla` or a mod ID)
+  /// and returns the value the package must hold.
   fn apply_review(manager: &mut ModManager, choice: &str) -> String {
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
     let [conflict] = analysis.conflicts.as_slice() else {
@@ -781,6 +810,7 @@ mod applied_review_tests {
       refresh_repairs(&mut manager, None).unwrap();
       assert_reviewed_package(&manager, &expected);
 
+      // The review outlives the manager, and launch reuses it like a refresh.
       drop(manager);
       let manager = test_manager(temp.path());
       manager.invalidate_localization_overlay(None);
@@ -804,6 +834,7 @@ mod applied_review_tests {
       apply_review(&mut manager, "load order");
       let base = manager.get_addons_path(None).unwrap();
       match change {
+        // Only fixed mods take part in a review.
         "new contender" => {
           write_review_vpk(&base.join("pak04_dir.vpk"), "Third", "");
           let mut manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -833,6 +864,7 @@ mod applied_review_tests {
             )
             .unwrap();
         }
+        // Same conflicting value; only the losing mod's files changed.
         "loser rewritten" => {
           let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
           let loser = &analysis.conflicts[0].candidates[1];
@@ -850,6 +882,7 @@ mod applied_review_tests {
             "\"other_token\" \"Game other\"",
           );
         }
+        // A new finding that pauses launch, beside the same conflict.
         "missing mod" => {
           let mut manifest = ProfileVpkManifest::load(&base).unwrap();
           manifest.mark_enabled(
@@ -872,6 +905,7 @@ mod applied_review_tests {
     let (_temp, mut manager) = manager_with_conflict();
     apply_review(&mut manager, "first");
     let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    // The earlier package stays current; make saving the new review fail.
     fs::remove_file(review::path(&overlay)).unwrap();
     fs::create_dir_all(review::path(&overlay)).unwrap();
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
@@ -946,6 +980,8 @@ mod applied_review_tests {
       .unwrap();
     assert!(!other.parent().unwrap().exists());
 
+    // A review that can't be removed doesn't fail the deletion after its
+    // shards are gone; the package is still removed.
     fs::create_dir_all(other.parent().unwrap()).unwrap();
     fs::write(&other, b"package").unwrap();
     fs::write(receipt::path(&other), b"{}").unwrap();

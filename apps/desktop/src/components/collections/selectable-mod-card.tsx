@@ -3,6 +3,10 @@ import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * A mod card with a checkbox for picking it into a partial download. The
+ * checkbox shows on hover, and on every card once anything is picked.
+ */
 export const SelectableModCard = ({
   mod,
   selectable,
@@ -14,6 +18,7 @@ export const SelectableModCard = ({
   mod: ModDto;
   selectable: boolean;
   selected: boolean;
+  /** Whether any mod is picked, which keeps every checkbox visible. */
   selecting: boolean;
   onToggle: (remoteId: string) => void;
   children: ReactNode;

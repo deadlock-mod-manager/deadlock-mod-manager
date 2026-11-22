@@ -1,3 +1,7 @@
+//! Hostcall broker. Every method checks the session's current grant and the
+//! scope of the request it approved; the plugin identity comes from the
+//! worker session, never from the request.
+
 use super::PluginHost;
 use super::abi;
 use super::activity::{ExternalPluginActivity, ExternalPluginActivityKind as Kind};
@@ -18,6 +22,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::path::Path;
 
+/// Refusals recorded as `blocked` activity: a permission or scope the grant
+/// does not cover, or a method outside the host API.
 const BLOCKED_CODES: [&str; 2] = ["permission_denied", "unknown_method"];
 const MAX_NOTIFICATION_TITLE: usize = 60;
 const MAX_NOTIFICATION_BODY: usize = 200;
@@ -211,6 +217,7 @@ fn require(plugin: &ActivePlugin, id: Id) -> Result<&Permission, HostError> {
   })
 }
 
+/// The `mods` request, when it includes `access`.
 fn require_mods(plugin: &ActivePlugin, access: ModAccess) -> Result<&Permission, HostError> {
   let request = require(plugin, Id::Mods)?;
   if !request.allows_mods(access) {
@@ -234,6 +241,7 @@ fn picked_profile(plugin: &ActivePlugin) -> Result<&str, HostError> {
     .ok_or_else(|| HostError::denied(Id::Mods, "No profile was picked for this plugin"))
 }
 
+/// The granted file or folder with the request's access level.
 fn file_scope(plugin: &ActivePlugin) -> Result<(Scope<'_>, FileAccess), HostError> {
   let Permission::Files {
     kind,
@@ -576,6 +584,7 @@ fn dispatch(
   }
 }
 
+/// Handles one hostcall and always answers with an envelope.
 pub fn handle(host: &PluginHost, plugin: &ActivePlugin, request: &str) -> String {
   let request: HostRequest = match serde_json::from_str(request) {
     Ok(request) => request,

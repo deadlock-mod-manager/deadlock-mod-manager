@@ -1,3 +1,15 @@
+//! Config files extracted from archives (imports, GameBanana downloads, mod
+//! downloads) wait here until the user reviews them.
+//!
+//! Layout: `<app data>/performance/staging/<id>/manifest.json`, with the
+//! config files under `files/` at their paths inside the archive.
+//!
+//! An archive often holds several configs (tiers, translated copies, a stock
+//! backup), so each becomes a variant. Variants are listed best first: the
+//! untranslated, recommended, top-level file that actually changes something.
+//! Translated copies whose settings match another variant point at it through
+//! `duplicate_of`.
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -25,11 +37,14 @@ const STALE_AFTER: Duration = Duration::from_secs(24 * 60 * 60);
 struct Manifest {
   label: Option<String>,
   variants: Vec<ImportVariant>,
+  /// video.txt files, which are companions of a variant rather than variants.
   videos: Vec<String>,
 }
 
+/// A staged archive, opened for analysis.
 pub struct StagedImport {
   pub id: String,
+  /// Archive or mod name, for the suggested config name.
   pub label: Option<String>,
   pub variants: Vec<ImportVariant>,
   videos: Vec<String>,
@@ -45,6 +60,8 @@ impl StagedImport {
     read_text(&self.files_dir.join(&variant.path))
   }
 
+  /// The video.txt nearest to a variant: in its folder or that folder's
+  /// `cfg/`, else the closest parent folder, up to the archive root.
   pub fn companion_video(&self, variant: &ImportVariant) -> Option<String> {
     let mut folder: Vec<&str> = variant.path.split('/').collect();
     folder.pop();
@@ -69,6 +86,10 @@ pub fn staging_root(app_data_dir: &Path) -> PathBuf {
   catalog::cache_dir(app_data_dir).join("staging")
 }
 
+/// Copies config files out of an extracted mod archive. `None` when there are
+/// none: a gameinfo.gi that only differs from stock outside ConVars and the
+/// engine sections (the `citadel/addons` loader skins ship) doesn't count,
+/// and neither does a lone video.txt.
 pub fn stage_from_dir(
   app_data_dir: &Path,
   source_dir: &Path,
@@ -85,6 +106,8 @@ pub fn stage_from_dir(
   Ok(staged.map(|staged| (staged.id, staged.variants)))
 }
 
+/// Stages an archive the user chose to import. Unlike a mod download, every
+/// config file counts, and an archive with only video.txt files lists those.
 pub(super) fn stage_import(
   app_data_dir: &Path,
   source_dir: &Path,
@@ -119,6 +142,7 @@ pub fn discard(app_data_dir: &Path, staging_id: &str) -> Result<(), Error> {
   }
 }
 
+/// Deletes staging folders older than a day. Called at startup.
 pub fn cleanup_stale(app_data_dir: &Path) {
   let Ok(entries) = fs::read_dir(staging_root(app_data_dir)) else {
     return;
@@ -141,6 +165,8 @@ pub fn cleanup_stale(app_data_dir: &Path) {
   }
 }
 
+/// Staging ids are the random names of the folders we create; anything else
+/// could name a path outside the staging root.
 fn staging_dir(app_data_dir: &Path, staging_id: &str) -> Result<PathBuf, Error> {
   let valid = !staging_id.is_empty()
     && staging_id.len() <= 64
@@ -160,6 +186,7 @@ enum StageMode {
 }
 
 struct Candidate {
+  /// Path inside the archive, `/`-separated.
   path: String,
   format: ImportFormat,
   parsed: ParsedConfig,
@@ -175,6 +202,8 @@ fn stage(
 ) -> Result<Option<StagedImport>, Error> {
   let (mut candidates, videos) = collect(source_dir, catalog);
   if mode == StageMode::ModDownload {
+    // Any `name value` line reads as a console command, so a pack's notes
+    // (`pak01_dir.vpk  HUD++`) would pass for a cfg without a real convar.
     candidates.retain(|candidate| {
       candidate.facts.performance_changes
         && (candidate.format != ImportFormat::Cfg
@@ -247,6 +276,8 @@ fn stage(
   }))
 }
 
+/// Config files under `source_dir`, and the video.txt files beside them.
+/// Links are not followed and oversized or unreadable files are skipped.
 fn collect(source_dir: &Path, catalog: &Catalog) -> (Vec<Candidate>, Vec<String>) {
   let mut candidates = Vec::new();
   let mut videos = Vec::new();
@@ -314,6 +345,8 @@ fn collect(source_dir: &Path, catalog: &Catalog) -> (Vec<Candidate>, Vec<String>
   (candidates, videos)
 }
 
+/// Text files named like documentation. Readmes often quote a few convars
+/// between paragraphs, which would read as a cfg.
 const DOCUMENT_WORDS: &[&str] = &[
   "readme",
   "read me",
@@ -339,6 +372,8 @@ fn read_text(path: &Path) -> Result<String, Error> {
   Ok(formats::decode_text(&fs::read(path)?))
 }
 
+/// Orders candidates best first and marks copies whose settings match a
+/// better-ranked variant of the same format.
 fn rank_variants(candidates: Vec<Candidate>) -> Vec<ImportVariant> {
   let richest = candidates
     .iter()
@@ -388,6 +423,8 @@ fn convar_count(parsed: &ParsedConfig) -> usize {
     .count()
 }
 
+/// Higher is better. Translated copies, stock backups, partial files and
+/// files buried in folders rank low; "recommended" ranks high.
 fn preference(candidate: &Candidate, richest: usize) -> i32 {
   let mut score = match candidate.format {
     ImportFormat::FullGameinfo | ImportFormat::ConvarsSnippet => 0,
@@ -421,6 +458,7 @@ fn preference(candidate: &Candidate, richest: usize) -> i32 {
     score -= 30;
   }
   score -= 5 * candidate.path.matches('/').count() as i32;
+  // Far fewer convars than the richest file: a stock copy or a fragment.
   if convar_count(&candidate.parsed) * 10 < richest * 4 {
     score -= 60;
   }
@@ -429,6 +467,8 @@ fn preference(candidate: &Candidate, richest: usize) -> i32 {
 
 type SettingsSignature = Vec<(String, String)>;
 
+/// Normalized settings, ignoring FileSystem (translations mount their own
+/// language folder) and comments, so translated copies compare equal.
 fn settings_signature(parsed: &ParsedConfig) -> SettingsSignature {
   let leaves: Vec<_> = parsed
     .leaves
@@ -464,6 +504,9 @@ struct Language {
   english: bool,
 }
 
+/// Language folder names seen in config archives, with their display name.
+/// Codes only count as a whole folder name (`ru/`), names also inside one
+/// (`FPS Configs (Russian)`).
 const LANGUAGES: &[(&str, &str)] = &[
   ("english", "English"),
   ("russian", "Russian"),
@@ -552,6 +595,9 @@ fn words(text: &str) -> impl Iterator<Item = &str> {
     .filter(|word| !word.is_empty())
 }
 
+/// Labels from paths: folders shared by every variant, wrapper folders such
+/// as `gameinfo (now with 15 languages)` and plain file names are dropped,
+/// so `dyson build/gameinfo (…)/russian/gameinfo.gi` reads `Russian`.
 fn variant_labels(paths: &[String]) -> Vec<String> {
   let split: Vec<Vec<&str>> = paths.iter().map(|path| path.split('/').collect()).collect();
   let common = split

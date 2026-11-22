@@ -23,6 +23,7 @@ export function reportCacheKeys(
       keys.add(`reports:counts:${report.modId}`);
     }
   }
+  // The recent reports endpoint accepts limits from 1 through 100.
   for (let limit = 1; limit <= 100; limit++) {
     keys.add(`reports:recent:${limit}`);
   }

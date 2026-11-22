@@ -118,6 +118,8 @@ export const AnimatedModelPreview = ({
     retry: 1,
     meta: { skipGlobalErrorHandler: true },
   });
+  // The hero whose model folder holds this model; the longest folder wins so
+  // `nano/nano_v2/` beats `nano/`.
   const hero = (heroAbilities.data?.data ?? [])
     .filter((set) => source.entryPath.startsWith(set.modelDirectory))
     .sort((a, b) => b.modelDirectory.length - a.modelDirectory.length)[0];
@@ -133,9 +135,11 @@ export const AnimatedModelPreview = ({
       ...abilityNames,
     ],
     queryFn: () => listPreviewAnimations(source, abilityNames),
+    // The names find clips not prefixed `ability_`; wait for them.
     enabled: modelAssetQuery.enabled && !heroAbilities.isPending,
   });
   const actions = choices.data ?? [];
+  // Until something is picked, play the first action (an idle) on its own.
   const action =
     selectedId === REST_POSE
       ? null
@@ -151,6 +155,7 @@ export const AnimatedModelPreview = ({
     ],
     queryFn: () => decodePreviewAnimation(source, action?.clips ?? []),
     enabled: action !== null,
+    // Keep the previous move on screen while the next one decodes.
     placeholderData: (previous) => previous,
     staleTime: 60_000,
     gcTime: 30_000,

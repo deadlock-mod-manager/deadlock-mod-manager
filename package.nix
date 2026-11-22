@@ -55,6 +55,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     glib-networking
     gtk3
     libsoup_3
+    # Only for tauri-cli's build-time lookup; the Linux build has no tray
     libayatana-appindicator
     pango
 
@@ -86,8 +87,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
       --replace '"createUpdaterArtifacts": true' '"createUpdaterArtifacts": false'
   '';
 
+  # Environment variables
   env.VITE_API_URL = "https://api.deadlockmods.app";
 
+  # Skip tests that require network access
   checkFlags = [
     "--skip=download_manager::downloader::tests::test_download_file"
   ];

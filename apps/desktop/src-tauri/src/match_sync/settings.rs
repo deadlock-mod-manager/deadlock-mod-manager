@@ -1,3 +1,7 @@
+//! Persisted, off-by-default state for match-sync, in its own store file so writes
+//! never race the zustand-managed `state.json`. The quota timestamps live here too,
+//! which is what makes the daily fetch cap survive reboots and app restarts.
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,11 +24,16 @@ const KEY_FULL_SYNC_COMPLETE: &str = "full_sync_complete";
 const KEY_ACCOUNT_LIST_DRAINED: &str = "account_list_drained_at";
 const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 const KEY_HISTORY_HITS: &str = "history_hits";
+// Global, not per account: a friend shared by several accounts is looked up once.
 const KEY_FRIEND_COOLDOWNS: &str = "friend_cooldowns";
+// Steam3 account ids the user turned off. Their saved sessions are never read.
 const KEY_EXCLUDED_ACCOUNTS: &str = "excluded_accounts";
 
 const MAX_FETCHED_IDS: usize = 10_000;
 
+/// Bump to ask every user again. Choices saved under an older version are
+/// ignored, so the config falls back to the default: off, no consent.
+/// Version 1 consent could be given just by viewing the onboarding step.
 const CONSENT_VERSION: u64 = 2;
 
 pub fn now_secs() -> i64 {
@@ -63,6 +72,7 @@ fn has_current_consent_version(store: &Store<AppRuntime>) -> bool {
   store.get(KEY_CONSENT_VERSION).and_then(|v| v.as_u64()) == Some(CONSENT_VERSION)
 }
 
+// The first write under a new version must not revive the old consent value.
 fn stamp_consent_version(store: &Store<AppRuntime>) {
   if !has_current_consent_version(store) {
     store.set(KEY_CONSENT, false);
@@ -74,6 +84,7 @@ pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError
   let store = store(app)?;
   stamp_consent_version(&store);
   store.set(KEY_CONSENT, accepted);
+  // enabled=true with consent_accepted=false is never a valid persisted state.
   if !accepted {
     store.set(KEY_ENABLED, false);
   }
@@ -168,6 +179,8 @@ pub fn save_fetched_ids(
   save(&store)
 }
 
+// Unix timestamp until which this account's GC handshake is known-broken (e.g. it
+// doesn't own the game), so the loops can skip it instead of re-paying the connect cost.
 pub fn load_gc_backoff_until(app: &AppHandle, steam_id64: u64) -> Option<i64> {
   store(app)
     .ok()?
@@ -230,6 +243,7 @@ pub fn save_quota(
   save(&store)
 }
 
+// Friend account id -> unix time before which their history isn't looked up again.
 pub fn load_friend_cooldowns(app: &AppHandle) -> Result<HashMap<u32, i64>, MatchSyncError> {
   Ok(
     store(app)?
@@ -239,6 +253,7 @@ pub fn load_friend_cooldowns(app: &AppHandle) -> Result<HashMap<u32, i64>, Match
   )
 }
 
+// Records friends' cooldowns (account id, until) and drops the ones that already expired.
 pub fn set_friend_cooldowns(
   app: &AppHandle,
   updates: &[(u32, i64)],

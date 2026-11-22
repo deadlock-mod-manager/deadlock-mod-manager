@@ -11,7 +11,9 @@ export const PICK_CHIP_CLASS =
 interface PickChipProps {
   heroId: number;
   hero: DeadlockHero | undefined;
+  /** Marked as the pick the party would do better without. */
   isWeakest: boolean;
+  /** Just placed by a suggested swap; glows once so the eye finds it. */
   isLanded: boolean;
   onRemove: () => void;
 }

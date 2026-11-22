@@ -39,6 +39,11 @@ const findCommissionAuthor = async (remoteId: string) => {
   };
 };
 
+/**
+ * The author's DMM Commissions listing, or null when they aren't a verified
+ * commissions author (or the site is offline). `requestUrl` is null while
+ * their commissions are closed.
+ */
 export const useCommissionAuthor = (
   author: ModAuthorDto | null | undefined,
 ) => {
@@ -47,6 +52,7 @@ export const useCommissionAuthor = (
   const { data } = useQuery({
     queryKey: ["commission-author", remoteId],
     queryFn:
+      // The E2E harness only reaches fixture servers, never the live site.
       remoteId && import.meta.env.VITE_DMM_E2E_HARNESS !== "1"
         ? () => findCommissionAuthor(remoteId)
         : skipToken,

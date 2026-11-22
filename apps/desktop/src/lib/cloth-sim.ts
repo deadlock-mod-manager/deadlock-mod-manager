@@ -9,16 +9,22 @@ import type { PreviewClothNodeBase } from "@/types/generated/PreviewClothNodeBas
 const STEP = 1 / 60;
 const MAX_STEPS_PER_FRAME = 4;
 const ITERATIONS = 4;
+/** Velocity kept per step on top of each node's own damping; keeps the solver calm. */
 const BASE_RETENTION = 0.985;
+/** A static node jumping further than this in one frame is a cut, not motion. */
 const TELEPORT_DISTANCE = 40;
+/** Hard leash on any node's distance from its animated position. */
 const MAX_STRAY = 48;
 
 interface NodeState {
   bone: THREE.Bone | null;
+  /** Read straight from the animated skeleton rather than derived from a parent. */
   driven: boolean;
+  /** Bind pose relative to the parent node (or the model root). */
   relative: THREE.Matrix4;
   goal: THREE.Matrix4;
   goalPosition: THREE.Vector3;
+  /** Where the goal was at the last simulation step. */
   stepGoal: THREE.Vector3;
   position: THREE.Vector3;
   previous: THREE.Vector3;
@@ -27,10 +33,17 @@ interface NodeState {
 
 const sanitize = (name: string) => THREE.PropertyBinding.sanitizeNodeName(name);
 
+/**
+ * Simulates a model's Source 2 cloth on top of whatever pose the animation
+ * mixer produced, then writes the result into the cloth bones.
+ */
 export const createClothEffect =
   (cloth: PreviewCloth) =>
   ({ model }: Pick<ViewerEffectContext, "model">): ViewerEffect | null => {
     const nodes = cloth.nodes;
+    // A dynamic node nothing holds up (no static node reachable through rods,
+    // no pull toward its animation, no stray limit) would just fall; jiggle
+    // bones authored that way follow the animation instead.
     const linked = nodes.map((): number[] => []);
     for (const {
       nodes: [a, b],
@@ -87,6 +100,7 @@ export const createClothEffect =
       if (node.parent >= 0 && !pinned[index])
         state[node.parent].children.push(index);
     });
+    // Parents before children, so goals and bone writes can build on them.
     const depth = (index: number, seen = 0): number =>
       nodes[index].parent < 0 || seen > nodes.length
         ? 0
@@ -106,6 +120,9 @@ export const createClothEffect =
         scale: bone.scale.clone(),
       };
     });
+    // The animated pose of each bone this effect overwrites. When the mixer is
+    // paused it leaves our last write in place, so that is swapped back for
+    // the pose it last produced before goals are read.
     const animatedLocals = restLocals.map((rest) => ({
       ...rest,
       position: rest.position.clone(),
@@ -153,6 +170,7 @@ export const createClothEffect =
         if (node.driven && node.bone) node.goal.copy(node.bone.matrixWorld);
         else if (parent >= 0)
           node.goal.multiplyMatrices(state[parent].goal, node.relative);
+        // A node with no cloth parent hangs off its bone's own animated pose.
         else if (node.bone) node.goal.copy(node.bone.matrixWorld);
         else node.goal.multiplyMatrices(model.matrixWorld, node.relative);
         node.goalPosition.setFromMatrixPosition(node.goal);
@@ -239,6 +257,7 @@ export const createClothEffect =
       }
     };
 
+    /** One fixed step; `fraction` is how far through this frame's goal motion it lands. */
     const step = (fraction: number, steps: number) => {
       nodes.forEach((node, index) => {
         const current = state[index];
@@ -248,6 +267,7 @@ export const createClothEffect =
           current.previous.copy(goal);
           return;
         }
+        // This step's share of the animated motion, carried into the node.
         motion
           .subVectors(current.goalPosition, current.stepGoal)
           .multiplyScalar(node.animationForceAttraction / steps);
@@ -350,6 +370,8 @@ export const createClothEffect =
           reconstructFrame(base, false, goalFrame) &&
           reconstructFrame(base, true, solvedFrame)
         ) {
+          // Compare the solved frame with the animated bind frame. Applying
+          // only their delta preserves the exported bone's rotation convention.
           aim.copy(solvedFrame).multiply(goalFrame.invert());
           rotation.premultiply(aim);
         } else if (node.children.length > 0) {

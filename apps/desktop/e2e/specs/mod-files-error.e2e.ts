@@ -10,6 +10,8 @@ import { navigate, openFilesTab, waitForDisplayed } from "../support/ui";
 const FILES_TAB = '[role="tab"][id$="-trigger-files"]';
 const FILES_PANEL = '[role="tabpanel"][id$="-content-files"]';
 
+// GameBanana's file list fails to load for a mod the user has not installed.
+// The page must keep its Files tab, say the list failed, and offer a retry.
 describe("Mod page file list failure", () => {
   it("keeps the Files tab and loads the files on retry", async () => {
     const runtime = await startApplication();
@@ -20,6 +22,7 @@ describe("Mod page file list failure", () => {
     await waitForDisplayed(`[title="${CATALOG_MOD_NAME}"]`);
     await $(`[title="${CATALOG_MOD_NAME}"]`).click();
     await waitForDisplayed(`//div[normalize-space()="${CATALOG_MOD_NAME}"]`);
+    // The transport retries the failing request for a few seconds first.
     const kept = await browser
       .waitUntil(() => $(FILES_TAB).isExisting(), { timeout: 20_000 })
       .catch(() => false);
@@ -54,6 +57,7 @@ describe("Mod page file list failure", () => {
       await browser.waitUntil(async () => !(await retry.isEnabled()), {
         timeoutMsg: "Try again never showed the retry in flight",
       });
+      // The transport retries the failing request for a few seconds first.
       await browser.waitUntil(() => retry.isEnabled(), {
         timeout: 20_000,
         timeoutMsg: "The failed retry never finished",
@@ -70,6 +74,7 @@ describe("Mod page file list failure", () => {
     });
     await step("Retry loads the file list", async () => {
       await retry.click();
+      // The fixture delays the retried response; the tab and its error stay.
       await browser.waitUntil(async () => !(await retry.isEnabled()), {
         timeoutMsg: "Try again never showed the retry in flight",
       });

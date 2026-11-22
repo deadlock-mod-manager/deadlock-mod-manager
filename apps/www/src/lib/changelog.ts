@@ -1,8 +1,16 @@
+/**
+ * Turns the desktop app's Changesets output into release notes for the
+ * /changelog page: the generated CHANGELOG.md for shipped versions, plus the
+ * pending .changeset/*.md files that haven't been versioned yet.
+ */
+
 export type ChangeKind = "new" | "experimental" | "improved" | "fixed";
 
 export interface Change {
   kind: ChangeKind;
+  /** First line of the entry. */
   summary: string;
+  /** Remaining lines; lines starting with "- " are list items. */
   details: string[];
 }
 
@@ -18,12 +26,17 @@ type Bump = (typeof BUMPS)[number];
 const parseBump = (text = "") =>
   BUMPS.find((bump) => bump === text.trim().toLowerCase());
 
+/**
+ * The wording wins over the bump: "Fix …" is a fix and "Add …" is new even in
+ * a patch. Otherwise minor and major changes are new and patches improve.
+ */
 export const changeKind = (bump: Bump, summary: string): ChangeKind => {
   if (/^fix(es|ed)?\b/i.test(summary)) return "fixed";
   if (/^add(s|ed)?\b/i.test(summary)) return "new";
   return bump === "patch" ? "improved" : "new";
 };
 
+/** "- @deadlock-mods/shared@2.1.0": Changesets lists dependency bumps as sub-items. */
 const DEPENDENCY_BUMP = /^- @[\w-]+\/[\w-]+@\d/;
 
 const toChange = (
@@ -44,6 +57,10 @@ const toChange = (
 
 const normalize = (markdown: string) => markdown.replace(/\r\n/g, "\n");
 
+/**
+ * Releases in a Changesets-generated CHANGELOG.md, newest first. A hand-added
+ * "### Experimental Changes" section files its entries as experimental.
+ */
 export const parseChangelog = (markdown: string): Release[] =>
   normalize(markdown)
     .split(/^## /m)
@@ -69,6 +86,7 @@ export const parseChangelog = (markdown: string): Release[] =>
           bump = parseBump(heading[1]) ?? bump;
         } else if (line.startsWith("- ")) {
           flush();
+          // Drop the commit hash Changesets prefixes entries with.
           entry = [line.slice(2).replace(/^[0-9a-f]{7,40}: /, "")];
         } else if (entry && (line.startsWith("  ") || line === "")) {
           entry.push(line.slice(2));
@@ -79,6 +97,7 @@ export const parseChangelog = (markdown: string): Release[] =>
       return { version: version.trim(), changes };
     });
 
+/** A pending changeset's entry for one package, or null if it doesn't touch it. */
 export const parseChangeset = (
   markdown: string,
   packageName: string,

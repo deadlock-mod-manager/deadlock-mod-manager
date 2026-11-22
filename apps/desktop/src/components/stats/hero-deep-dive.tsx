@@ -25,6 +25,7 @@ import {
 } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
+/** Enough games that the matchup is a record rather than an anecdote. */
 const MIN_MATCHUP_GAMES = 3;
 const MATCHUPS_PER_SIDE = 5;
 const BUILD_ITEMS = 12;
@@ -84,12 +85,19 @@ const MatchupRow = ({
 
 interface HeroDeepDiveProps {
   accountId: number | null;
+  /** The hero to analyse; `null` closes the dialog. */
   heroId: number | null;
   heroesById: Map<number, DeadlockHero>;
+  /** The player's own aggregate on this hero, when the caller already has it. */
   heroStats?: PlayerHeroStats;
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * One hero, in depth: who the player actually beats on it and what they build.
+ * Both come from analytics scoped to the account, so this is their record rather
+ * than the global meta - and both are fetched only once the card is opened.
+ */
 export const HeroDeepDive = ({
   accountId,
   heroId,
@@ -110,6 +118,8 @@ export const HeroDeepDive = ({
     const best = ranked.slice(0, MATCHUPS_PER_SIDE);
     return {
       best,
+      // Starting no earlier than where `best` ends keeps a hero off both lists
+      // when there are fewer than ten matchups to go around.
       worst: ranked
         .slice(Math.max(ranked.length - MATCHUPS_PER_SIDE, best.length))
         .sort((a, b) => winrateOf(a) - winrateOf(b)),

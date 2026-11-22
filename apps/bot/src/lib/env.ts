@@ -33,6 +33,7 @@ export const envSchema = z.object({
     .transform((val) => val.split(",").map((id) => id.trim())),
   BLACKLIST_MODERATOR_ROLES: z
     .string()
+    // Lead Dev, Co-Founders, Moderator, Community Support
     .default(
       "1322369688445124719,1322369692962390119,1499784538056818699,1486214760952234105",
     )
@@ -42,6 +43,7 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  // Moderator, Core Contributors, Community Support. Administrators always pass.
   FORUM_MODERATOR_ROLES: z
     .string()
     .default("1499784538056818699,1491132377282514978,1486214760952234105")
@@ -51,6 +53,7 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  // Moderator, Core Contributors, Community Support. Administrators always pass.
   PERF_CONFIG_MODERATOR_ROLES: z
     .string()
     .default("1499784538056818699,1491132377282514978,1486214760952234105")

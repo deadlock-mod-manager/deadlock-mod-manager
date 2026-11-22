@@ -18,6 +18,7 @@ type EngineSectionsToggleProps = {
 
 const LISTED_SECTIONS = 3;
 
+/** Engine-section edits are left out unless the user includes them for this config. */
 export const EngineSectionsToggle = ({
   count,
   sections,

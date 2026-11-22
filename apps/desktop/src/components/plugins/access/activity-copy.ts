@@ -18,6 +18,7 @@ import { TONE_COLOR } from "@/components/plugins/plugin-status";
 import type { ExternalPluginActivity } from "@/types/generated/ExternalPluginActivity";
 import type { ExternalPluginActivityKind } from "@/types/generated/ExternalPluginActivityKind";
 
+/** Kinds that answer a plugin's own hostcall, as opposed to user actions. */
 export const REQUEST_KINDS: ExternalPluginActivityKind[] = [
   "staged",
   "deployed",
@@ -82,6 +83,10 @@ const blockedTitle = (
   }
 };
 
+/**
+ * One line for an activity entry. `request` phrases hostcalls the way the
+ * Access sheet lists them ("Read output.vpk"); `event` is the log wording.
+ */
 export const describeActivity = (
   t: TFunction,
   activity: ExternalPluginActivity,

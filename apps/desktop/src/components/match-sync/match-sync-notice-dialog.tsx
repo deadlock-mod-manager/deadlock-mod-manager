@@ -17,6 +17,11 @@ import { usePersistedStore } from "@/lib/store";
 const DOCS_URL =
   "https://docs.deadlockmods.app/using-mod-manager/community#match-data-sharing";
 
+/**
+ * Asks users who finished onboarding before it had a match sync step whether
+ * to turn sync on. Shown once; "Turn on" still goes through the consent dialog.
+ * New users answer the same question in onboarding instead.
+ */
 export const MatchSyncNoticeDialog = () => {
   const { t } = useTranslation();
   const { status, setConsent, setEnabled } = useMatchSync();
@@ -34,6 +39,7 @@ export const MatchSyncNoticeDialog = () => {
   const dismissPrompt = usePersistedStore(
     (state) => state.dismissMatchSyncPrompt,
   );
+  // Let the telemetry prompt go first so the two dialogs never stack.
   const telemetryPromptResolved = usePersistedStore(
     (state) =>
       state.telemetrySettings.hasSeenTelemetryPrompt ||

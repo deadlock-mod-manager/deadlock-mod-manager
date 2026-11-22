@@ -18,6 +18,7 @@ import {
 import { formatClock, formatCompact } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
+/** The grid is eight wide; the number of rows follows the build itself. */
 const SLOTS_PER_ROW = 8;
 const VISIBLE_TRANSACTIONS = 3;
 const PLAYBACK_DURATION_MS = 8_000;
@@ -41,6 +42,8 @@ const itemTone = (slotType: string | undefined): string => {
 };
 
 const ItemSlot = ({ item }: { item?: DeadlockItem }) => {
+  // An empty slot is a spacer that keeps the grid from reflowing as the build
+  // fills up, not something to draw a box around.
   if (!item) {
     return <div aria-hidden className='aspect-square' />;
   }
@@ -114,6 +117,8 @@ export const ItemPurchaseTimeline = ({
   const bought = transactions.filter(({ kind }) => kind === "buy").length;
   const sold = transactions.length - bought;
 
+  // Sizing the grid to the build's peak keeps it from growing a row mid-playback
+  // while never reserving space for items the player never owned at once.
   const slotCount = useMemo(() => {
     let owned = 0;
     let peak = 0;
@@ -267,6 +272,9 @@ export const ItemPurchaseTimeline = ({
           <h4 className='mb-1.5 font-medium text-xs'>
             {t("stats.player.transactions")}
           </h4>
+          {/* Rows on a shared surface: a border per purchase turned a three-line
+              log into three more boxes. The height is reserved for the full log
+              so scrubbing does not shift the build grid beside it. */}
           <div className='min-h-[6.75rem] divide-y'>
             {visibleTransactions.length > 0 ? (
               visibleTransactions.map((transaction) => {

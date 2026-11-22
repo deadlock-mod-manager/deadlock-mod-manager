@@ -13,8 +13,10 @@ const SHARE_CODE_PREFIX = "dmm-perf:";
 export const looksLikeShareCode = (text: string) =>
   text.trim().toLowerCase().startsWith(SHARE_CODE_PREFIX);
 
+/** The mod download an archive came from, carried alongside a staged source. */
 export type ImportModContext = { modId: string; modName: string };
 
+/** Router state that opens the import dialog on the Performance page. */
 export type PerfImportNavigationState = {
   importSource: ImportSource;
   importContext: ImportModContext | null;
@@ -44,6 +46,10 @@ export const importAnalyticsSourceKind = (
   }
 };
 
+/**
+ * Where a saved config came from. `source` is the one the user started from;
+ * picking another variant of an archive re-analyzes a staged copy of it.
+ */
 export const importOrigin = (
   source: ImportSource,
   report: ImportReport,
@@ -103,6 +109,11 @@ export const buildUserPerfConfig = ({
   baseBuild: report.base?.build ?? null,
 });
 
+/**
+ * Overrides to store with an imported config: the share code's own tweaks,
+ * plus an omit for every camera and visibility setting when the user turned
+ * the author's ones off.
+ */
 export const importOverrides = (
   shared: EntryOverride[],
   cameraPaths: string[][],

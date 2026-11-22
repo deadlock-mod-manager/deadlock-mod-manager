@@ -15,6 +15,11 @@ export const CONFLICT_MODS = [HAT_JACKET, HAT_PANTS, PANTS_TEXTURE];
 
 const SHARED_JACKET = "jacket model, identical in two mods\n";
 
+// Mods load in this order, so the first one wins every file it shares:
+// - hat-jacket and hat-pants replace the same model (critical).
+// - hat-pants and pants-texture replace the same material and texture (normal).
+// - hat-jacket and pants-texture ship a byte-identical jacket, which is not a
+//   conflict, and every mod carries packer noise that must be skipped.
 const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
   [
     HAT_JACKET,

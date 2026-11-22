@@ -11,6 +11,7 @@ import {
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
+/** Mirrors `ModMetadata` in @deadlock-mods/shared, which depends on this package */
 export interface ModMetadataColumn {
   mapName?: string;
   donationLinks?: Array<{ url: string; platform: string }>;
@@ -32,10 +33,15 @@ export interface ModOverrides {
 }
 
 export interface ModDependency {
+  /** The text GameBanana shows */
   label: string;
+  /** The link, if there is one */
   url: string | null;
+  /** The other mod's id, if the link points at a GameBanana mod */
   remoteId: string | null;
+  /** Required or recommended, if GameBanana says which */
   level: "required" | "recommended" | null;
+  /** The provider explicitly requires this mod to be disabled or absent. */
   mustBeDisabled?: boolean;
 }
 
@@ -56,7 +62,9 @@ export type ModAuthorContactType =
 
 export interface ModAuthorContact {
   type: ModAuthorContactType;
+  /** What the author entered, cleaned up for display */
   value: string;
+  /** Null for a Discord username, which has no public profile link */
   url: string | null;
 }
 
@@ -121,6 +129,9 @@ export const mods = pgTable(
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
     blacklistedBy: text("blacklisted_by"),
     filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
+    // The GameBanana index listing's modified time, which can run ahead of the
+    // profile's (remoteUpdatedAt). The sync compares against it to skip
+    // unchanged submissions.
     remoteIndexModifiedAt: timestamp("remote_index_modified_at", {
       mode: "date",
     }),
@@ -162,6 +173,7 @@ export const modDownloads = pgTable(
     size: integer("size").notNull(),
     description: text("description"),
     md5Checksum: text("md5_checksum"),
+    /** Where the author lists the file on GameBanana; it sets the default load order. */
     position: integer("position").notNull().default(0),
     ...timestamps,
   },

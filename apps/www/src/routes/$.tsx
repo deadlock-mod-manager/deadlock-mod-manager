@@ -8,6 +8,8 @@ import { headI18n } from "@/lib/i18n/route";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/$")({
+  // Throwing marks the match as not found, so the server answers with a real
+  // 404 status instead of a 200 page that only looks like one.
   loader: () => {
     throw notFound();
   },
@@ -24,6 +26,8 @@ export const Route = createFileRoute("/$")({
   },
 });
 
+// Seeded rather than Math.random() so the server and the browser render the
+// same particles (and they stay put when the glitch timer re-renders).
 const seeded = (n: number) => {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
   x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);

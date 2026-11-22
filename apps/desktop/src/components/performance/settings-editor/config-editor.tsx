@@ -61,6 +61,7 @@ const RESOLVE_DEBOUNCE_MS = 250;
 const HIGHLIGHT_MS = 1600;
 
 type ConfigEditorProps = {
+  /** The config's request without tweaks. */
   base: PerfApplyRequest;
   options: EditorConfigOption[];
   categories: CategoryInfo[];
@@ -131,6 +132,7 @@ export const ConfigEditor = ({
   const [addQuery, setAddQuery] = useState("");
   const [pendingScrollKey, setPendingScrollKey] = useState<string | null>(null);
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  // The category last picked in the rail; `token` replays the flash on a repeat click.
   const [flashedCategory, setFlashedCategory] = useState<{
     id: string;
     token: number;
@@ -226,6 +228,9 @@ export const ConfigEditor = ({
     const element = groupElements.current.get(id);
     if (!element) return;
     element.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Groups render as the page scrolls past them (content-visibility) and
+    // change height on the way, so the smooth scroll can overshoot; settle on
+    // the group once it ends.
     document.addEventListener(
       "scrollend",
       () => element.scrollIntoView({ block: "start" }),
@@ -267,6 +272,7 @@ export const ConfigEditor = ({
     });
   };
 
+  // A search is cleared first; the filter only widens once there's no search left.
   const showMore = () => {
     if (search.trim() !== "") setSearch("");
     else setFilter("all");

@@ -16,8 +16,10 @@ import {
 } from "@/lib/stats/derive";
 import { formatPercent } from "@/lib/stats/format";
 
+/** Fewer games than this in a slot is noise, not a pattern worth calling out. */
 const MIN_CALLOUT_MATCHES = 5;
 
+/** Bars top out below the frame so a 100% slot still has room for its label. */
 const BAR_SCALE = 88;
 
 const PRIMARY = "hsl(var(--primary))";
@@ -30,6 +32,10 @@ interface SessionChartProps {
   matches: MatchHistoryEntry[];
 }
 
+/**
+ * Winrate by position within a play session. The shape answers "when should I
+ * stop for today" better than any average can.
+ */
 export const SessionChart = ({ matches }: SessionChartProps) => {
   const { t } = useTranslation();
 
@@ -59,6 +65,7 @@ export const SessionChart = ({ matches }: SessionChartProps) => {
       description={t("stats.charts.sessionDescription")}
       title={t("stats.charts.sessionTitle")}>
       <div className='flex h-full min-h-[220px] flex-col gap-3'>
+        {/* Bars only: the baseline and the labels share its percentage scale. */}
         <div className='relative flex min-h-[140px] flex-1 items-end gap-2.5 pt-5'>
           <div
             aria-hidden
@@ -67,6 +74,7 @@ export const SessionChart = ({ matches }: SessionChartProps) => {
           />
           {slots.map((slot) => {
             const isBest = slot.bucket === best;
+            // Too few games to mean anything: still shown, but faded and dashed.
             const isThin = slot.matches < MIN_CALLOUT_MATCHES;
             const color = isBest
               ? PRIMARY

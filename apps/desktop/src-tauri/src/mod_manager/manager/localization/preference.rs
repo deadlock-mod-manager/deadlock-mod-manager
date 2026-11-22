@@ -29,6 +29,7 @@ impl ModManager {
     )
   }
 
+  /// Whether any mod in the profile has a saved fix, enabled or not.
   pub fn mod_fix_saved(&self, profile_folder: Option<&str>) -> Result<bool, Error> {
     if self.steam_manager.get_game_path().is_none() {
       return Ok(false);
@@ -58,6 +59,9 @@ impl ModManager {
     Ok(())
   }
 
+  /// Saves the choice for every listed mod in one manifest write. Turning
+  /// compatibility off records that the player chose the original files.
+  /// Returns whether the set of repaired mods changed.
   pub(super) fn write_mod_compatibility(
     &self,
     mod_ids: &[String],
@@ -85,6 +89,8 @@ impl ModManager {
       }
       return Ok(false);
     }
+    // Remove any previously generated replacements before committing the new scope.
+    // If saving fails, the next launch rebuilds the previous selection safely.
     self.delete_localization_overlay(profile_folder)?;
     manifest.save(&base)?;
     self

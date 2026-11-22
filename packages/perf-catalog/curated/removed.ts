@@ -1,5 +1,11 @@
 import type { ConvarMeta } from "../src/schema";
 
+/**
+ * Convars that configs set but Valve's current dump doesn't have (removed, or
+ * never real). Kind and help come from older in-game cvarlists shipped with
+ * OptimizationLock and OptiLock, or from the values configs use. The generator
+ * infers the kind from config values for anything not listed here.
+ */
 export const REMOVED_CONVARS = new Map(
   Object.entries({
     ai_expression_optimization: { kind: "int" },

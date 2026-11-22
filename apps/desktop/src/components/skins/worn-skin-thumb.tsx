@@ -2,6 +2,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import type { LocalMod } from "@/types/mods";
 
+/** A chip-sized cover; left out when the cover would have to be blurred. */
 export const WornSkinThumb = ({ mod }: { mod: LocalMod }) => {
   const { shouldBlur } = useNSFWBlur(mod);
   const coverImage = getModCoverImage(mod);

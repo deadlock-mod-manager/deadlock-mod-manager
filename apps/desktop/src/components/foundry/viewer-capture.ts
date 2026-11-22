@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 export const RECORDING_LIMIT_MS = 10_000;
 
+/** One bounded recording at a time; releasing the viewer also releases its stream. */
 export const createViewerRecorder = (canvas: HTMLCanvasElement) => {
   let recorder: MediaRecorder | null = null;
   let cancel: (() => void) | null = null;
@@ -93,8 +94,13 @@ export const createViewerRecorder = (canvas: HTMLCanvasElement) => {
   };
 };
 
+/** Room left around the hero in a still, as a share of its height. */
 const STILL_PADDING = 0.06;
 
+/**
+ * Render one frame and crop it to the hero's posed outline, for places that
+ * show the finished skin without a live viewer.
+ */
 export const captureHeroStill = async (
   root: THREE.Object3D,
   camera: THREE.Camera,

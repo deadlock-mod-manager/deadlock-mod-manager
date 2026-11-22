@@ -1,3 +1,5 @@
+//! Opt-in regression runner for locally downloaded, checksum-pinned mods.
+//! Runtime acceptance is deliberately not inferred from a successful rebuild.
 use super::*;
 
 #[test]
@@ -306,6 +308,8 @@ fn authored_clips_gain_inserted_tracks_without_changing_custom_motion() {
   let (format, current, _) = decode_compiled_data(&skeleton_bytes, skeleton).unwrap();
   let current_rig =
     parse_nm_skeleton(&IndependentResource::parse(skeleton_bytes.to_vec()).unwrap()).unwrap();
+  // Reconstructed from the authored hierarchy and named static poses, including
+  // right-before-left limbs and the original finger/clothing traversal.
   let authored_names: Vec<String> = serde_json::from_str(include_str!(
     "animation_clips/fixtures/baba-track-order.json"
   ))
@@ -1276,6 +1280,8 @@ fn inspect_legacy_model_contracts() {
   }
 }
 
+/// Blocks byte-identical to the mod's own `source` were copied, not rebuilt,
+/// and are skipped; legacy embedded blocks can use encodings no repair writes.
 fn validate_exported_blocks(
   bytes: &[u8],
   path: &str,
@@ -1866,6 +1872,7 @@ fn legacy_mina_animation_and_camera_contract() {
       }
       continue;
     }
+    // Every LOD mesh carries its own camera points.
     let before = kv3::decode(original.get_block_by_index(index).unwrap()).unwrap();
     let after = kv3::decode(resource.get_block_by_index(index).unwrap()).unwrap();
     for (field, value) in before.as_object().unwrap() {
@@ -2159,6 +2166,7 @@ fn toon_bebop_repair_is_stable_with_unrelated_animation_overrides() {
     expected,
     snapshot.game_bytes(skeleton).unwrap().unwrap().as_ref()
   );
+  // Attachment frames and the sound binding may change; the authored rig may not.
   let rewrites_model = |plan: &LocalizationOverlayPlan| {
     plan.analysis.asset_repairs.iter().any(|repair| {
       repair.file_path.ends_with(".vmdl_c")

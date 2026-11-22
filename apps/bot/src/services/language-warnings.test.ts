@@ -54,6 +54,7 @@ describe.skipIf(!redisUrl)("language warnings in Redis", () => {
     expect(await firstClient.ttl(warningKey)).toBeGreaterThan(0);
     await firstClient.pexpire(warningKey, 5000);
     await firstStore.recordWarning(guildId, "user", 60);
+    // Later warnings must not restart the original window.
     expect(await firstClient.pttl(warningKey)).toBeLessThanOrEqual(5000);
     expect(
       await secondStore.claimMessage(guildId, "user", "message-6", 60),

@@ -74,6 +74,12 @@ interface RankDeepDiveProps {
   matches: MatchHistoryEntry[];
 }
 
+/**
+ * Everything the badge on the header does not say. Valve's current system tracks
+ * placement games, a flat progress counter and demotion protection, and none of
+ * that is visible from a tier name - so it lives one click deeper rather than
+ * cluttering the dashboard.
+ */
 export const RankDeepDive = ({
   open,
   onOpenChange,
@@ -83,6 +89,7 @@ export const RankDeepDive = ({
   matches,
 }: RankDeepDiveProps) => {
   const { t, i18n } = useTranslation();
+  // Fetched only while the dialog is mounted and open.
   const insights = useRankInsights(open);
 
   const badge = resolveRank(rank?.badge, rankAssets);
@@ -185,6 +192,7 @@ export const RankDeepDive = ({
             )}
           </Panel>
 
+          {/* Brings its own frame - it is the same chart the Overview tab shows. */}
           <RankChart matches={matches} rankAssets={rankAssets} />
 
           {season && (

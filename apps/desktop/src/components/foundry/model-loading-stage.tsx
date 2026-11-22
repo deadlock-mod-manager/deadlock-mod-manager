@@ -44,6 +44,7 @@ const Step = ({
   </li>
 );
 
+/** What opening the skin has done so far, from the Foundry's own state. */
 const OpeningSteps = () => {
   const { t } = useTranslation();
   const foundry = useOptionalFoundry();
@@ -64,6 +65,8 @@ const OpeningSteps = () => {
         label={t("foundry.opening.unpacked")}
         state='done'
       />
+      {/* In the order they usually finish. They run side by side, so each one
+          that is still going spins rather than waiting its turn. */}
       <Step
         label={t("foundry.opening.workspace")}
         state={workspace ? "done" : "now"}
@@ -81,6 +84,12 @@ const OpeningSteps = () => {
   );
 };
 
+/**
+ * The stage a model is about to stand on: embers that build `hero`, and either
+ * the Foundry's steps of opening the skin or a single status line. It sits
+ * where the model will land, so the model can fade in over it. With `idle`,
+ * nothing is loading yet: the hero builds once and `status` says what to do.
+ */
 export const ModelLoadingStage = ({
   status,
   hero,
@@ -89,11 +98,15 @@ export const ModelLoadingStage = ({
   className,
 }: {
   status: string;
+  /** The hero being loaded; null when unknown. */
   hero: string | null;
+  /** Show the open Foundry skin's progress instead of `status`. */
   steps?: boolean;
   idle?: boolean;
   className?: string;
 }) => {
+  // Undefined while the lookup runs, so a known hero never flashes the
+  // generic figure first.
   const [silhouette, setSilhouette] = useState<Silhouette | null | undefined>(
     hero ? undefined : null,
   );

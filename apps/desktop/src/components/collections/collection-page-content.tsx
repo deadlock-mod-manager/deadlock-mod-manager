@@ -47,6 +47,7 @@ import { CollectionFreshnessIndicator } from "./collection-freshness";
 import { CollectionNotFound } from "./collection-not-found";
 import { SelectableModCard } from "./selectable-mod-card";
 
+// Same fuzziness as the local mod search.
 const MOD_SEARCH_THRESHOLD = 0.35;
 
 export const CollectionPageContent = ({ id }: { id: string }) => {
@@ -60,6 +61,7 @@ export const CollectionPageContent = ({ id }: { id: string }) => {
   );
   const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
   const collectionMods = filterHiddenNSFWItems(catalogMods, hideNSFW) ?? [];
+  // Shared with the mods store's "Hide Outdated" filter.
   const hideOutdated = usePersistedStore(
     (state) => state.modsFilters.hideOutdated,
   );
@@ -70,6 +72,7 @@ export const CollectionPageContent = ({ id }: { id: string }) => {
     ? collectionMods.filter((mod) => !isModOutdated(mod))
     : collectionMods;
   const localMods = usePersistedStore((state) => state.localMods);
+  // A failed download leaves its library entry behind; it still needs downloading.
   const inLibrary = collectionMods.filter((mod) => {
     const localMod = findLocalMod(localMods, mod.remoteId);
     return (
@@ -95,6 +98,7 @@ export const CollectionPageContent = ({ id }: { id: string }) => {
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(
     new Set(),
   );
+  // Picks are kept while searching, but only mods still pending count.
   const selected = pending.filter((mod) => selectedIds.has(mod.remoteId));
   const selecting = selected.length > 0;
   const targets = selecting ? selected : pending;

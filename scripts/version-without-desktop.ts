@@ -1,5 +1,16 @@
 #!/usr/bin/env bun
 
+/**
+ * Version all packages except the desktop app.
+ *
+ * Desktop-only changesets are moved out before versioning and restored after,
+ * so they remain for a later release. Mixed changesets (desktop + other packages)
+ * are split: non-desktop packages get versioned now, desktop entries are
+ * preserved for later.
+ *
+ * Usage: bun scripts/version-without-desktop.ts
+ */
+
 import { execSync } from "node:child_process";
 import {
   mkdirSync,

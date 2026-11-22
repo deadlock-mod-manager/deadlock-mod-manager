@@ -2,6 +2,11 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { CircleCheck } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 
+/**
+ * The payoff for turning match sharing on: it replaces the "it's off" hint for
+ * a few seconds, so the click lands somewhere instead of the banner just
+ * vanishing. Same footprint as the hint it replaces, so nothing below jumps.
+ */
 export const MatchSyncEnabledNote = () => {
   const { t } = useTranslation();
 

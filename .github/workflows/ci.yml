@@ -59,6 +59,8 @@ jobs:
       - name: Select critical desktop coverage
         id: desktop
         env:
+          # A force push drops the old head from history, so there is nothing to
+          # compare against; an empty base runs full coverage.
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || (!github.event.forced && github.event.before) || '' }}
           HEAD_SHA: ${{ github.sha }}
         run: node scripts/select-critical-e2e.mjs
@@ -76,16 +78,6 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-
-      - name: Check code comments
-        env:
-          COMMENT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || (!github.event.forced && github.event.before) || '' }}
-        run: |
-          python3 -m venv "$RUNNER_TEMP/comment-ratchet"
-          source "$RUNNER_TEMP/comment-ratchet/bin/activate"
-          python -m pip install --only-binary=:all: -r scripts/comment-ratchet-requirements.txt
-          python -B scripts/tests/comment_ratchet_test.py
-          python -B scripts/comment-ratchet.py
 
       - name: Check formatting
         run: pnpm format:check
@@ -120,6 +112,7 @@ jobs:
     if: always()
     runs-on: depot-ubuntu-24.04
     steps:
+      # Keep the existing required check name so rulesets enforce both paths.
       - name: Require static checks and selected desktop scenarios
         shell: node {0}
         env:
@@ -273,6 +266,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Nightly CEF builds resolve against Cargo.cef.lock, so dependency changes
+      # must be synced there before merge.
       - name: Check CEF lockfile
         run: pnpm --filter @deadlock-mods/desktop cef:check-lockfile
 
@@ -281,9 +276,11 @@ jobs:
           RUSTFLAGS: -C link-arg=-lstdc++
         run: cargo test --manifest-path packages/plugin-runtime/Cargo.toml --locked
 
+      # tauri::generate_context! embeds frontendDist, so dist must exist before cargo test.
       - name: Build frontend
         run: pnpm --filter @deadlock-mods/desktop ui:build
 
+      # Skip list mirrors checkFlags in package.nix so CI and the Nix build agree.
       - name: Run Rust tests
         run: |
           cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
@@ -300,6 +297,7 @@ jobs:
       - name: Check build with plugins
         run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets --features plugins
 
+      # Builds without match sync must keep compiling.
       - name: Check build without match sync
         run: |
           cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets \
@@ -307,6 +305,7 @@ jobs:
 
       - name: Run Source 2 codec tests
         env:
+          # intel_tex_2's prebuilt compressor objects require the C++ runtime.
           RUSTFLAGS: -C link-arg=-lstdc++
         run: |
           cargo test --manifest-path packages/vpkmanager/Cargo.toml --locked

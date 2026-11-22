@@ -26,8 +26,12 @@ type NSFWBlurProps = {
   disableBlur?: boolean;
 };
 
+// Box blur radius in canvas pixels. The canvas is drawn at BLUR_RADIUS /
+// blurStrength of the on-screen size, so the radius matches blurStrength.
 const BLUR_RADIUS = 4;
 
+// Averages shifted copies with draws only, since cross-origin thumbnails
+// taint the canvas and their pixels can't be read back.
 const boxBlurPass = (source: HTMLCanvasElement, dx: number, dy: number) => {
   const target = document.createElement("canvas");
   target.width = source.width;
@@ -72,6 +76,7 @@ const drawBlurred = (
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, blurred.width, blurred.height);
 
+  // Two box passes per axis come close to a gaussian blur.
   for (let pass = 0; pass < 2; pass++) {
     blurred = boxBlurPass(boxBlurPass(blurred, 1, 0), 0, 1);
   }
@@ -83,6 +88,10 @@ const drawBlurred = (
   canvas.getContext("2d")?.drawImage(blurred, 0, 0);
 };
 
+/**
+ * Wrapper component that applies blur effect to NSFW content
+ * with toggle controls for showing/hiding the content
+ */
 export const NSFWBlur = ({
   children,
   isNSFW,
@@ -99,6 +108,9 @@ export const NSFWBlur = ({
   const linuxCanvasNSFWBlur = usePersistedStore(
     (state) => state.linuxCanvasNSFWBlur,
   );
+  // WebKitGTK's compositor stalls or crashes on pages with many filter and
+  // backdrop-filter layers (#1041), so Linux blurs image thumbnails through a
+  // canvas instead. Other content keeps the CSS blur.
   const canvasBlur =
     linuxCanvasNSFWBlur &&
     platform() === "linux" &&
@@ -135,7 +147,7 @@ export const NSFWBlur = ({
   }
 
   const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent event from bubbling up to parent elements
     const newVisibility = !isVisible;
     setIsVisible(newVisibility);
     onToggleVisibility?.(newVisibility);
@@ -143,6 +155,9 @@ export const NSFWBlur = ({
 
   return (
     <div className={`relative ${className}`}>
+      {/* Blurred content — will-change:filter promotes to GPU layer so
+          the blur is rasterised once and cached, not recalculated every frame.
+          contain:paint clips/isolates paint without size containment (strict would collapse layout). */}
       <div
         className={cn(
           "h-full w-full",

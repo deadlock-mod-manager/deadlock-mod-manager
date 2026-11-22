@@ -32,6 +32,7 @@ import { type State, usePersistedStore } from "@/lib/store";
 
 const FEATURE_GROUPS = ["matches", "customization", "tools"] as const;
 
+// Icons match the sidebar entries each feature adds.
 const FEATURE_DISPLAY = {
   stats: { group: "matches", icon: ChartLineUpIcon },
   "server-browser": { group: "matches", icon: HardDrivesIcon },
@@ -108,6 +109,7 @@ export const FeaturesSettings = ({
   const setMinimalMode = usePersistedStore((state) => state.setMinimalMode);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
 
+  // Opening this tab puts Minimal DMM in front of the user, so its hint is done.
   useEffect(() => {
     markFeatureUsed("minimal-mode");
   }, [markFeatureUsed]);
@@ -129,6 +131,8 @@ export const FeaturesSettings = ({
       flag !== null && !isExperimentalFeatureOn({ experimentalFeatures }, flag)
     );
   };
+  // Builds without the plugin runtime have no plugins to turn off. Read at
+  // render time: this module loads before the runtime bootstrap resolves.
   const visibleFeatures = OPTIONAL_FEATURES.filter(
     (feature) => feature !== "plugins" || isPluginsBuilt(),
   );
@@ -136,6 +140,7 @@ export const FeaturesSettings = ({
   const leftoverFor = useFeatureLeftovers(
     (feature) => !isFeatureEnabled(featureState, feature),
   );
+  // What Minimal DMM pauses, or what is on without it.
   const enabledCount = visibleFeatures.filter(
     (feature) => features[feature] && !isFlagOff(feature),
   ).length;
@@ -165,6 +170,8 @@ export const FeaturesSettings = ({
             </h4>
             <div className='divide-y divide-border overflow-hidden rounded-lg border border-border bg-card'>
               {groupFeatures.map((feature) => {
+                // The user's choice is kept while the flag is off and
+                // applies again once it is turned on.
                 const flagOff = isFlagOff(feature);
                 const paused = minimalMode && features[feature] && !flagOff;
                 return (

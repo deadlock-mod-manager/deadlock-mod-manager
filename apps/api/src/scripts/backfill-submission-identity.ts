@@ -1,5 +1,17 @@
 #!/usr/bin/env bun
 
+/**
+ * Re-runs the migration 0055 backfill: copies the GameBanana submission
+ * identity onto reports and VPKs that only reference the legacy catalog.
+ * Run once after the v2 rollout completes, to cover rows the previous API or
+ * Lockdex wrote while both versions were live. Idempotent.
+ *
+ * Legacy desktop compatibility: remove with the catalog retirement (#715).
+ *
+ * Usage:
+ * pnpm --filter api backfill-submission-identity
+ */
+
 import { db, ReportRepository, VpkRepository } from "@deadlock-mods/database";
 import { createWideEvent, logger, wideEventContext } from "@/lib/logger";
 

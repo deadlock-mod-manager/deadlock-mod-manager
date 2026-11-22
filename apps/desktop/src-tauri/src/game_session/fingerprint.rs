@@ -1,3 +1,7 @@
+//! The game-side half of a session's fingerprint: what gameinfo.gi mounted,
+//! the performance config it carried, autoexec.cfg, launch arguments and the
+//! game build. The frontend adds the profile and mod list.
+
 use std::path::Path;
 
 use sha2::{Digest, Sha256};
@@ -36,6 +40,11 @@ pub fn capture(
 
 const IGNORED_FLAGS: [&str; 2] = ["-steam", "-condebug"];
 
+/// Drops what says nothing about the user's setup: Steam's own `-steam`, a
+/// server join's `+connect`/`+password` (which must not be stored either),
+/// and what the app adds to its own launches, which a launch from Steam
+/// lacks: `-condebug` (game presence, joins) and the `-exec autoexec` of its
+/// autoexec option (autoexec.cfg itself is hashed).
 pub fn normalize_launch_args(arguments: &[String]) -> Vec<String> {
   let mut normalized = Vec::new();
   let mut arguments = arguments.iter().peekable();
@@ -60,6 +69,7 @@ pub fn normalize_launch_args(arguments: &[String]) -> Vec<String> {
   normalized
 }
 
+/// `Game citadel/addons…` search paths, in file order, without duplicates.
 pub fn addon_search_paths(gameinfo: &str) -> Vec<&str> {
   let mut paths: Vec<&str> = Vec::new();
   for line in gameinfo.lines() {

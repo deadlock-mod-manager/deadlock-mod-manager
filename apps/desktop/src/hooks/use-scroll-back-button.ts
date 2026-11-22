@@ -9,10 +9,15 @@ export const shouldShowBackButton = (
 ): boolean => buttonBottom <= containerTop;
 
 interface UseScrollBackButtonOptions {
+  /** Fallback scroll threshold when no sentinel ref is provided */
   threshold?: number;
+  /** Whether the hook should be active (e.g., only on specific pages) */
   enabled?: boolean;
+  /** Ref to the scroll container element. If not provided, uses window scroll */
   scrollContainerRef?: RefObject<HTMLElement | null>;
+  /** Ref to the in-page back button used to detect when it scrolls out of view */
   sentinelRef?: RefObject<HTMLElement | null>;
+  /** Callback function to execute when back button is clicked */
   onBackClick?: () => void;
 }
 

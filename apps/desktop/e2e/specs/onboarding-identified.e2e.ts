@@ -49,6 +49,7 @@ describe("onboarding analysis of an identified addon", () => {
         await $("button=Analyze Mods").click();
         const card = analysisCard("pak01_dir.vpk");
         await waitForDisplayed(card);
+        // Without mod details in the match, the card names the mod by its id.
         await expect($(card)).toHaveText(
           expect.stringContaining(CATALOG_MOD_ID),
         );

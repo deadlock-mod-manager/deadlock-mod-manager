@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { modThumbnail, type PreviewMod } from "./mods";
 import { usePreviewFormat, usePreviewState } from "./preview-state";
 
+// The snapshot's "today", so "Updated recently" stays stable over time.
 const SNAPSHOT_DATE = Date.parse("2026-10-05T00:00:00Z");
 const RECENT_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -53,6 +54,7 @@ export const EmptyState = ({
   </div>
 );
 
+/** The Mods Store card (apps/desktop/src/components/mod-browsing/mod-card.tsx). */
 export const ModCard = ({ mod }: { mod: PreviewMod }) => {
   const { t } = useTranslation("preview");
   const { formatCount, formatDate } = usePreviewFormat();

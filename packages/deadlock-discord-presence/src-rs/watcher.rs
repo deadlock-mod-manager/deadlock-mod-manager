@@ -28,6 +28,8 @@ pub enum PresencePhase {
 
 pub type PresenceStatusCallback = Arc<dyn Fn(PresencePhase) + Send + Sync>;
 pub type GameExitCallback = Arc<dyn Fn() + Send + Sync>;
+/// `initial` distinguishes current state recovered at watcher startup from a
+/// newly observed transition. Observers run independently of Discord updates.
 pub type GameStateCallback = Arc<dyn Fn(&GameState, bool) + Send + Sync>;
 
 pub struct GamePresenceWatcher {
@@ -37,6 +39,8 @@ pub struct GamePresenceWatcher {
     discord_presence: DiscordPresenceState,
     status_callback: Option<PresenceStatusCallback>,
     presence_config: PresenceBuildConfig,
+    // When false, poll game state only (no Discord activity) — lets match-sync reuse
+    // this watcher for game-exit detection without turning on Rich Presence.
     presence_enabled: bool,
     on_game_exit: Option<GameExitCallback>,
     on_game_state: Option<GameStateCallback>,
@@ -275,10 +279,12 @@ fn emit_phase(status_callback: Option<&PresenceStatusCallback>, phase: PresenceP
     }
 }
 
+/// The `console.log` path this watcher itself checks, derived from the install dir.
 pub fn console_log_path(game_path: &Path) -> PathBuf {
     game_path.join("game").join("citadel").join("console.log")
 }
 
+/// Exposed so other consumers can check without duplicating the process-name list.
 pub fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
     sys.refresh_processes_specifics(
         sysinfo::ProcessesToUpdate::All,

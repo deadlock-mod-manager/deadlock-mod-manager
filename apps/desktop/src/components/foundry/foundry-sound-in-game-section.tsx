@@ -11,6 +11,10 @@ import {
 import { GAIN_MAX_DB, GAIN_MIN_DB } from "./foundry-sound-utils";
 import { SwitchRow } from "./foundry-sound-switch-row";
 
+/**
+ * How loud the clip plays in the game. Each change rebuilds the clip from its
+ * source, so edits never stack on audio that was already processed.
+ */
 export const InGameSection = ({
   entryPath,
   disabled,

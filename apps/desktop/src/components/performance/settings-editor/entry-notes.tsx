@@ -79,6 +79,7 @@ const statusLine = (entry: ResolvedEntry, t: TFunction): NoteLine | null => {
 const valueLines = (entry: ResolvedEntry, t: TFunction): NoteLine[] => {
   const lines: NoteLine[] = [];
   const value = entry.value ?? "";
+  // "You set …" instead of "The config sets …" once the user picked the value.
   const context = entry.overridden ? "yours" : undefined;
   const clamped = findNote(entry.notes, "clamped");
   if (clamped) {
@@ -110,6 +111,7 @@ const valueLines = (entry: ResolvedEntry, t: TFunction): NoteLine[] => {
   return lines;
 };
 
+/** One factual line per reason the entry won't apply exactly as written. */
 export const EntryNotes = ({ entry }: { entry: ResolvedEntry }) => {
   const { t } = useTranslation();
   const status = statusLine(entry, t);

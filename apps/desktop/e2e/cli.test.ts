@@ -20,6 +20,7 @@ it.skipIf(process.platform === "win32")(
   },
 );
 
+// Native-input cases are only registered on Windows.
 it.skipIf(process.platform !== "win32")(
   "rejects a native-input suite before executing even its first smoke case",
   () => {

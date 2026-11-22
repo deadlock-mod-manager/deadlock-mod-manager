@@ -9,7 +9,7 @@ type AppProviderProps = {
 };
 
 type AppProviderState = {
-  _placeholder?: unknown;
+  _placeholder?: unknown; // Just a placeholder
 };
 
 const AppProviderContext = createContext<AppProviderState>({});

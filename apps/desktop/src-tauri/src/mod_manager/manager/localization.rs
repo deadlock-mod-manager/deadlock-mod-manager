@@ -51,6 +51,8 @@ pub(super) struct CachedLocalizationOverlayPlan {
   plan: LocalizationOverlayPlan,
 }
 
+/// Inputs for a repair package rebuild, captured under the mod manager lock so
+/// the slow plan build can run without it.
 pub struct ModFixRefresh {
   profile_folder: Option<String>,
   search_paths_revision: u64,
@@ -187,6 +189,8 @@ impl ModManager {
         });
         continue;
       }
+      // Old addon analysis could register the same physical VPK under two IDs.
+      // Match reorder's first-owner rule without modifying the manifest on a read.
       vpks.retain(|path| claimed.insert(path.clone()));
       if !vpks.is_empty() {
         inputs.push(LocalizationModInput {
@@ -204,6 +208,7 @@ impl ModManager {
       &citadel_dir.with_file_name("core"),
       &localization_paths,
     )?);
+    // steam.inf changes with the game build; Steam's appmanifest also changes on play.
     let version = citadel_dir.join("steam.inf");
     if version.is_file() {
       base_game.push(localization_input_stamp(&version)?);
@@ -330,6 +335,10 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
+    // Validate first, so invalid choices never replace the saved review. The
+    // review is saved before the package because the next library change
+    // rebuilds the package from it. An earlier package for these same inputs
+    // is removed first, so a failed write can't leave it looking current.
     plan.analyze(resolutions)?;
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
     receipt::remove(&key.output_path)?;
@@ -364,6 +373,8 @@ impl ModManager {
     self.commit_overlay_plan(profile_folder, key, plan)
   }
 
+  /// Starts rebuilding the repair package after a library change. Returns
+  /// `None` when the game is running, fixes are off or the package is current.
   pub fn begin_mod_fix_refresh(
     &mut self,
     profile_folder: Option<&str>,
@@ -391,6 +402,9 @@ impl ModManager {
     }))
   }
 
+  /// Writes a plan built by [`ModFixRefresh::build`]. A library change, a game
+  /// start or a launch that already prepared the package during the build
+  /// makes the plan stale, so it is dropped; the change schedules a new one.
   pub fn finish_mod_fix_refresh(
     &mut self,
     refresh: ModFixRefresh,
@@ -413,6 +427,8 @@ impl ModManager {
     }
   }
 
+  /// Writes a plan built without the lock. Returns false when the mods changed
+  /// during the build, so the plan no longer matches them.
   fn commit_mod_fix_refresh(
     &self,
     refresh: ModFixRefresh,
@@ -449,6 +465,7 @@ impl ModManager {
     }
     let resolutions = if requires_review(&plan.analysis) {
       let Some(resolutions) = self.reviewed_resolutions(&plan, &key)? else {
+        // The review dialog analyzes the same inputs next; hand it this plan.
         self
           .localization_overlay_plan_cache
           .lock()
@@ -469,6 +486,8 @@ impl ModManager {
     Ok(())
   }
 
+  /// The player's saved choices, when they reviewed exactly the findings and
+  /// inputs this plan pauses for. Library changes elsewhere don't discard them.
   fn reviewed_resolutions(
     &self,
     plan: &LocalizationOverlayPlan,
@@ -492,6 +511,7 @@ impl ModManager {
     Ok(Some(resolutions))
   }
 
+  /// Sends repair plan progress to the window while the player waits on it.
   fn plan_progress(&self) -> impl Fn(RepairPlanProgress) + '_ {
     move |progress: RepairPlanProgress| {
       if let Some(app) = &self.app_handle {
@@ -536,6 +556,9 @@ impl ModManager {
     self.notify_compatibility_changed(profile_folder);
   }
 
+  /// Removes a deleted profile's repair package and its saved review. Its
+  /// shards are already gone, so removing the review is best effort; a review
+  /// left behind is reused only while the inputs it covered still match.
   pub fn delete_profile_localization_overlay(&self, profile_folder: &str) -> Result<(), Error> {
     let overlay = self.localization_overlay_vpk_path(Some(profile_folder))?;
     if let Err(error) = review::remove(&overlay) {
@@ -587,6 +610,8 @@ fn build_overlay_plan(
     started.elapsed().as_millis()
   );
   if changed && let Some(path) = &history_path {
+    // Learning is reproducible from these stamped inputs. A cache write failure
+    // must not prevent analysis; the next plan can learn the same snapshot again.
     if let Err(error) = history::save(path, &observed) {
       log::warn!("Could not persist observed compatibility history: {error}");
     }
@@ -598,6 +623,10 @@ fn build_overlay_plan(
   Ok(plan)
 }
 
+/// Launch pauses only for choices between mods and for inputs that could not
+/// be read or matched. A mod's own asset and data findings describe that mod
+/// whether or not it is repaired, so mod health reports them instead; model
+/// overlaps and competing definitions involve other mods and still pause.
 fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
   use crate::mod_manager::localization_overlay::asset_compatibility::WarningKind;
   use crate::mod_manager::localization_overlay::vdata_compatibility::WarningReason;
@@ -707,11 +736,15 @@ fn localization_input_stamp(path: &Path) -> Result<LocalizationInputStamp, Error
   })
 }
 
+/// Loose resources precede packed game data in the compatibility resolver.
+/// Hash these small inputs so equal-sized edits also invalidate reviewed plans.
 fn loose_resource_stamps(
   directory: &Path,
   localization_paths: &std::collections::BTreeSet<String>,
 ) -> Result<Vec<LocalizationInputStamp>, Error> {
   let mut stamps = std::collections::BTreeMap::new();
+  // Probe exact language paths as well as walking the tree. Directory aliases
+  // may share a canonical target, but each requested language still needs a hash.
   for name in localization_paths {
     let path = directory.join(name);
     if path.is_file() {
@@ -752,6 +785,7 @@ fn loose_resource_stamps(
           ))),
         };
         if path.is_file() {
+          // A leaf alias may provide compiled data, so hash its contents too.
           if crate::mod_manager::localization_overlay::reads_compiled_baseline(
             &path.to_string_lossy(),
           ) {
@@ -1188,6 +1222,7 @@ mod tests {
     let manifest = ProfileVpkManifest::load(&base).unwrap();
     assert_eq!(manifest.mods.len(), 1);
     assert_eq!(manifest.mods["remote-id"].order, Some(3));
+    // Removing the old identity must not delete the newly identified owner's file.
     manager
       .remove_mod_vpks("old-local-id", &["pak01_dir.vpk".into()], None)
       .unwrap();
@@ -1283,6 +1318,8 @@ mod tests {
 
   #[test]
   fn analyzed_registration_prefers_the_identity_own_fix_choice() {
+    // (identity's choice, placeholder's choice, expected), each as
+    // (compatibility_enabled, compatibility_opted_out).
     for (identity, placeholder, expected) in [
       ((true, false), (false, true), (true, false)),
       ((false, true), (false, false), (false, true)),
@@ -1294,6 +1331,8 @@ mod tests {
       let file = base.join("pak01_dir.vpk");
       write_test_vpk(&file);
       let mut manifest = ProfileVpkManifest::default();
+      // The catalog mod is already installed but disabled; a hand-added copy
+      // of its file is enabled under a placeholder id.
       manifest.mark_disabled("remote-id", vec!["remote-id_pak01_dir.vpk".into()], vec![]);
       manifest.mark_enabled(
         "old-local-id",
@@ -1551,6 +1590,7 @@ mod tests {
     let unchanged = ProfileVpkManifest::load(&base).unwrap();
     assert_eq!(unchanged.mods.keys().collect::<Vec<_>>(), ["owner"]);
 
+    // Without the switch, an identical file set still passes to the new mod.
     let registration = register(&mut manager, false).unwrap();
     assert_eq!(registration.replaced_mod_ids, ["owner"]);
   }
@@ -1970,6 +2010,8 @@ Game core
     record_combined(&mut manager);
     assert_eq!(status(), Some(ModHealthStatus::Fixed));
 
+    // An unfixed mod ships the fixed mod's text file, so the rebuild keeps
+    // that file as shipped and leaves the repair out.
     fs::copy(base.join("pak01_dir.vpk"), base.join("pak03_dir.vpk")).unwrap();
     let mut manifest = ProfileVpkManifest::load(&base).unwrap();
     manifest.mark_enabled(
@@ -1985,6 +2027,7 @@ Game core
     assert!(!overlay.exists());
     assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
 
+    // A launch result saved before the flag existed: no findings at all.
     let key = HealthKey::stamp(
       &[base.join("pak01_dir.vpk")],
       history::version(&citadel),
@@ -2001,6 +2044,8 @@ Game core
       )],
     )
     .unwrap();
+    // A check keeps this entry while its key is current: a standalone recheck
+    // can't see the rival.
     context.check(None, false, |_| {}).unwrap();
     assert_eq!(status(), Some(ModHealthStatus::Works));
 
@@ -2140,6 +2185,7 @@ Game core
           manager.remove_mod_vpks("unrelated", &[], None).unwrap();
         }
         "reorder" => {
+          // The fixed mod retains pak01 while other mods swap places.
           write_test_vpk(&base.join("pak03_dir.vpk"));
           let mut manifest = ProfileVpkManifest::load(&base).unwrap();
           manifest.mark_enabled(
@@ -2254,6 +2300,7 @@ Game core
   fn removing_the_fixed_mod_does_not_keep_its_replacements_mounted() {
     let (_temp, mut manager) = manager_with_applied_repair();
     manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    // The search path stays for the saved fix; the package it points at is gone.
     assert!(
       !manager
         .localization_overlay_vpk_path(None)
@@ -2268,6 +2315,8 @@ Game core
     let (_temp, mut manager) = manager_with_applied_repair();
     let base = manager.get_addons_path(None).unwrap();
     let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    // A partially missing multifile mod makes input collection fail before
+    // launch preparation reaches its normal stale-overlay removal.
     manifest
       .mods
       .get_mut("unrelated")
@@ -2368,6 +2417,7 @@ Game core
       ModHealthStatus::Fixed,
       "a disabled mod reports the fix saved for it"
     );
+    // A gameinfo.gi write while the fixed mod is disabled, as fixing it does.
     manager.apply_profile_gameinfo(None).unwrap();
     enable(&mut manager);
     assert_applied_repair(&manager, &repaired);
@@ -2444,6 +2494,8 @@ Game core
       ModHealthStatus::Fixable
     );
     fs::write(receipt::path(&overlay), receipt_bytes).unwrap();
+    // The original mod's health key is unchanged; the full applied receipt
+    // still must stop matching when another enabled input changes.
     write_vpk(
       &base.join("pak02_dir.vpk"),
       &[("unrelated.txt", b"updated unrelated mod")],
@@ -2684,6 +2736,7 @@ Game core
       gameinfo_mounts_repairs(temp.path()),
       "the first mod is still fixed, so its repairs stay mounted"
     );
+    // Any other search path rewrite before the rebuild keeps them too.
     manager.apply_profile_gameinfo(None).unwrap();
     assert!(gameinfo_mounts_repairs(temp.path()));
 
@@ -2727,6 +2780,7 @@ Game core
       .unwrap()
       .build(&|_| {})
       .unwrap();
+    // The library changes while the plan builds without the manager lock.
     write_test_vpk(&base.join("pak02_dir.vpk"));
     let mut manifest = ProfileVpkManifest::load(&base).unwrap();
     manifest.mark_enabled(
@@ -2779,6 +2833,7 @@ Game core
       .unwrap()
       .build(&|_| {})
       .unwrap();
+    // Launch takes the manager lock while the refresh builds without it.
     manager
       .prepare_localization_overlay_with_progress(
         None,

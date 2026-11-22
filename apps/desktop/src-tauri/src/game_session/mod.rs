@@ -1,3 +1,18 @@
+//! Launch health: notices when Deadlock closes abnormally and records what the
+//! setup looked like, so the frontend can ask "Did Deadlock just crash?" and
+//! list what changed since the last normal session.
+//!
+//! A session starts when we see a Deadlock process: right after a launch from
+//! the app, or when the frontend's running-game poll finds one. We capture a
+//! fingerprint of the setup, persist the session, and wait for the process to
+//! exit on a dedicated thread. At exit we gather the signals the research in
+//! `classify` relies on (exit code, a new crash dump, console.log's shutdown
+//! lines, whether the app stopped the game) and queue a [`SessionReport`] until
+//! the frontend acknowledges it. A session that ended while the app was closed
+//! is analyzed at the next start from the persisted record.
+//!
+//! Lock order: never take `MANAGER` while holding the tracker lock.
+
 mod attribution;
 pub mod classify;
 pub mod console;
@@ -30,22 +45,36 @@ use types::{
 const SESSION_STARTED_EVENT: &str = "game-session-started";
 const SESSION_ENDED_EVENT: &str = "game-session-ended";
 
+/// A process that shows up this soon after a launch request is ours. Matches
+/// how long the launch command waits for the game.
 const LAUNCH_ATTRIBUTION_WINDOW: chrono::Duration = chrono::Duration::seconds(180);
 const MAX_PENDING_REPORTS: usize = 10;
+/// Breakpad can still be writing the dump when the process handle signals.
 const DUMP_SETTLE: Duration = Duration::from_secs(3);
+/// Steam logs the exit a few seconds after the process is gone.
 const STEAM_LOG_ATTEMPTS: u32 = 3;
 const STEAM_LOG_RETRY_DELAY: Duration = Duration::from_secs(3);
+/// Without a PID (Flatpak) a session can only end through a dump or the
+/// console's shutdown lines; give up on it eventually.
 const PIDLESS_POLL_INTERVAL: Duration = Duration::from_secs(5);
 const PIDLESS_MAX_AGE: chrono::Duration = chrono::Duration::hours(12);
 const CONSOLE_LOG_SLACK: chrono::Duration = chrono::Duration::seconds(5);
+/// Steam logs the launch of the session itself around its start (off Windows,
+/// the wrapper's, just before it); nothing else can start that soon after.
 const LATER_RUN_MIN_GAP: chrono::Duration = chrono::Duration::seconds(10);
+/// The app's Stop can come before the session is tracked (it was still being
+/// set up, or the running-game poll was paused), so an exit this soon after a
+/// stop is the stop's doing.
 const DMM_STOP_WINDOW: chrono::Duration = chrono::Duration::seconds(10);
+/// Process start times come from different clocks and roundings: whole
+/// seconds from the OS, a dump's MiscInfo, sysinfo's boot-time arithmetic.
 const PROCESS_START_TOLERANCE_SECS: u64 = 2;
 
 fn same_process_start(a: u64, b: u64) -> bool {
   a.abs_diff(b) <= PROCESS_START_TOLERANCE_SECS
 }
 
+/// The last `max_bytes` of a log file, which may be cut mid-line.
 fn read_tail(path: &Path, max_bytes: u64) -> Option<String> {
   let mut file = std::fs::File::open(path).ok()?;
   let len = file.metadata().ok()?.len();
@@ -67,11 +96,16 @@ struct Tracker {
   sessions_dir: Option<PathBuf>,
   app_handle: Option<AppHandle>,
   enabled: bool,
+  /// A session is being set up on another thread.
   starting: bool,
   current: Option<SessionRecord>,
   pending: Vec<SessionReport>,
   launch_request: Option<LaunchRequest>,
+  /// The app's last Stop, whether or not a session was tracked then.
   dmm_stop_at: Option<DateTime<Utc>>,
+  /// The session the app's last confirmed Stop ended. A PID-less session
+  /// can't see the exit itself, and a forced kill leaves no dump or shutdown
+  /// lines.
   dmm_stopped_session: Option<String>,
   state: TrackerState,
 }
@@ -92,6 +126,8 @@ static TRACKER: LazyLock<Mutex<Tracker>> = LazyLock::new(|| {
   })
 });
 
+/// Nothing panics while the lock is held, so a poisoned lock is recovered
+/// rather than disabling crash checks for the rest of the run.
 fn tracker() -> MutexGuard<'static, Tracker> {
   TRACKER
     .lock()
@@ -104,6 +140,8 @@ struct ObservedExit {
   ended_at: Option<DateTime<Utc>>,
 }
 
+/// Loads persisted sessions and analyzes one that ended while the app was
+/// closed. Does nothing in the E2E harness, which never runs the game.
 pub fn init(app_handle: AppHandle, app_data_dir: PathBuf) {
   if crate::runtime_environment::records_game_launches() {
     return;
@@ -124,6 +162,7 @@ pub fn init(app_handle: AppHandle, app_data_dir: PathBuf) {
   }
 }
 
+/// Called before the app asks Steam to start the game.
 pub fn note_launch_requested(args: &str) {
   let mut tracker = tracker();
   let Some(sessions_dir) = tracker.sessions_dir.clone() else {
@@ -133,6 +172,8 @@ pub fn note_launch_requested(args: &str) {
     at: Utc::now(),
     args: args.to_string(),
   });
+  // A Flatpak session that never showed how it ended is over now, and the
+  // new launch truncates the console.log it was waiting on.
   if tracker
     .current
     .as_ref()
@@ -143,6 +184,7 @@ pub fn note_launch_requested(args: &str) {
   }
 }
 
+/// Called once the launch command saw the game start.
 pub fn on_launch_confirmed() {
   if tracker().sessions_dir.is_none() {
     return;
@@ -157,6 +199,8 @@ pub fn on_launch_confirmed() {
   });
 }
 
+/// Called with every process scan the app does anyway (the frontend polls
+/// `is_game_running`), so sessions started outside the app are tracked too.
 pub fn observe(processes: &[GameProcess]) {
   let Some(process) = processes
     .iter()
@@ -171,13 +215,20 @@ pub fn observe(processes: &[GameProcess]) {
   spawn("game-session-start", move || start_session(Some(process)));
 }
 
+/// What one Stop attempt changed, so a failed attempt can undo only its own
+/// marks and leave an earlier confirmed Stop's attribution in place.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub struct DmmStop {
   session_id: Option<String>,
+  /// `dmm_stop_at` before this attempt, when it set one.
   previous_stop_at: Option<Option<DateTime<Utc>>>,
+  /// The session was already marked by an earlier Stop.
   previously_requested: bool,
 }
 
+/// Marks the running session as stopped by the app, so the forced kill
+/// (exit code 1) isn't taken for a crash. Called before the kill. Returns what
+/// it marked, for `note_dmm_stop_completed` or `note_dmm_stop_failed`.
 pub fn note_dmm_stop() -> DmmStop {
   let mut tracker = tracker();
   let mut stop = DmmStop {
@@ -198,12 +249,18 @@ pub fn note_dmm_stop() -> DmmStop {
   stop
 }
 
+/// Called once the app's Stop confirmed the game is gone, with what
+/// `note_dmm_stop` returned. A session that started while the Stop was running
+/// isn't the one it ended.
 pub fn note_dmm_stop_completed(stop: DmmStop) {
   if let Some(session_id) = stop.session_id {
     tracker().dmm_stopped_session = Some(session_id);
   }
 }
 
+/// Called when the app's Stop failed, with what `note_dmm_stop` returned. The
+/// game may still be running, so a later exit must not be credited to this
+/// attempt; an earlier Stop's marks stay.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub fn note_dmm_stop_failed(stop: DmmStop) {
   let mut tracker = tracker();
@@ -248,6 +305,9 @@ pub fn acknowledge(session_id: &str, outcome: SessionAckOutcome) {
   }
 }
 
+/// Attaches the frontend's half of the fingerprint. The first one wins, so a
+/// restarted app doesn't overwrite what the launch looked like. Without an id
+/// it goes to the running session.
 pub fn record_client_fingerprint(session_id: Option<&str>, client: ClientFingerprint) -> bool {
   let mut tracker = tracker();
   let Some(sessions_dir) = tracker.sessions_dir.clone() else {
@@ -384,6 +444,7 @@ fn build_record(process: Option<GameProcess>) -> Option<SessionRecord> {
   })
 }
 
+/// `None` when the OS couldn't tell.
 fn process_started_at(start_time: u64) -> Option<DateTime<Utc>> {
   DateTime::from_timestamp(i64::try_from(start_time).ok()?, 0)
     .filter(|started_at| *started_at > DateTime::UNIX_EPOCH)
@@ -409,7 +470,11 @@ fn watch(record: SessionRecord) {
 
 #[derive(Debug, PartialEq, Eq)]
 enum Recovery {
+  /// The game is still running: watch it again.
   Resume,
+  /// It ended while the app was closed: analyze what it left behind.
+  /// `later_run` is when the game running now started: that run owns
+  /// console.log, and its dumps are not ours.
   Analyze {
     later_run: Option<DateTime<Utc>>,
   },
@@ -424,6 +489,7 @@ fn plan_recovery(record: &SessionRecord, running: &[GameProcess], now: DateTime<
       Recovery::Resume
     };
   };
+  // PIDs are reused, so the start time has to match too.
   let still_running = running.iter().any(|process| {
     process.pid == pid
       && record
@@ -493,6 +559,8 @@ fn finalize(
   if !recovered {
     std::thread::sleep(DUMP_SETTLE);
   }
+  // The app may have stopped the game, or the frontend attached its
+  // fingerprint, while we were waiting.
   let (record, dmm_stop_at) = {
     let tracker = tracker();
     let record = tracker
@@ -550,6 +618,8 @@ fn finalize(
   emit(app_handle.as_ref(), SESSION_ENDED_EVENT, report);
 }
 
+/// Whether the app's Stop at `stop_at` is what ended a session that started
+/// at `started_at` and was seen to end at `ended_at`.
 fn stop_ended_session(
   stop_at: DateTime<Utc>,
   started_at: DateTime<Utc>,
@@ -559,6 +629,8 @@ fn stop_ended_session(
     && ended_at.is_some_and(|ended_at| ended_at >= stop_at && ended_at - stop_at <= DMM_STOP_WINDOW)
 }
 
+/// Gathers the exit signals and classifies the session. `later_run` is when
+/// a run that started after this one was seen to start, if any.
 fn analyze(
   record: SessionRecord,
   observed: ObservedExit,
@@ -573,6 +645,7 @@ fn analyze(
   if let Some(steam_path) = &record.steam_path
     && (exit_code.is_none() || recovered)
   {
+    // Only Windows PIDs match what Steam logs, so only there is it worth waiting.
     let attempts = if cfg!(windows) && record.pid.is_some() && !recovered {
       STEAM_LOG_ATTEMPTS
     } else {
@@ -856,6 +929,8 @@ mod tests {
       steam_path: Some(steam.path().to_path_buf()),
       ..recovered_record(&game)
     };
+    // No exit line for our PID, as off Windows, where Steam tracks Proton's
+    // wrapper; a later launch of the game is still logged.
     let later_run = record.started_at + chrono::Duration::seconds(30);
     std::fs::create_dir_all(steam.path().join("logs")).unwrap();
     std::fs::write(
@@ -916,6 +991,7 @@ mod tests {
     assert!(!stop_ended_session(stop_at, started_at, after(60)));
     assert!(!stop_ended_session(stop_at, started_at, after(-5)));
     assert!(!stop_ended_session(stop_at, started_at, None));
+    // A stop from before this session started was for an earlier one.
     assert!(!stop_ended_session(
       started_at - chrono::Duration::seconds(5),
       started_at,

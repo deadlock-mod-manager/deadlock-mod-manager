@@ -56,6 +56,10 @@ const ExternalLink = ({
   </button>
 );
 
+/**
+ * The Foundry's start page: the skin picker is the page, with the community's
+ * other skin sources beside it.
+ */
 export const FoundryEmptyState = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -66,6 +70,9 @@ export const FoundryEmptyState = () => {
     (state) => state.setForgeInstallEnabled,
   );
 
+  // The 1-click handoff only works if the bridge is on, and the site gives no
+  // hint that it is off. Offer the switch here, then leave for the site either
+  // way.
   const handleForgeClick = async () => {
     if (!forgeInstallEnabled) {
       const accepted = !!(await confirm({

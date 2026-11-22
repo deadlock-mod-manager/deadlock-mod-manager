@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createPreviewClip } from "@/lib/preview-animation";
 import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 
+/** The stock clip follows the selected clip's normalized phase, even if its length differs. */
 export const createComparisonPlayback = (root: THREE.Object3D) => {
   let mixer: THREE.AnimationMixer | null = null;
   let phaseScale = 1;

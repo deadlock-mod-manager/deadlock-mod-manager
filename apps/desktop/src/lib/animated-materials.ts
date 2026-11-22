@@ -26,6 +26,7 @@ export type MaterialFamily =
   | "smoke"
   | "spectral";
 
+/** Narrow material-name cases: never turn a hero's entire model into an FX shader. */
 export function materialFamily(
   effect: Pick<Source2Effect, "shader" | "material">,
 ): MaterialFamily {
@@ -121,6 +122,7 @@ export interface AnimatedMaterials {
   diagnostics: string[];
 }
 
+/** All animation is a pure function of PreviewClock time, including backwards seeks. */
 export async function installAnimatedMaterials(
   root: THREE.Object3D,
   loadTexture?: (index: number) => Promise<THREE.Texture>,
@@ -352,6 +354,7 @@ export async function installAnimatedMaterials(
     let mask: THREE.Texture | null = null;
     if (effect.maskTexture !== undefined && loadTexture) {
       try {
+        // Clone sampler state; these linear masks must not change a shared color map.
         let request = maskRequests.get(effect.maskTexture);
         if (!request) {
           request = loadTexture(effect.maskTexture);
@@ -361,6 +364,7 @@ export async function installAnimatedMaterials(
         mask = maskClones.get(original) ?? null;
         if (!mask) {
           mask = original.clone();
+          // Paint can replace a color map's image; a mask keeps its original pixels.
           mask.source = new THREE.Source(original.source.data);
           mask.colorSpace = THREE.NoColorSpace;
           mask.wrapS = mask.wrapT = THREE.RepeatWrapping;
@@ -416,6 +420,7 @@ export async function installAnimatedMaterials(
       uSourceEmissionScroll: {
         value: new THREE.Vector2(emissionScroll[0], emissionScroll[1]),
       },
+      // The exporter changes axes while retaining the model's Source units.
       uSourceJitter: {
         value: new THREE.Matrix3().set(
           jitter[0],

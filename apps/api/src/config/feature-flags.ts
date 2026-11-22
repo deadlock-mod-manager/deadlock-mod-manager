@@ -1,5 +1,8 @@
 import type { FeatureFlagDefinition } from "@deadlock-mods/feature-flags";
 
+/**
+ * Feature flag definitions to be registered on application startup.
+ */
 export const featureFlagDefinitions: FeatureFlagDefinition[] = [
   {
     name: "remlock-release",

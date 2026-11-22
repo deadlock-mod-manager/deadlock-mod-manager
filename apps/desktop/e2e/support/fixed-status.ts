@@ -16,11 +16,16 @@ import {
 } from "./ui";
 import { assertOwnedWorld } from "./world";
 
+// Probes for fixed-status cases. A fixed mod should keep "Fixed for this
+// patch", and its repair should stay in the package the game loads, unless the
+// player changes it.
+
 type HealthReport = {
   gameBuild: number | null;
   mods: { modId: string; status: string }[];
 };
 
+/** Each mod's health status, as the backend reports it to the window. */
 export const readHealth = async (
   folder: string | null,
 ): Promise<Record<string, string>> => {
@@ -62,6 +67,8 @@ const citadelOf = async (world: string) => {
   return path.join(roots.game, "game", "citadel");
 };
 
+// Mirrors `localization_overlay_search_path`: the first 8 bytes of the folder
+// name's SHA-256, or "default".
 const overlayFolder = (profileFolder: string | null) =>
   profileFolder === null
     ? "dmm_localization_default"
@@ -70,6 +77,7 @@ const overlayFolder = (profileFolder: string | null) =>
         .digest("hex")
         .slice(0, 16)}`;
 
+/** What a game started from Steam would load for this profile. */
 export const readRepairState = async (
   world: string,
   profileFolder: string | null,
@@ -101,6 +109,7 @@ export const readRepairState = async (
   };
 };
 
+/** When the profile's repair receipt was last written, or null without one. */
 export const readReceiptModifiedMs = async (
   world: string,
   profileFolder: string | null,
@@ -117,6 +126,7 @@ export const readReceiptModifiedMs = async (
   );
 };
 
+/** The install-wide observed-history file the receipt key digests. */
 const readHistoryDigest = async (world: string): Promise<string | null> => {
   const {
     configuration: { roots },
@@ -148,8 +158,10 @@ type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+/** Named values saved beside a case's other evidence. */
 export type CheckpointData = { [key: string]: JsonValue };
 
+/** A JSON checkpoint, plus a matching screenshot while the window is open. */
 export const checkpoint = async (
   name: string,
   data: CheckpointData,
@@ -166,6 +178,7 @@ export const checkpoint = async (
     );
 };
 
+/** A checkpoint an earlier phase of the same case saved. */
 export const readCheckpoint = async <T>(name: string, schema: z.ZodType<T>) =>
   schema.parse(
     JSON.parse(
@@ -178,6 +191,10 @@ export const readCheckpoint = async <T>(name: string, schema: z.ZodType<T>) =>
 
 type Sample = { atMs: number; status: string | undefined };
 
+/**
+ * Reads a mod's status every 250 ms for `durationMs` and records each change,
+ * so a transient "Can be fixed" shows up in the evidence even if it heals.
+ */
 export const sampleStatus = async (
   label: string,
   folder: string | null,
@@ -206,6 +223,7 @@ export const sampleStatus = async (
 const card = (modId: string) =>
   `//*[@title="${modId}"]/ancestor::*[.//button[@role="switch"]][1]`;
 
+/** Clicks a mod's enable switch in the library. */
 export const toggleMod = async (modId: string) => {
   await navigate("my-mods");
   await findMod(modId);
@@ -214,6 +232,12 @@ export const toggleMod = async (modId: string) => {
   await toggle.click();
 };
 
+/**
+ * Makes the page close DMM as soon as a disable of `modId` lands: the backend
+ * has sent mod-compatibility-changed and the switch reads off. The page closes
+ * itself so no WebDriver round trip sits between the change and the close,
+ * which keeps the close well inside the window's 1.5 s rebuild debounce.
+ */
 export const closeOnceDisabled = (modId: string) =>
   browser.execute(
     async (xpath: string) => {
@@ -251,6 +275,7 @@ export const closeOnceDisabled = (modId: string) =>
 
 type Badge = { status: string | null; text: string } | null;
 
+/** The health badge on `modId`'s library card. */
 const readBadge = async (modId: string): Promise<Badge> => {
   const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
   if (!(await badge.isExisting())) return null;
@@ -260,6 +285,7 @@ const readBadge = async (modId: string): Promise<Badge> => {
   };
 };
 
+/** The library card's badge for a mod, as the player sees it. */
 export const badgeStatus = async (modId: string) => {
   await navigate("my-mods");
   await findMod(modId);
@@ -269,6 +295,7 @@ export const badgeStatus = async (modId: string) => {
 export const row = (modId: string) =>
   `//*[@data-testid="mod-health-row"][.//button[@title="${modId}"]]`;
 
+/** Opens the health dialog from the library banner. */
 export const openHealthDialog = async () => {
   await navigate("my-mods");
   const details = await $('[data-testid="mod-health-banner"]').$(
@@ -289,6 +316,7 @@ export const closeDialogs = async () => {
   }
 };
 
+/** Clicks Fix all in the health dialog. */
 export const fixAllInDialog = async () => {
   const dialog = await openHealthDialog();
   const fixAll = await dialog.$("button=Fix all");
@@ -296,6 +324,7 @@ export const fixAllInDialog = async () => {
   await fixAll.click();
 };
 
+/** Clicks the row's Fix in the health dialog, as the player would. */
 const fixInDialog = async (modId: string) => {
   const dialog = await openHealthDialog();
   const fix = await dialog.$(row(modId)).$("button=Fix");
@@ -316,16 +345,19 @@ export const waitForStatus = (
     timeoutMs,
   );
 
+/** Rewrites files with their own bytes, as a Steam verify or patch might. */
 export const rewriteGameFiles = async (world: string, files: string[]) => {
   const citadel = await citadelOf(world);
   for (const file of files) {
     const target = path.join(citadel, file);
     const bytes = await readFile(target);
+    // The receipt stamps mtimes; make sure the new one differs.
     await delay(1100);
     await writeFile(target, bytes);
   }
 };
 
+/** A game update: a new build number in steam.inf. */
 export const bumpGameBuild = async (world: string, build: number) => {
   const citadel = await citadelOf(world);
   await writeFile(
@@ -347,6 +379,10 @@ const healthCacheSchema = z.looseObject({
   ),
 });
 
+/**
+ * What an app update that bumps `REPAIR_REVISION` leaves behind: a receipt and
+ * health cache written by the previous revision.
+ */
 export const ageRepairRevision = async (
   world: string,
   profileFolder: string | null,
@@ -379,6 +415,7 @@ export const ageRepairRevision = async (
   return { from: revision, to: revision - 1 };
 };
 
+/** Imports a VPK from the world's fixtures as a new mod, enabled or not. */
 export const importMod = async (
   world: string,
   file: string,
@@ -415,6 +452,7 @@ export const importMod = async (
   return added;
 };
 
+/** Fixes `modId` from the health dialog and waits for its repair on disk. */
 export const fixAndConfirm = async (
   world: string,
   folder: string | null,
@@ -431,6 +469,10 @@ export const fixAndConfirm = async (
   );
 };
 
+/**
+ * The library reads its own cached health report, so its badge can trail
+ * `get_mod_health` until a finished rebuild invalidates that report.
+ */
 const waitForFixedBadge = async (modId: string, timeoutMs: number) => {
   await navigate("my-mods");
   await findMod(modId);
@@ -443,6 +485,11 @@ const waitForFixedBadge = async (modId: string, timeoutMs: number) => {
   return badge;
 };
 
+/**
+ * Samples `modId` for `durationMs`, saves a checkpoint, and asserts it ends
+ * fixed with its repair packaged and mounted, and that its library card reads
+ * "Fixed for this patch".
+ */
 export const expectStillFixed = async (
   world: string,
   folder: string | null,
@@ -453,6 +500,7 @@ export const expectStillFixed = async (
 ) => {
   const samples = await sampleStatus(name, folder, modId, durationMs);
   const repairs = await readRepairState(world, folder);
+  // The slowest case already samples for 60 s of a 90 s test timeout.
   const badge = await waitForFixedBadge(modId, 10_000);
   await checkpoint(name, {
     health: await readHealth(folder),
@@ -504,12 +552,14 @@ const readManifestEntry = async (
   return manifestSchema.parse(JSON.parse(raw)).mods[modId];
 };
 
+/** The profile manifest's enabled flag, read straight from disk. */
 export const readManifestEnabled = async (
   world: string,
   profileFolder: string,
   modId: string,
 ) => (await readManifestEntry(world, profileFolder, modId))?.enabled ?? null;
 
+/** Whether the player's Fix choice for `modId` is saved in the manifest. */
 export const readFixChosen = async (
   world: string,
   profileFolder: string,

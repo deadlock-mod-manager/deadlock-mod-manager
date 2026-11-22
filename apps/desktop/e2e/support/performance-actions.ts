@@ -18,6 +18,7 @@ export const applyPreset = (presetId: string) =>
     await expect(card).toHaveText(expect.stringContaining("Applied"));
   });
 
+/** Applies pending changes to the chosen config, from any tab. */
 export const applyChanges = async () => {
   const apply = await $("button=Apply changes");
   await reveal(apply);
@@ -25,6 +26,8 @@ export const applyChanges = async () => {
   await expect(apply).not.toBeDisplayed();
 };
 
+// A status refresh re-renders the tabs and can swallow a click, so look the
+// tab up again and retry, falling back to the keyboard, until it is selected.
 export const openTab = async (name: string) => {
   const tab = `//button[@role="tab"][normalize-space()="${name}"]`;
   await reveal(await $(tab));
@@ -57,5 +60,6 @@ export const turnOff = () =>
     await expect(button).not.toBeDisplayed();
   });
 
+/** Coming back to the window from the game, as alt-tab does. */
 export const refocusWindow = () =>
   browser.execute(() => window.dispatchEvent(new Event("focus")));

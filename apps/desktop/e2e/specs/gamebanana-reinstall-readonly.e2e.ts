@@ -92,6 +92,8 @@ describe("reinstall with a file that stays read-only", () => {
         await prompt.waitForDisplayed({ reverse: true });
       });
 
+      // Either the reinstall reports the failure, or it carried on and the
+      // install step hit the same read-only file and asked again.
       const settled = await observeUntil(
         "Reinstall settled after the declined prompt",
         async () => ({
@@ -130,6 +132,8 @@ describe("reinstall with a file that stays read-only", () => {
       await expect($('button[aria-label="Reinstall"]')).toBeEnabled();
       await waitCatalogStatus(world, "installed");
     } finally {
+      // A missing VPK is itself a failure the assertions above report; it must
+      // not be replaced by the restore's ENOENT.
       await chmod(vpk, mode).catch((error: NodeJS.ErrnoException) => {
         if (error.code !== "ENOENT") throw error;
       });

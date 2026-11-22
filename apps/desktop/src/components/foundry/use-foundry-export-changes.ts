@@ -12,6 +12,7 @@ export interface Change {
   thumb?: string;
 }
 
+/** Every edit in the workspace, named the way its tab names it. */
 export const useChanges = (): Change[] => {
   const { t } = useTranslation();
   const {
@@ -40,6 +41,8 @@ export const useChanges = (): Change[] => {
         .pop()
         ?.replace(/\.[^.]+$/, "") ?? path;
 
+    // A model's removed sections rewrite several files; they read as one
+    // change, listed under its first file, and undo together.
     const removalOwners = new Map(
       Object.values(removedParts).flatMap((removed) =>
         removed.resources.map((path) => [path, removed] as const),

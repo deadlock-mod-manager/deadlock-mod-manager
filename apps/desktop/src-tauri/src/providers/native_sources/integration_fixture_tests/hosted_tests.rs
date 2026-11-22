@@ -11,6 +11,8 @@ use crate::providers::native_sources::{
   NativeSourceManager, build_component_selection, listing_slug,
 };
 
+/// A pack with suggested paks in `addons` and extras in `optional-addons`,
+/// one of which replaces a default pak.
 const HOSTED_PACK_CATALOG: &str = include_str!("hosted_pack_catalog.json");
 
 #[tokio::test]
@@ -70,6 +72,7 @@ async fn hosted_pack_catalog_installs_choices_from_both_archive_folders_in_pak_o
     .collect();
   let artifact_ids = vec!["archive".to_string()];
   assert!(build_component_selection(&release, &defaults, &artifact_ids).is_ok());
+  // The reduced variant, the second outline and every extra.
   let mut everything: Vec<String> = installation
     .components
     .iter()
@@ -167,6 +170,7 @@ async fn hosted_sync_enrolls_once_trusts_new_download_origins_and_never_re_adds_
   manager.sync_hosted(&api.origin, true).await.unwrap();
   assert_eq!(manager.list().await.unwrap().len(), 1);
 
+  // A new hosted project can download from another origin without a review.
   api.edit_json("/dmm-source.json", |descriptor| {
     descriptor["networkOrigins"]["downloads"]
       .as_array_mut()

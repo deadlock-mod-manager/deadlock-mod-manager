@@ -18,10 +18,13 @@ interface HeroSkinsSectionProps {
   hero: string;
   group: HeroModGroup<LocalMod>;
   disabled: boolean;
+  /** The randomizer owns this hero, so which skin is on stays a surprise. */
   randomized: boolean;
   poolMode: boolean;
+  /** Skins and the default look the next launch can land on. */
   poolSize: number;
   onPoolModeChange: (poolMode: boolean) => void;
+  /** A skin to wear, or null for the default look. */
   onWear: (mod: LocalMod | null) => void;
   onRemove: (mod: LocalMod) => void;
   onDelete: (mod: LocalMod) => void;
@@ -67,6 +70,8 @@ export const HeroSkinsSection = ({
     markFeatureUsed("skin-randomizer");
   };
 
+  // The banner already says the hero is randomized, so the header only offers
+  // the way into the pool.
   const headerAction = (
     <HintAnchor
       eligible={!randomizerEnabled && skins.length >= RANDOMIZER_MIN_POOL}

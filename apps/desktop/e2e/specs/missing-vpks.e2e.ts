@@ -29,8 +29,13 @@ import { ALPHA } from "../support/profile-fixtures";
 import { navigate } from "../support/ui";
 import { assertOwnedWorld } from "../support/world";
 
+/**
+ * Longer than any debounce the detection may use. A mod that is still listed
+ * after this long is kept on purpose, not merely not yet noticed.
+ */
 const SETTLE_MS = 3_000;
 
+/** Alpha mods that lose files in both cases; see the fixture for which ones. */
 const DELETED_ALPHA = [
   MISSING.enabled,
   MISSING.parked,
@@ -68,6 +73,10 @@ const listed = async (name: string): Promise<boolean> =>
 const brokenWarnings = async (): Promise<number> =>
   $$('[data-testid="missing-files-warning"]').length;
 
+/**
+ * My Mods renders exactly the expected Alpha mods, by name, and warns on each
+ * broken one.
+ */
 const assertMyMods = (label: string, expected: MissingVpkExpectation) =>
   step(`${label}: My Mods lists ${expected.alpha.join(", ")}`, async () => {
     const warnings = Object.keys(expected.broken).length;
@@ -84,6 +93,7 @@ const assertMyMods = (label: string, expected: MissingVpkExpectation) =>
     );
   });
 
+/** Delete a file the way a user would, from outside DMM. */
 const deleteAlphaFile = async (world: string, name: string) => {
   const {
     configuration: { roots },
@@ -91,6 +101,7 @@ const deleteAlphaFile = async (world: string, name: string) => {
   await rm(path.join(profileDirectory(roots.game, ALPHA.folder), name));
 };
 
+/** Reorder through the real Rust command, so DMM itself renames every enabled VPK. */
 const reorderAlpha = async (world: string, order: readonly string[]) => {
   const manifest = await readMissingVpkManifest(world, ALPHA.folder);
   const data = order.map(
@@ -114,6 +125,10 @@ const reorderAlpha = async (world: string, order: readonly string[]) => {
   assert.equal(error, null, "Reorder failed");
 };
 
+/**
+ * DMM stays open and in the foreground the whole time, so nothing but the
+ * deletions themselves can prompt it to look at the disk again.
+ */
 const deleteWhileRunning = async (world: string) => {
   await awaitLibrary(world, "seeded", EVERY_MOD);
   await navigate("my-mods");
@@ -180,6 +195,9 @@ describe("mods with missing VPKs", () => {
     const caseId = (await assertOwnedWorld(world)).configuration.caseId;
     if (!PHASES.has(phase)) throw new Error(`Unknown phase for ${caseId}`);
 
+    // Offline, the files were deleted while DMM was closed - including one in
+    // the inactive Beta profile - and startup alone has to notice. Live, DMM
+    // never restarts before the first check.
     const offline = caseId === "missing-vpks-offline";
     const expected: MissingVpkExpectation = offline
       ? { alpha: KEPT_ALPHA_MODS, beta: [MISSING.betaIntact], broken: BROKEN }
@@ -195,6 +213,7 @@ describe("mods with missing VPKs", () => {
     await assertMyMods(phase, expected);
     await assertMissingVpkOutcome(world, phase, expected, deleted);
 
+    // A removed mod must not come back from the manifest on the next launch.
     await closeApplication(world, runtime.processId);
     await assertMissingVpkOutcome(world, `closed-${phase}`, expected, deleted);
   });

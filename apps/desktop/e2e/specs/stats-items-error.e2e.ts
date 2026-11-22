@@ -135,6 +135,7 @@ describe("Items request errors", () => {
         );
       },
     );
+    // The next independent failure must not be hidden by a disk-cache fallback.
     if (phase !== "empty-items")
       await writeFile(
         path.join(configuration.roots.appData, "stats-cache.json"),

@@ -21,6 +21,7 @@ import {
 import { readDownloadState } from "../support/download-oracle";
 
 const NOTICE_DELAY_MS = 8_000;
+/** Ample for a purge and a queue IPC; the first download runs for about 8 s. */
 const QUEUE_SETTLE_MS = 1_000;
 
 const card = (name: string) => $(`[role="button"][aria-label="Open ${name}"]`);
@@ -81,6 +82,7 @@ const screenshot = (world: string, name: string) =>
 const isTransferring = async (name: string) =>
   /[\d.]+ (KB|MB)\/s/.test(await card(name).getText());
 
+/** Pauses the first download while the second waits behind it; returns the bytes kept. */
 const pauseWithSecondQueued = async (
   world: string,
   scenario: string,
@@ -94,6 +96,7 @@ const pauseWithSecondQueued = async (
     });
     await click(QUEUED_NAME, "Retry");
     await waitStatus(world, QUEUED_MOD, "downloading");
+    // Retry purges the mod before it queues it, and neither step shows in the UI.
     await setTimeout(QUEUE_SETTLE_MS);
     expect(await requestsFor(world, QUEUED_FILE)).toEqual([]);
 
@@ -127,6 +130,7 @@ const pauseWithSecondQueued = async (
           (requests) => requests.length === 1,
           5_000,
         );
+        // The cancel case serves the second download at full speed.
         if (scenario !== "downloads-pause-queue-cancel")
           await browser.waitUntil(() => isTransferring(QUEUED_NAME), {
             timeout: 10_000,
@@ -152,6 +156,7 @@ const resumeBehindRunning = async (world: string, kept: number) => {
       await screenshot(world, "resumed-waiting");
       while (Date.now() < resumed + NOTICE_DELAY_MS + 2_000) {
         expect(await notice(DOWNLOAD_NAME).isDisplayed()).toBe(false);
+        // Resuming doesn't take the worker from the download running now.
         expect(await requestsFor(world, DOWNLOAD_FILE)).toHaveLength(1);
         expect(await statusOf(world, QUEUED_MOD)).toBe("downloading");
         await setTimeout(250);
@@ -258,6 +263,7 @@ describe("pausing a download frees the queue", () => {
       else if (scenario === "downloads-pause-queue-reload")
         await reloadWhilePaused(world);
       else if (scenario === "downloads-pause-queue-restart") {
+        // The restart interrupts the app with the first paused and the second running.
         await writeFile(
           checkpointPath,
           JSON.stringify({ processId: runtime.processId }),

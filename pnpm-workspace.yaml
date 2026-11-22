@@ -5,6 +5,7 @@ packages:
 
 overrides:
   typescript: "catalog:"
+  # Next.js runs type-checking through the TypeScript JS API, which TypeScript 7 does not ship
   "@deadlock-mods/docs>typescript": ^6.0.3
   "@types/node": 22.19.15
   "@isaacs/brace-expansion": ">=5.0.1"
@@ -57,6 +58,7 @@ dedupePeerDependents: true
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
+  # CVE-2026-102989 fix (react-start 1.168.60 / start-server-core 1.169.39) is newer than the release-age window
   - "@tanstack/*"
 pmOnFail: ignore
 

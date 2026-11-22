@@ -1,3 +1,6 @@
+//! Data shapes shared by the patcher, the import analyzer, the catalog and the
+//! frontend. Everything the UI sees is exported through ts-rs.
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -180,6 +183,8 @@ pub enum EntryStatus {
 }
 
 impl EntryStatus {
+  /// The overlay carries the entry. Convars the catalog says Deadlock won't
+  /// read are written too, so the file holds every edit its author made.
   pub fn is_written(self) -> bool {
     matches!(
       self,
@@ -346,6 +351,7 @@ pub struct ResolvedCounts {
 }
 
 impl ResolvedCounts {
+  /// Entries the overlay carries; see [`EntryStatus::is_written`].
   pub fn written(&self) -> u32 {
     self.applies + self.blocked + self.removed + self.not_convar
   }

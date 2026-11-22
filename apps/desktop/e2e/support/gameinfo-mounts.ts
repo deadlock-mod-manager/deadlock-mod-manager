@@ -1,3 +1,4 @@
+/** Read unconditional Game mounts from the controlled multiline E2E fixtures. */
 export const fixtureGamePaths = (content: string): string[] =>
   [
     ...content.matchAll(

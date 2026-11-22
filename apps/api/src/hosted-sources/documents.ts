@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+/*
+ * The subset of the `dmm-source` 1.0 documents a hosted source publishes. The
+ * desktop validates them again (`native_sources/validation.rs`); these
+ * schemas describe the API's responses.
+ */
+
 export const hostedSourceDescriptorSchema = z.object({
   format: z.literal("dmm-source"),
   protocolVersion: z.literal("1.0"),
@@ -17,6 +23,7 @@ export const hostedSourceDescriptorSchema = z.object({
   capabilities: z.object({ installationChoices: z.boolean() }),
 });
 
+/** No project is hosted yet, so the catalog has no listings. */
 export const hostedSourceCatalogSchema = z.object({
   snapshotId: z.string(),
   items: z.tuple([]),
@@ -32,6 +39,7 @@ export const HOSTED_SOURCE_NAME = "Deadlock Mod Manager";
 
 const ICON_URL = "https://deadlockmods.app/logo192.png";
 
+/** The API's own origin keeps the download origins valid while nothing is hosted. */
 export const buildHostedSourceDescriptor = (
   apiOrigin: string,
 ): HostedSourceDescriptor => ({
@@ -51,6 +59,7 @@ export const buildHostedSourceDescriptor = (
   capabilities: { installationChoices: true },
 });
 
+/** Static catalogs need a nonempty `snapshotId`; desktop rejects pages without one. */
 export const hostedSourceCatalog: HostedSourceCatalog = {
   snapshotId: "empty",
   items: [],

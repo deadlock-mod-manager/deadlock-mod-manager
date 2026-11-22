@@ -15,11 +15,16 @@ import type { LocalAddonInfo } from "@/types/mods";
 
 interface AddonFileActionsProps {
   addon: LocalAddonInfo;
+  /** For a leftover, the mod Add to Library brings back. */
   leftoverOf?: string;
   profileFolder: string | null;
   disabled: boolean;
 }
 
+/**
+ * Choices for a file Analyze couldn't place: a leftover parked file whose mod
+ * left the library, or an unknown file. Each acts on this one file only.
+ */
 export const AddonFileActions = ({
   addon,
   leftoverOf,

@@ -8,6 +8,11 @@ import {
 } from "@/lib/mods/missing-vpks";
 import { usePersistedStore } from "@/lib/store";
 
+/**
+ * Keeps the library in step with VPKs the user deletes while DMM is open. The
+ * backend watches the addons folders; each burst of changes reconciles every
+ * profile, which removes mods with no files left and flags partly deleted ones.
+ */
 export const useMissingVpkDetection = () => {
   const gamePath = usePersistedStore((state) => state.gamePath);
 
@@ -34,6 +39,8 @@ export const useMissingVpkDetection = () => {
     };
   }, []);
 
+  // A changed game path moves the addons folders. On startup the backend may
+  // not know the path yet; the app bootstrap starts the watch once it does.
   useEffect(() => {
     if (!gamePath) return;
     invoke("watch_addons_vpks").catch((error) => {

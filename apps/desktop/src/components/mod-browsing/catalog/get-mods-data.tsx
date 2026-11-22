@@ -65,8 +65,11 @@ import { ModsPagination } from "@/components/mod-browsing/catalog/mods-paginatio
 
 const PAGE_SIZE = 50;
 
+// Continuous scrolling loads the catalog in slices instead of all ~4k entries
+// at once. Divisible by every column count (1-6) so loaded rows stay full.
 const SCROLL_PAGE_SIZE = 120;
 
+// Start loading the next slice this many rows before the loaded end.
 const LOAD_MORE_ROW_THRESHOLD = 4;
 
 const MODS_STORE_PAGE_KEY = "/mods:page";
@@ -77,8 +80,11 @@ const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
 
+// Filters each store page last ran with, kept across unmounts so filters set
+// from elsewhere (dashboard "See all", skins) reset the page on the next visit.
 const lastFilterSignatures = new Map<string, string>();
 
+// Collections come from their own catalog table, not the submissions.
 type CatalogContentType = Exclude<ContentType, "collection">;
 
 const CONTENT_SUBMISSION_TYPE = {
@@ -143,6 +149,7 @@ export const GetModsData = ({
     searchQuery = "",
     currentSort,
   } = filters;
+  // A stale NSFW-only filter must not override the global hide setting.
   const nsfwOnly = nsfwOnlyFilter && !nsfwSettings.hideNSFW;
   const favorites = usePersistedStore((state) => state.favorites);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
@@ -157,6 +164,7 @@ export const GetModsData = ({
       : contentType === "mod" && isCustomMapsEnabled
         ? false
         : null;
+  // Facets depend only on the tab, so saved selections can be normalized before querying.
   const facetQuery = useMemo<CatalogQuery>(
     () => ({
       ...CATALOG_QUERY_DEFAULTS,
@@ -207,6 +215,8 @@ export const GetModsData = ({
       heroes: querySelection.heroes,
       authorRemoteId: null,
       excludeFilters: filterMode === "exclude",
+      // Sounds are picked by submissionType; maps only by the Maps tab, and
+      // Mods leaves them out once that tab exists.
       isAudio: null,
       isMap,
       hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
@@ -242,8 +252,13 @@ export const GetModsData = ({
     showFavoritesOnly,
     updatedFilter,
   ]);
+  // Querying with a deferred value keeps the current results on screen while a
+  // new filter/search/page loads, instead of suspending back to the skeleton.
+  // Only the very first load (nothing to show yet) hits the Suspense fallback.
   const deferredCatalogQuery = useDeferredValue(catalogQuery);
   const isUpdatingResults = deferredCatalogQuery !== catalogQuery;
+  // Paginated mode loads exactly the requested page; scrolling mode appends
+  // further pages as the virtualized list nears its end.
   const {
     data: catalogPages,
     error,
@@ -290,6 +305,7 @@ export const GetModsData = ({
     () => catalogPages.pages.flatMap((loadedPage) => loadedPage.items),
     [catalogPages.pages],
   );
+  // Filter menus list every option in the current tab, not just loaded rows.
   const filterOptions = useMemo(
     () =>
       (facets ?? []).map((facet) => ({
@@ -303,6 +319,8 @@ export const GetModsData = ({
   const previousFilterSignatureRef = useRef<string | null>(
     lastFilterSignatures.get(pageKey) ?? null,
   );
+  // Defer the mod list so background refetches (staleTime expiry) don't
+  // block the UI while thousands of cards and filter options recompute.
   const deferredData = useDeferredValue(data ?? []);
   const { restoreScrollPosition, setScrollElement, scrollY } =
     useScrollPosition(scrollKey);
@@ -327,6 +345,8 @@ export const GetModsData = ({
   );
   const { query, setQuery, sortType, setSortType } =
     useSearchQueryState(searchQueryState);
+  // A pasted GameBanana id or link shows that mod right away, ahead of the
+  // text matches, even when it isn't in the local catalog yet.
   const idReference = parseGameBananaReference(query);
   const { mod: idMatch, isFetching: isFetchingIdMatch } = useMod(
     idReference ?? undefined,
@@ -371,6 +391,7 @@ export const GetModsData = ({
       paginationEnabled ||
       !hasNextPage ||
       isFetchingNextPage ||
+      // A failed page would otherwise be re-requested as soon as it settles.
       isFetchNextPageError ||
       lastVirtualRowIndex < modRows.length - LOAD_MORE_ROW_THRESHOLD
     ) {

@@ -29,6 +29,7 @@ export const createAnalyticsClient = ({
   now,
   createId,
 }: AnalyticsClientDependencies) => {
+  // Every dependency belongs inside this boundary: telemetry must never stop an action.
   const emit = (
     event: string,
     properties: AnalyticsProperties = {},

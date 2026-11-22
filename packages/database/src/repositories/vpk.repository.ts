@@ -30,6 +30,7 @@ const isLegacyRowOf = (row: CachedVPK, identity: VpkIdentity) =>
   row.submissionType === identity.submissionType &&
   row.submissionId === identity.submissionId;
 
+/** GameBanana files Lockdex can index, aliased for use as the `c` CTE */
 const indexableDownloads = (
   options: Omit<UningestedDownloadQuery, "limit">,
 ) => sql`
@@ -135,6 +136,11 @@ export class VpkRepository {
     return entry ?? null;
   }
 
+  /**
+   * A sha256 has one row. When another file already owns it the row is left
+   * alone and reported as a duplicate, except that a legacy row of the same
+   * submission (written before file ids existed) is claimed by this file.
+   */
   async upsertBySource(
     identity: VpkIdentity,
     fileId: string,
@@ -178,6 +184,10 @@ export class VpkRepository {
     return { vpk: racedOwner, outcome: "duplicate" };
   }
 
+  /**
+   * GameBanana files whose current marker has no ingestion yet, submissions
+   * with no indexed VPK first, then the most downloaded.
+   */
   async findUningestedDownloads(
     options: UningestedDownloadQuery,
   ): Promise<UningestedDownload[]> {
@@ -201,6 +211,7 @@ export class VpkRepository {
     return result.rows;
   }
 
+  /** How many indexable GameBanana files have an ingestion at their current marker */
   async countIngestionCoverage(
     options: Omit<UningestedDownloadQuery, "limit">,
   ): Promise<{ indexable: number; ingested: number }> {
@@ -216,6 +227,11 @@ export class VpkRepository {
     return { indexable: Number(row.indexable), ingested: Number(row.ingested) };
   }
 
+  /**
+   * Copies the GameBanana identity onto VPKs that only reference the catalog,
+   * mirroring migration 0055 for rows legacy writers add after it.
+   * Legacy desktop compatibility: remove with the catalog retirement (#715).
+   */
   async backfillLegacyIdentities(): Promise<number> {
     const result = await this.db.execute(sql`
       UPDATE "vpk" SET

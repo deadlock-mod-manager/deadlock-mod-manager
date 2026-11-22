@@ -65,7 +65,7 @@ function normalizePath(inputPath: string): string {
   const parts = collapsed.split("/");
   const out: string[] = [];
   for (const part of parts) {
-    if (part === "" && out.length > 0) continue;
+    if (part === "" && out.length > 0) continue; // skip duplicate slashes (keep possible leading alias like @)
     if (part === ".") continue;
     if (part === "..") {
       if (out.length > 0 && out[out.length - 1] !== "@") out.pop();

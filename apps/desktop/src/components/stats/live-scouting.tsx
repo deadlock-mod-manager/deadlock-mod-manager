@@ -29,6 +29,7 @@ interface LiveScoutingProps {
   rankAssets: RankAsset[];
 }
 
+/** One number for both teams, the higher side in its team colour. */
 const Comparison = ({
   label,
   ours,
@@ -137,6 +138,11 @@ const ScoutingHeader = ({ board, lobby, rankAssets }: LiveScoutingProps) => {
   );
 };
 
+/**
+ * Everyone in the lobby before the zipline: both teams with each player's rank,
+ * record on the hero they locked and recent form, plus how your hero has done
+ * against theirs.
+ */
 export const LiveScouting = ({
   board,
   lobby,

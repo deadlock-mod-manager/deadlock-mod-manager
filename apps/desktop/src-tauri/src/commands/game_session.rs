@@ -4,6 +4,8 @@ use crate::game_session::{
   types::{ClientFingerprint, SessionAckOutcome, SessionReport},
 };
 
+/// Reports the frontend hasn't acknowledged yet, oldest first, including
+/// sessions that ended while the app was closed.
 #[tauri::command]
 pub async fn session_pending_reports() -> Result<Vec<SessionReport>, Error> {
   Ok(game_session::pending_reports())
@@ -18,6 +20,8 @@ pub async fn session_acknowledge(
   Ok(())
 }
 
+/// Attaches the active profile and its mods to a session. Without an id it
+/// goes to the running session. Returns whether it was recorded.
 #[tauri::command]
 pub async fn session_record_client_fingerprint(
   session_id: Option<String>,
@@ -29,6 +33,7 @@ pub async fn session_record_client_fingerprint(
   ))
 }
 
+/// Mirrors the "check for crashes" setting.
 #[tauri::command]
 pub async fn session_set_enabled(enabled: bool) -> Result<(), Error> {
   game_session::set_enabled(enabled);

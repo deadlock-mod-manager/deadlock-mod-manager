@@ -29,6 +29,7 @@ export const fingerprint = (bytes: Uint8Array): string =>
 export const readPersistedDocument = async (world: string) => {
   const { configuration } = await assertOwnedWorld(world);
   const deadline = Date.now() + 2_000;
+  // Tauri's store rewrites the file in place; observers can see a partial write.
   for (;;) {
     try {
       const store = z

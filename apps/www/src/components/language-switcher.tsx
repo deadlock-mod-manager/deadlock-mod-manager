@@ -12,9 +12,15 @@ import { LocaleFlag } from "@/components/locale-flag";
 import { LOCALES, type LocaleConfig } from "@/lib/i18n/locales";
 import { rememberLocale, useLocale, useLocaleLinks } from "@/lib/i18n/route";
 
+/** Short code shown beside the flag: "EN", "RU", "PT". */
 const shortCode = (entry: LocaleConfig) =>
   entry.hreflang.slice(0, 2).toUpperCase();
 
+/**
+ * Language choices are plain links to the other language's URL, not client
+ * navigations: the whole page (and its head tags) re-renders in that
+ * language, and the choice is remembered so detection never overrides it.
+ */
 export const LanguageSwitcher = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -95,6 +101,7 @@ export const LanguageSwitcher = ({ className }: { className?: string }) => {
   );
 };
 
+/** The same choices as a flat list, for the mobile menu. */
 export const LanguageList = ({ onSelect }: { onSelect?: () => void }) => {
   const { t } = useTranslation();
   const locale = useLocale();

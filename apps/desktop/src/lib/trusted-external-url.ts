@@ -1,9 +1,15 @@
+/**
+ * Hosts we're willing to hand over
+ */
 const TRUSTED_HOSTS = [
   "gamebanana.com",
   "deadlockmods.app",
   "deadlock-api.com",
 ] as const;
 
+/**
+ * Whether a url that came from remote data is safe to open.
+ */
 export const isTrustedExternalUrl = (
   url: string | null | undefined,
 ): url is string => {

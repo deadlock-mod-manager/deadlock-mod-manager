@@ -1,3 +1,12 @@
+//! Parsers for the text formats a config can arrive in: full gameinfo.gi,
+//! ConVars snippets, cfg / autoexec lines, Sqooky's `overrides.gi` and
+//! video.txt. Share codes are decoded in [`super::share`].
+//!
+//! Community files are messy: unquoted keys, stray braces, duplicate keys,
+//! mixed line endings, prose that lost its `//`, translated comments. Every
+//! parser is tolerant, so a line it can't read is skipped and reported as an
+//! [`IgnoredPart`] instead of failing the file.
+
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -17,24 +26,35 @@ use gameinfo::parse_gameinfo;
 use overrides::parse_overrides;
 use video::parse_video;
 
+/// One value a file sets, and where.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedLeaf {
   pub path: Vec<String>,
+  /// `None` when the file forces the key to be commented out, which only
+  /// `overrides.gi` can express.
   pub value: Option<String>,
   pub line: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedConfig {
+  /// `FullGameinfo` only when the file has a `GameInfo` root and the sections
+  /// of a whole file; a partial one parses as `ConvarsSnippet`.
   pub format: ImportFormat,
+  /// Every value in file order, duplicates included. Gameinfo paths start
+  /// below `GameInfo`; values from cfg, overrides.gi and bare snippets sit
+  /// under `ConVars`.
   pub leaves: Vec<ParsedLeaf>,
   pub ignored: Vec<IgnoredPart>,
   pub video_settings: Vec<VideoSetting>,
+  /// Lines that couldn't be read, including any beyond the first
+  /// [`kv::MAX_REPORTED_ERRORS`] that `ignored` lists.
   pub unreadable_lines: u32,
 }
 
 const DETAIL_MAX_CHARS: usize = 160;
 
+/// Parses `text` as `format`. Share codes and archives have no text form here.
 pub fn parse(text: &str, format: ImportFormat) -> ParsedConfig {
   match format {
     ImportFormat::FullGameinfo | ImportFormat::ConvarsSnippet => parse_gameinfo(text),
@@ -51,6 +71,8 @@ pub fn parse(text: &str, format: ImportFormat) -> ParsedConfig {
   }
 }
 
+/// Config bytes as text: UTF-16 when it has a BOM, else UTF-8 with the BOM
+/// dropped. Invalid bytes are replaced; non-ASCII only matters in comments.
 pub fn decode_text(bytes: &[u8]) -> String {
   if let Some(rest) = bytes.strip_prefix(&[0xFF, 0xFE]) {
     return decode_utf16(rest, u16::from_le_bytes);
@@ -62,6 +84,9 @@ pub fn decode_text(bytes: &[u8]) -> String {
   String::from_utf8_lossy(bytes).into_owned()
 }
 
+/// The last value per path (paths compare case-insensitively, as the engine
+/// does), in the order each path first appears, plus a `DuplicateKey` part
+/// for every earlier value a later line replaces with a different one.
 pub fn collapse(leaves: &[ParsedLeaf]) -> (Vec<ConfigEntry>, Vec<IgnoredPart>) {
   let mut entries: Vec<ConfigEntry> = Vec::new();
   let mut lines: Vec<u32> = Vec::new();
@@ -111,6 +136,8 @@ fn decode_utf16(bytes: &[u8], read: fn([u8; 2]) -> u16) -> String {
     .collect()
 }
 
+/// Drops stray byte-order marks and turns non-breaking spaces (pasted from
+/// web pages) into spaces.
 fn clean(text: &str) -> Cow<'_, str> {
   if text.contains(['\u{feff}', '\u{a0}']) {
     Cow::Owned(text.replace('\u{feff}', "").replace('\u{a0}', " "))

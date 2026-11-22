@@ -1,6 +1,14 @@
+/**
+ * Human layer for the convars presets use most. Descriptions say what the
+ * setting does and what changes on screen; they never promise frame rates or
+ * call anything safe. Sources: Valve's help text, upstream configs' inline
+ * comments (OptimizationLock, OptiLock), the OptimizationLock README FAQ and
+ * DeadTune's curated notes (GPL-3.0, simulieren/deadtune).
+ */
 interface CuratedConvar {
   label: string;
   description: string;
+  /** Visible consequences players report. */
   sideEffects?: string;
 }
 
@@ -8,6 +16,7 @@ const UNDOCUMENTED = "Valve doesn't document this setting.";
 
 export const CURATED_CONVARS = new Map(
   Object.entries({
+    // Shadows
     lb_enable_shadow_casting: {
       label: "Light shadows",
       description:
@@ -278,6 +287,7 @@ export const CURATED_CONVARS = new Map(
         "Spreads shadow map rendering over several frames. Not in Valve's current convar dump.",
     },
 
+    // Lighting & fog
     lb_enable_stationary_lights: {
       label: "Stationary lights",
       description:
@@ -459,6 +469,7 @@ export const CURATED_CONVARS = new Map(
         "Roughness range over which lightmapped surfaces fade from environment maps to lightmap-only lighting.",
     },
 
+    // Post-processing
     r_ssao: {
       label: "Screen-space ambient occlusion",
       description: "Contact shadows in corners and creases.",
@@ -576,6 +587,7 @@ export const CURATED_CONVARS = new Map(
         "Upstream notes visual issues with the pause menu on NVIDIA with Vulkan when it's off.",
     },
 
+    // Particles & effects
     r_physics_particle_op_spawn_scale: {
       label: "Physics particle spawns",
       description:
@@ -760,6 +772,7 @@ export const CURATED_CONVARS = new Map(
       description: "Gib entities.",
     },
 
+    // Textures & detail
     r_texturefilteringquality: {
       label: "Texture filtering",
       description:
@@ -883,6 +896,7 @@ export const CURATED_CONVARS = new Map(
       description: "Displacement mapping on surfaces.",
     },
 
+    // World & LOD
     r_farz: {
       label: "Far clip distance",
       description:
@@ -1075,6 +1089,7 @@ export const CURATED_CONVARS = new Map(
       description: "Smooths the wind simulation over time.",
     },
 
+    // Physics & animation
     cl_ragdoll_limit: {
       label: "Ragdoll limit",
       description:
@@ -1327,6 +1342,7 @@ export const CURATED_CONVARS = new Map(
       description: "Fixes up NPC ragdolls asynchronously.",
     },
 
+    // CPU & threading
     thread_pool_option: {
       label: "Thread pool mode",
       description:
@@ -1511,6 +1527,7 @@ export const CURATED_CONVARS = new Map(
       description: UNDOCUMENTED,
     },
 
+    // Network
     cl_smoothtime: {
       label: "Prediction smoothing time",
       description:
@@ -1542,6 +1559,7 @@ export const CURATED_CONVARS = new Map(
       description: "Async client connect optimization.",
     },
 
+    // Interface
     panorama_max_fps: {
       label: "Menu frame rate cap",
       description:
@@ -1671,6 +1689,7 @@ export const CURATED_CONVARS = new Map(
         "-1 forces the cinematic intro off, 0 uses the default, 1 forces it on.",
     },
 
+    // Audio
     snd_occlusion_bounces: {
       label: "Sound occlusion bounces",
       description: "Bounces traced for sound occlusion.",
@@ -1732,6 +1751,7 @@ export const CURATED_CONVARS = new Map(
       description: UNDOCUMENTED,
     },
 
+    // Camera & visibility
     r_aspectratio: {
       label: "Aspect ratio",
       description:
@@ -1859,6 +1879,7 @@ export const CURATED_CONVARS = new Map(
       description: "Not in Valve's current convar dump.",
     },
 
+    // Developer and hideout tools
     citadel_hideout_ball_show_juggle_count: {
       label: "Hideout ball juggle count",
       description: "Work-in-progress juggle counter on the hideout ball.",
@@ -1876,6 +1897,7 @@ export const CURATED_CONVARS = new Map(
       description: "Developer debug drawing.",
     },
 
+    // Other
     citadel_video_preset: {
       label: "Rendering quality preset",
       description: "The in-game Rendering quality preset, 0 Low to 3 Ultra.",

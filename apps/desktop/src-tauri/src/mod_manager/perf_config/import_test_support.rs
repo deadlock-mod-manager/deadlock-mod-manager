@@ -1,3 +1,9 @@
+//! Fixtures and builders shared by the import tests.
+//!
+//! Import fixtures live in `tests/fixtures/perf_import`; the stock files and
+//! the two upstream configs the patcher tests also use are read from
+//! `tests/fixtures/perf_config`.
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -39,12 +45,16 @@ pub fn fixture(name: &str) -> String {
   formats::decode_text(&fixture_bytes(name))
 }
 
+/// The bundled catalog without its stock history, as the placeholder catalog
+/// shipped before the generator ran.
 pub fn catalog_without_stock() -> Arc<Catalog> {
   let mut file = Catalog::bundled().file.clone();
   file.stock.clear();
   Arc::new(Catalog::from_file(file, CatalogOrigin::Bundled).expect("catalog without stock"))
 }
 
+/// A context with no game folder, so imports resolve against the catalog's
+/// newest stock file.
 pub fn context(app_data_dir: &Path, catalog: Arc<Catalog>) -> AnalyzeContext {
   AnalyzeContext {
     catalog,

@@ -8,10 +8,15 @@ use diesel::prelude::*;
 use diesel::sqlite::Sqlite;
 use std::collections::{HashMap, HashSet};
 
+/// Collections featured each week.
 const FEATURED_PER_WEEK: usize = 5;
+/// Featured collections need enough mods to be worth a front-row spot.
 const MIN_FEATURED_ITEMS: i64 = 20;
+/// Most GameBanana collections are a handful of bookmarks; smaller ones stay unlisted.
 pub const MIN_LISTED_ITEMS: i64 = 10;
+/// Thumbnails that make up a generated cover for collections without their own.
 const PREVIEW_IMAGES: usize = 4;
+// Leading items to look at when filling the preview; NSFW and unknown ones are skipped.
 const PREVIEW_CANDIDATES: i64 = 12;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,6 +70,7 @@ impl CollectionRecord {
   }
 }
 
+/// A collection whose items need crawling, with the revision they'll be recorded at.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StaleCollection {
   pub collection_id: String,
@@ -92,19 +98,24 @@ pub struct CatalogCollection {
   pub items_synced_at: Option<i64>,
 }
 
+/// Weeks since the Unix epoch, rolling over on Monday 00:00 UTC.
 pub fn current_week() -> u64 {
   let days = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .unwrap_or_default()
     .as_secs()
     / 86_400;
+  // 1970-01-01 was a Thursday; shifting by three days starts weeks on Monday.
   (days + 3) / 7
 }
 
+/// This week's featured collections: a fixed pseudo-random pick from the safe,
+/// substantial, fully synced ones, so every client features the same set.
 pub fn weekly_featured(collections: &[CatalogCollection], week: u64) -> HashSet<String> {
   let mut eligible = collections
     .iter()
     .filter(|collection| {
+      // Not every uploader sets GameBanana's content rating, so the name counts too.
       !collection.is_nsfw
         && !collection.name.to_lowercase().contains("nsfw")
         && collection.item_count >= MIN_FEATURED_ITEMS
@@ -123,6 +134,7 @@ pub fn weekly_featured(collections: &[CatalogCollection], week: u64) -> HashSet<
     .collect()
 }
 
+// std's hashers aren't stable across Rust versions, and the pick must agree everywhere.
 fn fnv1a(bytes: &[u8]) -> u64 {
   bytes.iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
     (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
@@ -152,6 +164,8 @@ fn listed() -> diesel::dsl::GtEq<collection::item_count, i64> {
 }
 
 impl Catalog {
+  /// Saves index metadata and marks each collection as seen; descriptions and items
+  /// keep the revision they were fetched at.
   pub async fn upsert_collections(
     &self,
     records: Vec<CollectionRecord>,
@@ -203,6 +217,7 @@ impl Catalog {
       .await
   }
 
+  /// Drops collections a complete index crawl no longer returned.
   pub async fn prune_collections(&self, seen_at: i64) -> Result<usize, Error> {
     self
       .pool
@@ -232,6 +247,7 @@ impl Catalog {
       .await
   }
 
+  /// `described_at` records the revision each description belongs to.
   pub async fn save_collection_descriptions(
     &self,
     descriptions: Vec<(u64, CollectionDescription)>,
@@ -256,6 +272,8 @@ impl Catalog {
       .await
   }
 
+  /// Listed collections whose item count or revision changed since their items were
+  /// crawled, or whose items are older than `refresh_before`.
   pub async fn collections_needing_items(
     &self,
     refresh_before: i64,
@@ -344,6 +362,7 @@ impl Catalog {
       .await
   }
 
+  /// Listed collections, largest first.
   pub async fn collections(&self) -> Result<Vec<CatalogCollection>, Error> {
     self
       .pool
@@ -358,6 +377,9 @@ impl Catalog {
       .await
   }
 
+  /// Thumbnails of each collection's first few catalog mods, in collection order, for
+  /// collections whose GameBanana cover is only the generic placeholder. NSFW mods
+  /// never make it into a cover.
   pub async fn collection_previews(
     &self,
     collection_ids: Vec<String>,
@@ -408,6 +430,7 @@ impl Catalog {
       .await
   }
 
+  /// Heroes each collection's catalog mods are for, most common first.
   pub async fn collection_heroes(
     &self,
     collection_ids: Vec<String>,
@@ -453,6 +476,7 @@ impl Catalog {
       .await
   }
 
+  /// A collection and its items in collection order.
   pub async fn collection(
     &self,
     collection_id: String,
@@ -628,10 +652,12 @@ mod tests {
     assert_eq!(saved, items);
     assert_eq!(saved[0].submission_type, SubmissionType::Sound);
 
+    // Items older than the refresh cutoff are crawled again.
     assert_eq!(
       catalog.collections_needing_items(51).await.unwrap().len(),
       1
     );
+    // So are items of a collection that gained an item.
     catalog
       .upsert_collections(vec![record("1", MIN_LISTED_ITEMS + 1, 100)], 20)
       .await

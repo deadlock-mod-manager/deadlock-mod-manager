@@ -43,6 +43,7 @@ describe("lineupStat", () => {
       comb([1, 2, 4], 10, 100),
       comb([2, 3, 4], 30, 200),
     ]);
+    // (60 + 10 + 30) wins over 400 matches; the missing trio [1, 3, 4] adds nothing.
     expect(lineupStat([1, 2, 3, 4], NONE, trios)).toEqual({
       winrate: 0.25,
       matches: null,
@@ -84,14 +85,19 @@ describe("pickAdvice", () => {
     );
     expect(advice?.replace).toBe(1);
     expect(advice?.heroId).toBe(4);
+    // From (40 + 50 + 60) / 3 to (90 + 50 + 60) / 3.
     expect(advice?.gain).toBeCloseTo(50 / 300);
     expect(pickAdvice([[2, 1, 3], [5]], 0, [4], pairs, NONE)?.replace).toBe(1);
   });
 
   it("never suggests a hero the party has no solid record with", () => {
+    // Hero 7 has no pair with 5, so its lineup would only leave the average.
     expect(pickAdvice([[1, 2, 3], [5]], 0, [7], pairs, NONE)).toBeNull();
+    // Hero 6 won its one match with 5, too few to trust.
     expect(pickAdvice([[1, 2, 3], [5]], 0, [6], pairs, NONE)).toBeNull();
+    // Hero 5 only has records as the teammate's pick, never as this player's.
     expect(pickAdvice([[1, 2, 3], [5]], 0, [5], pairs, NONE)).toBeNull();
+    // Hero 4's estimate comes only from the teammates' trio, none with 4 in it.
     const trios = indexCombs([
       comb([5, 6, 7], 600, 1000),
       comb([1, 5, 6], 100, 1000),

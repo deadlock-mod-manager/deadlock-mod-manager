@@ -221,6 +221,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
+      # Required by prost-build, pulled in transitively via steam-vent/valveprotos.
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -261,9 +262,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # Linux build - upload directly to release
       - name: Build the app (Linux)
         if: matrix.platform == 'ubuntu-24.04'
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_API_URL: https://api.deadlockmods.app
@@ -309,6 +311,8 @@ jobs:
             });
             console.log('Successfully uploaded Flatpak bundle');
 
+      # Same two-pass flow as release.yml: sign the executable, bundle it without
+      # the bundle-type patch, then sign the installer.
       - name: Build the app (Windows)
         if: matrix.platform == 'windows-latest'
         env:

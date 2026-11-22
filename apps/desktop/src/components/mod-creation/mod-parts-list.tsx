@@ -24,6 +24,7 @@ interface ModPartsListProps {
   onRemove: (file: File) => void;
 }
 
+// Code-point order, as the backend sorts the paths it installs.
 const byInstallOrder = (a: File, b: File) => {
   const left = getFileBaseName(a);
   const right = getFileBaseName(b);
@@ -31,6 +32,7 @@ const byInstallOrder = (a: File, b: File) => {
   return left < right ? -1 : 1;
 };
 
+// What the part changes, most telling first.
 const contentTags = (part: LocalPartContents, t: TFunction): string[] => {
   const tags: string[] = [];
   for (const name of part.mapNames) {
@@ -47,12 +49,14 @@ const contentTags = (part: LocalPartContents, t: TFunction): string[] => {
   for (const [key, count] of counted) {
     if (count > 0) tags.push(t(`addMods.contents.${key}`, { count }));
   }
+  // A skin's panorama files are its hero cards, not a HUD.
   if (part.hudFiles > 0 && !part.reskinsHero) {
     tags.push(t("addMods.contents.hud"));
   }
   return tags;
 };
 
+/** The VPKs a custom mod is imported from, each a part Manage files can turn off. */
 export const ModPartsList = ({
   files,
   contents,
@@ -113,12 +117,14 @@ export const ModPartsList = ({
         {ordered.map((file, index) => {
           const name = getFileBaseName(file);
           const part = partContentsFor(contents, file);
+          // A separate mod's category comes from its own files.
           const category = separate && part ? suggestCategory([part]) : null;
           return (
             <li
               className='flex items-center gap-3 px-3 py-2'
               data-part-name={name}
               key={name}>
+              {/* Separate mods load in library order, not file order. */}
               {!separate && (
                 <span className='w-4 text-muted-foreground text-xs tabular-nums'>
                   {index + 1}
@@ -164,6 +170,7 @@ export const ModPartsList = ({
           );
         })}
       </ol>
+      {/* One file has no parts to turn off and nothing to split. */}
       {files.length > 1 && (
         <p className='flex items-start gap-2 text-muted-foreground text-xs'>
           <Info className='mt-0.5 h-3.5 w-3.5 shrink-0' />

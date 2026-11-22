@@ -14,6 +14,7 @@ const ADD_CATALOG_METADATA_VERSION: &str = "20261003000000";
 const ADD_AUTHOR_REMOTE_ID_VERSION: &str = "20261004000000";
 const ADD_THUMBNAIL_URL_VERSION: &str = "20261005000000";
 const ADD_BROWSE_INDEXES_VERSION: &str = "20261005000100";
+// Pre-release builds shipped the author_remote_id migration under this version.
 const LEGACY_ADD_AUTHOR_REMOTE_ID_VERSION: &str = "20260916000000";
 
 diesel::table! {
@@ -115,6 +116,7 @@ diesel::table! {
 
 diesel::joinable!(collection_item -> collection (collection_id));
 
+// FTS5 virtual table; only the key columns are declared so it can be joined.
 diesel::table! {
   submission_fts (rowid) {
     rowid -> BigInt,
@@ -146,6 +148,8 @@ pub fn migrate(connection: &mut SqliteConnection) -> Result<(), Error> {
   })
 }
 
+// Older development catalogs already have audio_url without the metadata
+// migration. Finish that upgrade before Diesel tries to add the column again.
 fn complete_legacy_catalog_metadata(connection: &mut SqliteConnection) -> Result<(), Error> {
   let applied = connection.applied_migrations().map_err(catalog_error)?;
   if applied
@@ -177,6 +181,7 @@ fn complete_legacy_catalog_metadata(connection: &mut SqliteConnection) -> Result
       connection.batch_execute(statement).map_err(catalog_error)?;
     }
   }
+  // An untracked catalog still needs its earlier migrations baselined together.
   if !applied.is_empty() {
     record_migration(connection, ADD_CATALOG_METADATA_VERSION)?;
   }

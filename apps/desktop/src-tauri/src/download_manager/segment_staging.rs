@@ -1,3 +1,18 @@
+//! On-disk state of a download split into segments, kept apart from the
+//! single-stream `.partial` so neither format has to understand the other.
+//!
+//! ```text
+//! <name>.segments/
+//!   manifest.json   what the parts are and which are finished
+//!   0.part … 3.part one append-only file per segment
+//!   assembled       the joined file, only while it's being built
+//! ```
+//!
+//! A part's length is how far its segment got. That prefix is provisional: the
+//! range checks put it at the right offset, and the whole-file MD5, which every
+//! segmented download has, decides whether its bytes are right. `complete` is
+//! only recorded once a part is synced to disk at its full length.
+
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -11,6 +26,8 @@ const MANIFEST: &str = "manifest.json";
 const MANIFEST_TMP: &str = "manifest.json.tmp";
 const ASSEMBLED: &str = "assembled";
 
+/// Where a segment's bytes came from. Kept per segment so a later attempt never
+/// adds bytes from one server to bytes from another.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SegmentSource {
@@ -23,6 +40,7 @@ pub struct SegmentSource {
 #[serde(rename_all = "camelCase")]
 pub struct Segment {
   pub start: u64,
+  /// Exclusive.
   pub end: u64,
   pub complete: bool,
   pub source: Option<SegmentSource>,
@@ -43,6 +61,7 @@ struct Manifest {
   segments: Vec<Segment>,
 }
 
+/// `size` bytes in [`SEGMENT_COUNT`] spans that cover it exactly.
 pub fn plan_segments(size: u64) -> Vec<Segment> {
   let count = SEGMENT_COUNT as u128;
   let bound = |i: u128| (i * u128::from(size) / count) as u64;
@@ -62,6 +81,7 @@ pub fn staging_dir(target: &Path) -> PathBuf {
   target.with_file_name(name)
 }
 
+/// Removes a file's segment staging; nothing there is not an error.
 pub async fn discard_staging(target: &Path) -> Result<(), Error> {
   match tokio::fs::remove_dir_all(staging_dir(target)).await {
     Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(Error::Io(error)),
@@ -72,10 +92,14 @@ pub async fn discard_staging(target: &Path) -> Result<(), Error> {
 pub struct Staging {
   dir: PathBuf,
   manifest: Manifest,
+  /// Bytes on disk per part.
   lengths: Vec<u64>,
 }
 
 impl Staging {
+  /// Loads the staging for a file of `size` bytes and checksum `md5`, keeping
+  /// only what can still be trusted and starting over when the manifest
+  /// describes something else.
   pub async fn open(target: &Path, size: u64, md5: &str) -> Result<Self, Error> {
     let dir = staging_dir(target);
     let expected = Manifest {
@@ -101,6 +125,7 @@ impl Staging {
       manifest,
       lengths: vec![0; SEGMENT_COUNT],
     };
+    // An assembly that didn't finish has consumed the parts it copied.
     let interrupted_assembly = tokio::fs::try_exists(staging.dir.join(ASSEMBLED))
       .await
       .unwrap_or(false);
@@ -150,6 +175,7 @@ impl Staging {
     &self.manifest.segments[index]
   }
 
+  /// Bytes of segment `index` already on disk.
   pub fn stored(&self, index: usize) -> u64 {
     self.lengths[index]
   }
@@ -162,6 +188,8 @@ impl Staging {
     (0..SEGMENT_COUNT).find(|&index| !self.manifest.segments[index].complete)
   }
 
+  /// Ties every segment to `source`, first dropping bytes that came from
+  /// anywhere else.
   pub async fn pin_source(&mut self, source: &SegmentSource) -> Result<(), Error> {
     for index in 0..SEGMENT_COUNT {
       let segment = &self.manifest.segments[index];
@@ -175,6 +203,8 @@ impl Staging {
     self.save().await
   }
 
+  /// Records a finished segment. The caller has synced the part, so the record
+  /// never claims bytes the disk doesn't hold.
   pub async fn mark_complete(&mut self, index: usize) -> Result<(), Error> {
     let length = tokio::fs::metadata(self.part_path(index))
       .await
@@ -191,6 +221,7 @@ impl Staging {
     self.save().await
   }
 
+  /// Empties a segment so it's downloaded from its first byte.
   pub async fn restart_segment(&mut self, index: usize) -> Result<(), Error> {
     self.reset_segment(index).await?;
     self.save().await
@@ -208,6 +239,8 @@ impl Staging {
     Ok(())
   }
 
+  /// Written to a temporary file and synced before it replaces the manifest,
+  /// so a crash leaves the old manifest or the new one, never half of one.
   async fn save(&self) -> Result<(), Error> {
     let data = serde_json::to_vec(&self.manifest).map_err(|error| {
       Error::FileWriteFailed(format!("Failed to encode segment manifest: {error}"))
@@ -222,6 +255,8 @@ impl Staging {
       .map_err(Error::Io)
   }
 
+  /// Joins the finished parts into one file, deleting each part once it's
+  /// copied so the download never needs twice its size on disk.
   pub async fn assemble(&mut self, cancel_token: &CancellationToken) -> Result<PathBuf, Error> {
     let assembled_path = self.dir.join(ASSEMBLED);
     let mut assembled = File::create(&assembled_path).await.map_err(Error::Io)?;
@@ -360,6 +395,7 @@ mod tests {
         version: MANIFEST_VERSION,
         size: 400,
         md5: MD5.to_string(),
+        // Spans that don't tile the file.
         segments: plan_segments(400)
           .into_iter()
           .map(|segment| Segment {
@@ -387,6 +423,7 @@ mod tests {
       write_part(&staging, index, 100).await;
       staging.mark_complete(index).await.unwrap();
     }
+    // Finished but cut short, and longer than its segment.
     write_part(&staging, 0, 99).await;
     write_part(&staging, 2, 101).await;
     write_part(&staging, 3, 30).await;
@@ -469,6 +506,7 @@ mod tests {
       write_part(&staging, index, 100).await;
       staging.mark_complete(index).await.unwrap();
     }
+    // The crash came after parts 0 and 1 were copied.
     let dir_path = staging_dir(&target);
     tokio::fs::write(dir_path.join(ASSEMBLED), vec![7_u8; 200])
       .await

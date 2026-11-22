@@ -30,6 +30,8 @@ struct StoredSource {
   listings: Vec<NativeSourceListing>,
   #[serde(default)]
   generation: u64,
+  /// Enrolled from DMM's API without a review (`hosted.rs`), which also
+  /// vouches for the download origins it adds later.
   #[serde(default)]
   hosted: bool,
 }
@@ -196,6 +198,7 @@ impl NativeSourceManager {
     Ok(summary)
   }
 
+  /// Whether the registry knows the source at all, removed ones included.
   pub(super) async fn has_entry(&self, source_key: &str) -> bool {
     self.registry.lock().await.sources.contains_key(source_key)
   }
@@ -232,6 +235,8 @@ impl NativeSourceManager {
     Ok(summary)
   }
 
+  /// Keep the accepted source identity and complete catalog as a tombstone;
+  /// local downloaded/installed records remain independently manageable.
   pub async fn remove(&self, source_key: &str) -> Result<(), Error> {
     self.ensure_available()?;
     let mut registry = self.registry.lock().await;
@@ -304,6 +309,8 @@ impl NativeSourceManager {
         Ok(summary)
       }
       Err(error) => {
+        // Only diagnostics change on failure. No incomplete snapshot can erase
+        // cached listings or become evidence of a deleted release.
         if let Some(source) = updated.sources.get_mut(source_key) {
           source.summary.last_error = Some(error.to_string());
         }
@@ -360,6 +367,8 @@ impl NativeSourceManager {
       .ok_or_else(|| invalid("Listing was not found in the complete cached catalog"))
   }
 
+  /// Also resolves retained metadata for removed sources, so an installed detail
+  /// page can explain provenance without making a network request.
   pub async fn mod_by_remote_id(&self, remote_id: &str) -> Result<NativeSourceMod, Error> {
     self.ensure_available()?;
     let registry = self.registry.lock().await;
@@ -379,6 +388,10 @@ impl NativeSourceManager {
     Err(invalid("Source listing was not found in the local catalog"))
   }
 
+  /// Finds an install link's listing among added sources. The source is the
+  /// one at the link's origin with its declared ID, so a link cannot point an
+  /// added source's name at another site. A listing the cached catalog lacks
+  /// gets one refresh, since a site links to mods it has just published.
   pub async fn resolve_link(
     &self,
     link: &NativeSourceLink,
@@ -429,6 +442,8 @@ impl NativeSourceManager {
       .unwrap_or_else(|| Err(invalid("This mod is not in the source's catalog")))
   }
 
+  /// Fetched on demand rather than during refresh, so history never counts
+  /// against the snapshot budget or blocks installing the current release.
   pub async fn release_history(&self, remote_id: &str) -> Result<Vec<NativeSourceRelease>, Error> {
     let NativeSourceMod {
       source, listing, ..
@@ -569,6 +584,9 @@ impl NativeSourceManager {
   }
 }
 
+/// A link may pin the current release and name one of its files; older
+/// releases cannot be installed, so a stale pin is an error rather than a
+/// silent upgrade.
 fn link_target(
   source: &StoredSource,
   listing: &NativeSourceListing,
@@ -789,6 +807,8 @@ async fn fetch_catalog(source: &NativeSourceSummary) -> Result<Vec<NativeSourceL
   ))
 }
 
+/// Validated templates are stored joined to their base URL, which percent-
+/// encodes the braces, so both spellings are expanded.
 fn expand_listing_template(template: &str, listing_id: &str) -> String {
   let id = urlencoding::encode(listing_id);
   template
@@ -857,6 +877,8 @@ fn validate_revision_invariants(
       continue;
     };
     if old.id == new.id && old.content_revision == new.content_revision {
+      // Transport URLs may rotate and metadata may change. Installation meaning
+      // and any supplied byte evidence must not change under the same revision.
       let evidence = |release: &NativeSourceRelease| -> Result<Vec<u8>, Error> {
         let artifacts: Vec<_> = release
           .artifacts

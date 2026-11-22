@@ -18,6 +18,10 @@ import { usePerfCatalog } from "./use-perf-queries";
 
 type ListedMod = Pick<ModDto, "remoteId" | "category" | "name" | "tags">;
 
+/**
+ * Whether a GameBanana listing is a performance config rather than a mod.
+ * With Performance turned off every listing installs as a mod.
+ */
 export const useConfigListing = (mod: ListedMod | undefined) => {
   const enabled = useFeatureEnabled("performance");
   const { data: catalog } = usePerfCatalog(enabled);
@@ -34,6 +38,10 @@ export const useConfigListing = (mod: ListedMod | undefined) => {
   return mod && enabled ? configListing(mod, catalogConfigs) : null;
 };
 
+/**
+ * Opens the Performance page's import review for a GameBanana config: the
+ * catalog's curated file when we list it, otherwise the upload's default file.
+ */
 export const useOpenConfigInPerformance = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

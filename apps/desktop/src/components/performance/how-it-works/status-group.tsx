@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { EntryStatus } from "@/types/generated/EntryStatus";
 import { Term } from "./term";
 
+/** The badge the settings editor shows for a status, so the glossary matches it. */
 export const StatusBadge = ({ children }: { children: ReactNode }) => (
   <Badge
     className='px-1.5 py-0 font-normal text-[11px] text-muted-foreground'

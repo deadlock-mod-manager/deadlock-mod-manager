@@ -16,6 +16,11 @@ const emptySession = (): ImportSession => ({
   keptStagingId: null,
 });
 
+/**
+ * Import dialog for the Performance page. Opens from the page header, from
+ * GameBanana config cards, and from the "this mod includes a performance
+ * config" prompt, which hands its staged archive over through router state.
+ */
 export const ImportConfigDialog = () => {
   const { importOpen, importSource, openImport, closeImport } =
     usePerformanceUi();

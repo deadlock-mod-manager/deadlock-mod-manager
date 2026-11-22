@@ -4,24 +4,35 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
+/** Wearing skins, or picking the ones the randomizer shuffles between. */
 type SkinCardMode = "wear" | "pool";
 
 export interface SkinCardState {
   mode: SkinCardMode;
+  /** Installed now. False while the randomizer keeps the rolled skin a surprise. */
   isEquipped: boolean;
   inPool: boolean;
+  /** False for a skin that cannot be put on at launch without a dialog. */
   canPool: boolean;
+  /** A swap is running, so wearing has to wait. */
   disabled: boolean;
 }
 
 interface SkinCardShellProps extends SkinCardState {
   onWear: () => void;
+  /** Required in pool mode; a card that only wears can leave it out. */
   onTogglePool?: () => void;
+  /** The image area. Badges and hover actions sit on top of it. */
   media: ReactNode;
   hoverActions?: ReactNode;
   children: ReactNode;
 }
 
+/**
+ * The frame both skin cards share. A click wears the skin, or in pool mode
+ * ticks it in or out of the shuffle pool, so the card is a button or a
+ * checkbox depending on the mode.
+ */
 export const SkinCardShell = ({
   mode,
   isEquipped,
@@ -71,6 +82,8 @@ export const SkinCardShell = ({
       )}
       onClick={activate}
       onKeyDown={(e) => {
+        // Guard on the card itself so Enter on a nested control does not also
+        // wear the skin.
         if (
           e.target === e.currentTarget &&
           (e.key === "Enter" || e.key === " ")

@@ -108,8 +108,8 @@ impl Tokenizer {
         let start_offset = self.pos;
 
         let mut raw = String::from("//");
-        self.advance();
-        self.advance();
+        self.advance(); // Skip first /
+        self.advance(); // Skip second /
 
         let mut value = String::new();
         while let Some(ch) = self.current_char() {
@@ -142,15 +142,15 @@ impl Tokenizer {
         let start_offset = self.pos;
 
         let mut raw = String::from("/*");
-        self.advance();
-        self.advance();
+        self.advance(); // Skip /
+        self.advance(); // Skip *
 
         let mut value = String::new();
         while let Some(ch) = self.current_char() {
             if ch == '*' && self.peek(1) == Some('/') {
                 raw.push_str("*/");
-                self.advance();
-                self.advance();
+                self.advance(); // Skip *
+                self.advance(); // Skip /
                 break;
             }
             value.push(ch);
@@ -190,7 +190,7 @@ impl Tokenizer {
     }
 
     fn read_escape_sequence(&mut self) -> Result<char> {
-        self.advance();
+        self.advance(); // Skip backslash
         let ch = self.current_char().ok_or(KvError::UnexpectedEof {
             line: self.line,
             column: self.column,
@@ -202,6 +202,7 @@ impl Tokenizer {
             '\\' => '\\',
             '"' => '"',
             _ => {
+                // For unrecognized escape sequences, keep the backslash
                 return Ok(ch);
             }
         };
@@ -216,7 +217,7 @@ impl Tokenizer {
         let start_offset = self.pos;
 
         let mut raw = String::from("\"");
-        self.advance();
+        self.advance(); // Skip opening quote
 
         let mut value = String::new();
 
@@ -231,7 +232,7 @@ impl Tokenizer {
 
             if ch == '"' {
                 raw.push('"');
-                self.advance();
+                self.advance(); // Skip closing quote
                 break;
             }
 
@@ -239,6 +240,7 @@ impl Tokenizer {
                 let escape_start = self.pos;
                 let escaped = self.read_escape_sequence()?;
                 value.push(escaped);
+                // Add the raw escape sequence
                 for i in escape_start..self.pos {
                     raw.push(self.input[i]);
                 }
@@ -286,10 +288,12 @@ impl Tokenizer {
                 });
             }
 
+            // Check for comment start
             if ch == '/' && (self.peek(1) == Some('/') || self.peek(1) == Some('*')) {
                 break;
             }
 
+            // Stop at whitespace, quotes, or braces
             if Self::is_whitespace(ch) || ch == '"' || ch == '{' || ch == '}' {
                 break;
             }
@@ -319,7 +323,7 @@ impl Tokenizer {
         let start_offset = self.pos;
 
         let mut value = String::from("[");
-        self.advance();
+        self.advance(); // Skip [
 
         while let Some(ch) = self.current_char() {
             value.push(ch);
@@ -346,7 +350,7 @@ impl Tokenizer {
         let start_offset = self.pos;
         let raw_start = self.pos;
 
-        self.advance();
+        self.advance(); // Skip #
 
         let mut directive = String::new();
         while let Some(ch) = self.current_char() {
@@ -369,6 +373,7 @@ impl Tokenizer {
             }
         };
 
+        // Skip whitespace
         while let Some(ch) = self.current_char() {
             if !Self::is_whitespace(ch) {
                 break;
@@ -376,6 +381,7 @@ impl Tokenizer {
             self.advance();
         }
 
+        // Read file path
         let file_path = if self.current_char() == Some('"') {
             self.read_quoted_string()?.value
         } else {
@@ -399,6 +405,7 @@ impl Tokenizer {
     }
 
     pub fn next_token(&mut self) -> Result<Token> {
+        // Handle whitespace
         if let Some(ch) = self.current_char()
             && Self::is_whitespace(ch)
         {
@@ -422,6 +429,7 @@ impl Tokenizer {
         let offset = self.pos;
         let ch = self.current_char().unwrap();
 
+        // Handle comments
         if ch == '/' {
             if self.peek(1) == Some('/') {
                 return Ok(self.read_single_line_comment());
@@ -431,14 +439,17 @@ impl Tokenizer {
             }
         }
 
+        // Handle conditionals
         if ch == '[' && self.allow_conditionals {
             return Ok(self.read_conditional());
         }
 
+        // Handle directives
         if ch == '#' && self.allow_includes {
             return self.read_directive();
         }
 
+        // Handle braces
         if ch == '{' {
             self.advance();
             return Ok(Token {
@@ -465,10 +476,12 @@ impl Tokenizer {
             });
         }
 
+        // Handle quoted strings
         if ch == '"' {
             return self.read_quoted_string();
         }
 
+        // Handle unquoted strings
         let token = self.read_unquoted_string()?;
         if token.value.is_empty() {
             return Err(KvError::UnexpectedCharacter {
@@ -507,7 +520,7 @@ mod tests {
         let mut tokenizer = Tokenizer::new(input);
         let tokens = tokenizer.tokenize().unwrap();
 
-        assert_eq!(tokens.len(), 4);
+        assert_eq!(tokens.len(), 4); // "Key", whitespace, "Value", EOF
         assert_eq!(tokens[0].token_type, TokenType::String);
         assert_eq!(tokens[0].value, "Key");
         assert_eq!(tokens[1].token_type, TokenType::Whitespace);
@@ -599,8 +612,8 @@ mod tests {
         let tokens = tokenizer.tokenize().unwrap();
 
         assert_eq!(tokens[0].line, 1);
-        assert_eq!(tokens[2].line, 2);
-        assert_eq!(tokens[4].line, 3);
+        assert_eq!(tokens[2].line, 2); // After newline
+        assert_eq!(tokens[4].line, 3); // After second newline
     }
 
     #[test]

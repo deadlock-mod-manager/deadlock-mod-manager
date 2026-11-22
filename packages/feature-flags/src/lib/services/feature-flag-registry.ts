@@ -18,6 +18,12 @@ export class FeatureFlagRegistry {
     private readonly logger: Logger,
   ) {}
 
+  /**
+   * Register a feature flag, creating it if it doesn't exist
+   *
+   * @param definition - The feature flag definition
+   * @returns The feature flag (existing or newly created)
+   */
   async register(definition: FeatureFlagDefinition) {
     const {
       name,
@@ -72,6 +78,12 @@ export class FeatureFlagRegistry {
     }
   }
 
+  /**
+   * Register multiple feature flags
+   *
+   * @param definitions - Array of feature flag definitions
+   * @returns Array of results for each registration
+   */
   async registerMany(definitions: FeatureFlagDefinition[]) {
     this.logger
       .withMetadata({ count: definitions.length })
@@ -91,6 +103,13 @@ export class FeatureFlagRegistry {
     return results;
   }
 
+  /**
+   * Bootstrap feature flags by registering all provided definitions
+   * This method logs errors but doesn't throw, making it safe for app startup
+   *
+   * @param definitions - Array of feature flag definitions
+   * @returns Number of successfully registered flags
+   */
   async bootstrap(definitions: FeatureFlagDefinition[]): Promise<number> {
     if (definitions.length === 0) {
       this.logger.info("No feature flags to bootstrap");

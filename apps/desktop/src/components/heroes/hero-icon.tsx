@@ -10,7 +10,9 @@ import {
 import { cn } from "@/lib/utils";
 
 interface HeroIconProps {
+  /** Display name or codename. Empty renders a blank slot so lists stay aligned. */
   hero: string | null | undefined;
+  /** `card` is the taller portrait art; `small` is the square minimap icon. */
   variant?: "small" | "card";
   className?: string;
 }

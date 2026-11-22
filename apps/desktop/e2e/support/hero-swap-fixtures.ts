@@ -11,6 +11,7 @@ export const HAZE_SWAP = "local-haze-swap";
 
 export const hazeModel = (modId: string) => `haze model from ${modId}\n`;
 
+// Two Haze skins replacing the same model, the case the swap dialog exists for.
 const heroSwapPayload = (modId: string): Buffer =>
   buildSyntheticVpk([
     {

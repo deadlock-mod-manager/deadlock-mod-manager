@@ -41,6 +41,7 @@ type BulkActionRecapDialogProps = {
   action: BulkModAction;
 };
 
+/** Shown when a bulk disable or delete stops before reaching every mod. */
 export const BulkActionRecapDialog = ({
   action,
 }: BulkActionRecapDialogProps) => {
@@ -68,11 +69,14 @@ export const BulkActionRecapDialog = ({
         </DialogHeader>
 
         <div className='-mx-1 min-h-0 flex-1 space-y-5 overflow-y-auto px-1'>
+          {/* After a failure on the last mod nothing was left to skip. */}
           {(recap.stoppedBy !== "error" || recap.notAttempted.length > 0) && (
             <p className='rounded-md bg-muted p-3 text-sm text-muted-foreground'>
               {t(STOP_REASON[recap.stoppedBy])}
             </p>
           )}
+          {/* Purge removes a mod's VPKs before its stored files, so a failed
+              delete can leave it half removed. Disable rolls its renames back. */}
           {recap.action === "delete" && recap.failed && (
             <p className='rounded-md bg-muted p-3 text-sm text-muted-foreground'>
               {t("myMods.bulkActionRecap.deletePartial")}

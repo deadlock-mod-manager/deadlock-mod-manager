@@ -21,6 +21,10 @@ import type { ConfigFoundEvent } from "@/types/generated/ConfigFoundEvent";
 
 const logger = createLogger("download-manager");
 
+/**
+ * The window's id for the download, on the events that settle one. `null` for
+ * downloads the backend queued itself, which no window download owns.
+ */
 type AttemptId = string | null;
 
 interface DownloadStartedEvent {
@@ -70,6 +74,7 @@ interface DownloadErrorEvent {
   retryAfterSecs: number | null;
 }
 
+/** Says whose side a server failure is on, in place of the raw HTTP error. */
 const describeFailure = ({ reason }: DownloadFailure) =>
   reason === "sourceBusy"
     ? i18n.t("downloads.health.busyTitle")
@@ -89,6 +94,7 @@ class DownloadManager {
     queue: (mod, attemptId) => this.queueDownload(mod, attemptId),
     cancel: (modId) => invoke<void>("cancel_download", { modId }),
     duplicateMessage: () => i18n.t("downloads.alreadyQueued"),
+    // The mod's onError gets the same failure, and its caller tells the user.
     onQueueError: (error) => {
       logger.withError(error).error("Failed to queue download");
     },
@@ -108,6 +114,8 @@ class DownloadManager {
     const unlistenStarted = await listen<DownloadStartedEvent>(
       "download-started",
       (event) => {
+        // Marked before the progress patch below, which runs the selectors
+        // that read it.
         const mod = this.downloads.start(
           event.payload.modId,
           event.payload.attemptId,
@@ -131,6 +139,8 @@ class DownloadManager {
     const unlistenProgress = await listen<DownloadProgressEvent>(
       "download-progress",
       (event) => {
+        // Progress means it is running: one resumed before its pause stopped it
+        // carries on without starting again.
         const mod = this.downloads.start(
           event.payload.modId,
           event.payload.attemptId,
@@ -209,6 +219,7 @@ class DownloadManager {
             })
             .info("File tree received for mod");
 
+          // Store file tree in mod metadata
           const store = usePersistedStore.getState();
           const localMod = store.localMods.find(
             (m) => m.remoteId === event.payload.modId,
@@ -294,6 +305,9 @@ class DownloadManager {
           .info("Download resumed");
         this.downloads.requeue(event.payload.modId);
         const store = usePersistedStore.getState();
+        // The time spent paused is not the server being slow, and neither is the
+        // wait in the queue a resumed download may have. The clock restarts when
+        // the download does.
         store.patchModProgress(event.payload.modId, { slowSince: undefined });
         store.setModStatus(event.payload.modId, ModStatus.Downloading);
       },
@@ -328,6 +342,9 @@ class DownloadManager {
       return;
     }
 
+    // A webview reload drops the queue entries that route backend events to a
+    // mod, so a download the backend kept running can never report progress or
+    // completion. Cancel it; the stale scan below then offers a retry.
     await Promise.allSettled(
       activeDownloads
         .filter(({ modId }) => !this.isQueued(modId))
@@ -347,6 +364,12 @@ class DownloadManager {
     );
 
     const store = usePersistedStore.getState();
+    // Any mod left in a transient in-flight state (Downloading, Paused,
+    // Extracting) without a queue entry is stale and should be flagged as failed
+    // so the UI doesn't show a phantom queue.
+    // setModStatus resolves a mod through the active profile's list, so the scan
+    // has to read from there as well: a mod present only in localMods would be
+    // flagged here and then dropped by the writer as "Mod not found".
     const trackedMods =
       store.profiles[store.activeProfileId]?.mods ?? store.localMods;
     const staleMods = trackedMods.filter(
@@ -381,10 +404,16 @@ class DownloadManager {
     this.downloads.clear();
   }
 
+  /** Whether a download for the mod is still waiting for its outcome. */
   isQueued(modId: string) {
     return this.downloads.getMod(modId) !== undefined;
   }
 
+  /**
+   * Whether the mod is Downloading but still waiting its turn. Read it inside a
+   * store selector: the flag behind it is not store state, but every event that
+   * changes it also writes to the store, and that write runs the selector again.
+   */
   isWaiting({ remoteId, status }: Pick<LocalMod, "remoteId" | "status">) {
     return (
       status === ModStatus.Downloading && !this.downloads.isStarted(remoteId)
@@ -407,6 +436,9 @@ class DownloadManager {
       })
       .info("Queueing download for mod");
 
+    // Downloads run one at a time, so a retry can wait behind another one with
+    // its last attempt's progress and slow clock still set. The clock restarts
+    // when it starts.
     const store = usePersistedStore.getState();
     if (store.getModProgress(mod.remoteId) !== undefined) {
       store.patchModProgress(mod.remoteId, {
@@ -440,6 +472,8 @@ class DownloadManager {
   async cancelDownload(modId: string) {
     try {
       const tracked = await this.downloads.cancel(modId);
+      // Without a queue entry no callback settles the mod, so it would stay
+      // stuck in its in-flight status.
       if (!tracked) {
         usePersistedStore
           .getState()
@@ -452,16 +486,19 @@ class DownloadManager {
     }
   }
 
+  /** Cancels without download completion or error feedback. */
   async discardDownload(modId: string) {
     if (!this.isQueued(modId)) return;
     try {
       await this.downloads.cancel(modId, false);
     } catch (error) {
+      // The download may have ended while the cancel was in flight.
       if (this.isQueued(modId)) {
         logger.withError(error).error("Failed to cancel download");
         throw error;
       }
     }
+    // The mod outlives a delete that fails after this, so it can't stay in flight.
     if (!this.isQueued(modId)) {
       usePersistedStore
         .getState()

@@ -14,10 +14,16 @@ import { PREVIEW_MODS } from "@/components/home/app-preview/mods";
 
 const MODS = PREVIEW_MODS.slice(0, 8);
 const LAUNCH_MS = 900;
+/** Fixed for the first play so the server and client render the same. */
 const FIRST_CULPRIT = 5;
 
 type Stage = "ready" | "launching" | "judging" | "found";
 
+/**
+ * A short version of the desktop app's Find a broken mod: each round the
+ * first half of the suspects is on, the game shows whether the hidden
+ * culprit is among them, and the answer halves the list.
+ */
 export const BisectDemo = () => {
   const { t } = useTranslation("v2");
   const [culprit, setCulprit] = useState(FIRST_CULPRIT);

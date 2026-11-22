@@ -14,6 +14,12 @@ export type HeroSelectableMod = Pick<
   | "heroOverride"
 >;
 
+/**
+ * A skin owns how a hero looks, so only one of them can be installed at a time.
+ * Hero sounds (ability sounds, voice lines) and extras (weapon sounds, music
+ * and the like) sit next to a skin instead of replacing it, so they are
+ * switched on and off one by one.
+ */
 export type HeroModKind = "skin" | "sound" | "extra";
 
 const KIND_BY_CATEGORY = new Map<string, HeroModKind>([
@@ -38,13 +44,16 @@ export type HeroModGroup<T> = {
   skins: T[];
   sounds: T[];
   extras: T[];
+  /** Installed skins - more than one only once multiple skins are allowed. */
   activeSkins: T[];
   activeSounds: T[];
   activeExtras: T[];
 };
 
 export type HeroModOptions = {
+  /** Group weapon skins, sounds and the like under a hero as well. */
   includeExtras: boolean;
+  /** Mods taken off a hero's list; still in the library, just not listed. */
   hidden: ReadonlySet<string>;
 };
 
@@ -57,11 +66,24 @@ const emptyGroup = <T>(): HeroModGroup<T> => ({
   activeExtras: [],
 });
 
+/**
+ * The category is all there is before a mod is scanned, but uploaders file
+ * hero sound packs under Skins too. Once its VPKs show nothing but sounds, a
+ * "skin" is a hero sound instead.
+ */
 const kindOf = (mod: HeroSelectableMod): HeroModKind | undefined => {
   const kind = KIND_BY_CATEGORY.get(mod.category);
   return kind === "skin" && mod.detectedContent === "sound" ? "sound" : kind;
 };
 
+/**
+ * Where a mod belongs on the hero page, or null when it belongs nowhere: a
+ * category that is not per-hero, a hero nothing resolved, a status it cannot be
+ * selected in, or a mod the user took off the list. The hero behind an extra is
+ * a guess far more often than the hero behind a skin or a hero sound, so extras
+ * only show up once the setting asks for them - unless the hero was picked by
+ * hand.
+ */
 const placeHeroMod = (
   mod: HeroSelectableMod,
   { includeExtras, hidden }: HeroModOptions,
@@ -116,13 +138,21 @@ export function groupModsByHero<T extends HeroSelectableMod>(
 export type HeroAssignCandidate<T> = {
   mod: T;
   kind: HeroModKind;
+  /** The hero it resolves to today, or null when nothing recognised one. */
   currentHero: string | null;
+  /** It was taken off a list rather than never recognised. */
   hidden: boolean;
 };
 
+/** Unrecognised first, then what was removed from a list, then everything else. */
 const assignRank = (candidate: HeroAssignCandidate<unknown>) =>
   candidate.currentHero === null ? 0 : candidate.hidden ? 1 : 2;
 
+/**
+ * Everything in the library the user could hand to `hero`: mods no hero was ever
+ * found for, mods removed from a list, and mods sitting under another hero.
+ * Ordered by how likely each is to be what they came looking for.
+ */
 export function heroAssignCandidates<T extends HeroSelectableMod>(
   mods: T[],
   hero: string,

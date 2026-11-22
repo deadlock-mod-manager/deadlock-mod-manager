@@ -1,5 +1,9 @@
 import type { ModFile } from "@/types/mods";
 
+// A mod's file tree is its load order: an earlier file gets the lower pak
+// number, so it wins over later files of the same mod. New files take the
+// author's place for their archive, which is its place in the downloads list.
+
 const archiveRank = (archiveName: string, archiveNames: string[]) => {
   const index = archiveNames.indexOf(archiveName);
   return index === -1 ? archiveNames.length : index;
@@ -17,6 +21,7 @@ export const sortNamesInLoadOrder = (
   );
 };
 
+/** Places each new file before the first file from a later archive. */
 export const insertFilesInAuthorOrder = (
   files: ModFile[],
   added: ModFile[],
@@ -44,6 +49,10 @@ export const sortFilesInAuthorOrder = (
       a.path.localeCompare(b.path),
   );
 
+/**
+ * Puts the named files in the given order within the slots they already
+ * hold, so files outside the list keep their places.
+ */
 export const reorderFiles = (
   files: ModFile[],
   orderedNames: string[],

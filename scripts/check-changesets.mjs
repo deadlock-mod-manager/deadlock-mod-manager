@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/** A changeset becomes one release-notes line, so it gets one sentence. */
 const MAX_LENGTH = 160;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");

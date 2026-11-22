@@ -108,6 +108,12 @@ export class NotNullError extends BaseError {
   }
 }
 
+/**
+ * Maps PostgreSQL/Drizzle ORM errors to our custom error classes
+ *
+ * @param error The original error from Drizzle/Postgres
+ * @returns A mapped custom error
+ */
 export const mapDrizzleError = (
   error: DatabaseError | Error | undefined | null | unknown,
 ): BaseError => {
@@ -139,51 +145,61 @@ export const mapDrizzleError = (
     return new EntityNotFoundError("Entity", "unknown");
   }
 
+  // PostgreSQL error codes mapping
+  // See: https://www.postgresql.org/docs/current/errcodes-appendix.html
   switch (errCode) {
+    // Connection errors
     case "ECONNREFUSED":
     case "ECONNRESET":
     case "ENOTFOUND":
     case "EHOSTUNREACH":
-    case "08000":
-    case "08003":
-    case "08006":
-    case "08001":
-    case "08004":
+    case "08000": // connection_exception
+    case "08003": // connection_does_not_exist
+    case "08006": // connection_failure
+    case "08001": // sqlclient_unable_to_establish_sqlconnection
+    case "08004": // sqlserver_rejected_establishment_of_sqlconnection
       return new DatabaseConnectionError(errMsg);
 
-    case "28000":
-    case "28P01":
+    // Authentication errors
+    case "28000": // invalid_authorization_specification
+    case "28P01": // invalid_password
       return new DatabaseAuthError(errMsg);
 
-    case "23505":
+    // Constraint violations
+    case "23505": // unique_violation
       return new UniqueConstraintError(errMsg);
 
-    case "23503":
+    case "23503": // foreign_key_violation
       return new ForeignKeyConstraintError(errMsg);
 
-    case "23502":
+    case "23502": // not_null_violation
       return new NotNullError(errMsg);
 
-    case "42601":
-    case "42P01":
-    case "42703":
+    // Query syntax errors
+    case "42601": // syntax_error
+    case "42P01": // undefined_table
+    case "42703": // undefined_column
       return new QuerySyntaxError(errMsg);
 
-    case "25P02":
-    case "40001":
-    case "40P01":
+    // Transaction errors
+    case "25P02": // in_failed_sql_transaction
+    case "40001": // serialization_failure
+    case "40P01": // deadlock_detected
       return new TransactionError(errMsg);
 
-    case "42501":
+    // Permission errors
+    case "42501": // insufficient_privilege
       return new PermissionError(errMsg);
 
+    // Timeout errors
     case "ETIMEDOUT":
-    case "57014":
-    case "57P01":
-    case "57P02":
-    case "57P03":
+    case "57014": // query_canceled
+    case "57P01": // admin_shutdown
+    case "57P02": // crash_shutdown
+    case "57P03": // cannot_connect_now
       return new DatabaseTimeoutError(errMsg);
 
+    // Default: return the original error with improved context
     default:
       return new UnknownError(currentError);
   }

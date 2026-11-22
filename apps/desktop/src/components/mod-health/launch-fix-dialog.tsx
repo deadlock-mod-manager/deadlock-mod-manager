@@ -80,6 +80,7 @@ export const LaunchFixDialog = ({
 
 export type HeldBackMod = { name: string; health: ModHealth };
 
+/** Asks once about enabled mods that automatic fixes leave to the player. */
 export const HeldBackFixDialog = ({
   mods,
   onChoose,

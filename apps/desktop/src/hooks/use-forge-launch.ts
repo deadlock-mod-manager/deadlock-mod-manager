@@ -8,6 +8,8 @@ import { usePersistedStore } from "@/lib/store";
 
 const FORGE_LAUNCH_EVENT = "forge-launch-requested";
 
+// Raised when the site cannot find the bridge and fires the protocol URL.
+// Without it the app surfaces with no explanation of why.
 export const useForgeLaunchPrompt = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();

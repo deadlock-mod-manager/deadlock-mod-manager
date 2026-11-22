@@ -11,12 +11,18 @@ import type { EditorDraft } from "@/lib/performance/editor/draft";
 type DraftUpdater = (current: EditorDraft | undefined) => EditorDraft | null;
 
 type EditorDrafts = {
+  /** Unsaved edits per config id. A config without an entry shows its saved tweaks. */
   drafts: Record<string, EditorDraft>;
+  /** Return `null` to drop the draft. */
   updateDraft: (configId: string, updater: DraftUpdater) => void;
 };
 
 const EditorDraftsContext = createContext<EditorDrafts | null>(null);
 
+/**
+ * Holds the settings editor's unsaved edits above the tabs, so switching tabs
+ * keeps them while the Performance page stays mounted.
+ */
 export const EditorDraftsProvider = ({ children }: { children: ReactNode }) => {
   const [drafts, setDrafts] = useState<Record<string, EditorDraft>>({});
 

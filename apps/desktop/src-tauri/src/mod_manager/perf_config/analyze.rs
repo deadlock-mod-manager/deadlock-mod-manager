@@ -1,3 +1,12 @@
+//! The import pipeline: detect the format, find the stock build a full file was
+//! built on (`PGIVersion`, else the closest stock version), keep only the
+//! author's changes, and resolve them against the live file for review.
+//!
+//! Diffing against the file's own base rather than today's stock is what
+//! keeps Valve's later changes from reading as the author's: a config built
+//! on April's gameinfo.gi lacks keys Valve added since, and that absence is
+//! never a removal.
+
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
@@ -22,12 +31,16 @@ use crate::mod_manager::archive_extractor::ArchiveExtractor;
 
 const MAX_TEXT_BYTES: u64 = 4 * 1024 * 1024;
 const MAX_ARCHIVE_BYTES: u64 = 64 * 1024 * 1024;
+/// Total unpacked size an archive may declare; config archives are a few MB.
 const MAX_UNPACKED_BYTES: u64 = 1024 * 1024 * 1024;
 const MAX_IGNORED_PARTS: usize = 500;
 const GAMEBANANA_DOWNLOAD_URL: &str = "https://gamebanana.com/dl/";
 
+/// Root keys that matter even when they match stock: `PGIVersion` is how the
+/// base build is found, and `DisallowGameInfoConditionals 0` is a common edit.
 const NOTABLE_ROOT_KEYS: &[&str] = &["PGIVersion", "DisallowGameInfoConditionals"];
 
+/// File names that say nothing about the config, so the folder name is used.
 const GENERIC_FILE_NAMES: &[&str] = &[
   "gameinfo",
   "autoexec",
@@ -54,8 +67,12 @@ pub async fn analyze(ctx: &AnalyzeContext, source: ImportSource) -> Result<Impor
   run_blocking(move || analyze_local(&ctx, source)).await
 }
 
+/// What staging needs to know about a candidate file without resolving it.
 pub(super) struct VariantFacts {
+  /// The file changes something relative to its base (a stock copy doesn't).
   pub has_changes: bool,
+  /// Some change is in ConVars or a section the catalog has a category for,
+  /// not just SearchPaths or an addon switch.
   pub performance_changes: bool,
 }
 
@@ -73,6 +90,8 @@ pub(super) fn variant_facts(catalog: &Catalog, parsed: &ParsedConfig) -> Variant
   }
 }
 
+/// What a full gameinfo.gi changes relative to its closest stock build, as an
+/// import of it would keep. Empty for anything that isn't a full file.
 pub(super) fn changes_from_stock(catalog: &Catalog, text: &str) -> Vec<ConfigEntry> {
   match draft_from_text(catalog, text, Some("gameinfo.gi")) {
     Ok(draft) if draft.format == ImportFormat::FullGameinfo => draft.entries,
@@ -80,6 +99,7 @@ pub(super) fn changes_from_stock(catalog: &Catalog, text: &str) -> Vec<ConfigEnt
   }
 }
 
+/// An import before it is resolved against the live file.
 #[derive(Debug)]
 struct Draft {
   format: ImportFormat,
@@ -126,8 +146,11 @@ fn analyze_local(ctx: &AnalyzeContext, source: ImportSource) -> Result<ImportRep
   }
 }
 
+/// Where the suggested name of a file import comes from.
 enum FileName {
+  /// The user's file: its name, or its folder's for `gameinfo.gi`.
   FromPath,
+  /// A download, named after the mod when the catalog knows it.
   Given(Option<String>),
 }
 
@@ -220,6 +243,8 @@ async fn analyze_gamebanana(
   .await
 }
 
+/// Extracts an archive (with the mod installer's path checks), stages its
+/// config files and analyzes the best variant.
 fn analyze_archive(
   ctx: &AnalyzeContext,
   archive_path: &Path,
@@ -229,6 +254,7 @@ fn analyze_archive(
 ) -> Result<ImportReport, Error> {
   check_unpacked_size(archive_path, kind)?;
   let work_dir = tempfile::tempdir()?;
+  // The extractor picks the format from a lower-case extension.
   let archive = if archive_path.extension().and_then(|ext| ext.to_str()) == Some(kind) {
     archive_path.to_path_buf()
   } else {
@@ -311,6 +337,9 @@ fn analyze_staged(
   Ok(report)
 }
 
+/// The catalog's hint for this archive when it names a variant (or the
+/// original of the copy it names), else the best ranked variant. Variants come
+/// best first with copies last.
 fn default_variant<'a>(
   variants: &'a [ImportVariant],
   variant_hint: Option<&str>,
@@ -374,6 +403,10 @@ fn draft_from_share(catalog: &Catalog, text: &str) -> Result<Draft, Error> {
   })
 }
 
+/// Keeps the author's changes: every entry for a snippet, cfg or overrides
+/// file; for a full gameinfo.gi only what differs from its base build.
+/// SearchPaths, list sections and root keys are never imported and are
+/// reported instead.
 fn draft_from_parsed(catalog: &Catalog, parsed: ParsedConfig) -> Draft {
   let mut ignored = parsed.ignored;
   let mut warnings = Vec::new();
@@ -438,13 +471,17 @@ fn draft_from_parsed(catalog: &Catalog, parsed: ParsedConfig) -> Draft {
   }
 }
 
+/// The stock gameinfo.gi a full file was made from.
 struct Base<'a> {
   build: &'a StockBuild,
   matched: BaseMatch,
+  /// Every normalized stock value by path key.
   values: HashMap<String, String>,
 }
 
 impl Base<'_> {
+  /// The file sets a value the base doesn't have. A comment-out is always a
+  /// change; a key the file lacks never is.
   fn differs(&self, path: &[String], value: Option<&str>) -> bool {
     match value {
       Some(value) => self.values.get(&path_key(path)) != Some(&normalize_value(value)),
@@ -453,6 +490,12 @@ impl Base<'_> {
   }
 }
 
+/// `PGIVersion` names the stock file exactly (several builds can share one,
+/// so the closest of those wins). Without it, the stock build whose values
+/// the file keeps best: distance counts stock values the file changes or
+/// lacks, over ConVars and the engine sections (root keys and excluded
+/// sections left out on both sides), and ties go to the newer build, because
+/// a newer build only adds keys an older file would lack.
 fn find_base<'a>(
   catalog: &'a Catalog,
   leaves: &[ParsedLeaf],
@@ -538,6 +581,10 @@ fn find_base<'a>(
   })
 }
 
+/// One part per excluded section or root key the file sets. SearchPaths and
+/// list sections are always reported (configs ship the author's own mounts);
+/// editor sections and root keys only when they differ from the base, apart
+/// from the root keys every config tool cares about.
 fn excluded_parts(
   catalog: &Catalog,
   leaves: &[ParsedLeaf],
@@ -615,6 +662,8 @@ fn finish(ctx: &AnalyzeContext, draft: Draft, live: LiveGameinfo) -> ImportRepor
   }
 }
 
+/// The live file when the game is set up and readable, else the catalog's
+/// newest stock file as a stand-in.
 fn live_gameinfo(ctx: &AnalyzeContext) -> LiveGameinfo {
   if let Some(game_path) = &ctx.game_path {
     let path = super::gameinfo_path(game_path);
@@ -631,6 +680,7 @@ fn live_gameinfo(ctx: &AnalyzeContext) -> LiveGameinfo {
   LiveGameinfo::latest_stock(&ctx.catalog)
 }
 
+/// Archive format from the file's magic bytes; `None` for anything else.
 fn archive_kind(path: &Path) -> Result<Option<&'static str>, Error> {
   let mut magic = [0u8; 6];
   let mut file = fs::File::open(path)?;
@@ -649,6 +699,8 @@ fn archive_kind(path: &Path) -> Result<Option<&'static str>, Error> {
   )
 }
 
+/// Refuses archives whose entries declare more than [`MAX_UNPACKED_BYTES`],
+/// before anything is written.
 fn check_unpacked_size(path: &Path, kind: &str) -> Result<(), Error> {
   let total: u64 = match kind {
     "zip" => {
@@ -681,6 +733,8 @@ fn check_unpacked_size(path: &Path, kind: &str) -> Result<(), Error> {
   Ok(())
 }
 
+/// A name for the config from its file, or its folder when the file is just
+/// `gameinfo.gi` (`OptiLock FPS Config (Recommended)/gameinfo.gi`).
 fn name_from_path(path: &Path) -> Option<String> {
   let stem = path.file_stem()?.to_string_lossy().to_string();
   if !GENERIC_FILE_NAMES.contains(&stem.to_lowercase().as_str()) {

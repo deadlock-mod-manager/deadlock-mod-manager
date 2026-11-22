@@ -40,6 +40,7 @@ export const useServerPicker = () => {
   const refreshCatalog = refresh.mutate;
   const fetchedAt = query.data?.catalog?.fetchedAt;
 
+  // Show cached locations first, then synchronize the external catalog once.
   useEffect(() => {
     if (!query.isSuccess || checkedCatalog.current) return;
     checkedCatalog.current = true;
@@ -94,6 +95,7 @@ export const useServerPicker = () => {
   const catalog = query.data?.catalog;
   const cachedLatencies = query.data?.latencies;
 
+  // Defer the first native sweep until after StrictMode's setup/cleanup cycle.
   useEffect(() => {
     let scheduled: number | undefined;
     const measureWhenVisible = () => {
@@ -133,6 +135,7 @@ export const useServerPicker = () => {
     };
   }, [catalog, cachedLatencies, measure, probe.isPending, refresh.isPending]);
 
+  // Native probes outlive their IPC promise unless explicitly cancelled.
   useEffect(() => {
     if (!probe.isPending) return;
     const cancelWhenHidden = () => {

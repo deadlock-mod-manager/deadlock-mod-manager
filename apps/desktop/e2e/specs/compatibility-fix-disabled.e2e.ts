@@ -28,6 +28,7 @@ const readRepairedMods = async (world: string) =>
 const screenshot = (world: string, name: string) =>
   browser.saveScreenshot(path.join(world, "artifacts", `${name}.png`));
 
+// Each fix toasts once; wait out the previous one so the next is unambiguous.
 const nextSuccessToast = async (
   world: string,
   name: string,
@@ -69,6 +70,7 @@ describe("compatibility fix on a disabled mod", () => {
         readHealth,
         (value) => value[ENABLED_FIX_MOD] === "fixed",
       );
+      // The toast, the disabled mod's status and its saved choice must agree.
       assert.deepEqual(
         {
           toast: toast.trim(),
@@ -92,6 +94,7 @@ describe("compatibility fix on a disabled mod", () => {
           fixChoices: { [ENABLED_FIX_MOD]: true, [DISABLED_FIX_MOD]: true },
         },
       );
+      // Only enabled mods are loaded, so only their repairs are packaged.
       assert.deepEqual(await readRepairedMods(world), [ENABLED_FIX_MOD]);
       await expect($(row(DISABLED_FIX_MOD))).toHaveText(
         expect.stringContaining(SAVED_NOTE),
@@ -160,6 +163,8 @@ describe("compatibility fix on a disabled mod", () => {
       );
       await navigate("my-mods");
       await setModEnabled(world, DISABLED_FIX_MOD, true);
+      // Enabling changes the package's inputs, so the enabled mod reads as
+      // fixed again only once the package is rebuilt.
       await observeUntil(
         "package rebuilt without the opted-out mod",
         readHealth,

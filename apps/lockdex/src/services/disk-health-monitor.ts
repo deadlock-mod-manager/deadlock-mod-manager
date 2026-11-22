@@ -6,10 +6,19 @@ import { diskSpaceMonitor } from "@/services/disk-space-monitor";
 import { tempCleanupService } from "@/services/temp-cleanup";
 
 export interface HealthCheckConfig {
+  /**
+   * Interval between health checks in milliseconds (default: 5 minutes)
+   */
   checkIntervalMs: number;
 
+  /**
+   * Whether to perform cleanup during health checks (default: true)
+   */
   performCleanup: boolean;
 
+  /**
+   * Whether to log disk space info on each check (default: false)
+   */
   logDiskInfo: boolean;
 }
 
@@ -27,7 +36,7 @@ export class DiskHealthMonitor {
   static getInstance(config?: Partial<HealthCheckConfig>): DiskHealthMonitor {
     if (!DiskHealthMonitor.instance) {
       const defaultConfig: HealthCheckConfig = {
-        checkIntervalMs: 5 * 60 * 1000,
+        checkIntervalMs: 5 * 60 * 1000, // 5 minutes
         performCleanup: true,
         logDiskInfo: false,
         ...config,
@@ -37,6 +46,9 @@ export class DiskHealthMonitor {
     return DiskHealthMonitor.instance;
   }
 
+  /**
+   * Start the health monitoring service
+   */
   start(): void {
     if (this.isRunning) {
       this.logger.warn("Disk health monitor is already running");
@@ -53,6 +65,9 @@ export class DiskHealthMonitor {
     }, this.config.checkIntervalMs);
   }
 
+  /**
+   * Stop the health monitoring service
+   */
   stop(): void {
     if (!this.isRunning) {
       return;
@@ -67,6 +82,9 @@ export class DiskHealthMonitor {
     }
   }
 
+  /**
+   * Perform a single health check
+   */
   async performHealthCheck(): Promise<void> {
     try {
       const diskInfo = await diskSpaceMonitor.checkDiskSpace();
@@ -92,6 +110,7 @@ export class DiskHealthMonitor {
         );
       }
 
+      // Perform cleanup if configured and disk usage is high
       if (this.config.performCleanup && diskInfo.isLowSpace) {
         this.logger.warn("Low disk space detected, performing cleanup");
         const cleanupResult =
@@ -109,6 +128,9 @@ export class DiskHealthMonitor {
     }
   }
 
+  /**
+   * Check temp directories for potential issues
+   */
   private async checkTempDirectories(): Promise<{
     count: number;
     totalSizeMB: number;
@@ -141,7 +163,9 @@ export class DiskHealthMonitor {
                 patterns[pattern]++;
                 totalSize += await this.calculateDirectorySize(fullPath);
               }
-            } catch {}
+            } catch {
+              // Ignore errors for individual directories
+            }
             break;
           }
         }
@@ -157,6 +181,9 @@ export class DiskHealthMonitor {
     };
   }
 
+  /**
+   * Calculate directory size recursively
+   */
   private async calculateDirectorySize(dirPath: string): Promise<number> {
     try {
       const entries = await readdir(dirPath);
@@ -179,6 +206,9 @@ export class DiskHealthMonitor {
     }
   }
 
+  /**
+   * Get current health status
+   */
   async getHealthStatus(): Promise<{
     diskSpace: Awaited<ReturnType<typeof diskSpaceMonitor.checkDiskSpace>>;
     isHealthy: boolean;
@@ -194,6 +224,7 @@ export class DiskHealthMonitor {
     }
 
     if (diskSpace.freeBytes < 2 * 1024 * 1024 * 1024) {
+      // Less than 2GB
       recommendations.push("Free space is below 2GB - cleanup recommended");
     }
 

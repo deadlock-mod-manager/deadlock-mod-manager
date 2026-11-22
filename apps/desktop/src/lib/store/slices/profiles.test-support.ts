@@ -76,6 +76,7 @@ export const snapshotFor = (
   missing: [],
 });
 
+/** The default snapshot after the user deleted some or all of mod 42's files. */
 export const snapshotMissing = (
   missingVpks: string[],
   orphaned: boolean,

@@ -1,5 +1,12 @@
 #!/usr/bin/env bun
 
+/**
+ * Script to manually trigger mod synchronization from GameBanana
+ *
+ * Usage:
+ * pnpm --filter api sync-mods
+ */
+
 import { createWideEvent, logger, wideEventContext } from "@/lib/logger";
 import { ModSyncService } from "@/services/mod-sync";
 

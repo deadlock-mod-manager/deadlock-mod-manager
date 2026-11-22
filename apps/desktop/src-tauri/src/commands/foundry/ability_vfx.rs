@@ -1,3 +1,12 @@
+//! Which particle effects an ability plays on the hero using it.
+//!
+//! The game spawns ability effects from code, reading their paths out of
+//! `scripts/abilities.vdata_c`; neither the model nor its animation clips name
+//! them. The same table lists every effect that lands somewhere else (impacts,
+//! projectiles, debuffs on the target, aiming previews) and nothing marks which
+//! is which, so this keeps the fields that play on the caster and drops any
+//! effect whose name places it on someone else.
+
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -8,6 +17,8 @@ use crate::errors::Error;
 
 const ABILITIES_VDATA: &str = "scripts/abilities.vdata_c";
 
+/// Ability fields naming an effect the caster plays from the start of the
+/// ability: wind-ups, channels and movement.
 const CAST_FIELDS: &[&str] = &[
   "m_CastParticle",
   "m_strCastEffect",
@@ -21,6 +32,8 @@ const CAST_FIELDS: &[&str] = &[
   "m_TrailParticle",
 ];
 
+/// Ability fields naming what the caster lets loose (a beam, a shot, a swing),
+/// which starts once the animation reaches its firing phase.
 const RELEASE_FIELDS: &[&str] = &[
   "m_BeamParticle",
   "m_ShootParticle",
@@ -28,8 +41,11 @@ const RELEASE_FIELDS: &[&str] = &[
   "m_SlashSwingEffect",
 ];
 
+/// Ability field mapping cast events (`CAST_COMPLETED`, ...) to the effect the
+/// caster plays as the cast goes off.
 const CAST_EVENT_FIELD: &str = "m_mapCastEventParticles";
 
+/// Fields of a modifier naming the effect it shows on whoever carries it.
 const MODIFIER_FIELDS: &[&str] = &[
   "m_strParticleEffect",
   "m_BuffParticle",
@@ -39,6 +55,8 @@ const MODIFIER_FIELDS: &[&str] = &[
   "m_ChargeParticle",
 ];
 
+/// Words in a modifier or effect name that put it on someone other than the
+/// caster, on the ground, or on the HUD.
 const ELSEWHERE: &[&str] = &[
   "target",
   "_tgt",
@@ -69,13 +87,16 @@ const ELSEWHERE: &[&str] = &[
   "status_fx",
 ];
 
+/// The `.vpcf` effects an ability plays on its caster, by when they start.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(super) struct CasterParticles {
   /// From the start of the ability's animation.
   pub cast: Vec<String>,
+  /// From the animation's firing phase.
   pub release: Vec<String>,
 }
 
+/// Ability class to the effects it plays on its caster.
 type AbilityParticles = HashMap<String, CasterParticles>;
 
 fn elsewhere(name: &str) -> bool {
@@ -89,6 +110,7 @@ fn caster_effect(value: Option<&KvValue>) -> Option<&str> {
     .filter(|path| path.ends_with(".vpcf") && !elsewhere(path))
 }
 
+/// The effects `ability` plays on its caster, each listed once.
 fn ability_caster_particles(ability: &KvValue) -> CasterParticles {
   let mut particles = CasterParticles::default();
   let KvValue::Object(fields) = ability else {
@@ -123,6 +145,8 @@ fn ability_caster_particles(ability: &KvValue) -> CasterParticles {
         push(true, caster_effect(Some(event)));
       }
     } else if key.ends_with("Modifier") && !elsewhere(key) {
+      // Only modifiers the ability applies directly: nested ones (an aura's
+      // provided modifier, a buff's follow-up) usually land on other heroes.
       for field in MODIFIER_FIELDS {
         push(false, caster_effect(value.get(field)));
       }
@@ -146,6 +170,8 @@ fn ability_table(root: KvValue) -> Result<AbilityParticles, Error> {
   )
 }
 
+/// The effects `class` plays on its caster, read from the base game.
+/// Accepts the class with or without its `citadel_ability_` prefix.
 pub(super) fn caster_particles(class: &str) -> CasterParticles {
   static CACHE: TableCache<AbilityParticles> = OnceLock::new();
   let Some(table) = base_table(&CACHE, ABILITIES_VDATA, ability_table) else {
@@ -179,6 +205,7 @@ mod tests {
 
   #[test]
   fn sorts_caster_effects_and_drops_those_landing_elsewhere() {
+    // Shaped after Haze's Bullet Flurry and Bebop's Hyper Beam.
     let ability = object(&[
       ("m_ChannelParticle", text("particles/haze/flurry.vpcf")),
       ("m_BeamParticle", text("particles/bebop/beam.vpcf")),

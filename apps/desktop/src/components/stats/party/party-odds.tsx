@@ -20,9 +20,11 @@ interface PartyOddsProps {
   heroesById: Map<number, DeadlockHero>;
   isPending: boolean;
   isError: boolean;
+  /** No single pick change raises the expected winrate any further. */
   isOptimal: boolean;
 }
 
+/** What the party can expect from queue, and its best and worst draw. */
 export const PartyOdds = ({
   players,
   odds,

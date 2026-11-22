@@ -27,6 +27,7 @@ type RetainedCategory = {
   name: string;
 };
 
+// GameBanana omits the id for this root; the desktop catalog pins it.
 const MODEL_REPLACEMENT_ID = "33154";
 const MAX_U64 = 18_446_744_073_709_551_615n;
 const CATEGORY_URL_ID = /\/cats\/(\+?\d+)\/*$/;
@@ -48,6 +49,7 @@ function categoryId(
     : null;
 }
 
+/** Mirrors `category_path` in the desktop GameBanana catalog. */
 function retainedCategoryPath(
   categories: Array<ProfileCategory | undefined>,
   submissionType: "mod" | "sound",
@@ -83,6 +85,11 @@ export type RetainedNormalizedSubmission = {
   remoteUpdatedAt: number;
 };
 
+/**
+ * Projects the fields retained by the desktop catalog using the API's current
+ * normalization helpers. The fixture test and Rust normalizer share one oracle,
+ * making intentional behavior changes visible on both sides of the migration.
+ */
 export function normalizeRetainedProfile(
   profile: Profile,
   submissionType: "mod" | "sound",

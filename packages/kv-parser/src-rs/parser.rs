@@ -184,6 +184,7 @@ impl Parser {
                     children.push(AstNode::Conditional(self.parse_conditional()?));
                 }
                 TokenType::Include | TokenType::Base if !self.strict => {
+                    // Skip includes for now
                     self.advance();
                 }
                 _ if self.strict => return Err(self.unexpected_token()),
@@ -207,8 +208,11 @@ impl Parser {
     fn parse_keyvalue(&mut self) -> Result<KeyValueNode> {
         let start_token = self.current_token().clone();
 
+        // Parse key
         let key = self.parse_string()?;
 
+        // Comments between a key and its value are trivia too. Keep their raw
+        // text with the separator so AST serialization still round-trips it.
         let start = self.current_token().clone();
         let mut raw = String::new();
         let mut end = self.make_position(&start);
@@ -229,9 +233,11 @@ impl Parser {
             raw,
         });
 
+        // Parse value
         let value = if self.current_token().token_type == TokenType::OpenBrace {
             ValueNode::Object(Box::new(self.parse_object()?))
         } else if self.current_token().token_type == TokenType::String {
+            // Try to parse as number
             let token = self.current_token();
             let is_quoted = token
                 .metadata
@@ -252,6 +258,7 @@ impl Parser {
             });
         };
 
+        // Look ahead for conditional on same line
         let mut temp_pos = self.pos;
         let mut conditional_separator = None;
         let mut conditional = None;
@@ -260,6 +267,7 @@ impl Parser {
             let token = &self.tokens[temp_pos];
             match token.token_type {
                 TokenType::Whitespace => {
+                    // Check if contains newline
                     if token.value.contains('\n') {
                         break;
                     }
@@ -267,6 +275,7 @@ impl Parser {
                     continue;
                 }
                 TokenType::Conditional => {
+                    // Found conditional on same line
                     if self.current_token().token_type == TokenType::Whitespace {
                         conditional_separator = Some(self.parse_whitespace()?);
                     }
@@ -274,6 +283,7 @@ impl Parser {
                     break;
                 }
                 TokenType::Comment => {
+                    // Comments can appear after conditionals on same line, skip
                     break;
                 }
                 _ => break,
@@ -320,7 +330,7 @@ impl Parser {
             value: "{".to_string(),
         };
 
-        self.advance();
+        self.advance(); // Skip {
 
         let mut children = Vec::new();
 
@@ -365,7 +375,7 @@ impl Parser {
             value: "}".to_string(),
         };
 
-        self.advance();
+        self.advance(); // Skip }
 
         Ok(ObjectNode {
             node_type: NodeType::Object,
@@ -513,10 +523,12 @@ impl Parser {
         let mut condition = token.value.clone();
         let mut negated = false;
 
+        // Strip outer brackets
         if condition.starts_with('[') && condition.ends_with(']') {
             condition = condition[1..condition.len() - 1].trim().to_string();
         }
 
+        // Check for negation
         if condition.starts_with('!') {
             negated = true;
             condition = condition[1..].trim().to_string();
@@ -551,6 +563,7 @@ impl Parser {
                 let key = kv.key.value.clone();
                 let value = self.extract_value(&kv.value);
 
+                // Handle duplicate keys
                 if let Some(existing) = result.get_mut(&key) {
                     match existing {
                         KeyValuesValue::Array(arr) => {
@@ -673,6 +686,7 @@ mod tests {
     fn test_parse_conditional_with_or_operator() {
         let input = r#""VulkanOnly"								"1"	[ $LINUX || $OSX ] // No OpenGL or D3D9/11 fallback on Linux or OSX, only Vulkan is supported."#;
 
+        // First test tokenization
         use crate::tokenizer::Tokenizer;
         let mut tokenizer = Tokenizer::new(input);
         let _ = tokenizer.tokenize();
@@ -694,6 +708,7 @@ mod tests {
 "#;
         let result = Parser::parse(input, ParseOptions::default()).unwrap();
 
+        // Verify AST has comments
         let comment_count = result
             .ast
             .children
@@ -702,6 +717,7 @@ mod tests {
             .count();
         assert!(comment_count > 0);
 
+        // Verify data extraction works despite comments
         assert!(result.data.contains_key("Root"));
     }
 
@@ -730,6 +746,7 @@ Root
         let input = r#""Key"    "Value""#;
         let result = Parser::parse(input, ParseOptions::default()).unwrap();
 
+        // AST should preserve the exact spacing
         if let AstNode::KeyValue(kv) = &result.ast.children[0] {
             assert!(kv.separator.is_some());
             if let Some(ws) = &kv.separator {

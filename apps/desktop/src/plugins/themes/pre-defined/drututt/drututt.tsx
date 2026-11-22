@@ -11,6 +11,7 @@ const drututtBackground = getPluginAssetUrl(
   "public/pre-defined/drututt/background.jpg",
 );
 
+// Channel offline art by @MiyuArt_, cropped to the campfire band and dimmed so cards stay readable.
 const backdropStyle = {
   backgroundImage: `linear-gradient(rgba(10, 21, 23, 0.85), rgba(10, 21, 23, 0.92) 40%, rgba(10, 21, 23, 0.97)), url(${drututtBackground})`,
   backgroundSize: "cover",

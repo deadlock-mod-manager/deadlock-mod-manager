@@ -76,6 +76,8 @@ const copy = async (t: TFunction, value: string, toastKey: string) => {
 const CheckRow = ({ result }: { result: NetworkCheckResult }) => {
   const { t } = useTranslation();
   const failed = result.status === "error" || result.status === "warning";
+  // The probed address is what has to be unblocked or shared with support, and
+  // it is not always the default one: a custom API URL shows up here too.
   const showUrl = failed && result.url !== undefined;
 
   return (

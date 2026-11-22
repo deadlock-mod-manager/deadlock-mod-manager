@@ -51,9 +51,11 @@ describe("seasonal calendar", () => {
     expect(themeOn("2026-12-27")).toBe("seasonal-new-year");
     expect(themeOn("2027-01-01")).toBe("seasonal-new-year");
     expect(themeOn("2027-01-02")).toBeUndefined();
+    // Lunar New Year 2027 is Feb 6: Jan 16 through Feb 20.
     expect(themeOn("2027-01-15")).toBeUndefined();
     expect(themeOn("2027-01-16")).toBe("seasonal-lunar-new-year");
     expect(themeOn("2027-02-20")).toBe("seasonal-lunar-new-year");
+    // Easter 2027 is Mar 28: Feb 26 through Mar 29.
     expect(themeOn("2027-02-26")).toBe("seasonal-easter");
     expect(themeOn("2027-03-29")).toBe("seasonal-easter");
     expect(themeOn("2027-03-30")).toBeUndefined();
@@ -172,6 +174,7 @@ describe("seasonal theme for a player", () => {
         season,
       ),
     ).toBeUndefined();
+    // A dismissal from last year does not carry over.
     expect(
       resolveSeasonalTheme(
         {

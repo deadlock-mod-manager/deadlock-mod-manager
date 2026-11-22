@@ -66,6 +66,7 @@ describe("stats dashboard custom queries", () => {
         await toggleMetric("KDA");
         await setWidgetTitle("Per hero");
         await submitEditor();
+        // Infernus 6 of 13 won, (84 + 104) / 52; Seven 4 of 7, (46 + 56) / 28.
         await expectTable(
           $('[data-widget-source="matches"]'),
           ["Hero", "Winrate", "Matches", "KDA"],
@@ -100,12 +101,14 @@ describe("stats dashboard custom queries", () => {
         await openWidgetEditor();
         await chooseSourceMode("api");
         await setApiPath(BANS_PATH);
+        // The preview titles itself after the endpoint it now reads.
         await expect(editorDialog().$("[data-widget-state] h3")).toHaveText(
           "/v1/analytics/hero-ban-stats",
         );
         await waitForWidgetState(editorDialog(), "ready");
         await chooseChart("table");
         await submitEditor();
+        // Raw API fields keep their names; ids still resolve to heroes.
         await expectTable(
           $('[data-widget-source="api"]'),
           ["hero_id", "bans"],
@@ -149,6 +152,8 @@ describe("stats dashboard custom queries", () => {
         ["api", "table"],
       ],
     );
+    // The template is stored, not the resolved timestamp, so the window keeps
+    // moving with every load.
     assert.equal(saved[2]?.source.path, BANS_PATH);
     assert.deepEqual(saved[0]?.view?.y, ["winrate", "matches", "kda"]);
   });

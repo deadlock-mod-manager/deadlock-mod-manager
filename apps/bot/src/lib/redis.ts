@@ -19,6 +19,9 @@ redis.on("connect", () => {
   logger.info("Redis connected");
 });
 
+/**
+ * Shared cache-manager instance for the bot.
+ */
 export const cache = createRedisCache(env.REDIS_URL, {
   ttl: FEATURE_FLAG_CACHE_TTL,
 });

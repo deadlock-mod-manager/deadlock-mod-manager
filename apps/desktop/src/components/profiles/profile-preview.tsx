@@ -28,6 +28,7 @@ export const ProfilePreview = ({
 }: ProfilePreviewProps) => {
   const { t } = useTranslation();
 
+  // Calculate progress percentage
   const calculatePercentage = (completed: number, total: number): number => {
     if (total === 0) {
       return 0;
@@ -48,6 +49,7 @@ export const ProfilePreview = ({
       )
     : 0;
 
+  // Determine current step info
   const isDownloading = importProgress?.isDownloading ?? false;
   const isInstalling = importProgress?.isInstalling ?? false;
 

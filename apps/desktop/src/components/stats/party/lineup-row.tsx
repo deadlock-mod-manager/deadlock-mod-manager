@@ -6,6 +6,7 @@ import { formatPercent, formatWhole } from "@/lib/stats/format";
 import { LOW_SAMPLE_MATCHES, type RatedLineup } from "@/lib/stats/party";
 import { cn } from "@/lib/utils";
 
+/** Bars span this winrate range; lineup winrates rarely leave it. */
 const BAR_FLOOR = 0.4;
 const BAR_SPAN = 0.3;
 
@@ -19,6 +20,7 @@ interface LineupRowProps {
   rank: number;
   lineup: RatedLineup;
   heroesById: Map<number, DeadlockHero>;
+  /** The party's expected winrate, marked on the bar. */
   expected: number | null;
 }
 
@@ -40,6 +42,7 @@ export const LineupRow = ({
     ),
   );
 
+  // Estimates blend several trios, so they have no match count of their own.
   const matches = !stat
     ? "–"
     : stat.matches === null

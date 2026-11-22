@@ -22,6 +22,7 @@ export const DEFAULT_LOOK: ViewerLook = {
   bloomStrength: 0.3,
 };
 
+/** A View menu switch for something drawn over the model, such as the ability bar. */
 export interface ViewerOverlayToggle {
   id: string;
   label: string;
@@ -31,6 +32,7 @@ export interface ViewerOverlayToggle {
   onCheckedChange: (checked: boolean) => void;
 }
 
+/** Controls float over the render, so they need their own backdrop to stay legible on any background image. */
 export const overlaySurface =
   "border border-white/10 bg-background/90 shadow-black/40 shadow-lg";
 

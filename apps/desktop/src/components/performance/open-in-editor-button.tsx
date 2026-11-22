@@ -7,6 +7,7 @@ import { FileTextIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
+/** Opens gameinfo.gi in the system's text editor. */
 const useOpenGameinfo = () => {
   const { t } = useTranslation();
   return useMutation({

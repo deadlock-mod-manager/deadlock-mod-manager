@@ -1,5 +1,13 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
 
+/**
+ * An indeterminate progress bar: a gold highlight sweeping across a track.
+ *
+ * Parsing a pak and decoding a model report no progress, so this deliberately
+ * does not pretend to know how far along the work is — it only shows that work
+ * is happening. A bar that sat still, or one that faked a percentage, would both
+ * be worse.
+ */
 export const FoundryLoadingBar = ({ className }: { className?: string }) => (
   <div
     aria-busy='true'

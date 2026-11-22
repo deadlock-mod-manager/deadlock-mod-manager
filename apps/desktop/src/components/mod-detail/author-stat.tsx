@@ -16,6 +16,8 @@ interface AuthorStatProps {
 
 export const AuthorStat = ({ authorId, mod, onSelect }: AuthorStatProps) => {
   const { t } = useTranslation();
+  // Shares the author page's cache, so opening the profile is usually instant.
+  // The avatar is decoration here, so a failed lookup stays silent.
   const { data: profile } = useQuery({
     ...modAuthorQueryOptions(authorId),
     meta: { skipGlobalErrorHandler: true },

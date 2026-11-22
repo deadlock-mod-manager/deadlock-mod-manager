@@ -85,6 +85,8 @@ export const DashboardGrid = ({
       }
       onDragStart={handleDragStart}
       sensors={sensors}>
+      {/* Items keep their slots while dragging; the outlined target shows where
+          the dragged widget lands. Live shuffling misbehaves with mixed sizes. */}
       <SortableContext
         items={tab.widgets.map((widget) => widget.id)}
         strategy={() => null}>

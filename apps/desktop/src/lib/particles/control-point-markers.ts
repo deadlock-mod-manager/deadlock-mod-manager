@@ -3,6 +3,7 @@ import type { ParticleHierarchyNode } from "./hierarchy";
 
 const MAX_MARKERS = 64;
 
+/** Two bounded draw calls for position dots and RGB attachment orientation axes. */
 export const createControlPointMarkers = (parent: THREE.Object3D) => {
   const group = new THREE.Group();
   group.visible = false;

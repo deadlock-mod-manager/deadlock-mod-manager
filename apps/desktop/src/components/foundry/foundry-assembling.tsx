@@ -2,10 +2,15 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
+/** Signed random jitter in [-0.5, 0.5). */
 const jitter = (): number => Math.random() - 0.5;
 
 const easeOutCubic = (x: number): number => 1 - (1 - x) ** 3;
 
+/**
+ * Sample a point on a rough humanoid silhouette (head, torso, arms, legs),
+ * normalized to roughly y in [-1, 1] and centred on the origin.
+ */
 const sampleFigurePoint = (out: THREE.Vector3): void => {
   const part = Math.random();
   if (part < 0.14) {
@@ -14,6 +19,7 @@ const sampleFigurePoint = (out: THREE.Vector3): void => {
   } else if (part < 0.22) {
     out.set(jitter() * 0.12, 0.58 + Math.random() * 0.08, jitter() * 0.1);
   } else if (part < 0.56) {
+    // Torso, tapering outward towards the shoulders.
     const y = -0.05 + Math.random() * 0.6;
     const width = 0.3 + 0.14 * ((y + 0.05) / 0.6);
     out.set(jitter() * width, y, jitter() * 0.22);
@@ -35,6 +41,7 @@ const sampleFigurePoint = (out: THREE.Vector3): void => {
   }
 };
 
+/** Sample a point on the perimeter of a rectangle centred on the origin. */
 const rectPerimeter = (
   out: THREE.Vector3,
   halfW: number,
@@ -55,6 +62,7 @@ const rectPerimeter = (
   }
 };
 
+/** A portrait hero card (3:4): a filled body inside a brighter frame. */
 const sampleCardPoint = (out: THREE.Vector3): void => {
   const halfW = 0.6;
   const halfH = 0.82;
@@ -69,9 +77,19 @@ const sampleCardPoint = (out: THREE.Vector3): void => {
   }
 };
 
+// The shape holds fully assembled until this build time, then disperses and
+// rebuilds; the last stretch fades out so the reset is never seen.
 const LOOP_RESET_AT = 2.8;
 const LOOP_FADE_SPAN = 0.6;
 
+/**
+ * A skin that assembles itself out of glowing gold particles: points fly in from
+ * a scattered cloud and snap into shape from the ground up, then rotate.
+ *
+ * With `loop`, it rebuilds forever, which is what makes it a loading indicator.
+ * Otherwise it holds until `finish()` fades it out, so a caller can hand off to
+ * a real mesh.
+ */
 export const createAssemblingFigure = ({
   loop = false,
   spin = 0.5,
@@ -104,6 +122,7 @@ export const createAssemblingFigure = ({
     maxY = Math.max(maxY, point.y);
   }
 
+  // Higher points arrive later, so the figure builds from the feet up.
   const range = maxY - minY || 1;
   for (let i = 0; i < count; i++) {
     delays[i] = (targets[i * 3 + 1] - minY) / range;
@@ -139,6 +158,7 @@ export const createAssemblingFigure = ({
   let buildTime = 0;
   let fadingOut = false;
 
+  /** Advance the animation. True once fully faded out and safe to remove. */
   const update = (delta: number): boolean => {
     if (fadingOut) {
       material.opacity = Math.max(0, material.opacity - delta * 4);
@@ -257,6 +277,9 @@ const AssemblingCanvas = ({
       resizeObserver.disconnect();
       scene.remove(figure.points);
       figure.dispose();
+      // `dispose()` frees three.js resources but leaves the WebGL context
+      // alive; browsers cap how many a page may hold, and this canvas is
+      // mounted and unmounted on every repaint, so release it explicitly.
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();
@@ -272,6 +295,11 @@ const AssemblingCanvas = ({
   );
 };
 
+/**
+ * A portrait card that builds and rebuilds, shown per tile while card art
+ * decodes. No spin — a flat card turned edge-on would vanish — and fewer
+ * particles, so a whole grid of tiles stays cheap.
+ */
 export const FoundryCardAssembling = ({
   className,
 }: {
@@ -286,6 +314,7 @@ export const FoundryCardAssembling = ({
   />
 );
 
+/** A point drawn from a captured silhouette, scattered a hair for depth. */
 const silhouetteSampler =
   (points: Float32Array) =>
   (out: THREE.Vector3): void => {
@@ -297,6 +326,11 @@ const silhouetteSampler =
     );
   };
 
+/**
+ * A hero built from embers, shown while a model decodes: the hero's own shape
+ * when a silhouette is known, a generic figure otherwise. Without `loop` it
+ * builds once and holds, for a stage that is waiting rather than loading.
+ */
 export const FoundryHeroAssembling = ({
   className,
   loop,
@@ -322,6 +356,8 @@ export const FoundryHeroAssembling = ({
       distance={silhouette ? 3.9 : 4.6}
       sampler={sampler}
       size={silhouette ? 0.032 : 0.04}
+      // A known hero holds still and faces the camera, the way players
+      // recognise them; the generic figure turns to read as a figure at all.
       spin={silhouette ? 0 : 0.35}
     />
   );

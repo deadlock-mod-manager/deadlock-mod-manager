@@ -1,3 +1,10 @@
+//! Sound edits that need the audio itself, not just its container: formats the
+//! game can't take as-is, and volume, normalize and mute.
+//!
+//! Every such edit takes the same path: decode the source to PCM, process it,
+//! then write it into a PCM16 `.vsnd_c` built from the clip it replaces, so the
+//! game keeps the original's loop flag and dependency info.
+
 use std::io::Cursor;
 
 use symphonia::core::audio::SampleBuffer;
@@ -11,13 +18,21 @@ use symphonia::core::probe::Hint;
 use crate::error::{Result, VpkManagerError};
 use crate::source2::sound::{VsndAudio, encode_vsnd_pcm16_c, extract_vsnd_audio};
 
+/// The loudness normalize aims for, as an RMS level in dBFS. Close to where the
+/// game's own voice and ability clips sit.
 const NORMALIZE_RMS_DBFS: f32 = -18.0;
+/// Normalize never pushes a peak above this, so a quiet clip with one loud spike
+/// doesn't clip.
 const PEAK_CEILING_DBFS: f32 = -1.0;
 
+/// How to rework a clip's audio. The default changes nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct SoundAdjust {
+    /// Gain in decibels, applied after normalize.
     pub gain_db: f32,
+    /// Level the clip to [`NORMALIZE_RMS_DBFS`] before the gain.
     pub normalize: bool,
+    /// Replace the audio with silence of the same length.
     pub mute: bool,
 }
 
@@ -27,17 +42,22 @@ impl SoundAdjust {
     }
 }
 
+/// Where the audio comes from: a replacement file, or the clip itself.
 pub enum SoundSource<'a> {
+    /// A replacement's bytes and its file extension, which hints the decoder.
     File { bytes: &'a [u8], extension: &'a str },
+    /// The donor clip's own audio.
     Original,
 }
 
+/// Interleaved samples in `[-1, 1]`.
 struct Pcm {
     rate: u32,
     channels: u16,
     samples: Vec<f32>,
 }
 
+/// Extensions [`rebuild_sound`] can decode as a replacement.
 pub fn is_decodable_audio(extension: &str) -> bool {
     matches!(
         extension.to_ascii_lowercase().as_str(),
@@ -45,6 +65,7 @@ pub fn is_decodable_audio(extension: &str) -> bool {
     )
 }
 
+/// Mint a PCM16 `.vsnd_c` for `donor` from `source`, reworked by `adjust`.
 pub fn rebuild_sound(donor: &[u8], source: SoundSource, adjust: SoundAdjust) -> Result<Vec<u8>> {
     let mut pcm = match source {
         SoundSource::File { bytes, extension } => decode(bytes, Some(extension))?,
@@ -101,6 +122,7 @@ fn decode(bytes: &[u8], extension: Option<&str>) -> Result<Pcm> {
         }
         let decoded = match decoder.decode(&packet) {
             Ok(decoded) => decoded,
+            // A corrupt frame costs a few milliseconds of audio, not the clip.
             Err(SymphoniaError::DecodeError(_)) => continue,
             Err(e) => return Err(audio_error(e)),
         };
@@ -147,6 +169,7 @@ fn apply(pcm: &mut Pcm, adjust: SoundAdjust) {
     }
 }
 
+/// A canonical 16-bit PCM RIFF/WAVE file.
 fn to_wav16(pcm: &Pcm) -> Vec<u8> {
     let data_len = (pcm.samples.len() * 2) as u32;
     let block_align = pcm.channels * 2;

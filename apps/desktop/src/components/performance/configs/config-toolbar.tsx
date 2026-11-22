@@ -24,6 +24,7 @@ type ConfigToolbarProps = {
   source: ConfigSourceFilter;
   onSourceChange: (source: ConfigSourceFilter) => void;
   counts: Record<ConfigSourceFilter, number>;
+  /** The tier picked on the scale above, shown here so a short list explains itself. */
   tier: PerfTier | null;
   onClearTier: () => void;
   sort: ConfigSort;

@@ -14,6 +14,7 @@ const MENU_QUIT: &str = "tray-quit";
 
 static MINIMIZE_TO_TRAY: AtomicBool = AtomicBool::new(false);
 static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(false);
+/// Set by the tray's Quit item so the close that follows really exits.
 static QUITTING: AtomicBool = AtomicBool::new(false);
 
 pub fn show_main_window(app: &AppHandle) {
@@ -26,6 +27,8 @@ pub fn show_main_window(app: &AppHandle) {
 
 fn quit(app: &AppHandle) {
   QUITTING.store(true, Ordering::Relaxed);
+  // Closing goes through the frontend's close handler, which flushes the
+  // store before the window is destroyed.
   match app.get_webview_window(MAIN_WINDOW) {
     Some(window) => {
       if window.close().is_err() {
@@ -73,6 +76,8 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
   Ok(())
 }
 
+/// Mirrors the tray settings into the backend. The tray icon only exists while
+/// one of them is on.
 #[tauri::command]
 pub fn set_tray_behavior(
   app: AppHandle,
@@ -88,11 +93,15 @@ pub fn set_tray_behavior(
     _ => {}
   }
 
+  // Stored only once the tray exists, so a failed build can't hide the window
+  // with nothing to bring it back
   MINIMIZE_TO_TRAY.store(minimize_to_tray, Ordering::Relaxed);
   CLOSE_TO_TRAY.store(close_to_tray, Ordering::Relaxed);
   Ok(())
 }
 
+/// Asked by the frontend's close handler. Hides the window and returns true
+/// when closing should send the app to the tray instead of exiting.
 #[tauri::command]
 pub fn hide_to_tray_on_close(window: WebviewWindow<AppRuntime>) -> bool {
   if QUITTING.load(Ordering::Relaxed) || !CLOSE_TO_TRAY.load(Ordering::Relaxed) {

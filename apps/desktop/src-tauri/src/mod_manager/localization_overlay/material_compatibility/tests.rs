@@ -155,7 +155,7 @@ fn texture(provenance: &[u8], pixels: &[u8]) -> Vec<u8> {
   let mut header = vec![0u8; 40];
   header[..2].copy_from_slice(&1u16.to_le_bytes());
   header[20..26].copy_from_slice(&[1, 0, 1, 0, 1, 0]);
-  header[26] = 4;
+  header[26] = 4; // RGBA8888
   header[27] = 1;
   let mut bytes = vec![0u8; 40];
   bytes[4..6].copy_from_slice(&12u16.to_le_bytes());
@@ -195,7 +195,7 @@ fn bundled_defaults_may_differ_only_in_provenance_not_rendering_data() {
     .find(|b| b.kind == *b"DATA")
     .unwrap()
     .offset as usize;
-  different_header[data + 2] = 1;
+  different_header[data + 2] = 1; // changed clamp flags
   assert!(!same_texture_runtime(&different_header, &current));
   assert!(!same_texture_runtime(b"truncated", &current));
 }
@@ -307,6 +307,8 @@ fn legacy_material_scan_reports_the_unverified_runtime_eye_feature() {
   let current = edit::decode(&resources.game_bytes(path).unwrap().unwrap())
     .unwrap()
     .0;
+  // Both omit the runtime-requested slot. Only the authored variant enables
+  // this feature, so the current same-path material cannot supply a safe default.
   let source_textures = authored.get("m_textureParams").unwrap().as_array().unwrap();
   let current_textures = current.get("m_textureParams").unwrap().as_array().unwrap();
   for entries in [source_textures, current_textures] {

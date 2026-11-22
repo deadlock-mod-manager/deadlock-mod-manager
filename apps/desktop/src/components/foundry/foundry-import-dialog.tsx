@@ -13,6 +13,7 @@ interface FoundryImportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/** "Change skin" from inside the workspace: the start page's picker. */
 export const FoundryImportDialog = ({
   open,
   onOpenChange,

@@ -16,6 +16,10 @@ import {
 import { FIXED_MOD, PLAIN_MOD, STATUS } from "../support/fixed-status-fixtures";
 import { navigate } from "../support/ui";
 
+// A library change deletes the repair package at once, and the rebuild waits
+// for a 1.5 s debounce in the window. Closing DMM inside that window used to
+// leave the fixed mod without its repair until the next library change or
+// modded launch.
 describe("repair rebuild after closing DMM early", () => {
   it("restores the repair after the restart", async () => {
     const runtime = await startApplication();
@@ -45,6 +49,7 @@ describe("repair rebuild after closing DMM early", () => {
         throw new Error(
           "the disable didn't reach the manifest before DMM closed",
         );
+      // Otherwise the restart has nothing to recover and the case proves nothing.
       if (afterClose.packageExists)
         throw new Error(
           `the repair was rebuilt before DMM closed (${msFromToggleToExit} ms after the change)`,

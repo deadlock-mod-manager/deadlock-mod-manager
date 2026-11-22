@@ -8,6 +8,9 @@ use crate::live_bridge::{self, LIVE_BRIDGE_FILE};
 use crate::live_match::{self, LiveMatchStatus};
 use crate::mod_manager::{ModManager, mods_store};
 
+/// Runs `work` on the blocking pool. The console log can be tens of megabytes
+/// and the game's pak directory takes about half a second to parse, so neither
+/// is read on a runtime thread.
 async fn blocking<T: Send + 'static>(
   work: impl FnOnce() -> T + Send + 'static,
 ) -> Result<T, Error> {
@@ -16,6 +19,7 @@ async fn blocking<T: Send + 'static>(
     .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))
 }
 
+/// Runs `work` against the installed game on the blocking pool.
 async fn with_game<T: Send + 'static>(
   work: impl FnOnce(&Path) -> Result<T, Error> + Send + 'static,
 ) -> Result<T, Error> {
@@ -26,6 +30,10 @@ async fn with_game<T: Send + 'static>(
   .await?
 }
 
+/// Whether the game writes a console log at all, plus the match currently being
+/// played. Both come from `console.log`, which only exists with `-condebug`.
+/// The frontend polls this every few seconds, so a failed read is logged and
+/// reported as nothing to show.
 #[tauri::command]
 pub async fn get_live_match() -> Result<LiveMatchStatus, Error> {
   let status = blocking(|| {
@@ -41,6 +49,7 @@ pub async fn get_live_match() -> Result<LiveMatchStatus, Error> {
   Ok(status)
 }
 
+/// The bridge's file in the mods store, inside the folder of mod `mod_id`.
 fn library_copy(app_handle: &AppHandle, mod_id: &str) -> Result<PathBuf, Error> {
   ModManager::ensure_safe_mod_id(mod_id)?;
   Ok(
@@ -51,12 +60,17 @@ fn library_copy(app_handle: &AppHandle, mod_id: &str) -> Result<PathBuf, Error> 
   )
 }
 
+/// Builds the live bridge HUD mod from the installed game into the `files`
+/// folder of mod `mod_id` in the mods store. The renderer then adds it to the
+/// library like any other local VPK.
 #[tauri::command]
 pub async fn build_live_bridge(app_handle: AppHandle, mod_id: String) -> Result<(), Error> {
   let destination = library_copy(&app_handle, &mod_id)?;
   with_game(move |game_path| live_bridge::build(game_path, &destination)).await
 }
 
+/// The enabled bridge's file in the profile's addons folder. `installed_vpk`
+/// is the name the library recorded for it, so it must be a bare file name.
 fn installed_bridge(
   game_path: &Path,
   profile_folder: Option<&str>,
@@ -70,6 +84,8 @@ fn installed_bridge(
   Ok(ModManager::profile_addons_dir(game_path, profile_folder)?.join(installed_vpk))
 }
 
+/// Whether the enabled live bridge was built from the current game and bridge.
+/// `installed_vpk` is `None` when the library has no enabled bridge.
 #[tauri::command]
 pub async fn live_bridge_status(
   profile_folder: Option<String>,
@@ -84,6 +100,9 @@ pub async fn live_bridge_status(
   .await
 }
 
+/// Rebuilds mod `mod_id`'s bridge file in the mods store from the current game
+/// and copies it over the enabled one. Refused while the game runs, like every
+/// other write to the game's files.
 #[tauri::command]
 pub async fn update_live_bridge(
   app_handle: AppHandle,

@@ -1,3 +1,23 @@
+//! Resolving a hero to the body model the game actually loads.
+//!
+//! Deadlock ships more than one model per hero: the current body, the
+//! pre-rework body still sitting in `heroes_staging` after the live hero moved
+//! to `heroes_wip`, and the weapon. Choosing between them by filename is a
+//! guess, and it guesses wrong often enough to matter — a skin carrying both a
+//! body and a weapon `.vmdl_c` surfaced whichever came first in the VPK
+//! directory, which is how importing Calico opened on her gun.
+//!
+//! `scripts/heroes.vdata_c` settles it. Every `hero_<codename>` entry there
+//! carries `m_strModelName`: the model the live game loads for that hero. So
+//! the Foundry asks the game rather than guessing.
+//!
+//! Measured against the installed pak (2026-08-12): all 39 heroes in our roster
+//! resolve, and the answers reproduce on their own every special case that a
+//! name-matching approach has to hardcode — Abrams' body is `abrams` (not his
+//! `atlas` codename), Seven's is `gigawatt_prisoner`, Grey Talon's is `archer`,
+//! Rem's is `familiar_wip`, and the reworked heroes land in `heroes_wip` rather
+//! than on their stale `heroes_staging` twin.
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -12,12 +32,17 @@ use super::staging::staged_base_game_vpk;
 use super::types::FoundryEntry;
 use crate::vpk_archive_cache::open_archive;
 
+/// The hero definition table, inside the base game's own pak.
 const HEROES_VDATA: &str = "scripts/heroes.vdata_c";
 
+/// Codename (without the `hero_` prefix) to the compiled model entry it names.
 type HeroModels = HashMap<String, String>;
 
+/// Identity of the pak a table was read from, so a game update is picked up
+/// rather than served from a stale parse. Mirrors `archive_cache`'s keying.
 type TableKey = (PathBuf, u64, u128, Option<String>);
 
+/// One slot per table is enough: there is only ever one base pak to read.
 pub(super) type TableCache<T> = OnceLock<Mutex<Option<(TableKey, Arc<T>)>>>;
 
 fn key_for(path: &Path) -> Result<TableKey, Error> {
@@ -43,6 +68,7 @@ fn as_str(value: Option<&KvValue>) -> Option<&str> {
   }
 }
 
+/// The decoded `DATA` block of a `.vdata_c` entry in the pak.
 fn read_vdata(pak: &Path, entry: &str) -> Result<KvValue, Error> {
   let archive = open_archive(pak, None)?;
   let bytes = archive
@@ -57,6 +83,10 @@ fn read_vdata(pak: &Path, entry: &str) -> Result<KvValue, Error> {
     .map_err(|e| Error::InvalidInput(format!("failed to decode {entry}: {e}")))
 }
 
+/// `build` run over the base pak's `entry`, parsed once per base pak.
+///
+/// A missing or unreadable table is not fatal: callers fall back to a
+/// heuristic or show less, and the Foundry still opens.
 pub(super) fn base_table<T>(
   cache: &'static TableCache<T>,
   entry: &str,
@@ -80,6 +110,8 @@ pub(super) fn base_table<T>(
     return Some(Arc::clone(table));
   }
 
+  // Parsed outside the lock: reading a table costs ~70 ms on top of opening
+  // the pak, which is long enough that holding the mutex would stall callers.
   let table = match read_vdata(&pak, entry).and_then(build) {
     Ok(table) => Arc::new(table),
     Err(error) => {
@@ -94,6 +126,10 @@ pub(super) fn base_table<T>(
   Some(table)
 }
 
+/// Every `hero_<codename> -> m_strModelName` pair in the hero table.
+///
+/// `m_strModelName` is the *uncompiled* path (`....vmdl`); a VPK stores the
+/// compiled resource, so the entry we want carries a trailing `_c`.
 fn hero_table(root: KvValue) -> Result<HeroModels, Error> {
   let KvValue::Object(heroes) = &root else {
     return Err(Error::InvalidInput(format!(
@@ -119,11 +155,16 @@ fn hero_table(root: KvValue) -> Result<HeroModels, Error> {
   Ok(models)
 }
 
+/// The hero model table, parsed once per base pak.
 fn hero_models() -> Option<Arc<HeroModels>> {
   static CACHE: TableCache<HeroModels> = OnceLock::new();
   base_table(&CACHE, HEROES_VDATA, hero_table)
 }
 
+/// The codenames to look for in the table, most specific first. The panorama
+/// namespace covers almost the whole roster; the display name reduced to a
+/// codename covers the rest (Wrecker is `hero_wrecker` in the table but
+/// `butcher` in panorama).
 fn codename_candidates(hero_name: &str) -> Vec<String> {
   let mut candidates: Vec<String> = panorama_codenames(hero_name)
     .into_iter()
@@ -141,6 +182,7 @@ fn codename_candidates(hero_name: &str) -> Vec<String> {
   candidates
 }
 
+/// The model entry the live game loads for a hero, if the table knows them.
 pub(crate) fn canonical_model_entry(hero_name: &str) -> Option<String> {
   let models = hero_models()?;
   codename_candidates(hero_name)
@@ -152,12 +194,18 @@ fn file_name_of(path: &str) -> &str {
   path.rsplit('/').next().unwrap_or(path)
 }
 
+/// How good a stand-in a model entry is when the authoritative lookup found
+/// nothing to match. Higher wins; ties keep VPK order.
 fn fallback_score(path: &str) -> i32 {
   let lower = path.to_ascii_lowercase();
   let mut score = 0;
+  // A `.vmdl_c` assembles the whole character (every mesh plus the skeleton),
+  // so it beats a lone `.vmesh_c`, which is a single body part.
   if lower.ends_with(".vmdl_c") {
     score += 4;
   }
+  // Showing the gun instead of the hero is the exact failure this module
+  // exists to prevent, so weight it heavily even in the fallback.
   if !super::paint::is_weapon_path(&lower) {
     score += 8;
   }
@@ -181,9 +229,14 @@ fn body_model_path(canonical: String, models: &[FoundryEntry]) -> String {
     return entry.path.clone();
   }
 
+  // An ability or accessory can ship whole .vmdl files too. The hero table
+  // supplies the body for those partial mods; guessing from those files can
+  // open a shield, summon or effect instead of the character.
   canonical
 }
 
+/// Prefer the hero table's body, including a relocated body supplied by a mod.
+/// Only guess among models when the local game cannot identify a canonical body.
 pub(crate) fn primary_model_path(
   hero_name: Option<&str>,
   models: &[FoundryEntry],
@@ -216,6 +269,8 @@ mod tests {
 
   #[test]
   fn the_weapon_never_wins_the_preview_slot() {
+    // The reported failure: a skin shipping the gun before the body. Without a
+    // hero name there is no table lookup, so this exercises the fallback only.
     let models = [
       model("models/weapons/hero/nano_gun.vmdl_c"),
       model("models/heroes_staging/nano/nano_v2/nano.vmdl_c"),
@@ -269,6 +324,8 @@ mod tests {
 
   #[test]
   fn panorama_and_display_name_are_both_offered_as_codenames() {
+    // Wrecker is `hero_wrecker` in the table but `butcher` in panorama, so the
+    // compacted display name is what actually resolves them.
     assert!(codename_candidates("Wrecker").contains(&"wrecker".to_string()));
     assert!(codename_candidates("Wrecker").contains(&"butcher".to_string()));
     assert!(codename_candidates("Mo & Krill").contains(&"mokrill".to_string()));

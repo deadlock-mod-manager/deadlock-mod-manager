@@ -39,6 +39,13 @@ interface StoredHealth {
 
 const FAILURE_THRESHOLD = 3;
 
+/**
+ * Owns the relay mesh state used by the server browser:
+ *  - Periodically pulls the bootstrap relays.json manifest.
+ *  - Caches it in Redis so a transient fetch failure doesn't take the
+ *    server browser offline.
+ *  - Tracks per-relay health (rolling failure count + last success/error).
+ */
 export class RelayDiscoveryService {
   private static instance: RelayDiscoveryService | null = null;
 
@@ -77,6 +84,8 @@ export class RelayDiscoveryService {
       return this.filterForEnv(fromRedis);
     }
 
+    // Cold start, or Redis lost the manifest: fetch synchronously so the API
+    // has at least one relay to query.
     try {
       await this.refreshManifest();
     } catch (error) {
@@ -88,6 +97,10 @@ export class RelayDiscoveryService {
     return this.filterForEnv(this.cachedManifest ?? []);
   }
 
+  /**
+   * The in-process copy has to expire on its own: the cron that refreshes it
+   * runs in the worker, so nothing in an API process would ever replace it.
+   */
   private isCacheStale(): boolean {
     return Date.now() - this.cachedAt >= CACHE_TTL.RELAYS_MANIFEST;
   }

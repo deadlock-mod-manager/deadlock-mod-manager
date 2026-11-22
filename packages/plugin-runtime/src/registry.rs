@@ -13,16 +13,24 @@ use ts_rs::TS;
 
 pub const REGISTRY_SCHEMA_VERSION: u32 = 1;
 
+/// A user grant, stored outside plugin storage. The file and profile are
+/// picked in trusted host UI; plugin payloads never set them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoredGrant {
+  /// The approved requests, exactly as the manifest declared them.
   pub permissions: Vec<ExternalPluginPermission>,
+  /// Canonical path of the picked file or folder, for `files`.
   pub file: Option<String>,
+  /// The picked profile folder, for `mods` with `profiles: "picked"`.
   pub profile: Option<String>,
   pub granted_at: String,
 }
 
 impl StoredGrant {
+  /// Drops approvals `manifest` no longer requests and picked resources its
+  /// scopes no longer allow. A request removed and later reintroduced needs
+  /// consent again.
   pub fn narrow_to(&mut self, manifest: &PluginManifest) {
     self
       .permissions
@@ -44,6 +52,8 @@ impl StoredGrant {
   }
 }
 
+/// Whether the manifest's `files` request admits `path`: the same kind of
+/// entry and, for files, an allowed extension.
 pub fn file_allowed(manifest: &PluginManifest, path: &Path) -> bool {
   match manifest.permissions.required(PermissionId::Files) {
     Some(ExternalPluginPermission::Files {
@@ -59,6 +69,8 @@ pub fn file_allowed(manifest: &PluginManifest, path: &Path) -> bool {
   }
 }
 
+/// Whether the manifest's `mods` request admits a picked `folder`. Installing
+/// never targets the default profile; reading may.
 pub fn profile_allowed(manifest: &PluginManifest, folder: &str) -> bool {
   manifest
     .permissions
@@ -79,6 +91,7 @@ pub enum ExternalPluginSource {
   Catalog,
 }
 
+/// An unpacked package under `packages/<id>/<package_dir>`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoredPackage {
@@ -110,6 +123,8 @@ pub struct InstalledPlugin {
   #[serde(default)]
   pub last_error_at: Option<String>,
   pub quarantined: bool,
+  /// A newer package that needs permissions the grant does not cover. It
+  /// waits for approval while the installed version keeps running.
   #[serde(default)]
   pub pending_update: Option<StoredPackage>,
 }
@@ -136,6 +151,8 @@ impl InstalledPlugin {
     }
   }
 
+  /// A required request is not approved exactly, or a resource it needs is
+  /// not picked.
   pub fn needs_consent(&self) -> bool {
     if !self.uncovered(&self.manifest).is_empty() {
       return true;
@@ -151,6 +168,8 @@ impl InstalledPlugin {
     missing_file || missing_profile
   }
 
+  /// Requests `manifest` requires that the current grant does not hold with
+  /// exactly that scope.
   pub fn uncovered(&self, manifest: &PluginManifest) -> Vec<ExternalPluginPermission> {
     manifest
       .permissions
@@ -171,6 +190,9 @@ impl InstalledPlugin {
     self.last_error = error;
   }
 
+  /// Switches to `package`; the caller removes the previous package directory.
+  /// The grant keeps only what the new manifest still allows, and without
+  /// full consent for it the plugin is disabled.
   pub fn install_package(&mut self, package: StoredPackage) {
     self.manifest = package.manifest;
     self.package_dir = package.package_dir;
@@ -257,6 +279,7 @@ pub struct ExternalPluginPendingUpdate {
   pub source: ExternalPluginSource,
 }
 
+/// Live state the registry does not hold.
 #[derive(Debug)]
 pub struct RuntimeStats {
   pub storage_bytes: u64,
@@ -299,6 +322,8 @@ pub struct ExternalPluginSummary {
   pub pending_update: Option<ExternalPluginPendingUpdate>,
 }
 
+/// Canonical Windows paths carry the `\\?\` extended-length prefix, which
+/// nobody types; show the path the way the user picked it.
 fn display_path(path: &str) -> String {
   match path.strip_prefix(r"\\?\UNC\") {
     Some(share) => format!(r"\\{share}"),
@@ -369,6 +394,8 @@ impl ExternalPluginSummary {
   }
 }
 
+/// What a live session may use. Built from the registry on every check, so a
+/// stale generation cannot keep authority after disable, revoke or update.
 #[derive(Debug, Clone)]
 pub struct ActivePlugin {
   pub id: String,
@@ -380,6 +407,7 @@ pub struct ActivePlugin {
 }
 
 impl ActivePlugin {
+  /// The required request for `id`, when the grant approves it exactly.
   pub fn permission(&self, id: PermissionId) -> Option<&ExternalPluginPermission> {
     self
       .manifest
@@ -417,6 +445,7 @@ impl Registry {
     if enabled {
       return Vec::new();
     }
+    // Retire sessions without changing the saved per-plugin settings.
     let ids: Vec<String> = self.file.plugins.keys().cloned().collect();
     for id in &ids {
       let generation = self.next_generation();
@@ -495,6 +524,8 @@ impl Registry {
       .ok_or_else(|| Error::InvalidInput(format!("Plugin {id} is not installed")))
   }
 
+  /// Applies `change` and moves the plugin to a new generation, which retires
+  /// every view and worker session of the previous one.
   pub fn update<T>(
     &mut self,
     id: &str,
@@ -513,6 +544,8 @@ impl Registry {
     Ok(result)
   }
 
+  /// Applies `change` without a new generation, for changes that grant or
+  /// revoke nothing, such as staging an update for approval.
   pub fn amend<T>(
     &mut self,
     id: &str,
@@ -540,6 +573,7 @@ impl Registry {
     Ok(removed)
   }
 
+  /// Records a non-authority change such as a background error message.
   pub fn note_error(&mut self, id: &str, generation: u64, error: Option<String>) {
     if let Some(plugin) = self.file.plugins.get_mut(id)
       && plugin.generation == generation

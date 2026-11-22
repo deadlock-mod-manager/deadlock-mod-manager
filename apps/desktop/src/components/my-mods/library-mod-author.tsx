@@ -48,6 +48,8 @@ export const LibraryModAuthor = ({
 
   if (mod.remoteId.startsWith("local-")) {
     const author = mod.author.trim();
+    // Custom mods are saved as "Unknown", or its translation from the form,
+    // when no author is given.
     if (
       !author ||
       author === "Unknown" ||
@@ -60,6 +62,7 @@ export const LibraryModAuthor = ({
         </span>
       );
     }
+    // No source icon: the card's Custom badge already says where it came from.
     return (
       <span className='block truncate' title={author}>
         {t("mods.by")} {author}

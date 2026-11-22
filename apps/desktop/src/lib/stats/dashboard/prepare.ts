@@ -8,6 +8,7 @@ import type { KpiReducer, WidgetView } from "./layout";
 
 const TIME_FORMATS = new Set(["date", "hour", "weekday", "session"]);
 
+/** Whether the x axis runs through time, where "the newest N" beats "the first N". */
 export const hasTimeAxis = (dataset: Dataset, view: WidgetView): boolean => {
   const axis = fieldByKey(dataset, view.x);
   return axis !== undefined && TIME_FORMATS.has(axis.format);
@@ -26,9 +27,11 @@ export const compareCells = (
   if (left === null && right === null) {
     return direction * String(a ?? "").localeCompare(String(b ?? ""));
   }
+  // Missing values sink to the end whichever way the sort runs.
   return left === null ? 1 : -1;
 };
 
+/** Sort, then cut to `limit`. Time series keep their order and their newest rows. */
 export const prepareRows = (
   dataset: Dataset,
   view: WidgetView,
@@ -49,6 +52,10 @@ export const prepareRows = (
   return rows;
 };
 
+/**
+ * Collapses a column into the one number a KPI shows. "auto" picks the only row,
+ * the latest point of a time series, or the average of anything else.
+ */
 export const reduceColumn = (
   rows: DatasetRow[],
   key: string,

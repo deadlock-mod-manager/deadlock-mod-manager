@@ -10,7 +10,9 @@ interface HeaderToggleProps {
   description: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  /** Accent while on: gold for the randomizer, cream for everything else. */
   tone: "gold" | "primary";
+  /** Extra controls after the switch, such as a menu. */
   children?: ReactNode;
 }
 

@@ -33,12 +33,16 @@ export const useApiStatus = () => {
 
     const { status, db, redis } = data;
 
+    // If main status is not "ok", consider it offline
     if (status !== "ok") return "offline";
 
+    // If database is down, consider it offline
     if (!db.alive) return "offline";
 
+    // If redis is configured but not alive, consider it degraded
     if (redis.configured && !redis.alive) return "degraded";
 
+    // Everything looks good
     return "healthy";
   };
 

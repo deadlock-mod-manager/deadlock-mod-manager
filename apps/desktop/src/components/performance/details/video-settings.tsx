@@ -9,6 +9,11 @@ import type { VideoVariant } from "@/types/generated/VideoVariant";
 import { DetailsSection } from "./details-parts";
 import { VideoBackupNotice } from "./video-backup-notice";
 
+/**
+ * The author's video.txt settings, written with the config unless the user
+ * turns them off. When the author ships several video.txt files, each one is a
+ * variant to pick from.
+ */
 export const VideoSettings = ({
   configId,
   settings,
@@ -20,6 +25,7 @@ export const VideoSettings = ({
   settings: VideoSetting[];
   variants?: VideoVariant[];
   notes: string[];
+  /** Off where the page shows the saved-copy row itself. */
   showBackup?: boolean;
 }) => {
   const { t } = useTranslation();

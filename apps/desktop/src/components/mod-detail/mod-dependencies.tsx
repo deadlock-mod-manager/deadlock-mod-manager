@@ -163,6 +163,8 @@ const ExternalDependencyRow = ({
   const url = dependency.dependency.url;
   const level = dependency.dependency.level;
 
+  // These urls come from whatever the mod author typed on GameBanana, so we
+  // only open the ones we trust. Anything else stays a plain note with the link shown as text
   if (!isTrustedExternalUrl(url)) {
     return (
       <li className='flex items-center gap-3 rounded-lg border p-3'>

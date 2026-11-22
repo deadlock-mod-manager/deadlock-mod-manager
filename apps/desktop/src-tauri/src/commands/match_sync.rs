@@ -17,6 +17,9 @@ pub async fn get_match_sync_status(app_handle: AppHandle) -> Result<MatchSyncSta
   Ok(match_sync::status(&app_handle)?)
 }
 
+/// Today's matches from the Game Coordinator for `account_id`, which deadlock-api
+/// has not ingested yet. Empty whenever it cannot run - the caller treats that as
+/// "nothing to add".
 #[tauri::command]
 pub async fn get_local_match_history(
   app_handle: AppHandle,
@@ -44,10 +47,12 @@ pub async fn set_match_sync_enabled(app_handle: AppHandle, enabled: bool) -> Res
     return Ok(());
   }
   match_sync::set_enabled(&app_handle, enabled)?;
+  // Enabling starts (and disabling stops) the game-exit detect-only watcher.
   game_presence::sync_monitoring_watcher(&app_handle);
   Ok(())
 }
 
+/// Turns match sync off (or back on) for one remembered Steam account.
 #[tauri::command]
 pub async fn set_match_sync_account_excluded(
   app_handle: AppHandle,
@@ -87,11 +92,14 @@ pub async fn cancel_full_match_sync() -> Result<(), Error> {
   Ok(())
 }
 
+// Re-applies the persisted opt-in on startup: starts the background worker and the
+// game-exit watcher iff the user previously opted in. A no-op otherwise.
 #[tauri::command]
 pub async fn resume_match_sync_monitoring(app_handle: AppHandle) -> Result<(), Error> {
   if crate::runtime_environment::is_e2e_active() {
     return Ok(());
   }
+  // Cleanup of persisted state for accounts removed from Steam entirely.
   match_sync::prune_forgotten_accounts(&app_handle);
   match_sync::start_background_worker(app_handle.clone());
   game_presence::sync_monitoring_watcher(&app_handle);

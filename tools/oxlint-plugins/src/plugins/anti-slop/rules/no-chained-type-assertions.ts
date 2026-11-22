@@ -51,6 +51,10 @@ const isForbiddenAssertionChain = (node: TypeAssertionExpression): boolean => {
   return assertionCount > 1 && hasNonConstAssertion;
 };
 
+/**
+ * Disallow nested TypeScript type assertions, while permitting chains made only of const
+ * assertions.
+ */
 export const noChainedTypeAssertionsRule = defineRule({
   meta: {
     type: "problem",

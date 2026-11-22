@@ -5,8 +5,20 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 
+/** How long a route loader waits for API data before rendering without it. */
 const LOADER_DATA_TIMEOUT_MS = 2000;
 
+/**
+ * Prefetches a query from a route loader without letting a slow or failing API
+ * hold the page hostage.
+ *
+ * Errors are swallowed: the component renders its own fallback. During SSR, a
+ * request that fails or outlives `timeoutMs` is cancelled and dropped from the
+ * cache, so the page is server-rendered in its loading state and the browser
+ * fetches the data itself after hydration (instead of hydrating into an error
+ * or into data the server never rendered). In the browser the request keeps
+ * running and the component picks it up when it lands.
+ */
 export async function prefetchWithin<
   TQueryFnData,
   TError,

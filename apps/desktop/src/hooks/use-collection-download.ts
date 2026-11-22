@@ -11,6 +11,7 @@ import { usePersistedStore } from "@/lib/store";
 
 type CollectionDownloadResult = {
   queued: number;
+  /** Mods with several files; the user has to choose one on the mod page. */
   needsFileChoice: string[];
   failed: string[];
 };
@@ -31,11 +32,14 @@ export const useCollectionDownload = () => {
       };
 
       setPrepared(0);
+      // Sequential: file lists share GameBanana's rate budget with the
+      // catalog, and the downloads queue up one after another anyway.
       for (const mod of mods) {
         try {
           const { downloads } = await queryClient.fetchQuery(
             modDownloadsQueryOptions(mod.remoteId),
           );
+          // Picking a variant for the user could install the wrong one.
           const file = downloads.length === 1 ? downloads[0] : undefined;
           if (file) {
             queueModDownload(mod, [file], {
@@ -43,6 +47,7 @@ export const useCollectionDownload = () => {
               profileFolder,
               analyticsEntryPoint: "collection",
               onError: (error) => {
+                // Mods that failed earlier stay pending until their turn.
                 if (error instanceof DownloadAlreadyQueuedError) return;
                 toast.error(
                   t("downloads.downloadError", {

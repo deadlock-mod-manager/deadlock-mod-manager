@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import logger from "@/lib/logger";
 
-const WATCH_TIMEOUT_MS = 3 * 60 * 1000;
+const WATCH_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
 
 export const useMapConnectCode = () => {
   const [connectCode, setConnectCode] = useState<string | null>(null);

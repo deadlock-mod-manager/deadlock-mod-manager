@@ -39,10 +39,15 @@ mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
 
 type Payload = Record<string, string | number | null | undefined>;
 const handlers = new Map<string, (event: { payload: Payload }) => void>();
+/** The attempt each `queue_download` call named, in order. */
 const queued: (string | undefined)[] = [];
+/** What `get_all_downloads` reports to the startup reconciliation. */
 const running: { modId: string }[] = [];
+/** The mod each `cancel_download` call named, in order. */
 const cancelled: (string | undefined)[] = [];
 
+// The backend accepts every request at once; events arrive only when a test
+// delivers them, so their order relative to commands is the test's to choose.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
   invoke: async (
@@ -153,6 +158,7 @@ describe("download events from an earlier attempt", () => {
 
     downloadManager.addToQueue(request(callbacks, "retry"));
     const retry = queued[1];
+    // The cancelled worker noticed its token only after Retry was clicked.
     deliver("download-error", first, cancelledError);
     deliver("download-started", retry);
     deliver("download-error", first, cancelledError);
@@ -171,6 +177,7 @@ describe("download events from an earlier attempt", () => {
     downloadManager.addToQueue(request(callbacks, "orphan"));
     const [orphan] = queued;
     deliver("download-started", orphan);
+    // A reload drops the queue entries and starts listening again.
     await downloadManager.cleanup();
     running.push({ modId: MOD_ID });
     await downloadManager.init();

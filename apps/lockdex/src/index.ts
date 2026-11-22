@@ -15,9 +15,11 @@ import { modFileProcessingQueue } from "./services/queue";
 import { tempCleanupService } from "./services/temp-cleanup";
 
 const main = async () => {
+  // Initialize disk management services
   await tempCleanupService.initialize();
   diskHealthMonitor.start();
 
+  // Each job is mostly download time; the processor gates the memory-heavy part
   const modFileWorker = new BaseWorker(
     queueConfigs.modFileProcessing.name,
     redis,

@@ -72,6 +72,7 @@ fn parse_catalog(bytes: &[u8]) -> Result<ServerPickerCatalog, PickerError> {
   }
   let mut locations = Vec::new();
   for (id, location) in raw.pops {
+    // Some PoPs host servers but expose no public relay; they cannot be blocked here.
     if location.relays.is_empty() {
       continue;
     }

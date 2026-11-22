@@ -7,6 +7,11 @@ import { recentMatchesByLocation } from "@/lib/server-picker";
 import { getPlayerRegionHistory } from "@/lib/stats/api";
 import type { ServerPickerLocation } from "@/types/generated/ServerPickerLocation";
 
+/**
+ * Where the Stats account's recent matches were played, per picker location.
+ * Follows the Stats feature switch, which promises that turning it off
+ * stops sending account ids to deadlock-api.
+ */
 export const useRecentServerMatches = (
   locations: readonly ServerPickerLocation[],
 ): Map<string, number> | null => {

@@ -32,6 +32,10 @@ export type PendingConfirm =
 
 type EditorTarget = { tabId: string; widget: DashboardWidget | null };
 
+/**
+ * The dashboard's layout and its editing session. Edits go to a draft, so the
+ * saved layout only changes on Save; destructive steps wait for confirmation.
+ */
 export const useDashboardEditor = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -113,6 +117,7 @@ export const useDashboardEditor = () => {
       tab.widgets.length === 0
         ? edit((current) => removeTab(current, tab.id))
         : setPendingConfirm({ kind: "deleteTab", tab }),
+    // Steps past the tabs the page hides, which the draft still holds.
     onMoveTab: (id: string, offset: -1 | 1) => {
       const index = layout.tabs.findIndex((tab) => tab.id === id);
       const neighbour = layout.tabs[index + offset];
@@ -142,6 +147,8 @@ export const useDashboardEditor = () => {
     startEditing: () => setDraft(cloneLayout(savedLayout)),
     save: () => {
       if (!draft) return;
+      // Saving the untouched default stores nothing, so later releases can
+      // still improve the default for everyone who never customised it.
       setStoredLayout(
         JSON.stringify(draft) === JSON.stringify(DEFAULT_LAYOUT) ? null : draft,
       );

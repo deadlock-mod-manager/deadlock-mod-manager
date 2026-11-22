@@ -5,6 +5,8 @@ import { browser } from "@wdio/globals";
 import { observeUntil } from "./observations";
 import { assertOwnedWorld } from "./world";
 
+// Mirrors `runtime_environment::e2e_game_argv0`: E2E builds count only this
+// world's stand-in as Deadlock, so it never affects another run on the machine.
 const GAME_FILE_NAME = "dmm-e2e-game";
 
 const appSeesGame = () =>
@@ -20,6 +22,7 @@ const endProcess = async (game: ChildProcess) => {
   await exited;
 };
 
+/** Starts a process the app counts as a running Deadlock until it is stopped. */
 export const startFakeGame = async (world: string): Promise<ChildProcess> => {
   const {
     configuration: { roots },
@@ -42,6 +45,7 @@ export const startFakeGame = async (world: string): Promise<ChildProcess> => {
   return game;
 };
 
+/** Ends the stand-in and waits until the app no longer sees it. */
 export const stopFakeGame = async (game: ChildProcess) => {
   await endProcess(game);
   await observeUntil(

@@ -85,6 +85,7 @@ export const useHeroDetection = () => {
     }
   }, [gameRunning]);
 
+  // Startup: 5s after mount, scan any unindexed mods
   useEffect(() => {
     const timer = setTimeout(() => {
       if (pausedByGame) return;
@@ -93,6 +94,7 @@ export const useHeroDetection = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Reactive: when new unindexed mods appear, scan immediately
   useEffect(() => {
     if (pausedByGame) return;
 

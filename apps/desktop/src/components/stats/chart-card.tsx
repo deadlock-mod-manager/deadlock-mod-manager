@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 interface ChartCardProps {
   title: string;
   description?: string;
+  /** Rendered on the right of the header - a legend, a picker, a hint. */
   action?: ReactNode;
   className?: string;
   children: ReactNode;
@@ -23,6 +24,7 @@ export const ChartCard = ({
   className,
   children,
 }: ChartCardProps) => (
+  // Fills a fixed-height dashboard cell; in an auto-height one `h-full` is a no-op.
   <Card
     className={cn("stats-surface flex h-full flex-col shadow-none", className)}>
     <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0 pb-2'>

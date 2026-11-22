@@ -1,3 +1,5 @@
+//! Synthetic archive fixtures only; no Valve assets are stored in this repository.
+
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -111,6 +113,7 @@ fn triangle() -> Vec<u8> {
     set(4, 1);
     set(8, 32);
     set(12, 1);
+    // Vertex/index descriptors; one POSITION field and three triangle indices.
     set(16, 3);
     set(20, 12);
     set(24, 40);
@@ -121,7 +124,7 @@ fn triangle() -> Vec<u8> {
     set(44, 2);
     set(56, 100);
     set(60, 6);
-    set(100, 6);
+    set(100, 6); // DXGI_FORMAT_R32G32B32_FLOAT
     vbib[64..72].copy_from_slice(b"POSITION");
     for (index, value) in [0.0f32, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         .iter()
@@ -396,6 +399,10 @@ fn dependency_diagnostics_remain_bounded_for_large_broken_archives() {
     assert!(report.issues.len() <= 512);
 }
 
+/// Optional game-update smoke check:
+/// DMM_PREVIEW_GAME_VPK=<local pak01_dir.vpk> [DMM_PREVIEW_CORE_VPK=<core pak>]
+/// DMM_PREVIEW_MODEL_PATHS=<compiled model paths separated by semicolons>
+/// cargo test --manifest-path packages/source2-model/Cargo.toml local_game_preview_compatibility -- --nocapture
 #[test]
 fn local_game_preview_compatibility() {
     let Some(path) = std::env::var_os("DMM_PREVIEW_GAME_VPK")

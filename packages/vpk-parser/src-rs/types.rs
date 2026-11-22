@@ -24,10 +24,10 @@ pub struct VpkEntry {
 pub struct VpkFingerprint {
     pub file_path: String,
     pub file_size: usize,
-    pub last_modified: Option<String>,
-    pub fast_hash: String,
+    pub last_modified: Option<String>, // ISO string for JSON compatibility
+    pub fast_hash: String,             // xxHash64
     pub sha256: String,
-    pub content_signature: String,
+    pub content_signature: String, // SHA-256 of sorted (path, size, crc32) tuples
     pub vpk_version: u32,
     pub file_count: usize,
     pub has_multiparts: bool,

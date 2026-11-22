@@ -35,6 +35,7 @@ const waitForStatus = async (
     (state) => {
       if (status === "deleted") return state.localMods.length === 0;
       const mod = state.localMods[0];
+      // The profile's enabled flag persists separately from the mod status.
       const enabled =
         mod &&
         state.profiles[state.activeProfileId]?.enabledMods[mod.remoteId]

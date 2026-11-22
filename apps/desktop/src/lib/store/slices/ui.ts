@@ -12,11 +12,16 @@ export type FilterMode = "include" | "exclude";
 
 export type MapQuickFilter = "off" | "only" | "exclude";
 export type AudioQuickFilter = "off" | "only" | "exclude";
+// Which GameBanana section the mods store is browsing. Maps are mods with the
+// map flag set; collections are GameBanana collections; the rest map onto
+// submission types.
 export type ContentType = "mod" | "sound" | "map" | "wip" | "collection";
 export type DatePeriod = "any" | "24h" | "7d" | "14d" | "28d" | "1y" | "custom";
 
+// The "Updated" and "Added" filters: a rolling window or a custom range.
 export type DateFilter = {
   period: DatePeriod;
+  // Local calendar dates (YYYY-MM-DD) used when period is "custom".
   from: string;
   to: string;
 };
@@ -73,9 +78,12 @@ export type CrosshairFilters = {
   searchQuery: string;
 };
 
+/** A user image painted behind the app; an empty `image` shows none. */
 type AppBackground = {
+  /** An image URL, or a data URL for a file picked from disk. */
   image: string;
   opacity: number;
+  /** Blur radius in px. */
   blur: number;
   includeSidebar: boolean;
   includeTopBar: boolean;
@@ -92,22 +100,28 @@ const DEFAULT_APP_BACKGROUND: AppBackground = {
 };
 
 export type UIState = {
+  // Set once the user has answered the match sync opt-in, either in onboarding
+  // or in the one-time prompt shown to existing users.
   matchSyncPromptDismissed: boolean;
   dismissMatchSyncPrompt: () => void;
   showWhatsNew: boolean;
   lastSeenVersion: string | null;
-  audioVolume: number;
+  audioVolume: number; // Volume as percentage (0-100)
   modsFilters: ModsFilters;
   mapsFilters: ModsFilters;
   crosshairFilters: CrosshairFilters;
   hasCompletedOnboarding: boolean;
+  // Sidebar entries marked "New" that the user has opened at least once.
   seenNavItems: Record<string, true>;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
   autoFixMods: boolean;
+  /** Optional features the user kept on. Read through `isFeatureEnabled`. */
   features: Record<OptionalFeature, boolean>;
+  /** Turns every optional feature off without changing `features`. */
   minimalMode: boolean;
   appBackground: AppBackground;
 
+  // Plugins
   enabledPlugins: Record<string, boolean>;
   pluginSettings: Record<string, unknown>;
 
@@ -173,7 +187,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   dismissMatchSyncPrompt: () => set({ matchSyncPromptDismissed: true }),
   showWhatsNew: false,
   lastSeenVersion: null,
-  audioVolume: 50,
+  audioVolume: 50, // Default to 50%
   modsFilters: DEFAULT_MODS_FILTERS,
   mapsFilters: DEFAULT_MODS_FILTERS,
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
@@ -205,7 +219,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
 
   setAudioVolume: (volume: number) =>
     set(() => ({
-      audioVolume: Math.max(0, Math.min(100, volume)),
+      audioVolume: Math.max(0, Math.min(100, volume)), // Clamp between 0-100
     })),
 
   updateModsFilters: (filters: Partial<ModsFilters>) =>

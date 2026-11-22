@@ -7,6 +7,9 @@ use std::path::PathBuf;
 
 const DEADLOCK_APP_ID: u32 = 1422450;
 
+/// Steam build id from the `appmanifest_1422450.acf` next to the install. It
+/// changes on every game update, which is also when Steam rewrites
+/// `gameinfo.gi` and drops our search paths.
 pub fn installed_build_id(game_path: &std::path::Path) -> Option<u64> {
   let manifest = game_path
     .parent()?
@@ -25,6 +28,7 @@ fn parse_manifest_build_id(manifest: &str) -> Option<u64> {
   })
 }
 
+/// Manages Steam integration and game path detection
 pub struct SteamManager {
   steam_dir: Option<steamlocate::SteamDir>,
   game_path: Option<PathBuf>,
@@ -34,6 +38,8 @@ fn push_unique_steam_dir(
   steam_dirs: &mut Vec<steamlocate::SteamDir>,
   steam_dir: steamlocate::SteamDir,
 ) {
+  // ~/.steam/steam and ~/.steam/root are symlinks to the real install, so
+  // compare resolved paths to avoid scanning the same libraries twice.
   let resolved = |path: &std::path::Path| std::fs::canonicalize(path).unwrap_or(path.to_path_buf());
   let steam_dir_path = resolved(steam_dir.path());
   if steam_dirs
@@ -44,6 +50,9 @@ fn push_unique_steam_dir(
   }
 }
 
+/// Directory holding every snap's per-user data (`~/snap`). Inside a snap,
+/// `SNAP_USER_DATA` is this snap's own `~/snap/<name>/<revision>`, so Steam's
+/// data sits two levels up.
 #[cfg(target_os = "linux")]
 fn linux_snap_dir(home_dir: &Path, snap_user_data: Option<&Path>) -> PathBuf {
   snap_user_data
@@ -52,12 +61,16 @@ fn linux_snap_dir(home_dir: &Path, snap_user_data: Option<&Path>) -> PathBuf {
     .unwrap_or_else(|| home_dir.join("snap"))
 }
 
+/// steamlocate only returns the first Steam directory it finds and checks
+/// Flatpak before native, so a leftover Flatpak Steam hides a native (deb)
+/// install. List every known location and let `find_game` try each one.
 #[cfg(target_os = "linux")]
 fn linux_steam_dir_candidates(home_dir: &Path, snap_dir: &Path) -> Vec<PathBuf> {
   vec![
     home_dir.join(".local/share/Steam"),
     home_dir.join(".steam/steam"),
     home_dir.join(".steam/root"),
+    // Debian/Ubuntu/Mint `steam-installer` package
     home_dir.join(".steam/debian-installation"),
     home_dir.join(".var/app/com.valvesoftware.Steam/data/Steam"),
     home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
@@ -68,6 +81,8 @@ fn linux_steam_dir_candidates(home_dir: &Path, snap_dir: &Path) -> Vec<PathBuf> 
   ]
 }
 
+/// Steam installed as a Flatpak or Snap. Its steam.sh needs the sandbox
+/// runtime; run on the host it fails with "missing 32-bit libraries".
 #[cfg(target_os = "linux")]
 #[derive(Debug)]
 enum SandboxedSteam {
@@ -77,6 +92,8 @@ enum SandboxedSteam {
 
 #[cfg(target_os = "linux")]
 impl SandboxedSteam {
+  /// `~/.steam/steam` can symlink into either sandbox, so the resolved path is
+  /// checked.
   fn detect(steam_exe: &Path) -> Option<Self> {
     let path = std::fs::canonicalize(steam_exe).unwrap_or_else(|_| steam_exe.to_path_buf());
     let components: Vec<_> = path.components().map(|c| c.as_os_str()).collect();
@@ -104,11 +121,16 @@ impl SandboxedSteam {
   }
 }
 
+/// Where the mod manager runs, as far as launching Steam is concerned.
 #[cfg(target_os = "linux")]
 #[derive(Clone, Copy)]
 enum LinuxHost {
   Native,
+  /// The mod manager is a Flatpak and can only reach Steam through the portal.
   Flatpak,
+  /// The `steam.sh` that Steam unpacks into its install directory expects an
+  /// FHS distro and exits 71 here. Only the nixpkgs `steam` wrapper on `PATH`
+  /// can start Steam.
   NixOs,
 }
 
@@ -140,6 +162,9 @@ fn linux_fallback_steam_dirs(home_dir: &Path, snap_dir: &Path) -> Vec<steamlocat
   steam_dirs
 }
 
+/// steamlocate only reads `InstallPath` under HKLM, which a moved or restored
+/// Steam can leave missing or pointing at an old folder. Steam rewrites the
+/// per-user `SteamPath` on every start, and most installs use the default folder.
 #[cfg(target_os = "windows")]
 fn windows_fallback_steam_dirs() -> Vec<steamlocate::SteamDir> {
   let mut candidates = Vec::new();
@@ -215,6 +240,7 @@ impl SteamManager {
     }
   }
 
+  /// Find and locate Steam installation
   pub fn find_steam(&mut self) -> Result<&steamlocate::SteamDir, Error> {
     if self.steam_dir.is_none() {
       let steam_dir = self
@@ -228,6 +254,7 @@ impl SteamManager {
     Ok(self.steam_dir.as_ref().unwrap())
   }
 
+  /// Find the Deadlock game installation path
   pub fn find_game(&mut self) -> Result<&PathBuf, Error> {
     if self.game_path.is_none() {
       let (steam_dir, game_path) =
@@ -241,6 +268,7 @@ impl SteamManager {
     Ok(self.game_path.as_ref().unwrap())
   }
 
+  /// Get the current game path if available
   pub fn get_game_path(&self) -> Option<&PathBuf> {
     self.game_path.as_ref()
   }
@@ -252,6 +280,7 @@ impl SteamManager {
       ));
     }
 
+    // steamlocate's from_dir only checks that the path is a directory.
     if !path.join("steamapps").is_dir() {
       return Err(Error::InvalidInput(
         "Invalid Steam path: not a valid Steam installation directory".to_string(),
@@ -287,6 +316,7 @@ impl SteamManager {
       .ok_or_else(|| Error::InvalidInput("Sign in to Steam before changing crosshairs".into()))
   }
 
+  /// `userdata/<account>/1422450` for the account signed in to Steam.
   pub fn active_userdata_path(&self) -> Option<PathBuf> {
     let steam = self.get_steam_path()?;
     let account = crate::steam_user::list_accounts_in(&steam)
@@ -300,6 +330,7 @@ impl SteamManager {
     )
   }
 
+  /// Set the game path manually
   pub fn set_game_path(&mut self, path: PathBuf) -> Result<(), Error> {
     if !path.exists() {
       return Err(Error::GameNotFound);
@@ -317,6 +348,9 @@ impl SteamManager {
     Ok(())
   }
 
+  /// Get the Steam executable path for launching games. Falls back to
+  /// detection when the cached Steam directory has no client, or when a
+  /// manually set game path meant detection never ran.
   pub fn get_steam_executable(&self) -> Result<PathBuf, Error> {
     self
       .candidate_steam_dirs()
@@ -364,11 +398,18 @@ impl SteamManager {
     }
   }
 
+  /// Prepare a request to launch Deadlock through Steam with optional arguments.
   pub fn game_launch_request(&self, additional_args: &str) -> Result<SteamUriLaunchRequest, Error> {
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
     self.uri_launch_request(&steam_uri)
   }
 
+  /// Hand a `steam://` URI to the Steam client.
+  ///
+  /// `steam://connect/<ip:port>` is the only join path Steam treats as
+  /// first-class: it launches the game when it is closed and hands the
+  /// address to an already running client, which `steam://run//+connect`
+  /// cannot do.
   pub fn uri_launch_request(&self, steam_uri: &str) -> Result<SteamUriLaunchRequest, Error> {
     log::info!("Opening Steam URI: {}", redacted_steam_uri(steam_uri));
 
@@ -426,6 +467,8 @@ impl SteamManager {
       for steam_dir in windows_fallback_steam_dirs() {
         push_unique_steam_dir(&mut steam_dirs, steam_dir);
       }
+      // A stale registry path can still hold an old steamapps folder. Without
+      // steam.exe it would win game detection and then fail every launch.
       let cached = self.get_steam_path();
       steam_dirs.retain(|steam_dir| {
         cached.as_deref() == Some(steam_dir.path()) || steam_executable(steam_dir).exists()
@@ -590,6 +633,8 @@ mod tests {
 
   #[test]
   fn fallback_steam_dirs_find_deadlock_in_every_linux_layout() {
+    // Relative candidates double as the layout list, so a new candidate is
+    // covered without touching this test.
     for layout in linux_steam_dir_candidates(Path::new(""), Path::new("snap")) {
       let home = tempfile::tempdir().unwrap();
       create_steam_dir(&home.path().join(&layout), true);

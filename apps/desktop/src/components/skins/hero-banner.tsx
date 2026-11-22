@@ -17,6 +17,7 @@ import type { LocalMod } from "@/types/mods";
 interface HeroBannerProps {
   hero: string;
   group: HeroModGroup<LocalMod>;
+  /** Pool size while the randomizer rolls this hero's skin, otherwise null. */
   randomizedPoolSize: number | null;
   disabled: boolean;
   onAssignMod: () => void;
@@ -110,6 +111,8 @@ export const HeroBanner = ({
           )}
         </div>
       </div>
+      {/* Stacked while the 3D preview leaves the banner narrow, so the hero
+          name keeps its room. */}
       <div className='relative flex shrink-0 flex-col items-stretch gap-2 pt-5 pr-5 @2xl:flex-row @2xl:items-start'>
         <Button
           disabled={disabled}

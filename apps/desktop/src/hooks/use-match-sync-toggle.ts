@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import type { useMatchSync } from "@/hooks/use-match-sync";
 
+// Subcodes with a stable, localizable message. Anything else (network/store
+// errors) falls back to the raw backend message, since those wrap arbitrary
+// underlying error text that can't be meaningfully translated.
 const MATCH_SYNC_ERROR_KEYS: Record<string, string> = {
   consentRequired: "matchSync.errors.consentRequired",
   disabled: "matchSync.errors.disabled",
@@ -38,6 +41,7 @@ type MatchSyncControls = Pick<
   "status" | "setConsent" | "setEnabled"
 >;
 
+/** Enables match sync only after the user accepts the consent dialog. */
 export const useMatchSyncToggle = ({
   status,
   setConsent,

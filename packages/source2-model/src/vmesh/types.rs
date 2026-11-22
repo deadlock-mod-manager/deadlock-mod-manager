@@ -55,15 +55,24 @@ pub struct PreviewTexture {
     pub normal_png: Option<Vec<u8>>,
     pub orm_png: Option<Vec<u8>>,
     pub emissive_png: Option<Vec<u8>>,
+    /// The material takes its colour from the mesh's vertex colours
+    /// (`F_VERTEX_COLOR`), so its primitives export a COLOR_0 stream.
     pub vertex_color: bool,
     pub double_sided: bool,
     pub base_color_factor: [f32; 4],
+    /// glTF metallicFactor. Source 2 hero materials are non-metallic unless the
+    /// VMAT declares `g_flMetalness`; defaulting to 0 avoids the oily/chrome look
+    /// that results from treating an ambiguous packed "mask" texture as a real ORM.
     pub metalness_factor: f32,
     pub alpha_mode: MaterialAlphaMode,
     pub alpha_cutoff: f32,
     pub emissive_factor: Option<[f32; 3]>,
+    /// glTF `emissiveStrength`: the self-illum scale, which Source 2 lets run
+    /// past 1 so bright glows bloom.
     pub emissive_strength: f32,
+    /// The NPR silhouette outline, when the material draws one.
     pub outline: Option<MaterialOutline>,
+    /// Authored shader parameters retained for the clock-driven desktop preview.
     pub source2_effect: Option<Source2Effect>,
     pub effect_mask_png: Option<Vec<u8>>,
 }
@@ -79,8 +88,11 @@ pub struct Source2Effect {
     pub textures: std::collections::BTreeMap<String, String>,
 }
 
+/// Deadlock's toon outline around NPR-lit materials.
 #[derive(Debug, Clone, Copy)]
 pub struct MaterialOutline {
+    /// `g_vSolidOutlineTint` when `F_SOLID_COLOR_OUTLINE` is set; otherwise the
+    /// outline darkens the surface colour.
     pub tint: Option<[f32; 3]>,
 }
 
@@ -142,6 +154,7 @@ pub(crate) struct DecodedPrimitive {
     pub(crate) positions: Vec<f32>,
     pub(crate) normals: Option<Vec<f32>>,
     pub(crate) texcoords: Option<Vec<f32>>,
+    /// Linear RGBA per vertex, from the mesh's COLOR stream.
     pub(crate) colors: Option<Vec<f32>>,
     pub(crate) joints: Option<Vec<u16>>,
     pub(crate) weights: Option<Vec<f32>>,

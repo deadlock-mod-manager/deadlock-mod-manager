@@ -6,6 +6,7 @@ interface SkinConflictNoticeProps {
   count: number;
 }
 
+/** Several skins installed while the user expects one; only one can show. */
 export const SkinConflictNotice = ({
   hero,
   count,

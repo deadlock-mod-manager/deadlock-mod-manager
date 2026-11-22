@@ -3,6 +3,7 @@ use crate::mod_manager::vpk_manager::staging::RenameTransaction;
 
 pub(super) enum ConflictPolicy<'a> {
   Replace(&'a [String]),
+  /// Keep every listed skin enabled, e.g. an addon built to load over a base.
   Allow(&'a [String]),
   RestoreBisect(&'a [String]),
 }
@@ -26,6 +27,8 @@ impl ConflictPolicy<'_> {
         }
         Ok(Vec::new())
       }
+      // Bisect deliberately reproduces the original setup, including conflicts.
+      // Both sides must belong to its persisted original-enabled snapshot.
       Self::RestoreBisect(original_enabled) => {
         if !original_enabled.iter().any(|id| id == mod_id) {
           return Err(Error::InvalidInput(
@@ -41,6 +44,8 @@ impl ConflictPolicy<'_> {
   }
 }
 
+/// Hold the conflicting skins' renames until the replacement and manifest
+/// commit together. No copies of large archives are needed.
 pub(super) fn disable_conflicts(
   vpks: &VpkManager,
   base: &ProfileBase,
@@ -56,6 +61,8 @@ pub(super) fn disable_conflicts(
       } else {
         entry.original_vpk_names.clone()
       };
+      // disable_vpks_in can discard an active copy when a staged variant
+      // already exists. A skin switch must preserve both copies instead.
       if originals
         .iter()
         .any(|name| base.join(format!("{id}_{name}")).exists())
@@ -154,6 +161,7 @@ mod tests {
     assert!(manifest.mods["other"].enabled);
     assert!(base.join("josuke_skin.vpk").is_file());
     assert!(base.join(&installed.installed_vpks[0]).is_file());
+    // The reverse choice works too, independent of hero names or load order.
     manager
       .install_mod_resolving_conflicts(skin("josuke"), None, &["suit".into()], None)
       .unwrap();
@@ -271,6 +279,7 @@ mod tests {
   #[test]
   fn bisect_restores_original_conflicting_skins_without_replacing_them() {
     let (_game, mut manager, base) = world();
+    // Seed a legacy combination that was enabled before conflict prevention.
     let mut manifest = ProfileVpkManifest::load(&base).unwrap();
     fs::rename(base.join("suit_skin.vpk"), base.join("pak03_dir.vpk")).unwrap();
     manifest.mark_enabled(
@@ -325,6 +334,7 @@ mod tests {
   #[ignore = "requires the local Josuke and Suit Shiv VPK fixtures"]
   fn real_shiv_pair_requires_a_choice_in_both_directions() {
     let (_game, mut manager, base) = world();
+    // Replace synthetic archives with the real pair; no live game files are changed.
     manager
       .uninstall_mod("josuke".into(), vec![], None)
       .unwrap();

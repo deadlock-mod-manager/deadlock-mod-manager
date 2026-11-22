@@ -38,6 +38,7 @@ const terminateProcessTree = async (child: ChildProcess): Promise<void> => {
     if (result.status !== 0 && processExists(target))
       throw new Error(`Could not terminate owned process tree ${child.pid}`);
   } else {
+    // runProcess creates a dedicated Unix process group, including descendants.
     try {
       process.kill(target, "SIGKILL");
     } catch (error) {

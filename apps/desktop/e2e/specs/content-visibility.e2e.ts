@@ -57,7 +57,10 @@ describe("global content visibility", () => {
             .hideNSFW,
       );
       await checkAllSurfaces(true);
+      // Direct navigation must not reveal a hidden mod's gallery or metadata.
       await step("open a hidden mod directly", async () => {
+        // Pin this window so the driver's focus recovery does not race the
+        // document reload and wait for a script in the discarded document.
         await browser.switchToWindow(await browser.getWindowHandle());
         await browser.url(
           new URL("/mods/920002", await browser.getUrl()).toString(),

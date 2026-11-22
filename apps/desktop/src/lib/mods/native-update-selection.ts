@@ -17,6 +17,7 @@ export const nativeComponentDownloads = (
   });
 };
 
+/** Carry archive renames only through the publisher's stable artifact ID. */
 export const nativeManualFileTree = (
   installed: LocalMod | undefined,
   downloads: ModDownloadItem[],
@@ -44,6 +45,7 @@ export const nativeManualFileTree = (
   return remapped;
 };
 
+/** Updates carry explicit choices; defaults only apply to first installation. */
 export const nativeChoicesFit = (
   installation: NativeSourceInstallation,
   ids: string[],
@@ -63,6 +65,12 @@ export const nativeChoicesFit = (
   );
 };
 
+/**
+ * The components a website link installs without asking: the required ones,
+ * plus those holding the linked file. Null when that leaves a choice to the
+ * user, such as a variant the link did not name or a file several components
+ * share.
+ */
 export const linkedComponentIds = (
   installation: NativeSourceInstallation,
   artifactId: string | null,

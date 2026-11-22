@@ -6,6 +6,10 @@ import { IMPORT_MODS_KEY, useAddModDialog } from "@/lib/add-mod-dialog";
 import { discardStagedDrops } from "@/lib/file-utils";
 import logger from "@/lib/logger";
 
+/**
+ * Adds mods from files on disk: asks for files, then for the mod's details.
+ * Files dropped anywhere in the window open it on the details step.
+ */
 export const AddModDialog = () => {
   const { open, source, session, show, setSource, close } = useAddModDialog();
   const importing = useIsMutating({ mutationKey: IMPORT_MODS_KEY }) > 0;
@@ -19,6 +23,7 @@ export const AddModDialog = () => {
 
   return (
     <Dialog
+      // An import still reads the staged files that closing deletes.
       onOpenChange={(nextOpen) => {
         if (!nextOpen && !importing) closeAndDiscard();
       }}

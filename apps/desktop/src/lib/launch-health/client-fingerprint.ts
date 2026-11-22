@@ -2,6 +2,7 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 import type { ModProfile } from "@/types/profiles";
 import type { ClientFingerprint } from "./types";
 
+/** Persisted dates come back from storage as strings. */
 type StoredDate = Date | string;
 
 type FingerprintMod = Pick<
@@ -19,6 +20,7 @@ export const toIsoString = (value: StoredDate | undefined): string | null => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
+/** The active profile and the mods it had enabled and installed. */
 export const buildClientFingerprint = (
   profile: FingerprintProfile | undefined,
   localMods: FingerprintMod[],

@@ -4,6 +4,7 @@ import type { CommunityConfigSummary } from "@/types/generated/CommunityConfigSu
 import { Chip } from "./card-parts";
 import { outdatedBuild } from "./outdated-build";
 
+/** "Made for the April patch" when the config predates the newest build we know. */
 export const OutdatedPatchChip = ({
   community,
   latestBuild,

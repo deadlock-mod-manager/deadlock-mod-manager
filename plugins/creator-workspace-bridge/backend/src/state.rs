@@ -23,9 +23,12 @@ pub struct UiState {
   pub history_expanded: bool,
 }
 
+/// Plugin-owned workflow options. Paths and profiles are host grants and are
+/// never stored here.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Settings {
+  /// Only stage the output once `<output>.ready` is newer than it.
   pub require_ready_marker: bool,
 }
 
@@ -33,8 +36,11 @@ pub struct Settings {
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowState {
   pub schema: u32,
+  /// Newest first. Never longer than [`HISTORY_LIMIT`].
   pub builds: Vec<Snapshot>,
   pub deployed_hash: Option<String>,
+  /// Set while `mods.install` runs. Seeing it at the start of a later call
+  /// means the deploying instance died before recording the outcome.
   pub pending_hash: Option<String>,
   pub watch: Option<Watch>,
   pub watch_error: Option<PluginError>,
@@ -90,6 +96,8 @@ impl WorkflowState {
     self.deployed_hash.as_deref() == Some(hash) || self.pending_hash.as_deref() == Some(hash)
   }
 
+  /// Moves a re-detected build to the front, or records a new one and drops
+  /// the oldest builds that are neither deployed nor being deployed.
   pub fn stage(&mut self, snapshot: Snapshot) {
     if let Some(index) = self
       .builds
@@ -118,6 +126,8 @@ impl WorkflowState {
   }
 }
 
+/// Workflow state loaded from plugin storage. Only writes back when the state
+/// changed, so steady ticks cost one storage read.
 pub struct Session {
   pub state: WorkflowState,
   persisted: Option<WorkflowState>,

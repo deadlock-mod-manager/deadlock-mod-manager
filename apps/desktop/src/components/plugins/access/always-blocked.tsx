@@ -5,6 +5,7 @@ import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSumm
 
 const ROW_SIZE = 3;
 
+/** What no grant can unlock for this plugin, in rows of three chips. */
 export const AlwaysBlocked = ({
   plugin,
 }: {

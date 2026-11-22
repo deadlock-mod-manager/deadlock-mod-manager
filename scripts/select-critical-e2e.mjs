@@ -33,6 +33,7 @@ export function requiresDesktopE2E(files) {
 
 /** @param {string | undefined} base @param {string | undefined} head */
 export function changedFiles(base, head) {
+  // Dispatches and the first push have no comparison base: run coverage.
   if (!base || /^0+$/.test(base)) return null;
   if (!/^[a-f0-9]{40}$/i.test(base) || !/^[a-f0-9]{40}$/i.test(head ?? ""))
     throw new Error("Expected base and head commit SHAs");

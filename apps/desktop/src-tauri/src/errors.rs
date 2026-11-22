@@ -68,6 +68,7 @@ pub enum Error {
   Preview { kind: &'static str, message: String },
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
+  /// A plugin call refused because the plugin is disabled, revoked or updated.
   #[error("{0}")]
   ExternalPluginSession(String),
   #[error("Network error: {0}")]
@@ -80,6 +81,8 @@ pub enum Error {
   ProviderUnavailable(String),
   #[error("GameBanana returned an invalid response: {0}")]
   ProviderInvalidResponse(String),
+  /// The submission exists but is private, withheld by moderators, deleted, or not a
+  /// Deadlock submission.
   #[error("This mod is not publicly available on GameBanana")]
   ProviderSubmissionUnavailable,
   #[error("GameBanana response exceeded the {limit}-byte safety limit")]
@@ -107,6 +110,7 @@ pub enum Error {
   DownloadFailed(String),
   #[error("Download cancelled")]
   DownloadCancelled,
+  /// The download stopped for a pause and kept its partial files to resume from.
   #[error("Download paused")]
   DownloadPaused,
   #[error("GameBanana could not serve the download right now (HTTP {status})")]
@@ -134,6 +138,8 @@ pub enum Error {
   BackgroundTaskFailed(String),
   #[error("VPK files are in use and cannot be deleted: {0}")]
   VpkInUse(String),
+  // subcode is a stable machine-readable tag (e.g. "consentRequired") so the
+  // frontend can branch/localize without parsing the English message.
   #[error("Match sync error: {message}")]
   MatchSync {
     subcode: &'static str,
@@ -178,6 +184,7 @@ impl serde::Serialize for Error {
     };
     let mut state = serializer.serialize_struct("Error", field_count)?;
 
+    // Map the error variant to the corresponding kind string
     let kind = match self {
       Error::Io(_) => "io",
       Error::ReadOnlyFile(_) => "readOnlyFile",

@@ -12,6 +12,7 @@ use ts_rs::TS;
 
 const STORE_KEY: &str = "gamebanana_remote_install";
 
+/// Kept in the Rust-owned store entry, so the key never reaches the webview.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Pairing {
@@ -19,6 +20,7 @@ pub struct Pairing {
   pub secret_key: String,
 }
 
+/// A pair link waiting for the user to confirm it in the app.
 #[derive(Default)]
 pub struct PendingPairing(pub Mutex<Option<Pairing>>);
 
@@ -90,6 +92,7 @@ pub async fn unpair_remote_install(app_handle: AppHandle) -> Result<(), Error> {
   Ok(())
 }
 
+/// A member's public GameBanana profile, shown before pairing and in Settings.
 #[tauri::command]
 pub async fn get_gamebanana_member(member_id: u32) -> Result<GameBananaMember, Error> {
   let profile = GameBananaClient::new()?
@@ -103,6 +106,8 @@ pub async fn get_gamebanana_member(member_id: u32) -> Result<GameBananaMember, E
   })
 }
 
+/// Fetches the member's queue. Invalid entries are skipped so one bad item
+/// does not hold back the rest of the batch.
 #[tauri::command]
 pub async fn poll_remote_install(app_handle: AppHandle) -> Result<Vec<DeepLinkData>, Error> {
   let Some(pairing) = load_pairing(&app_handle)? else {

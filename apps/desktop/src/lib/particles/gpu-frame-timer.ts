@@ -5,6 +5,7 @@ const timerExtension = z.object({
   GPU_DISJOINT_EXT: z.number(),
 });
 
+/** Small adapter also permits testing the asynchronous query protocol without a GPU. */
 export interface GpuTimerContext {
   QUERY_RESULT_AVAILABLE: number;
   QUERY_RESULT: number;
@@ -23,6 +24,7 @@ export interface GpuFrameSample {
   milliseconds: number;
 }
 
+/** Bounded, nonblocking, WebGL2 GPU timing. Results from disjoint periods are discarded. */
 export const createGpuFrameTimer = (gl: GpuTimerContext) => {
   const parsed = timerExtension.safeParse(
     gl.getExtension("EXT_disjoint_timer_query_webgl2"),
@@ -81,6 +83,7 @@ export const createGpuFrameTimer = (gl: GpuTimerContext) => {
         gl.getQueryParameter(oldest.query, gl.QUERY_RESULT_AVAILABLE) !== true
       )
         return null;
+      // QUERY_RESULT is never requested until the availability flag says it is ready.
       const result = z
         .number()
         .nonnegative()

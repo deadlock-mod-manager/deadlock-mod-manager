@@ -3,9 +3,13 @@ pub struct NmSkeleton {
     pub name: String,
     pub bone_names: Vec<String>,
     pub parent_indices: Vec<i32>,
+    /// Parent-space (local) reference pose, one entry per bone, in raw Source
+    /// coordinates. Additive clips store deltas relative to this pose.
     pub(crate) reference_pose: Vec<ReferenceTransform>,
 }
 
+/// One bone's local rest transform in raw Source space (before glTF axis
+/// conversion). Translation, uniform scale, and an `(x, y, z, w)` quaternion.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ReferenceTransform {
     pub(crate) translation: [f32; 3],

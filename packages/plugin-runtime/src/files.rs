@@ -1,3 +1,9 @@
+//! `files.*`: access to the one file or folder the user picked while
+//! granting. Paths from plugins are only ever relative names inside a picked
+//! folder; the host resolves them, refuses traversal and anything that
+//! redirects (symlinks, junctions, other reparse points), and applies the
+//! request's extension filter to files.
+
 use super::manifest::ExternalPluginFileKind as FileKind;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -13,9 +19,12 @@ const MAX_COMPONENTS: usize = 32;
 
 #[derive(Debug)]
 pub enum FileError {
+  /// Outside the grant: traversal, a redirect or a filtered extension.
   Denied(String),
+  /// A malformed request.
   Invalid(String),
   Missing(String),
+  /// Not text in the requested encoding.
   Encoding(String),
   Io(std::io::Error),
 }
@@ -56,6 +65,7 @@ pub fn encode_base64(bytes: &[u8]) -> String {
   base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
+/// Whether `path` passes an extension filter; an empty filter allows any.
 pub fn extension_allowed(extensions: &[String], path: &Path) -> bool {
   extensions.is_empty()
     || path
@@ -68,6 +78,7 @@ pub fn extension_allowed(extensions: &[String], path: &Path) -> bool {
       })
 }
 
+/// Symlinks, junctions and every other reparse point count as redirects.
 fn is_redirect(meta: &fs::Metadata) -> bool {
   #[cfg(windows)]
   {
@@ -95,6 +106,8 @@ fn is_reserved_name(component: &str) -> bool {
     && stem.as_bytes()[3].is_ascii_digit())
 }
 
+/// Splits a plugin-supplied relative path into plain names. Traversal and
+/// absolute paths are refusals; other malformed names are invalid input.
 fn components(path: &str) -> Result<Vec<&str>, FileError> {
   if path.starts_with(['/', '\\']) || path.split(['/', '\\']).any(|part| part == "..") {
     return Err(denied("Paths must stay inside the granted folder"));
@@ -120,15 +133,18 @@ fn components(path: &str) -> Result<Vec<&str>, FileError> {
   Ok(parts)
 }
 
+/// A granted file or folder: the canonical path recorded at grant time.
 pub struct Scope<'a> {
   pub root: &'a Path,
   pub kind: FileKind,
   pub extensions: &'a [String],
 }
 
+/// What a plugin path resolved to.
 #[derive(Debug)]
 pub struct Resolved {
   pub path: PathBuf,
+  /// `None` when the entry does not exist yet.
   pub meta: Option<fs::Metadata>,
   pub is_root: bool,
 }
@@ -160,6 +176,9 @@ fn redirected() -> FileError {
 }
 
 impl Scope<'_> {
+  /// Resolves an optional relative `path`. File grants take no path; folder
+  /// grants resolve it inside the folder. Existing entries come back
+  /// canonical, checked to still be inside the grant.
   pub fn resolve(&self, path: Option<&str>) -> Result<Resolved, FileError> {
     let root_meta = lstat(self.root)?;
     if root_meta.as_ref().is_some_and(is_redirect) {
@@ -241,6 +260,8 @@ impl Scope<'_> {
     }
   }
 
+  /// Resolves a path that must name a file (existing or not) passing the
+  /// extension filter.
   pub fn resolve_file(&self, path: Option<&str>) -> Result<Resolved, FileError> {
     let resolved = self.resolve(path)?;
     if resolved.is_dir() || (resolved.is_root && self.kind == FileKind::Folder) {
@@ -327,9 +348,12 @@ pub struct ListEntry {
 #[serde(rename_all = "camelCase")]
 pub struct Listing {
   pub entries: Vec<ListEntry>,
+  /// More than [`MAX_LIST_ENTRIES`] entries matched; the rest are omitted.
   pub truncated: bool,
 }
 
+/// Entries of a folder, sorted by name. Redirects, files the extension
+/// filter excludes and names that are not UTF-8 are left out.
 pub fn list(scope: &Scope<'_>, path: Option<&str>) -> Result<Listing, FileError> {
   if scope.kind != FileKind::Folder {
     return Err(invalid("files.list needs a folder grant"));
@@ -372,10 +396,14 @@ pub fn list(scope: &Scope<'_>, path: Option<&str>) -> Result<Listing, FileError>
 #[serde(rename_all = "camelCase")]
 pub struct Chunk {
   pub data: String,
+  /// Size of the whole file.
   pub size: u64,
+  /// The chunk reaches the end of the file.
   pub eof: bool,
 }
 
+/// Reads at most [`MAX_READ_BYTES`] from `offset`. A UTF-8 chunk ends on a
+/// character boundary, so the next offset is `offset` plus its byte length.
 pub fn read(
   scope: &Scope<'_>,
   path: Option<&str>,
@@ -431,6 +459,8 @@ pub fn read(
   })
 }
 
+/// Replaces the file with `bytes` through a temporary file in the same
+/// folder, so readers see the old or the new content, never a mix.
 pub fn write(scope: &Scope<'_>, path: Option<&str>, bytes: &[u8]) -> Result<Resolved, FileError> {
   if bytes.len() > MAX_WRITE_BYTES {
     return Err(invalid("Writes are limited to 4 MiB"));
@@ -470,6 +500,10 @@ pub fn write(scope: &Scope<'_>, path: Option<&str>, bytes: &[u8]) -> Result<Reso
   Ok(resolved)
 }
 
+/// Writes through handles opened from the granted folder instead of paths,
+/// so swapping a folder that `resolve` checked for a junction cannot
+/// redirect the write: each folder opens relative to the one before it
+/// without following reparse points, and the rename targets the last handle.
 #[cfg(windows)]
 mod anchored {
   use super::{FileError, denied, is_redirect, redirected};
@@ -594,6 +628,7 @@ mod anchored {
   fn rename(file: &File, folder: &File, name: &str) -> io::Result<()> {
     let name = wide(name);
     let size = std::mem::offset_of!(FILE_RENAME_INFORMATION, FileName) + name.len() * 2;
+    // u64 cells keep the variable-length record aligned for its handle field.
     let mut buffer = vec![0u64; size.div_ceil(8)];
     let info = buffer.as_mut_ptr().cast::<FILE_RENAME_INFORMATION>();
     unsafe {
@@ -609,6 +644,8 @@ mod anchored {
     set_information(file, &buffer, size, FileRenameInformation)
   }
 
+  /// Writes `bytes` to `root` joined with `names`, by way of `temporary` in
+  /// the same folder.
   pub(super) fn replace(
     root: &Path,
     names: &[&str],

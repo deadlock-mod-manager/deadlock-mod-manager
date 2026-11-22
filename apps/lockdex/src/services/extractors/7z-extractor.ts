@@ -29,6 +29,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
     options: ExtractionOptions,
   ): Promise<ExtractionResult> {
     const filters = options.fileExtensions?.map((ext) => `*${ext}`) ?? [];
+    // -ssc- matches the filters case-insensitively, -r applies them in subfolders
     const args = [
       "x",
       "-y",

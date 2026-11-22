@@ -107,6 +107,7 @@ it("requires the Automatic update and download to come from the cache", async ()
       cache(b.archive),
     ]),
   );
+  // An update that ignores the preference downloads from /dl/ like Default.
   const ignored = await replayRequests([
     fileservers,
     `/dl/${a.id}/v1`,

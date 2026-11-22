@@ -84,6 +84,8 @@ pub enum ExternalPluginPermission {
   Notifications {},
 }
 
+/// Deserializes [`ExternalPluginPermission`] rejecting unknown fields. A
+/// separate type because ts-rs cannot parse `deny_unknown_fields`.
 #[derive(Deserialize)]
 #[serde(tag = "id", rename_all = "camelCase", deny_unknown_fields)]
 enum StrictPermission {
@@ -143,10 +145,12 @@ impl ExternalPluginPermission {
     }
   }
 
+  /// A `mods` request that includes `access`.
   pub fn allows_mods(&self, access: ExternalPluginModAccess) -> bool {
     matches!(self, Self::Mods { access: granted, .. } if granted.contains(&access))
   }
 
+  /// A request the user answers by picking one profile.
   pub fn needs_profile(&self) -> bool {
     matches!(
       self,
@@ -157,6 +161,7 @@ impl ExternalPluginPermission {
     )
   }
 
+  /// Sorts list scopes and checks them against the catalog.
   fn normalize(&mut self) -> Result<(), String> {
     match self {
       Self::Files { extensions, .. } => {
@@ -217,6 +222,8 @@ fn is_extension(value: &str) -> bool {
       .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
 }
 
+/// A lowercase DNS name with at least two labels that is neither an IP
+/// literal nor `localhost`.
 pub fn is_network_host(value: &str) -> bool {
   let labels: Vec<&str> = value.split('.').collect();
   value.len() <= 253
@@ -307,6 +314,8 @@ pub fn is_valid_plugin_id(id: &str) -> bool {
     })
 }
 
+/// A `/`-separated package path that maps to the same file on every platform:
+/// no traversal, no drive letters, no reserved Windows device names.
 pub fn is_safe_package_path(path: &str) -> bool {
   !path.is_empty()
     && path.len() <= 240
@@ -336,6 +345,8 @@ pub fn is_display_text(value: &str, max: usize) -> bool {
   !value.trim().is_empty() && value.chars().count() <= max && !value.chars().any(char::is_control)
 }
 
+/// A Phosphor icon name in kebab case. The host decides how to render names
+/// it does not know.
 fn is_icon_name(value: &str) -> bool {
   value.len() <= 40
     && value.split('-').all(|segment| {

@@ -7,6 +7,7 @@ import { Eyebrow } from "@/components/home/section-heading";
 import { GUIDES, type Guide, type GuidePath } from "@/lib/guides";
 import type { FaqEntry } from "@/utils/structured-data";
 
+/** Body copy for guide pages: paragraphs, lists, links and inline code. */
 export const proseClassName =
   "max-w-[68ch] space-y-4 text-pretty text-base text-muted-foreground leading-relaxed [&_a]:text-foreground [&_a]:underline [&_a]:decoration-border-strong [&_a]:underline-offset-4 [&_a:hover]:decoration-primary [&_code]:rounded [&_code]:bg-surface [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:text-foreground [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5";
 
@@ -78,6 +79,7 @@ export const GuideSection = ({
   </section>
 );
 
+/** Numbered steps. Use `columns={2}` when the list has the full width. */
 export const StepList = ({
   steps,
   columns = 1,
@@ -106,6 +108,10 @@ export const StepList = ({
   </ol>
 );
 
+/**
+ * Plain-text answers, so the same entries feed the page's FAQPage JSON-LD
+ * through guideHead() without drifting from what is rendered.
+ */
 export const GuideFaq = ({ faqs }: { faqs: FaqEntry[] }) => {
   const { t } = useTranslation("common");
 
@@ -168,6 +174,10 @@ export const RelatedGuides = ({
   );
 };
 
+/**
+ * The error text exactly as users see it, so the page matches searches that
+ * paste the message.
+ */
 export const ErrorMessage = ({
   source,
   children,
@@ -185,6 +195,7 @@ export const ErrorMessage = ({
   </figure>
 );
 
+/** An app screenshot with a caption. */
 export const GuideFigure = ({
   src,
   width,

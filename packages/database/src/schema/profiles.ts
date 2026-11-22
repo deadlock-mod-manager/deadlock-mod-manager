@@ -14,7 +14,7 @@ export const profiles = pgTable(
     contentHash: text("content_hash").notNull(),
     profile: json().$type<{
       version: string;
-      payload: unknown;
+      payload: unknown; // This will be validated by the shared schema
     }>(),
     ...timestamps,
   },

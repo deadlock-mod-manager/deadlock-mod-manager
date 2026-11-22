@@ -31,6 +31,7 @@ runs:
       run: |
         export KUBECONFIG=kubeconfig.yaml
         SERVICE_NAME="${{ inputs.service-name }}"
+        # api service uses 'web' deployment name for historical reasons
         DEPLOY_SUFFIX="${SERVICE_NAME}"
         if [ "$SERVICE_NAME" = "api" ]; then
           DEPLOY_SUFFIX="web"

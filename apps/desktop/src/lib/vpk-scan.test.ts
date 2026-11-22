@@ -60,6 +60,8 @@ describe("findUnmatchedVpks", () => {
     expect(unmatched).toEqual(["stranger.vpk"]);
   });
 
+  // Every shard numbers its files from pak01, so a bare filename cannot say
+  // which mod a file belongs to.
   it("matches enabled mods in the shard the manifest records", () => {
     const unmatched = findUnmatchedVpks(
       files("pak01_dir.vpk", "addons2/pak01_dir.vpk", "addons3/pak02_dir.vpk"),

@@ -1,5 +1,12 @@
 import type { PerformanceCurvePoint } from "@/lib/stats/api";
 
+/**
+ * Grades for the match being played, against players on the same hero in the
+ * same rank bracket at the same point of their matches. Souls and objective
+ * damage pile up faster as a match goes on, so a whole-match rate would mark
+ * every early game as behind; the bracket's curve compares like with like.
+ */
+
 export interface LivePlayerNumbers {
   kills: number | null;
   deaths: number | null;
@@ -10,6 +17,10 @@ export interface LivePlayerNumbers {
 
 type CurveStat = "net_worth" | "kills" | "deaths" | "assists" | "boss_damage";
 
+/**
+ * Souls first: it is the number the rest of the Live tab is built around. Each
+ * metric is compared on a curve stat, as a total so far rather than a rate.
+ */
 const METRICS = [
   {
     metric: "soulsPerMin",
@@ -55,12 +66,14 @@ const METRICS = [
 }[];
 export type LiveMetric = (typeof METRICS)[number]["metric"];
 
+/** Shown as a rate per minute rather than a count. */
 export const isPerMinute = (metric: LiveMetric): boolean =>
   METRICS.some((entry) => entry.metric === metric && entry.perMinute);
 
 export const GRADES = ["D", "C", "B", "A", "S"] as const;
 export type Grade = (typeof GRADES)[number];
 
+/** Where each grade starts, as the share of the bracket the player beats. */
 export const GRADE_STARTS = [0, 0.25, 0.5, 0.75, 0.9] as const;
 
 const gradeFor = (beats: number): Grade =>
@@ -68,14 +81,19 @@ const gradeFor = (beats: number): Grade =>
 
 export interface LiveGradeRow {
   metric: LiveMetric;
+  /** What the player has right now: a count, or a rate per minute. */
   value: number;
+  /** The bracket's average at this point of the match, on the same scale. */
   average: number;
+  /** Share of the bracket the player is ahead of, 0-1, flipped for deaths. */
   beats: number;
   grade: Grade;
 }
 
+/** Grades only mean something once a little of the match has been played. */
 export const MIN_GRADED_MINUTES = 1;
 
+/** Standard normal CDF (Abramowitz-Stegun 7.1.26, error below 1.5e-7). */
 const normalCdf = (z: number): number => {
   const x = Math.abs(z) / Math.SQRT2;
   const t = 1 / (1 + 0.3275911 * x);
@@ -89,6 +107,11 @@ const normalCdf = (z: number): number => {
   return z >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
 };
 
+/**
+ * Mean and spread of one stat at `seconds`, linear between the curve's steps.
+ * Every stat starts the match at zero, which anchors the part before the first
+ * step; past the last step the last one holds.
+ */
 export const curveAt = (
   curve: PerformanceCurvePoint[],
   stat: CurveStat,
@@ -135,6 +158,8 @@ export const liveGradeRows = ({
     const expected = curveAt(curve, stat, seconds);
     if (total === null || !expected) return [];
 
+    // A bracket where everyone sits on the same number has no spread to place
+    // the player in; above or below it is all there is to say.
     const below =
       expected.std > 0
         ? normalCdf((total - expected.avg) / expected.std)
@@ -157,6 +182,7 @@ export const liveGradeRows = ({
   });
 };
 
+/** One grade for the match so far: the average share of the bracket beaten. */
 export const overallGrade = (
   rows: LiveGradeRow[],
 ): { beats: number; grade: Grade } | null => {

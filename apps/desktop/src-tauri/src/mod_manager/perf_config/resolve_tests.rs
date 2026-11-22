@@ -82,6 +82,7 @@ fn excluded_and_denied_paths() {
   );
 }
 
+/// Keys a GameBanana config put in ConVars, checked against the real catalog.
 #[test]
 fn unknown_convars_against_the_bundled_catalog() {
   let catalog = Catalog::bundled();
@@ -99,6 +100,7 @@ fn unknown_convars_against_the_bundled_catalog() {
     section: section.to_string(),
   };
 
+  // Valve's file sets these in SceneSystem; no convar dump has them.
   assert_eq!(
     status("ConVars/CubemapFog"),
     (EntryStatus::Removed, vec![section("SceneSystem")])
@@ -107,10 +109,12 @@ fn unknown_convars_against_the_bundled_catalog() {
     status("ConVars/DefaultShadowTextureHeight"),
     (EntryStatus::Removed, vec![section("SceneSystem")])
   );
+  // Neither a convar nor a key in any stock gameinfo.gi: no reason to give.
   assert_eq!(
     status("ConVars/EnableSunlight"),
     (EntryStatus::Removed, Vec::new())
   );
+  // A real convar that left the dump keeps its build.
   assert_eq!(
     status("ConVars/animgraph_enable_parallel_op_evaluation"),
     (
@@ -120,6 +124,8 @@ fn unknown_convars_against_the_bundled_catalog() {
   );
 }
 
+/// A value the live file doesn't set is compared with the convar's built-in
+/// default, in any spelling (`1` for `true`).
 #[test]
 fn default_values_are_unchanged() {
   let catalog = Catalog::bundled();
@@ -132,6 +138,7 @@ fn default_values_are_unchanged() {
     );
     resolved.entries[0].status
   };
+  // Default true.
   assert_eq!(
     status("ConVars/citadel_damage_offscreen_indicator_disabled", "1"),
     EntryStatus::Unchanged
@@ -140,6 +147,7 @@ fn default_values_are_unchanged() {
     status("ConVars/citadel_damage_offscreen_indicator_disabled", "0"),
     EntryStatus::Applies
   );
+  // Default false.
   assert_eq!(
     status("ConVars/citadel_unit_status_hide_names", "1"),
     EntryStatus::Applies
@@ -208,6 +216,7 @@ fn gameplay_classes() {
   );
   assert_eq!(turned_off.status, EntryStatus::Omitted);
 
+  // Saved before developer tools applied as written.
   let legacy_enable = resolve_one(
     entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
     &[action(
@@ -630,6 +639,8 @@ fn bundled_presets_spread_across_the_scale() {
   let clean = score("dmm-clean");
   let balanced = score("optimizationlock");
   let optilock = score("optilock-fps");
+  // Counts alone don't order OptiLock and OptimizationLock: they set
+  // similar keys and differ in values.
   assert!(clean < balanced && clean < optilock);
   assert!(clean < 0.45, "dmm-clean at {clean}");
   assert!(optilock < 0.9, "optilock-fps at {optilock}");

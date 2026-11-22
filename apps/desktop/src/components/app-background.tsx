@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { usePersistedStore } from "@/lib/store";
 
+/** Paints the user's background image behind the app, above any theme backdrop. */
 const AppBackground = () => {
   const {
     image,

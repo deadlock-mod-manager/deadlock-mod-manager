@@ -14,8 +14,10 @@ const OPTION =
   "flex w-full cursor-pointer items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left leading-[normal] focus-visible:outline-none";
 
 type ProfileSelectProps = {
+  /** Non-default profiles with their own folder. */
   profiles: ModProfile[];
   defaultProfile: ModProfile | undefined;
+  /** Installing never targets the default profile; reading may. */
   install: boolean;
   selectedFolder: string | null;
   testProfileName: string;
@@ -29,6 +31,8 @@ type ProfileSelectProps = {
 const enabledModCount = (profile: ModProfile) =>
   Object.values(profile.enabledMods).filter((entry) => entry.enabled).length;
 
+/** Picks the profile a plugin may use. When it installs, the default profile
+ * is listed but never selectable. The menu opens in place, pushing the card open. */
 export const ProfileSelect = ({
   profiles,
   defaultProfile,

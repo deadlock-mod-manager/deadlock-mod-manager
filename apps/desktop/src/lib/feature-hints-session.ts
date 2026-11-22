@@ -2,12 +2,15 @@ import { create } from "zustand";
 import type { FeatureHintId } from "@/lib/feature-hints";
 
 type FeatureHintsSession = {
+  /** Hints whose control is on screen and that could show right now. */
   candidates: FeatureHintId[];
   active: FeatureHintId | null;
+  /** At most one hint per app session. */
   shownThisSession: boolean;
   register: (id: FeatureHintId) => void;
   unregister: (id: FeatureHintId) => void;
   activate: (id: FeatureHintId) => void;
+  /** Closes `id` if it is the hint on screen. */
   release: (id: FeatureHintId) => void;
 };
 

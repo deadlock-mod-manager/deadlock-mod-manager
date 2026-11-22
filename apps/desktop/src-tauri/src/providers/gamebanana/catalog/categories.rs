@@ -74,6 +74,7 @@ impl CategoryTaxonomy {
       return path;
     };
     let mut ancestors = candidate.iter();
+    // Cached ancestry can fill omissions, but cannot contradict newer source data.
     if path
       .iter()
       .all(|entry| ancestors.by_ref().any(|ancestor| ancestor.key == entry.key))
@@ -100,6 +101,7 @@ impl CategoryTaxonomy {
           .is_some_and(|category| category.name == leaf.trim())
     });
     let path = matches.next()?;
+    // Names are a fallback only when they identify one category in this tree.
     matches.next().is_none().then(|| path.clone())
   }
 }

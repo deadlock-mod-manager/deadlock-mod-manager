@@ -1,6 +1,8 @@
 import { env } from "@/lib/env";
 import type { ForumLifecycleConfig } from "@/lib/forum-status";
 
+// Only forums listed here are managed. Commission and mod request channels
+// are intentionally absent and must stay that way.
 export const managedForums: ForumLifecycleConfig[] = [
   {
     channelId: env.BUG_REPORT_CHANNEL_ID,

@@ -1,3 +1,7 @@
+//! `<app data>/sessions/`: the running session (so a crash while the app is
+//! closed is still analyzed at the next start), reports the frontend hasn't
+//! acknowledged yet, and the last build we saw.
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -11,11 +15,15 @@ const CURRENT_FILE: &str = "current.json";
 const PENDING_FILE: &str = "pending.json";
 const STATE_FILE: &str = "state.json";
 
+/// A session that is still running (or that we haven't analyzed yet).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionRecord {
   pub session_id: String,
+  /// `None` under Flatpak, where the host's processes are invisible.
   pub pid: Option<u32>,
+  /// The OS's process start time (seconds since the epoch), to tell our
+  /// process from a later one that reuses the PID.
   pub process_start: Option<u64>,
   pub started_at: DateTime<Utc>,
   pub launched_by_dmm: bool,
@@ -84,6 +92,8 @@ fn read_json<T: DeserializeOwned>(path: &Path) -> Option<T> {
     .ok()
 }
 
+/// Session files are rewritten while the game runs; a torn write would lose
+/// the session, so write to a temp file and rename it over the old one.
 fn write_json<T: Serialize + ?Sized>(path: &Path, value: &T) {
   let result = (|| -> std::io::Result<()> {
     let dir = path.parent().unwrap_or(Path::new("."));

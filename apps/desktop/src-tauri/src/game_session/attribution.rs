@@ -16,6 +16,8 @@ static PANORAMA_SOURCE: LazyLock<Regex> =
 
 fn resource_paths(message: &str) -> Vec<String> {
   let message = message.replace('\\', "/").to_ascii_lowercase();
+  // Panorama names sources through its {resources} alias; the VPK stores them
+  // compiled under panorama/.
   let message = PANORAMA_SOURCE.replace_all(&message, |found: &regex::Captures| {
     let extension = if &found[2] == "xml" {
       "vxml_c"
@@ -27,10 +29,12 @@ fn resource_paths(message: &str) -> Vec<String> {
   let mut paths = Vec::new();
   for found in RESOURCE.find_iter(&message) {
     let path = found.as_str();
+    // A word boundary still matches before `.` or `-`, so `x.vmat_c.bak` would name the wrong file.
     let suffixed = message[found.end()..]
       .chars()
       .next()
       .is_some_and(|next| next.is_ascii_alphanumeric() || matches!(next, '_' | '.' | '-'));
+    // A resource root inside a longer path would attribute a truncated suffix.
     let prefixed = message[..found.start()]
       .chars()
       .next_back()
@@ -40,6 +44,7 @@ fn resource_paths(message: &str) -> Vec<String> {
     if suffixed || prefixed || path.split('/').any(|part| part == ".." || part == ".") {
       continue;
     }
+    // Fatal errors can name the source vdata while the VPK stores the compiled resource.
     let path = if path.ends_with(".vdata") {
       format!("{path}_c")
     } else {
@@ -89,6 +94,7 @@ fn resource_owner(
     {
       return None;
     }
+    // Recovered reports must not blame a mod installed after the session.
     if addon_path_fingerprint(game_path, &mounted.path) != *mounted {
       return None;
     }

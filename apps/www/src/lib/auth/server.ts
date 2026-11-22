@@ -54,7 +54,7 @@ export async function createAuthorizationUrl(
 
   setCookie(PKCE_COOKIE, codeVerifier, {
     ...COOKIE_OPTIONS,
-    maxAge: 600,
+    maxAge: 600, // 10 minutes for PKCE flow
   });
 
   const state: OIDCState = { returnTo: returnTo || "/" };
@@ -101,6 +101,7 @@ export async function exchangeCodeForTokens(
     throw new Error(`Token exchange failed: ${error}`);
   }
 
+  // Clear the PKCE cookie
   setCookie(PKCE_COOKIE, "", {
     ...COOKIE_OPTIONS,
     maxAge: 0,
@@ -126,7 +127,7 @@ export function setAuthCookies(tokenResponse: TokenResponse): void {
   if (tokenResponse.refresh_token) {
     setCookie(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token, {
       ...COOKIE_OPTIONS,
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 30 * 24 * 60 * 60, // 30 days
     });
   }
 }
@@ -155,9 +156,11 @@ export function isTokenExpired(): boolean {
   if (!expiry) return true;
 
   const expiresAt = Number.parseInt(expiry, 10);
-  return Date.now() >= expiresAt - 60000;
+  return Date.now() >= expiresAt - 60000; // 1 minute buffer
 }
 
+// Keyed by refresh token: this runs on the server, so a single shared promise
+// would hand one user's refreshed tokens to another user's request.
 const inflightRefreshes = new Map<string, Promise<TokenResponse>>();
 
 export async function refreshTokens(): Promise<TokenResponse> {

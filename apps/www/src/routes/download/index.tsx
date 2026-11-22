@@ -10,6 +10,7 @@ export const Route = createFileRoute("/download/")({
   loader: async ({ context: { queryClient } }) => {
     const releasesQuery = orpc.getReleases.queryOptions();
     await prefetchWithin(queryClient, releasesQuery);
+    // Handed to head() so the release number lands in the indexed metadata.
     return {
       version: queryClient.getQueryData(releasesQuery.queryKey)?.latest.version,
     };

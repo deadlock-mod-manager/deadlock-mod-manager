@@ -59,6 +59,8 @@ describe("filesystem recovery", () => {
         .parse(JSON.parse(await readFile(processFile, "utf8")));
       assert.notEqual(runtime.processId, prior.processId);
       await assertFilesystemLayout(world, "restarted", expectedOrder, extras);
+      // Opening the profile selector and reactivating Alpha runs the normal frontend
+      // manifest reconciliation, including a commit that outlived its IPC response.
       await navigate("my-mods");
       await activateProfile("E2E Beta");
       await browser.waitUntil(
@@ -128,6 +130,7 @@ describe("filesystem recovery", () => {
         `${runtime.processId}:${point}`,
       );
       await reorder(world, changed, true);
+      // Poll disk without making another request to the deliberately dying webview.
       for (let attempt = 0; attempt < 100; attempt++) {
         try {
           await readFile(path.join(artifacts, "crash-observed.json"));

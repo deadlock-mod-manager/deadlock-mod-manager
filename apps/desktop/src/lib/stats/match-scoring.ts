@@ -32,6 +32,7 @@ export const matchScoring = (
   });
   if (status !== "notScored") return { status };
 
+  // These are recorded departures, not a server-provided reason for the non-score.
   const teammates = match.players
     .flatMap((player) => {
       const time = player.abandon_match_time_s ?? 0;

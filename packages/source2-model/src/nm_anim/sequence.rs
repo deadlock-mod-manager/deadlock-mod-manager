@@ -12,6 +12,8 @@ pub(super) fn clip_stem(path: &str) -> &str {
         .trim_end_matches(".vnmclip")
 }
 
+/// Phase tokens by playback order. Phases past the first only break ties, so
+/// `dive_intro` plays before `dive_loop` and `fire` before `fire_loop`.
 const PHASES: &[(i32, &[&str])] = &[
     (0, &["precast"]),
     (5, &["chargeup"]),
@@ -39,10 +41,15 @@ const PHASES: &[(i32, &[&str])] = &[
     (70, &["end", "release", "castcomplete", "exit", "getup"]),
 ];
 
+/// Loops and idles: the part of a move that holds.
 const HOLD_RANK: i32 = 50;
 
+/// The clip named after the family alone, like `ability_uppercut`, is the
+/// move's body: after its start and intro, before any loop or follow-up.
 const BODY_RANK: i32 = 45;
 
+/// Stance, direction and layer tokens. Like phases, they end an ability's
+/// name inside a clip stem.
 const VARIANTS: &[&str] = &[
     "in", "air", "inair", "ground", "up", "down", "crouch", "alt", "base", "turn", "run", "walk",
     "zipline", "stand", "add", "additive", "null", "aim", "forward", "backward", "left", "right",
@@ -60,6 +67,10 @@ fn ends_name(token: &str) -> bool {
     phase_token_rank(token).is_some() || VARIANTS.contains(&token)
 }
 
+/// `ability_` plus the ability's name: every token up to the first phase or
+/// variant, so `ability_sleep_dagger` and `ability_hook_cast_loop` group as
+/// `ability_sleep_dagger` and `ability_hook`. The first name token is kept
+/// even when it reads as a phase (`ability_charge`).
 pub(super) fn family_prefix(path: &str) -> Option<String> {
     let tokens = clip_stem(path).split('_').collect::<Vec<_>>();
     let ability = tokens.iter().position(|token| *token == "ability")?;
@@ -116,6 +127,8 @@ fn direction_preference(direction: &str) -> usize {
     }
 }
 
+/// Where `name` plays within `family`: its first phase token, then its next
+/// one to order variants of the same phase.
 fn phase_rank(name: &str, family: &str) -> Option<(i32, i32)> {
     if name == family {
         return Some((BODY_RANK, 0));
@@ -145,6 +158,8 @@ pub(super) fn coherent_phase_paths(
             } else {
                 name.strip_prefix(family)?.strip_prefix('_')?
             };
+            // Judge variants on what follows the name, so an ability called
+            // "Paradoxical Swap" still keeps its own clips.
             if [
                 "alt", "base", "swap", "turn", "run", "walk", "zipline", "up", "down", "crouch",
             ]
@@ -160,6 +175,8 @@ pub(super) fn coherent_phase_paths(
             phase_rank(name, family).map(|rank| (rank, stance, path))
         })
         .collect::<Vec<_>>();
+    // A stance clip such as `ability_bishop_stand_idle` is the move's hold,
+    // unless the move holds on its own as Bebop's beam does.
     let holds = phases
         .iter()
         .any(|((first, next), stance, _)| !stance && (*first == HOLD_RANK || *next == HOLD_RANK));

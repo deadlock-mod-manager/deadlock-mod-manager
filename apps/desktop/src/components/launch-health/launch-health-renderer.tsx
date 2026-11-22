@@ -11,6 +11,11 @@ const TOAST_DURATION_MS = 20_000;
 
 const toastIdFor = (sessionId: string) => `crash-check-${sessionId}`;
 
+/**
+ * The crash check, mounted once in app.tsx. Strong evidence opens the dialog
+ * directly; weaker or older evidence shows a toast that opens it on Review.
+ * Neither appears while Deadlock is running.
+ */
 export const LaunchHealthRenderer = () => {
   const { t } = useTranslation();
   const crashCheck = useCrashCheck();

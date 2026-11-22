@@ -7,6 +7,10 @@ import {
   localizedUrl,
 } from "@/utils/seo";
 
+/**
+ * Every translated page is listed once per language, and each entry names all
+ * its language versions so search engines can pair them up.
+ */
 const entry = (loc: string, alternates: ReturnType<typeof alternateUrls>) =>
   [
     `  <url>`,

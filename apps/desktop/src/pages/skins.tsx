@@ -75,6 +75,8 @@ const Skins = () => {
   const isHeroAvailable = useIsHeroAvailable();
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  // The skin the 3D panel shows, per hero, so coming back to a hero returns to
+  // what was on screen. A null entry is a deliberate pick of the default skin.
   const [previewedByHero, setPreviewedByHero] = useState<
     Map<string, string | null>
   >(new Map());
@@ -93,6 +95,7 @@ const Skins = () => {
     [visibleMods, heroExtrasEnabled, hidden],
   );
 
+  // Heroes the next modded launch will roll a skin for.
   const randomizedHeroes = useMemo(() => {
     const selection = {
       skins: randomizerSkins,
@@ -111,14 +114,17 @@ const Skins = () => {
     const knownHeroes: ReadonlySet<string> = new Set(
       Object.values(DeadlockHeroes),
     );
+    // Manual overrides may name heroes outside the enum; keep them visible.
     const extraHeroes = [...groups.keys()]
       .filter((hero) => !knownHeroes.has(hero))
       .sort();
+    // An unreleased hero still shows once the user has mods for it.
     const listedHeroes = [...knownHeroes].filter(
       (hero) => isHeroAvailable(hero) || groups.has(hero),
     );
     const all = [...listedHeroes, ...extraHeroes].map((hero) => {
       const group = groups.get(hero) ?? EMPTY_GROUP;
+      // The rolled skin is a surprise for the game, not for this list.
       const randomized = randomizerEnabled && randomizedHeroes.has(hero);
       return {
         hero,
@@ -126,6 +132,9 @@ const Skins = () => {
           group.skins.length + group.sounds.length + group.extras.length,
         wearing: randomized ? [] : group.activeSkins.map((mod) => mod.name),
         randomized,
+        // Several skins at once is only a conflict while the user expects one.
+        // Several archives of one mod are not: authors often split a skin
+        // into a model download and a sounds download that belong together.
         conflicted:
           !randomized && !multipleSkinsEnabled && group.activeSkins.length > 1,
       };
@@ -150,6 +159,8 @@ const Skins = () => {
 
   const selectedGroup = groups.get(effectiveHero ?? "") ?? EMPTY_GROUP;
 
+  // Without a pick of their own, the panel shows what the hero currently wears,
+  // unless the randomizer rolled it and it is meant to stay unseen.
   const hideWornSkin =
     randomizerEnabled && randomizedHeroes.has(effectiveHero ?? "");
   const previewedId =
@@ -198,6 +209,8 @@ const Skins = () => {
     if (!effectiveHero) {
       return;
     }
+    // Hand the store a single-hero filter so the browser opens on exactly the
+    // skins for the hero the user came from.
     updateModsFilters({
       selectedHeroes: [effectiveHero],
       filterMode: "include",

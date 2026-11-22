@@ -99,6 +99,7 @@ export class ModDownloadRepository {
     const existing = await this.findByModId(modId);
 
     if (existing.length > 0) {
+      // Update the first existing download (assuming one download per mod)
       return await this.update(existing[0].id, modDownload);
     }
     return await this.create({ ...modDownload, modId });
@@ -108,8 +109,10 @@ export class ModDownloadRepository {
     modId: string,
     modDownloads: NewModDownload[],
   ): Promise<ModDownload[]> {
+    // Delete existing downloads for this mod
     await this.deleteByModId(modId);
 
+    // Create new downloads
     const results: ModDownload[] = [];
     for (const modDownload of modDownloads) {
       const created = await this.create({ ...modDownload, modId });

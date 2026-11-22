@@ -1,3 +1,10 @@
+/**
+ * Compatibility for desktop releases that predate GameBanana submission
+ * identities: they address mods by internal catalog ID (`mod_…`) and require
+ * `matchedVpk.mod` in VPK analysis responses. Delete this module and its call
+ * sites with the catalog retirement (#715), once those releases are past the
+ * cutoff.
+ */
 import {
   type CachedVPK,
   db,
@@ -35,6 +42,7 @@ export const resolveLegacyModId = async (
   return mod ? legacyModIdentity(mod) : null;
 };
 
+/** The fields legacy desktop deserializes from `matchedVpk.mod`. */
 export interface LegacyVpkMod {
   id: string;
   remoteId: string;
@@ -44,6 +52,8 @@ export interface LegacyVpkMod {
 
 type LegacyCompatibleVpk = CachedVPK & { mod: LegacyVpkMod | null };
 
+// Alternative matches are often re-uploads of the same mod, so each mod is
+// looked up once per response.
 const memoizeLookup = (lookup: LegacyModLookup): LegacyModLookup => {
   const loaded = new Map<string, Promise<Mod | null>>();
   const once = (key: string, load: () => Promise<Mod | null>) => {
@@ -82,6 +92,8 @@ const legacyVpkMod = async (
     };
   }
   if (!entry.submissionType || !entry.submissionId) return null;
+  // Not in the catalog (e.g. ingested after the catalog stopped syncing). The
+  // slug is what legacy clients use to look the mod up, so it is enough.
   const slug = gameBananaIdentitySlug({
     provider: "gamebanana",
     submissionType: entry.submissionType,
@@ -106,6 +118,10 @@ interface VpkAnalysisShape {
   match?: { alternativeMatches?: CachedVPK[] };
 }
 
+/**
+ * Re-attaches the `mod` relation VPK analysis responses carried before v2.
+ * The return type deliberately omits it so current code cannot depend on it.
+ */
 export const withLegacyVpkMods = async <T extends VpkAnalysisShape>(
   result: T,
   lookup: LegacyModLookup = modRepository,

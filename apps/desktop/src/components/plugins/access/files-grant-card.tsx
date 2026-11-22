@@ -20,6 +20,7 @@ import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSumm
 
 const PATH_SEPARATOR = /[\\/]/;
 
+/** `C:\Users\me\Downloads\out.vpk` → `Downloads\out.vpk`, keeping the path's own separator. */
 const shortPath = (path: string) => {
   const separator = path.includes("\\") ? "\\" : "/";
   return path.split(PATH_SEPARATOR).filter(Boolean).slice(-2).join(separator);

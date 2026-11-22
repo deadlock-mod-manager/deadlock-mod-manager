@@ -1,3 +1,15 @@
+//! Mod transfer between mod managers through the manager-neutral
+//! "Deadlock Mod Interchange" format (`rfcs/001-mod-interchange/proposal.md`).
+//!
+//! - `format`: the document, parsing and bundle reading
+//! - `grimoire`: reader for Grimoire's native files (no Grimoire changes needed)
+//! - `import` / `export`: interchange <-> DMM profile
+//! - `ledger`: which interchange key became which DMM mod, and which source
+//!   profile went into which DMM profile
+//!
+//! Supporting another mod manager means adding a reader and one entry in
+//! [`SOURCES`]; the UI lists whatever this registry reports.
+
 pub mod export;
 pub mod format;
 pub mod grimoire;
@@ -19,9 +31,11 @@ pub const READ_PROGRESS_EVENT: &str = "interchange-read-progress";
 pub const IMPORT_PROGRESS_EVENT: &str = "interchange-import-progress";
 pub const EXPORT_PROGRESS_EVENT: &str = "interchange-export-progress";
 
+/// A mod manager DMM can read directly from disk.
 struct SourceDefinition {
   id: &'static str,
   name: &'static str,
+  /// Sections this reader can produce.
   sections: &'static [&'static str],
   detect: fn(Option<PathBuf>, Option<&Path>) -> SourceDetection,
   read:
@@ -121,6 +135,8 @@ pub async fn list_interchange_sources() -> Result<Vec<InterchangeSourceInfo>, Er
   .await
 }
 
+/// Read a mod manager's library. `location` overrides auto-detection (the
+/// user picked the manager's data folder by hand).
 #[tauri::command]
 pub async fn read_interchange_source(
   app_handle: AppHandle,
@@ -203,6 +219,7 @@ pub async fn export_interchange_bundle(
   .await
 }
 
+/// Interchange key -> DMM mod id for everything imported so far.
 #[tauri::command]
 pub async fn get_interchange_ledger() -> Result<BTreeMap<String, String>, Error> {
   blocking(|| {
@@ -212,6 +229,7 @@ pub async fn get_interchange_ledger() -> Result<BTreeMap<String, String>, Error>
   .await
 }
 
+/// `<source manager>:<profile key>` -> the DMM profile it was imported into.
 #[tauri::command]
 pub async fn get_interchange_profile_ledger() -> Result<BTreeMap<String, String>, Error> {
   blocking(|| {
@@ -221,9 +239,12 @@ pub async fn get_interchange_profile_ledger() -> Result<BTreeMap<String, String>
   .await
 }
 
+/// Remember that a source profile was imported into `profile_id`, so the next
+/// import fills that profile again instead of creating another one.
 #[tauri::command]
 pub async fn record_interchange_profile(key: String, profile_id: String) -> Result<(), Error> {
   blocking(move || {
+    // Held for the write, like an import's own ledger update.
     let manager = lock_manager()?;
     let app_data = manager.get_app_local_data_path()?;
     let mut entries = ledger::load(&app_data);
@@ -244,6 +265,9 @@ pub struct IdentifyResult {
   pub error: Option<String>,
 }
 
+/// Look imported local mods up by content hash, the same lookup as
+/// "Analyze local addons". Never fails as a whole: each mod reports its own
+/// outcome.
 #[tauri::command]
 pub async fn identify_interchange_mods(mod_ids: Vec<String>) -> Result<Vec<IdentifyResult>, Error> {
   let store = {
@@ -289,6 +313,8 @@ pub async fn identify_interchange_mods(mod_ids: Vec<String>) -> Result<Vec<Ident
   Ok(results)
 }
 
+/// Link an imported local mod to its GameBanana submission: the mod keeps its
+/// files and place in every profile, only its id changes.
 #[tauri::command]
 pub async fn relabel_interchange_mod(from: String, to: String) -> Result<(), Error> {
   use crate::providers::{SubmissionProvider, SubmissionRef};

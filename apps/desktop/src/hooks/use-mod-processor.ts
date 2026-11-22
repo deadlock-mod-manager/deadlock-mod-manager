@@ -43,12 +43,18 @@ export interface ModMetadata {
   link?: string;
   description?: string;
   imageFile?: File | null;
+  // A cover hosted by the mod's source, shown instead of the local preview.
   imageUrl?: string | null;
+  // A cover already rendered from the files, kept so the library need not
+  // render it again.
   renderedCover?: string | null;
+  // What the `map` console command takes, so the map can be launched.
   mapName?: string | null;
   installSource?: string;
 }
 
+// Every source is on disk by now: picked, dropped as a path, or staged when it
+// was dropped. Rust copies it, so its bytes never pass through the renderer.
 const storeSourceFile = async (
   file: File,
   directory: string,
@@ -64,11 +70,13 @@ const storeSourceFile = async (
   });
 };
 
+// Sources backed by one file; the live bridge is built by the backend instead.
 type FileSource = Exclude<ModSource, { kind: "liveBridge" | "vpks" }>;
 
 const sourceFileName = (source: FileSource): string =>
   source.kind === "staged" ? source.fileName : getFileBaseName(source.file);
 
+// Puts the source's file in `directory` and returns where it landed.
 const placeSource = async (
   source: FileSource,
   directory: string,
@@ -101,6 +109,7 @@ export const useModProcessor = () => {
     );
   };
 
+  // Kept beside the files folder, which receives the extracted VPKs.
   const extractArchive = async (
     source: FileSource,
     filesDir: string,
@@ -148,6 +157,7 @@ export const useModProcessor = () => {
     metadata: ModMetadata,
     category: ModCategory,
     detectedSource: ModSource,
+    // Callers adding several mods at once report them together.
     { announce = true }: { announce?: boolean } = {},
   ): Promise<string | null> => {
     setProcessing(true, t("addMods.validatingMetadata"));
@@ -185,6 +195,7 @@ export const useModProcessor = () => {
         }
       }
     } catch (error) {
+      // Nothing reached the library, so leave no folder behind.
       await invoke("remove_mod_folder", { modPath: modDir }).catch(
         (cleanupError) =>
           logger
@@ -207,6 +218,8 @@ export const useModProcessor = () => {
         isMap: category === ModCategory.MAPS,
       });
 
+      // Scan the extracted files dir for fonts and emit the same event as the
+      // download pipeline so the FontInstallDialog appears if any are found.
       await invoke("scan_and_stash_local_mod_fonts", {
         modId,
         filesDir,
@@ -318,6 +331,10 @@ export const useModProcessor = () => {
     category: ModCategory,
     addon: Pick<LocalAddonInfo, "fileName" | "filePath" | "locator">,
   ): Promise<void> => {
+    // The analysis list can be stale, so check the files on disk again. Two
+    // library mods must never own one file: disabling either moves it away
+    // from the other.
+    // Everything below targets the profile that was active at submit time.
     const profile = getActiveProfile();
     const profileFolder = profile?.folderName ?? null;
     const snapshot = await getProfileVpkSnapshot(profileFolder);
@@ -367,6 +384,9 @@ export const useModProcessor = () => {
 
     setProcessing(true, t("addMods.addingToLibrary"));
     try {
+      // Record the file in the profile's manifest with the shard it sits in;
+      // its name alone could match a file in another shard. The backend
+      // refuses if a mod took the file since the check above.
       await invoke("register_analyzed_mod", {
         modId,
         modName: modMetadata.name,

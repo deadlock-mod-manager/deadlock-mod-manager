@@ -30,16 +30,23 @@ const MAP_TO_MODE: &[MapToMode] = &[
 ];
 
 const MAX_PARTY_SIZE: u32 = 6;
+// A Street Brawl lobby holds 8 players, so anything above that is a 6v6 lobby.
 const STREET_BRAWL_MAX_PLAYERS: u32 = 8;
 const STREET_BRAWL_MIN_PLAYERS: u32 = 5;
+// Matchmade dedicated servers always report one bot ("Players: 7 (1 bots)"), so only
+// more than that means the match is actually played against bots.
 const MATCHMADE_SERVER_BOTS: u32 = 1;
 const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 
+// EGameState from client.dll: Invalid, Init, WaitingForPlayersToJoin, HeroSelection,
+// MatchIntro, WaitForMapToLoad, PreGameWait, GameInProgress, PostGame,
+// PostGame_PlayOfTheGame, Abandoned, End.
 const GAME_STATE_MATCH_INTRO: u32 = 4;
 const GAME_STATE_IN_PROGRESS: u32 = 7;
 const GAME_STATE_POST_GAME: u32 = 8;
 const GAME_STATE_END: u32 = 11;
 
+// Hideout Lobby Connection State values; the number is a state, not a lobby id.
 const HIDEOUT_LOBBY_NO_LOBBY: i64 = 0;
 
 pub struct LogParser {
@@ -48,7 +55,10 @@ pub struct LogParser {
     bot_init_count: u32,
     local_account_id: Option<u64>,
     party_id: Option<u64>,
+    // Other members named by party events; the local player is always counted separately.
     party_members: HashSet<u64>,
+    // Members the hideout headcount proves exist but no party event named, e.g. everyone
+    // who was already in a party before the local player joined it.
     party_unnamed_members: u32,
     match_peak_players: u32,
 }
@@ -136,6 +146,7 @@ impl LogParser {
             let addr = &caps[1];
             state.connect_to_server(addr);
             let addr_lower = addr.to_lowercase();
+            // The local hideout server is reached over loopback or 127.0.0.1.
             let is_real_server =
                 !addr_lower.contains("loopback") && !addr_lower.starts_with("127.0.0.1");
 
@@ -210,6 +221,8 @@ impl LogParser {
                 }
             }
         } else if let Some(caps) = p.hideout_lobby_state.captures(line) {
+            // The hideout lobby is dropped when a match starts, so only trust NoLobby
+            // as "solo" while the player is actually in the hideout.
             let connection_state: i64 = caps[2].parse().unwrap_or(-1);
             if connection_state == HIDEOUT_LOBBY_NO_LOBBY
                 && matches!(state.phase, GamePhase::Hideout | GamePhase::PartyHideout)
@@ -242,6 +255,8 @@ impl LogParser {
         } else if let Some(caps) = p.player_info.captures(line) {
             let players: u32 = caps[1].parse().unwrap_or(0);
             let bots: u32 = caps[2].parse().unwrap_or(0);
+            // Bots are reported separately and not included in the player count, e.g. a
+            // party of two in the hideout logs "Players: 2 (3 bots)".
             let humans = players;
             log::debug!(
                 "[GamePresence] Server info: players={players} bots={bots} max={} map={current_map} phase={:?}",
@@ -251,6 +266,8 @@ impl LogParser {
 
             if in_hideout_map && matches!(state.phase, GamePhase::Hideout | GamePhase::PartyHideout)
             {
+                // Only party members can enter the shared hideout, so its headcount is
+                // the party size, including members who joined before we did.
                 if humans > 0 {
                     self.apply_hideout_headcount(state, humans);
                 }
@@ -300,6 +317,8 @@ impl LogParser {
             if !matches!(state.phase, GamePhase::MatchIntro | GamePhase::InMatch) {
                 self.begin_match(state);
             }
+            // The map only names the mode for maps that host a single mode; otherwise
+            // keep whatever the player count already inferred.
             if state.match_mode == MatchMode::Unknown {
                 state.match_mode = mapped.mode;
             }
@@ -353,6 +372,8 @@ impl LogParser {
 
         if event_lower.contains("joinedparty") {
             if Some(account_id) == self.local_account_id {
+                // The GC never announces members who were in the party before us, so
+                // assume at least one until the hideout headcount says how many.
                 self.party_id = Some(party_id);
                 self.party_members.clear();
                 self.party_unnamed_members = 1;
@@ -379,6 +400,7 @@ impl LogParser {
             if Some(account_id) == self.local_account_id {
                 self.clear_party_tracking(state);
             } else {
+                // A member no event named must be one of the unnamed ones.
                 if !self.party_members.remove(&account_id) {
                     self.party_unnamed_members = self.party_unnamed_members.saturating_sub(1);
                 }
@@ -394,6 +416,8 @@ impl LogParser {
             return;
         }
         self.local_account_id = Some(id);
+        // An event may have named us before we knew our own id. That was our own join,
+        // so keep assuming one earlier member unless a peer was named.
         if self.party_members.remove(&id) {
             if self.party_members.is_empty() {
                 self.party_unnamed_members = self.party_unnamed_members.max(1);
@@ -403,6 +427,7 @@ impl LogParser {
     }
 
     fn named_party_size(&self) -> u32 {
+        // The local player plus every other member a party event named.
         1 + self.party_members.len() as u32
     }
 
@@ -425,6 +450,7 @@ impl LogParser {
     }
 
     fn begin_match(&mut self, state: &mut GameState) {
+        // Modes are per match; a mode inferred for the previous match must not leak.
         state.match_mode = MatchMode::Unknown;
         state.player_count = 0;
         state.bot_count = 0;
@@ -434,6 +460,8 @@ impl LogParser {
     }
 
     fn apply_match_player_count(&mut self, state: &mut GameState, players: u32, bots: u32) {
+        // The count is a snapshot taken when we connect, while others may still be
+        // loading in, so only the highest count seen is meaningful.
         self.match_peak_players = self.match_peak_players.max(players);
         let peak = self.match_peak_players;
 

@@ -74,6 +74,7 @@ export class BlacklistCommand extends Command {
     const modIdOrUrl = interaction.options.getString("mod_id_or_url", true);
 
     try {
+      // Extract mod ID from URL if needed
       const identity = parsePolicyIdentity(modIdOrUrl);
 
       if (subcommand === "add") {

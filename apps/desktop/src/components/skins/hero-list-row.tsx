@@ -5,8 +5,11 @@ import { cn } from "@/lib/utils";
 
 export interface HeroListEntry {
   hero: string;
+  /** Skins, sounds and extras together: everything listed under the hero. */
   modCount: number;
+  /** Names of the installed skins; empty while the hero wears the default. */
   wearing: string[];
+  /** The skin is rolled on launch, so the row names no skin. */
   randomized: boolean;
   conflicted: boolean;
 }
@@ -38,6 +41,8 @@ export const HeroListRow = ({
       <HeroIcon
         className={cn(
           "h-[34px] w-[34px] rounded-lg",
+          // Dim only the portrait so heroes without mods still read as
+          // selectable rows.
           !modded && "mx-[3px] h-7 w-7 opacity-45 grayscale",
           !modded && isSelected && "opacity-100 grayscale-0",
         )}

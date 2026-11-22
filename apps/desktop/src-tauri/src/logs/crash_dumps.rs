@@ -23,6 +23,8 @@ pub struct CrashDumpFile {
   pub modified: Option<String>,
 }
 
+/// Deadlock only ships a Windows build, and Proton writes its dumps next to
+/// the same executable, so this is `game/bin/win64` on every platform.
 pub fn crash_dumps_dir_for(game_path: &Path) -> PathBuf {
   game_path.join("game").join("bin").join("win64")
 }

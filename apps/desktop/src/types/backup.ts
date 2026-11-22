@@ -7,11 +7,13 @@ export interface AddonsBackup {
   created_at: number;
   file_size: number;
   addons_count: number;
+  /** Mods an update backup holds; empty for full backups. */
   mod_names: string[];
 }
 
 export type RestoreStrategy = "replace" | "merge";
 
+/** Mods an update backup put back; empty for full restores. */
 export interface RestoredBackup {
   sourceProvenance: NativeSourceBackupEntry[];
   profileFolder: string | null;

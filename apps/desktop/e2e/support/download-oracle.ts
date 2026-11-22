@@ -38,6 +38,7 @@ export const downloadDirectory = async (world: string): Promise<string> => {
   } = await assertOwnedWorld(world);
   return path.join(roots.appData, "mods", DOWNLOAD_MOD);
 };
+/** Bytes already on disk for the download, in either staging format. */
 export const stagedBytes = async (world: string): Promise<number> => {
   const directory = await downloadDirectory(world);
   const sizes = await Promise.all(
@@ -53,6 +54,8 @@ export const stagedBytes = async (world: string): Promise<number> => {
   return sizes.reduce((total, size) => total + size, 0);
 };
 
+// Each part must be the start of its own span of the file: anything else is a
+// byte written at the wrong offset.
 const assertSegmentStaging = async (
   directory: string,
   inventory: Record<string, string>,

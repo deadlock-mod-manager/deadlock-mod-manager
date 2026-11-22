@@ -19,11 +19,13 @@ fn link(source: &str, mod_id: &str, release_id: &str) -> Result<InstallLink, Err
     .ok_or_else(|| Error::InvalidInput("Invalid install link".to_string()))
 }
 
+/// Hands the window every link that arrived since it last asked.
 #[tauri::command]
 pub fn take_pending_source_installs() -> Vec<InstallLink> {
   install_sources::take_pending()
 }
 
+/// Fetches and checks the manifest so the user can see what the link installs.
 #[tauri::command]
 pub async fn resolve_source_install(
   source: String,
@@ -33,6 +35,8 @@ pub async fn resolve_source_install(
   install_sources::resolve(&link(&source, &mod_id, &release_id)?).await
 }
 
+/// Downloads and verifies the file from the manifest the user confirmed,
+/// returning the staged path. Nothing the renderer holds is trusted.
 #[tauri::command]
 pub async fn download_source_install(
   source: String,
@@ -55,6 +59,7 @@ pub async fn download_source_install(
   Ok(path.to_string_lossy().into_owned())
 }
 
+/// Deletes the staged download's temporary folder, placed or not.
 #[tauri::command]
 pub async fn finish_source_install(path: String) -> Result<(), Error> {
   let staged = staged_files::take(Stager::Source, &path)?;

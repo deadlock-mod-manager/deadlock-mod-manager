@@ -1,6 +1,11 @@
 import { createInstance, type i18n, type ResourceKey } from "i18next";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./locales";
 
+/**
+ * One JSON file per namespace and locale: src/locales/<file>/<namespace>.json.
+ * English is the source Crowdin translates from; missing or empty keys in
+ * other locales fall back to it.
+ */
 export const NAMESPACES = [
   "common",
   "home",
@@ -35,6 +40,11 @@ const byNamespace = (files: Record<string, ResourceKey>) =>
     ]),
   );
 
+/**
+ * English is the fallback for every missing key, so it ships with the app.
+ * Other languages load on demand, one chunk per language, so visitors only
+ * download the language they read.
+ */
 const english = byNamespace(
   import.meta.glob<ResourceKey>("../../locales/en/*.json", {
     eager: true,
@@ -54,6 +64,11 @@ const loaders = {
   () => Promise<{ default: Record<string, ResourceKey> }>
 >;
 
+/**
+ * Makes a language's strings available before anything renders in it: the
+ * root route awaits this on the server, and the router's hydrate step awaits
+ * it in the browser so the first client render matches the server HTML.
+ */
 export const ensureLocale = async (instance: i18n, locale: Locale) => {
   if (locale === DEFAULT_LOCALE) return;
   if (instance.hasResourceBundle(locale, "common")) return;
@@ -63,6 +78,11 @@ export const ensureLocale = async (instance: i18n, locale: Locale) => {
   }
 };
 
+/**
+ * A fresh i18next instance per router, so concurrent server renders never
+ * share a language. English is bundled, so init is synchronous; call
+ * `ensureLocale` before rendering any other language.
+ */
 export const createI18n = (locale: Locale = DEFAULT_LOCALE): i18n => {
   const instance = createInstance();
   instance.init({
@@ -72,6 +92,7 @@ export const createI18n = (locale: Locale = DEFAULT_LOCALE): i18n => {
     supportedLngs: LOCALES.map((entry) => entry.id),
     ns: NAMESPACES,
     defaultNS: "common",
+    // Crowdin writes untranslated strings as "", which should fall back to English.
     returnEmptyString: false,
     interpolation: { escapeValue: false },
     initAsync: false,

@@ -100,6 +100,7 @@ const LineFigure = ({
   </div>
 );
 
+/** Where the match sits in the history, how it ended, and the player's line. */
 export const MatchHeader = ({
   heroesById,
   profiles,

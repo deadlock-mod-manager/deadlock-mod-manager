@@ -11,6 +11,7 @@ const queues: PendingCommand[] = [];
 const cancellations: PendingCommand[] = [];
 const events: { name: string; properties: AnalyticsProperties }[] = [];
 let nextId = 0;
+/** Attempt ids in the order the queue made them. */
 const attempts: string[] = [];
 const analytics = createAnalyticsClient({
   getContext: () => ({

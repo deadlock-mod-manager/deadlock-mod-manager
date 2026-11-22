@@ -77,6 +77,7 @@ describe("local mod parts", () => {
             timeoutMsg: "The finalize dialog did not list the dropped parts",
           },
         );
+        // Listed in install order, whatever order they were dropped in.
         expect(await listedParts()).toEqual([BASE, EXTRA_PART, HAIR, SOUNDS]);
         await $(`button[aria-label="Remove ${EXTRA_PART}"]`).click();
         await browser.waitUntil(
@@ -144,6 +145,7 @@ describe("local mod parts", () => {
           async () => (await listedParts()).length === 3,
           { timeoutMsg: "The finalize dialog did not list the dropped files" },
         );
+        // The voice pack's category comes from its files, read in the dialog.
         await browser.waitUntil(
           async () =>
             (await $(`[data-part-name="${VOICE_PACK}"]`).getText()).includes(
@@ -151,6 +153,7 @@ describe("local mod parts", () => {
             ),
           { timeoutMsg: "The dialog did not say what the voice pack holds" },
         );
+        // Nothing in their names ties them together.
         await expect($('[data-testid="import-mode-separate"]')).toHaveAttribute(
           "data-state",
           "on",

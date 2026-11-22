@@ -21,13 +21,18 @@ export const HEALTH_PROFILE = {
   name: "E2E Health",
 };
 export const HEALTH_MOD = { id: "960001", name: "E2E Hero Names" };
+// A loose VPK: the update skips extraction, so the mod never leaves Installed.
 const FILE_NAME = `${HEALTH_MOD.id}.vpk`;
 const FILE_ID = 960101;
 const OLD_DATE = 1_780_000_000;
+// Before the run, so the updated mod no longer counts as outdated.
 const NEW_DATE = 1_790_000_000;
 
 const LOCALIZATION =
   "resource/localization/citadel_heroes/citadel_heroes_english.txt";
+// The installed version renames both heroes the game has; the update is an
+// outdated copy of the file that lacks the newer hero, which the repairs can
+// restore. So the mod works before the update and can be fixed after it.
 const GAME_TOKENS = { hero_e2e: "Hero", hero_e2e_new: "New hero" };
 const ORIGINAL_PAYLOAD = buildSyntheticVpk([
   {
@@ -124,6 +129,7 @@ export async function prepareHealthUpdateWorld(world: CreatedWorld) {
     },
     fileserverPreference: "default",
     autoUpdateEnabled: false,
+    // The launch asks before fixing, so the prompt shows what it would fix.
     autoFixMods: false,
   };
   await writeFile(
@@ -220,6 +226,7 @@ export async function healthUpdateRoutes() {
   };
 }
 
+/** The update downloads its one loose VPK exactly once. */
 export function assertHealthUpdateNetwork(
   _id: string,
   requests: readonly FixtureRequest[],

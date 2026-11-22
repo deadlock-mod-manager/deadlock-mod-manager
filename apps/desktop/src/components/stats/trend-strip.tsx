@@ -24,7 +24,9 @@ import {
   formatPercent,
 } from "@/lib/stats/format";
 
+/** The headline numbers - each the typical (median) match - cover the same games as the ring. */
 const RECENT = 20;
+/** Matches on each sparkline, and the rolling median that smooths it. */
 const SPARK_MATCHES = 30;
 const SPARK_SMOOTHING = 10;
 
@@ -43,6 +45,7 @@ const TREND_METRICS: Array<{
   { metric: "deaths", format: (value) => formatDecimal(value, 1) },
 ];
 
+/** A rolling median: steadier than a mean against the odd 20-kill stomp. */
 const rollingMedian = (values: number[], window: number) =>
   values.map((_, index) =>
     median(values.slice(Math.max(0, index - window + 1), index + 1)),
@@ -148,10 +151,16 @@ const Sparkline = ({
 
 interface TrendStripProps {
   matches: MatchHistoryEntry[];
+  /** The bracket comparison; empty while it loads or when it is unavailable. */
   bracket: BracketRow[];
+  /** Name of the bracket the medians come from, `null` for everyone. */
   bracketName: string | null;
 }
 
+/**
+ * The numbers that move from one evening to the next, each against the median
+ * of the player's own rank, in one strip rather than a row of identical cards.
+ */
 export const TrendStrip = ({
   matches,
   bracket,

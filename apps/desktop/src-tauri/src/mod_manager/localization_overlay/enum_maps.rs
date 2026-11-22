@@ -3,6 +3,8 @@ use super::*;
 const FIELD: &str = "m_mapStandardLevelUpUpgrades";
 const CLASS: &str = "CitadelHeroData_t";
 
+/// This native map uses modifier enum keys, unlike open ability or string maps.
+/// The installed table supplies the observed domain across all heroes.
 pub(super) struct EnumMapCompatibility {
   keys: BTreeSet<String>,
 }

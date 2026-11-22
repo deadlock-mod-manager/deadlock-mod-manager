@@ -1,3 +1,6 @@
+//! Enrolls DMM's hosted mod source once. The user can disable or remove it;
+//! its tombstone prevents automatic enrollment from undoing that choice.
+
 use std::collections::HashSet;
 
 use reqwest::Url;
@@ -23,6 +26,8 @@ struct HostedSourceEntry {
 }
 
 impl NativeSourceManager {
+  /// Enrolls listed hosted sources this registry has never seen, then
+  /// refreshes the enrolled ones so a project switched off disappears.
   pub async fn sync_hosted(&self, api_url: &str, allow_local_network: bool) -> Result<(), Error> {
     let api = Url::parse(api_url).map_err(|_| Error::InvalidInput("Invalid API URL".into()))?;
     let api_origin = api.origin().ascii_serialization();
@@ -34,8 +39,10 @@ impl NativeSourceManager {
     )
     .await?;
 
+    // Enrollment fetched these catalogs moments ago.
     let mut added = HashSet::new();
     for entry in list.sources {
+      // Only DMM's own API may hand out descriptors without a user review.
       let same_origin = Url::parse(&entry.descriptor_url)
         .is_ok_and(|url| url.origin().ascii_serialization() == api_origin);
       if !same_origin {

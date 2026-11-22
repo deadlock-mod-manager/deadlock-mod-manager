@@ -35,6 +35,7 @@ export const SkinCard = ({
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
   const coverImage = getModCoverImage(mod);
+  // Only pool mode needs to say why a skin cannot be ticked.
   const showLocked = state.mode === "pool" && !state.canPool;
 
   return (

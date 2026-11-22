@@ -1,3 +1,7 @@
+//! Other tools' overlays: Grimoire marks every line it touches, so its edits
+//! are undone exactly; DeadTune, Sqooky's updater and gameinfo-editor only
+//! mark the block of keys they add.
+
 use std::ops::Range;
 use std::sync::LazyLock;
 
@@ -6,6 +10,7 @@ use regex::Regex;
 use super::{Line, OwnedLine, split_lines};
 use crate::mod_manager::perf_config::types::{ForeignOverlay, ForeignTool};
 
+/// Overlays written by Grimoire, DeadTune, Sqooky's updater or gameinfo-editor.
 pub fn detect_foreign(text: &str) -> Vec<ForeignOverlay> {
   let lines = split_lines(text);
   let mut found = Vec::new();
@@ -42,6 +47,11 @@ pub fn detect_foreign(text: &str) -> Vec<ForeignOverlay> {
   found
 }
 
+/// Removes those overlays, restoring the values their markers recorded.
+///
+/// Grimoire marks every line, so its edits are undone exactly. DeadTune,
+/// Sqooky's updater and gameinfo-editor only mark the block of keys they
+/// added; their in-place edits carry no record of the original and stay.
 pub fn strip_foreign(text: &str) -> (String, Vec<ForeignOverlay>) {
   let found = detect_foreign(text);
   if found.is_empty() {
@@ -120,6 +130,8 @@ enum GrimoireLine {
   Keep,
 }
 
+/// Grimoire's own `removeMarkers` (electron/main/services/performanceConfig.ts),
+/// line for line, so a file it patched comes back exactly as it was.
 fn grimoire_line(content: &str) -> GrimoireLine {
   if !content.contains(GRIMOIRE_TAG) && !content.contains("Grimoire Performance Config") {
     return GrimoireLine::Keep;
@@ -145,6 +157,8 @@ struct BlockTool {
   tool: ForeignTool,
   header: &'static str,
   footer: &'static str,
+  /// gameinfo-editor splices its block right after the `{` character rather
+  /// than after the line, which leaves the rest of the brace line below it.
   inserted_after_brace: bool,
 }
 
@@ -169,6 +183,8 @@ const BLOCK_TOOLS: [BlockTool; 3] = [
   },
 ];
 
+/// Line ranges from a header line through its footer line. A header without a
+/// footer is left alone, as those tools do.
 fn find_blocks(lines: &[Line], header: &str, footer: &str) -> Vec<Range<usize>> {
   let starts_with = |line: &Line, tag: &str| line.content.trim().starts_with(tag);
   let mut blocks = Vec::new();

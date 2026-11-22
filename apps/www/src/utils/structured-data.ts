@@ -18,6 +18,10 @@ export interface FaqEntry {
   answer: string;
 }
 
+/**
+ * Translated answers mark links and code with <Trans> tags such as
+ * <link>GitHub</link>. JSON-LD gets the plain text.
+ */
 const stripTags = (text: string) => text.replace(/<\/?[\w-]+>/g, "");
 
 const faqPage = (faqs: FaqEntry[]) => ({
@@ -30,9 +34,12 @@ const faqPage = (faqs: FaqEntry[]) => ({
 });
 
 interface HomeStructuredDataOptions {
+  /** Latest stable release, e.g. "1.1.0". Omitted when the API is down. */
   version?: string;
   locale?: Locale;
+  /** Translated site description. */
   description: string;
+  /** The home page FAQ, exactly as rendered. */
   faqs: FaqEntry[];
 }
 
@@ -109,10 +116,15 @@ export interface GuidePageData {
   path: string;
   title: string;
   description: string;
+  /** Breadcrumb label for this page. */
   name: string;
   faqs: FaqEntry[];
 }
 
+/**
+ * JSON-LD for a landing or guide page: the page itself, its breadcrumb trail
+ * and the FAQ it renders. The FAQ text must match the page.
+ */
 const guideGraph = (
   { path, title, description, name, faqs }: GuidePageData,
   locale: Locale,
@@ -153,12 +165,15 @@ const guideGraph = (
 
 type JsonLdGraph = ReturnType<typeof homeGraph> | ReturnType<typeof guideGraph>;
 
+/** `<` is escaped so answer HTML can never close the script tag early. */
 const serialize = (graph: JsonLdGraph) =>
   JSON.stringify(graph).replace(/</g, "\\u003c");
 
+/** Serialized JSON-LD for the home page head. */
 export const homeStructuredData = (options: HomeStructuredDataOptions) =>
   serialize(homeGraph(options));
 
+/** Head tags for a landing or guide page: meta, canonical link and JSON-LD. */
 export const guideHead = (
   page: GuidePageData,
   locale: Locale = DEFAULT_LOCALE,

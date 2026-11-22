@@ -15,6 +15,7 @@ pub async fn preview_native_source(
   let mut preview = state
     .preview(&descriptor_url, allow_local_network.unwrap_or(false))
     .await?;
+  // Additional declared media origins have not been accepted at preview time.
   preview.descriptor.icon_url = None;
   Ok(preview)
 }
@@ -116,11 +117,13 @@ pub async fn get_native_source_release_history(
   state.release_history(&remote_id).await
 }
 
+/// Hands the window every source link that arrived since it last asked.
 #[tauri::command]
 pub fn take_pending_native_source_links() -> Vec<NativeSourceLink> {
   links::take_pending()
 }
 
+/// Rechecks the link the renderer sends back, then finds its listing.
 #[tauri::command]
 pub async fn resolve_native_source_link(
   state: State<'_, NativeSourceManager>,

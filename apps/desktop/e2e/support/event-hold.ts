@@ -1,5 +1,6 @@
 import { browser } from "@wdio/globals";
 
+/** What Tauri hands a JavaScript event listener. */
 export type TauriEventData = {
   event: string;
   id: number;
@@ -15,6 +16,7 @@ type EventHold = {
 
 declare global {
   interface Window {
+    // Tauri 2 keeps each webview's event listeners here, by event name and id.
     __internal_unstable_listeners_object_id__?: Record<
       string,
       Record<string, { handlerId: number }>
@@ -23,6 +25,12 @@ declare global {
   }
 }
 
+/**
+ * Holds back the mod's download events from its first cancellation error on,
+ * in the order they arrive, until `releaseHeldEvents`. The app's listeners are
+ * wrapped where Tauri keeps them, so the events themselves are the backend's.
+ * Returns how many listener callbacks it wrapped.
+ */
 export const holdEventsFromCancellation = (modId: string) =>
   browser.execute((target: string) => {
     const listeners = window["__internal_unstable_listeners_object_id__"] ?? {};
@@ -61,6 +69,11 @@ export const holdEventsFromCancellation = (modId: string) =>
     return hold.wrappedCallbacks;
   }, modId);
 
+/**
+ * Holds back every `event` the backend sends from now on, in the order they
+ * arrive, until `releaseHeldEvents`. Returns how many listener callbacks it
+ * wrapped.
+ */
 export const holdEvents = (event: string) =>
   browser.execute((name: string) => {
     const listeners =
@@ -90,9 +103,11 @@ export const holdEvents = (event: string) =>
     return hold.wrappedCallbacks;
   }, event);
 
+/** Whether the hold has caught the cancellation error yet. */
 export const cancellationHeld = () =>
   browser.execute(() => window.e2eEventHold?.captured === true);
 
+/** Delivers the held events in their original order; returns how many. */
 export const releaseHeldEvents = () =>
   browser.execute(() => {
     const hold = window.e2eEventHold;

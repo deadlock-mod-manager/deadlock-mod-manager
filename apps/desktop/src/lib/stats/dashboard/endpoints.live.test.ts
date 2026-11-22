@@ -3,6 +3,16 @@ import path from "node:path";
 import { z } from "zod";
 import { jsonValueSchema } from "@/lib/validation/json";
 
+/**
+ * Loads every dashboard preset and API example against the real deadlock-api
+ * and checks each endpoint against its published OpenAPI document. Off by
+ * default so ordinary test runs never touch the network:
+ *
+ *   pnpm --filter @deadlock-mods/desktop check:dashboard-endpoints
+ *
+ * The stats-dashboard-endpoints skill walks through fixing what this reports.
+ */
+
 const LIVE = process.env.DASHBOARD_LIVE === "1";
 const BASE_URL =
   process.env.DASHBOARD_API_URL ?? "https://api.deadlock-api.com";
@@ -38,6 +48,7 @@ const openApiSchema = z.object({
 
 type OpenApi = z.infer<typeof openApiSchema>;
 
+/** Template path ("/v1/players/{account_id}/rank") for a concrete one. */
 const operationFor = (openApi: OpenApi, requestPath: string) => {
   const [pathname] = requestPath.split("?");
   return Object.entries(openApi.paths).find(([template]) =>
@@ -47,6 +58,7 @@ const operationFor = (openApi: OpenApi, requestPath: string) => {
   );
 };
 
+/** Problems the OpenAPI document reports for one concrete request. */
 const contractProblems = (openApi: OpenApi, requestPath: string): string[] => {
   const operation = operationFor(openApi, requestPath);
   const get = operation?.[1].get;
@@ -67,6 +79,7 @@ const contractProblems = (openApi: OpenApi, requestPath: string): string[] => {
   return problems;
 };
 
+/** An active account with plenty of history, so player presets have data. */
 const sampleAccount = async (): Promise<number> => {
   const fromEnv = Number(process.env.DASHBOARD_ACCOUNT_ID);
   if (Number.isSafeInteger(fromEnv) && fromEnv > 0) {
@@ -90,6 +103,9 @@ describe.skipIf(!LIVE)("dashboard endpoints (live)", () => {
     "every preset loads, parses and has the fields its default view plots",
     async () => {
       const requested: string[] = [];
+      // The app's client goes through Tauri's HTTP plugin; outside the app the
+      // same calls run on plain fetch, and every path is recorded for the
+      // OpenAPI check.
       mock.module(path.resolve(import.meta.dir, "../api.ts"), () => ({
         requestJson: (requestPath: string) => {
           requested.push(requestPath);

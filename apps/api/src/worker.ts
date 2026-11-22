@@ -10,10 +10,21 @@ import { cronService } from "./services/cron";
 import { HealthService } from "./services/health";
 import { version } from "./version";
 
+/**
+ * Consumes the API cron queue. `index.ts` neither declares nor runs scheduled
+ * jobs, so this is the only process that does.
+ */
+
 let draining = false;
 
 const app = new Hono();
 
+/**
+ * A worker whose run loop has died still answers database and Redis checks, so
+ * probes have to assert that it is consuming rather than merely alive. Draining
+ * counts as healthy: BullMQ clears the flag when shutdown starts, and failing
+ * liveness then would kill the drain we are waiting for.
+ */
 const getWorkerState = () => {
   const running = cronService.isRunning();
   return {

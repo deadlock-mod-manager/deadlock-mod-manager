@@ -39,6 +39,7 @@ export const useModHealthProgress = create<{
   setProgress: (progress) => set({ progress }),
 }));
 
+/** Latest `repair-plan-progress` event, cleared when a new plan build starts. */
 export const useRepairPlanProgress = create<{
   progress: RepairPlanProgress | null;
   setProgress: (progress: RepairPlanProgress | null) => void;
@@ -47,6 +48,7 @@ export const useRepairPlanProgress = create<{
   setProgress: (progress) => set({ progress }),
 }));
 
+/** Invokes a command that builds a repair plan, clearing the last plan's progress. */
 export const invokeRepairPlan = <T>(command: string, args: InvokeArgs) => {
   useRepairPlanProgress.getState().setProgress(null);
   return invoke<T>(command, args);
@@ -70,6 +72,8 @@ export const useModHealthReport = (profileFolder: string | null) => {
 
 export const useGameRunning = () => {
   const gamePath = usePersistedStore((state) => state.gamePath);
+  // useHeroDetection already polls this key every 5s; a second interval here
+  // would drift out of phase and double the process scans.
   const game = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
@@ -105,6 +109,8 @@ export const useCheckModHealth = () => {
           String(report.gameBuild),
         );
       }
+      // Every repair receipt digests the observed game data. Other profiles
+      // rebuild when they next become active.
       if (historyChanged) {
         const { profiles, activeProfileId } = usePersistedStore.getState();
         refreshFixes(profiles[activeProfileId]?.folderName ?? null);
@@ -123,6 +129,8 @@ export const useCheckModHealth = () => {
   });
   mutateRef.current = mutation.mutate;
 
+  // One check runs at a time; requests made meanwhile merge into the next
+  // one for their profile.
   return useCallback(
     ({
       profileFolder,
@@ -144,6 +152,8 @@ export const useCheckModHealth = () => {
   );
 };
 
+// Library changes delete the repair package; rebuild it so the fixes survive
+// a game started outside the manager.
 export const useRefreshModFixes = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -190,6 +200,8 @@ export const useFixMods = () => {
       ),
     meta: { skipGlobalErrorHandler: true },
     onSuccess: (outcome, { modIds }) => {
+      // The review dialog confirms its own apply, so only the direct path
+      // needs a toast here.
       if (outcome === "applied") {
         toast.success(t("modHealth.fixedToast", { count: modIds.length }));
       }

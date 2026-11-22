@@ -32,6 +32,9 @@ const UPDATES_BUTTON = "button=1 update available";
 const toast = (text: string) =>
   $(`//*[@data-sonner-toast and contains(., "${text}")]`);
 
+// The app caches update checks for six hours. Expiring the cache between
+// processes stands in for that time passing, so the next check sees the
+// author's next change.
 const expireUpdateCache = async (world: string) => {
   const {
     configuration: { roots },
@@ -53,6 +56,7 @@ const expectUpdates = (count: 0 | 1) =>
   step(`check for updates: ${count} available`, async () => {
     await navigate("my-mods");
     const check = await $('button[aria-label="Check for updates"]');
+    // Wait for any automatic check to finish so a manual one cannot race it.
     await check.waitForEnabled({ timeout: 30_000 });
     await check.click();
     await expect(
@@ -99,6 +103,7 @@ describe("skipping mod updates", () => {
         ),
         [`gamebanana-file://${CATALOG_MOD_ID}/${installed.id}`],
       );
+      // The author added a newer optional file the user never installed.
       await expectUpdates(0);
       await expectModPage(false);
     } else {
@@ -109,6 +114,7 @@ describe("skipping mod updates", () => {
     }
 
     if (phase === "skip-update") {
+      // The installed file was updated.
       await expectUpdates(1);
       await expectModPage(true);
       await step("skip the update", async () => {
@@ -137,6 +143,7 @@ describe("skipping mod updates", () => {
       await expectUpdates(0);
       await expectModPage(false);
     } else if (phase === "newer-update") {
+      // The author updated the installed file again after the skipped update.
       assert.equal(await skippedUpdateAt(), UPDATE_SKIP_DATES.updatedFile);
       await expectUpdates(1);
       await expectModPage(true);

@@ -1,3 +1,9 @@
+"""Regenerate harmless, valid VPK/ZIP fixtures using Python standard libraries.
+
+The VPK v1 tree stores one inline file, its actual CRC32 and byte length.
+No generated fixture replaces a game asset. JSON digests are updated together.
+"""
+
 import hashlib
 import json
 from pathlib import Path

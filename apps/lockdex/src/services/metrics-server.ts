@@ -7,9 +7,11 @@ import { archiveExtractorFactory } from "@/services/archive";
 import { modFileProcessingQueue } from "@/services/queue";
 import { version } from "@/version";
 
+// The coverage count scans every download, so it is cached between requests
 const COVERAGE_TTL_MS = 60 * 1000;
 const toMb = (bytes: number) => Math.round(bytes / 1024 / 1024);
 
+/** JSON progress report for `kubectl port-forward`, not a public endpoint */
 class MetricsServer {
   private readonly vpkRepository = new VpkRepository(db);
   private server: ReturnType<typeof Bun.serve> | null = null;

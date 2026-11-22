@@ -15,6 +15,8 @@ const CACHE_TTL_MS = 5 * 60 * 1_000;
 const CACHE_MAX_ENTRIES = 256;
 const RESOLVE_CONCURRENCY = 4;
 const MAX_REQUIREMENTS = 50;
+// Kept below the server's idle timeout so a slow provider yields partial
+// results instead of a closed connection.
 const RESOLVE_DEADLINE_MS = 8_000;
 
 export interface ResolvedRequirement {
@@ -184,6 +186,14 @@ export class ServerModsResolver {
     };
   }
 
+  /**
+   * Resolves requirements with a fixed number of workers pulling from one
+   * shared iterator, so a slow provider lookup occupies a single slot instead
+   * of stalling a whole batch. Results start out as `timed_out` and are
+   * overwritten as each lookup lands, so a deadline miss returns partial
+   * results instead of holding the response open past the server's idle
+   * timeout.
+   */
   private async resolveBounded(
     bounded: ServerRequiredMod[],
     rules: PolicyRule[],

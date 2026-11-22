@@ -69,6 +69,10 @@ const MAX_SEQUENCE_SECONDS: f32 = 30.0;
 const MAX_SAMPLED_TRANSFORMS: usize = 180_000;
 const MAX_ANIMATED_BONES: usize = 2048;
 
+/// The bones that need tracks: those the clips move and the cloth roots pinned
+/// to them. The rest hold their bind transform, which the loaded model already
+/// has, so skipping them keeps cloth-heavy skins (thousands of procedural
+/// cloth bones) within the bone and sample budgets.
 fn driven_bones(clips: &[nm_anim::NmAnimation], skeleton: &skeleton::Skeleton) -> Vec<bool> {
   let mut driven: Vec<_> = skeleton
     .bones
@@ -126,6 +130,8 @@ fn sampling_plan(clips: &[(usize, f32)], bone_count: usize) -> Result<Vec<ClipSa
   }
   let requested_extras: usize = plan.iter().map(|clip| clip.sample_count - 2).sum();
   if requested_extras > extra_budget {
+    // Keep both endpoints of every phase, then share the remaining samples
+    // proportionally. Sampling less densely must never shorten the motion.
     for clip in &mut plan {
       clip.sample_count = 2 + (clip.sample_count - 2) * extra_budget / requested_extras;
     }
@@ -142,6 +148,8 @@ fn animation_slot() -> &'static Arc<tokio::sync::Semaphore> {
   SLOT.get_or_init(|| Arc::new(tokio::sync::Semaphore::new(1)))
 }
 
+/// The VPK at `file_path`, falling back to the base game and then the engine's
+/// core pak, plus the base game on its own for clip listings.
 pub(super) fn archives(file_path: &str) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
   archives_with_overlay(file_path, None)
 }
@@ -226,6 +234,8 @@ pub async fn foundry_list_animations(
   .map_err(invalid)?
 }
 
+/// Decodes `clip_paths` back to back into one timeline, so an action made of
+/// several clips (start, loop, end) plays as a single animation.
 #[tauri::command]
 pub async fn foundry_decode_animation(
   file_path: String,
@@ -235,6 +245,8 @@ pub async fn foundry_decode_animation(
   if clip_paths.is_empty() || clip_paths.len() > MAX_SEQUENCE_CLIPS {
     return Err(invalid("An animation needs between one and eight clips"));
   }
+  // Queue behind the running decode instead of failing, so switching actions
+  // quickly still plays the last one picked.
   let permit = animation_slot()
     .clone()
     .acquire_owned()
@@ -243,6 +255,8 @@ pub async fn foundry_decode_animation(
   tauri::async_runtime::spawn_blocking(move || {
     let _permit = permit;
     clip_directory(&entry_path)?;
+    // Clips come from the model's anim graphs, which may live in another
+    // hero's folder, so only the path's shape is checked here.
     if clip_paths
       .iter()
       .any(|clip_path| !clip_path.ends_with(".vnmclip_c") || clip_path.contains(".."))
@@ -333,6 +347,7 @@ pub async fn foundry_decode_animation(
         start: offset,
         end: offset + duration,
       });
+      // One frame of blend between clips keeps keyframe times strictly increasing.
       offset += duration + 1.0 / SAMPLE_RATE;
     }
     Ok(PreviewAnimation {

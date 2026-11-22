@@ -1,5 +1,6 @@
 import type { KeyValuesValue } from "./generated/KeyValuesValue";
 
+// Re-export generated types from Rust
 export type { AstNode } from "./generated/AstNode";
 export type { CommentNode } from "./generated/CommentNode";
 export type { CommentStyle } from "./generated/CommentStyle";
@@ -26,4 +27,5 @@ export type { TokenType } from "./generated/TokenType";
 export type { ValueNode } from "./generated/ValueNode";
 export type { WhitespaceNode } from "./generated/WhitespaceNode";
 
+// Helper type for KeyValuesObject
 export type KeyValuesObject = Record<string, KeyValuesValue>;

@@ -1,5 +1,6 @@
 export interface ExtractionOptions {
   targetDir: string;
+  /** Lowercase extensions with the dot, e.g. ".vpk"; omit to extract everything */
   fileExtensions?: string[];
 }
 

@@ -66,6 +66,7 @@ interface AnalyzedFile {
 }
 
 const lowerName = (path: string[]) => path[1].toLowerCase();
+/** Code-unit order, so the output doesn't depend on the machine's locale. */
 const compareText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const isConvarEntry = (entry: ConfigEntry) =>
   entry.path.length >= 2 && entry.path[0].toLowerCase() === "convars";
@@ -106,6 +107,7 @@ const categoryFor = (name: string, gameplay: GameplayClass | null): string => {
   );
 };
 
+/** Kind for a key Valve's dump doesn't know, from the values configs give it. */
 const inferKind = (name: string, values: string[]): ConvarMeta["kind"] => {
   const lower = values.map((value) => value.trim().toLowerCase());
   if (lower.length === 0) return "string";
@@ -123,6 +125,11 @@ const inferKind = (name: string, values: string[]): ConvarMeta["kind"] => {
   return "string";
 };
 
+/**
+ * Every `setting.*` key in the author's video.txt, written by the app as
+ * shipped. Menu options come first with their label, then the rest in file
+ * order; the last line wins for a repeated key, as in the game.
+ */
 const videoSettings = (text: string): VideoSetting[] => {
   const settings = new Map<string, { key: string; value: string }>();
   for (const match of text.matchAll(/"setting\.([^"]+)"\s+"([^"]*)"/g)) {
@@ -150,6 +157,7 @@ const videoSettings = (text: string): VideoSetting[] => {
   return out;
 };
 
+/** Drops `undefined`, `null` and empty arrays so the bundled file stays small. */
 const compact = <T extends object>(value: T): T =>
   Object.fromEntries(
     Object.entries(value).filter(
@@ -213,6 +221,7 @@ export const buildCatalog = async (
     dump.commands.map((command) => command.name.toLowerCase()),
   );
 
+  // Stock gameinfo.gi history, newest first, one file per build.
   const gt = sources.gameTracking;
   const stockAll = await mapLimit(
     gt.gameinfo.versions,
@@ -293,6 +302,7 @@ export const buildCatalog = async (
     upstream.set(file.id, { ...analyze(text), text, videos });
   }
 
+  // GameBanana configs: analyzed for stats only.
   const community = new Map<
     string,
     AnalyzedFile & { variantPath: string; bundlesVpks: boolean }
@@ -316,6 +326,8 @@ export const buildCatalog = async (
     });
   }
 
+  // Convar metadata: every convar in the dump, plus keys configs or stock use
+  // that the dump doesn't have.
   const seenValues = new Map<string, { name: string; values: string[] }>();
   const see = (name: string, value: string | null) => {
     const key = name.toLowerCase();
@@ -390,6 +402,11 @@ export const buildCatalog = async (
       );
   }
 
+  /**
+   * ConVars entries the app writes by default, per category: active, not
+   * denied, and not the convar's own default for a key stock doesn't set (the
+   * app counts that as unchanged).
+   */
   const writableCounts = (entries: ConfigEntry[]): Record<string, number> => {
     const counts: Record<string, number> = {};
     for (const entry of entries) {
@@ -439,6 +456,7 @@ export const buildCatalog = async (
     );
   }
 
+  // Presets must be expressible as an overlay.
   for (const id of presetFiles) {
     const file = upstream.get(id);
     if (!file) continue;
@@ -602,8 +620,13 @@ export const buildCatalog = async (
   return { catalog, report: { lines } };
 };
 
+/** `CATEGORY_SATURATION` in perf_config/resolve.rs. */
 const CATEGORY_SATURATION = 25;
 
+/**
+ * The desktop's Looks ⟷ Frames placement (`cut_score_from_category_counts` in
+ * perf_config/resolve.rs), for the report: each category saturates on its own.
+ */
 const cutScore = (counts: Record<string, number>): number => {
   const total = CATEGORIES.reduce(
     (sum, category) => sum + Math.max(0, category.weight),
@@ -637,6 +660,7 @@ const buildConsensus = ({
     ]);
   }
 
+  // Each lineage's value per key: the majority among its configs, first config on a tie.
   const votes = new Map<string, Map<string, string>>();
   for (const [lineage, ids] of lineages) {
     const perKey = new Map<string, string[]>();

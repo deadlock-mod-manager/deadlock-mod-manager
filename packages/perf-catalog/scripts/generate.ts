@@ -1,3 +1,15 @@
+/**
+ * Generates `data/catalog.json` from the pins in `sources.json` and the curated
+ * layer in `curated/`.
+ *
+ *   bun packages/perf-catalog/scripts/generate.ts            regenerate
+ *   bun packages/perf-catalog/scripts/generate.ts --check    fail if the committed file is stale
+ *   bun packages/perf-catalog/scripts/generate.ts --refresh  move pins to the newest upstream state
+ *       [--summary <file>]                                   write a markdown summary (CI)
+ *
+ * Set GITHUB_TOKEN (or GH_TOKEN) for `--refresh`; GitHub's unauthenticated API
+ * limit is too low for the stock history.
+ */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Catalog, catalogSchema } from "../src/schema";
@@ -15,6 +27,7 @@ const refresh = args.includes("--refresh");
 const summaryIndex = args.indexOf("--summary");
 const summaryPath = summaryIndex >= 0 ? args[summaryIndex + 1] : undefined;
 
+/** Catalog text without the fields that change on every run. */
 const comparable = (catalog: Catalog): string =>
   JSON.stringify({ ...catalog, version: "", generatedAt: "" });
 

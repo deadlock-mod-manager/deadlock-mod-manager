@@ -27,12 +27,15 @@ import {
   windowParam,
 } from "./kit";
 
+/** Presets derived from the match history; they cannot break with the API. */
+
 const newest = <T>(items: T[], count: number | null) =>
   count === null ? items : items.slice(-count);
 
 const perMinute = (value: number, match: MatchHistoryEntry) =>
   match.match_duration_s > 0 ? value / (match.match_duration_s / 60) : 0;
 
+/** A match query whose group column carries a preset-specific name. */
 const grouped = (
   matches: MatchHistoryEntry[],
   query: Partial<MatchQuery> & { metrics: MatchMetric[]; groupBy: MatchGroup },
@@ -126,6 +129,7 @@ export const HISTORY_PRESETS: PresetDef[] = [
     build: (matches, params) =>
       tabulate(formCurve(matches, numberParam(params, "window", 20)), [
         ["startTime", "date", (point) => point.startTime],
+        // The form curve is in percent; the dashboard keeps fractions.
         ["winrate", "percent", (point) => point.winrate / 100],
       ]),
   }),
@@ -213,6 +217,8 @@ export const HISTORY_PRESETS: PresetDef[] = [
     build: (matches, params) =>
       tabulate(
         newest(
+          // Placements carry badge 0; plotting them would drop the line to the
+          // bottom between ranked games.
           chronological(matches).filter(
             (match) => (match.ranked_display_badge ?? 0) > 0,
           ),

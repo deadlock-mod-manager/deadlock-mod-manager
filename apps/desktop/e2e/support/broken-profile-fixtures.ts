@@ -7,6 +7,8 @@ import type { CreatedWorld } from "./world";
 export const brokenProfileDirectory = (game: string) =>
   path.join(game, "game", "citadel", "addons", BETA.folder);
 
+// Seen in user installs: an inactive profile whose manifest has two mods
+// claiming the same VPK. Nothing the active profile does should depend on it.
 export const prepareBrokenProfileWorld = async (world: CreatedWorld) => {
   await prepareInstalledProfiles(
     world,

@@ -29,6 +29,7 @@ interface ItemCardProps {
   imbueTarget?: DeadlockAbility;
 }
 
+/** One item with its shop description on hover. */
 const ItemFace = ({
   item,
   price,
@@ -36,6 +37,7 @@ const ItemFace = ({
   size,
 }: {
   item: DeadlockUpgrade;
+  /** What the player pays at this step, which for an upgrade is the difference. */
   price: string;
   priceTitle?: string;
   size: "large" | "small";
@@ -98,6 +100,8 @@ const ItemFace = ({
         </div>
       </HoverCardTrigger>
 
+      {/* Portaled out of the page, so it takes the category colour rather
+          than the hero accent, which only exists inside the page. */}
       <HoverCardContent
         className={cn("w-80 bg-background-dark p-0", CATEGORY_BORDER[category])}
         collisionPadding={12}>
@@ -164,12 +168,18 @@ const ItemFace = ({
   );
 };
 
+/**
+ * One item slot of the build. A slot that gets upgraded is split in two: what
+ * is bought first on the left, what it turns into on the right.
+ */
 export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
   const { t } = useTranslation("tool-randomizer");
   const formatSouls = useFormatSouls();
   const { item, upgrade, imbueSlot } = entry;
   const final = finalItem(entry);
   const category = final.item_slot_type;
+  // Some imbues upgrade into an item that works on every ability, like Mystic
+  // Expansion into Greater Expansion - the imbue only lasts until then.
   const imbueLapses = Boolean(upgrade && item.imbue && !upgrade.imbue);
 
   return (
@@ -193,6 +203,8 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
         <span className='font-mono text-[11px] text-[rgb(var(--hero))] tabular-nums'>
           {String(order).padStart(2, "0")}
         </span>
+        {/* A handful of upgrades change category, like Spirit Lifesteal into
+            Spiritual Overflow, so both ends are named when they differ. */}
         {item.item_slot_type !== category ? (
           <span className={cn("dl-label", CATEGORY_TEXT[item.item_slot_type])}>
             {t("item.categoryChange", {

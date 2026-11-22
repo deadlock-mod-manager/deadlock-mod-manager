@@ -25,6 +25,7 @@ type AuthStep = "idle" | "redirecting" | "code-entry";
 
 const FALLBACK_TIMEOUT_MS = 5000;
 
+// `prominent` renders a primary button for places where signing in is the main action.
 const AuthModal = ({ prominent = false }: { prominent?: boolean }) => {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();

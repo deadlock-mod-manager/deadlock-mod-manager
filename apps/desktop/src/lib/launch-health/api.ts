@@ -8,6 +8,7 @@ import type {
 export const SESSION_STARTED_EVENT = "game-session-started";
 export const SESSION_ENDED_EVENT = "game-session-ended";
 
+/** Finished sessions not acknowledged yet, including ones from earlier runs. */
 export const getPendingSessionReports = () =>
   invoke<SessionReport[]>("session_pending_reports");
 
@@ -16,6 +17,7 @@ export const acknowledgeSession = (
   outcome: SessionAckOutcome,
 ) => invoke<void>("session_acknowledge", { sessionId, outcome });
 
+/** Without a session id it goes to the running session, if it has none yet. */
 export const recordClientFingerprint = (
   sessionId: string | null,
   data: ClientFingerprint,

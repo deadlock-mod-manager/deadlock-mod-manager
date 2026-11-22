@@ -76,6 +76,10 @@ interface PinnedDownload {
   md5?: string;
 }
 
+/**
+ * Downloads a pinned file, from the local cache when we have it. A hash
+ * mismatch is a hard failure: the pin no longer describes what upstream serves.
+ */
 export const fetchPinned = async ({
   url,
   sha256: expectedSha,
@@ -110,6 +114,7 @@ export const fetchPinned = async ({
   return data;
 };
 
+/** Unpinned download for `--refresh`, which computes the new pins. */
 export const fetchBytes = async (url: string): Promise<Uint8Array> =>
   new Uint8Array(await (await request(url)).arrayBuffer());
 
@@ -132,6 +137,7 @@ export const githubApi = async <T>(
   return fetchJson(`https://api.github.com/${path}`, schema, headers);
 };
 
+/** All pages of a GitHub list endpoint. */
 export const githubApiPaged = async <T>(
   path: string,
   schema: z.ZodType<T[]>,
@@ -164,6 +170,7 @@ export const decodeText = (data: Uint8Array): string => {
   }
 };
 
+/** Runs `tasks` with at most `limit` in flight, keeping input order. */
 export const mapLimit = async <T, R>(
   items: T[],
   limit: number,

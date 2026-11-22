@@ -14,6 +14,7 @@ import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSumm
 import { PageButton } from "./page-button";
 import { usePluginActions } from "./use-plugin-actions";
 
+/** "10:41" today, a full date and time before that. */
 const formatErrorTime = (language: string, iso: string) => {
   const at = new Date(iso);
   if (at.toDateString() !== new Date().toDateString()) {

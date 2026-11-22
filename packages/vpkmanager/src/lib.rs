@@ -35,6 +35,7 @@ pub use texture_edit::{
     EditedTexture, Recolor, paint_texture, recolor_texture, replace_texture_image,
 };
 
+/// Parse only a texture's header: its format, stored size and mip count.
 pub fn inspect_texture(bytes: &[u8]) -> Result<(u32, u32, String)> {
     let info = source2::inspect(bytes)?;
     Ok((

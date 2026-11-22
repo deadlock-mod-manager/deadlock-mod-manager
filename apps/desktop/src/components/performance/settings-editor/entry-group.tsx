@@ -9,6 +9,7 @@ import type { EntryOverride } from "@/types/generated/EntryOverride";
 import { categoryLabel } from "./category-rail";
 import { ENTRY_ROW_GRID, EntryRow } from "./entry-row";
 
+/** Rows shown per category before "Show N more"; keeps 500-entry configs cheap to render. */
 const COLLAPSED_ROW_LIMIT = 6;
 
 type EntryGroupProps = {
@@ -19,6 +20,7 @@ type EntryGroupProps = {
   showKeys: boolean;
   engineIncluded: boolean;
   highlightKey: string | null;
+  /** Set when the category was just picked in the rail; a new value replays the flash. */
   flashToken: number | null;
   onAction: (action: DraftAction) => void;
   registerElement: (id: string, element: HTMLElement | null) => void;

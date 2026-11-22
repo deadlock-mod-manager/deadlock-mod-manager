@@ -45,6 +45,8 @@ export function CrosshairCanvas({
       container.style.height = cssHeight;
     }
 
+    // Assigning width/height reallocates the backing buffer even when the
+    // value is unchanged, so only touch them on a real size change.
     const pixelWidth = Math.round(containerWidth * window.devicePixelRatio);
     const pixelHeight = Math.round(containerHeight * window.devicePixelRatio);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {

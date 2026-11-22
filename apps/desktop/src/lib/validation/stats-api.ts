@@ -1,7 +1,19 @@
 import { z } from "zod";
 import { jsonValueSchema } from "@/lib/validation/json";
 
+/**
+ * Schemas for everything api.deadlock-api.com sends the Stats page.
+ *
+ * The app does arithmetic on these numbers and renders the result, so they are
+ * parsed at the network boundary rather than cast. The shapes are deliberately
+ * forgiving: only the fields an entry is *identified* by are required, and every
+ * counter falls back to zero. deadlock-api adds fields between releases and
+ * leaves others unset, and neither should empty a scoreboard.
+ */
+
+/** A counter the app sums or averages: absent or malformed reads as zero. */
 const count = z.number().optional().default(0).catch(0);
+/** A counter Valve leaves unset rather than zeroing, where that difference matters. */
 const optionalCount = z.number().nullish().default(null).catch(null);
 const text = z.string().optional().default("").catch("");
 
@@ -13,8 +25,12 @@ export const matchHistoryEntrySchema = z.object({
   start_time: z.number(),
   game_mode: count,
   match_mode: count,
+  // Which side the player was on and which side won: `isWin` is the difference
+  // between them, so a default would silently turn every match into a loss.
   player_team: z.number(),
   match_result: z.number(),
+  // 5 means the match did not count for this player. Not every source reports
+  // it, so a missing value falls back to the winning-team comparison.
   player_match_outcome: z.number().nullish().catch(null),
   player_kills: count,
   player_deaths: count,
@@ -54,6 +70,7 @@ export const matchMetadataStatSchema = z.object({
   shots_missed: count,
 });
 
+/** One death, and which player slot landed it. */
 const matchMetadataDeathSchema = z.object({
   game_time_s: count,
   killer_player_slot: optionalCount,
@@ -73,6 +90,8 @@ export const matchMetadataPlayerSchema = z.object({
   last_hits: count,
   denies: count,
   level: count,
+  // A player with no recorded purchases is a real (if dull) match; an empty
+  // build must not drop the whole player off the scoreboard.
   items: z.array(matchMetadataItemSchema).optional().default([]).catch([]),
   stats: z.array(matchMetadataStatSchema).optional().default([]).catch([]),
   death_details: z
@@ -80,7 +99,9 @@ export const matchMetadataPlayerSchema = z.object({
     .optional()
     .default([])
     .catch([]),
+  /** Valve's post-match ranking, 1 being the lobby's best. */
   mvp_rank: optionalCount,
+  /** Shared by the two teams' players in the same lane. */
   assigned_lane: optionalCount,
 });
 
@@ -201,12 +222,14 @@ export const playerRankSchema = z.object({
   last_match: lastRankedMatchSchema.nullish().default(null).catch(null),
 });
 
+/** One month of `/players/{id}/region`: the account's matches on one cluster. */
 export const regionHistoryEntrySchema = z.object({
   month: z.number(),
   datacenter: z.string().nullish().default(null).catch(null),
   matches: count,
 });
 
+/** Rows are validated one by one, so a single odd month does not drop the rest. */
 export const playerRegionSchema = z.object({
   history: z.array(jsonValueSchema).optional().default([]).catch([]),
 });
@@ -227,6 +250,10 @@ export const badgeDistributionEntrySchema = z.object({
   unique_players: count,
 });
 
+/**
+ * One metric of `/analytics/player-stats/metrics`: the spread of a per-match
+ * value across every player in the requested bracket.
+ */
 export const metricSpreadSchema = z.object({
   avg: z.number(),
   percentile1: z.number(),
@@ -240,12 +267,17 @@ export const metricSpreadSchema = z.object({
   percentile99: z.number(),
 });
 
+/** One bucket of `/analytics/player-performance-curve` in absolute game time. */
 export const performancePointSchema = z.object({
   game_time: count,
   net_worth_avg: count,
   samples: count,
 });
 
+/**
+ * One step of the bracket-wide curve: how players on a hero stand at that game
+ * time, as a mean and standard deviation per stat.
+ */
 export const performanceCurvePointSchema = z.object({
   game_time: count,
   net_worth_avg: count,
@@ -293,6 +325,7 @@ export const heroCounterStatsSchema = z.object({
   enemy_networth: count,
 });
 
+/** How often a set of heroes won on one team. */
 export const heroCombStatsSchema = z.object({
   hero_ids: z.array(z.number()),
   wins: count,

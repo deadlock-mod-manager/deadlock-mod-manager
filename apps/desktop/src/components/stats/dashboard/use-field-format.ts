@@ -17,6 +17,7 @@ import {
 } from "@/lib/stats/format";
 import { useDashboardData } from "./dashboard-context";
 
+/** "avg_net_worth" and "netWorth" both read as "Avg net worth" / "Net worth". */
 const humanize = (key: string): string => {
   const spaced = key
     .replace(/[_.]+/g, " ")
@@ -28,6 +29,10 @@ const humanize = (key: string): string => {
 
 const SUNDAY = new Date(2024, 0, 7);
 
+/**
+ * Turns dataset cells into text. Ids resolve through the catalogs the page
+ * already loads; the item catalog is only fetched once a dataset carries items.
+ */
 export const useFieldFormat = (dataset: Dataset) => {
   const { t, i18n } = useTranslation();
   const { heroesById, rankAssets } = useDashboardData();
@@ -56,6 +61,7 @@ export const useFieldFormat = (dataset: Dataset) => {
     [heroesById],
   );
 
+  /** Short form for axes, legends and table cells. */
   const formatValue = useCallback(
     (value: CellValue | undefined, field: DatasetField | undefined): string => {
       if (value === null || value === undefined || value === "") {

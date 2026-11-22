@@ -9,6 +9,8 @@ import { cn } from "../lib/utils";
 
 const TooltipProvider = TooltipPrimitive.Provider;
 
+// Long lists render many tooltips that are never hovered, so content mounts on
+// first open and then stays mounted for its close animation.
 const TooltipOpenedContext = React.createContext(true);
 
 const Tooltip = ({

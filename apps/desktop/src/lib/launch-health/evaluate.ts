@@ -7,6 +7,11 @@ import type {
   SessionReport,
 } from "./types";
 
+/**
+ * Only an early exit points at the setup. Later crashes happen to any setup,
+ * and plenty of normal sessions are short too, so this decides whether to
+ * blame recent changes, not whether something crashed.
+ */
 const CRASH_WINDOW_SECONDS = 300;
 
 export const modFilesChanged = (
@@ -78,6 +83,11 @@ const launchOptionsChange = (
   return { kind: "launchOptions", added, removed };
 };
 
+/**
+ * What the session ran with that the last normal session didn't. Removals
+ * are left out (turning things off doesn't break a launch), except inside
+ * launch options, where a removed argument can matter.
+ */
 export const diffFingerprints = (
   previous: SessionFingerprint,
   current: SessionFingerprint,
@@ -99,6 +109,8 @@ export const diffFingerprints = (
   const launchOptions = launchOptionsChange(previous, current);
   if (launchOptions) changes.push(launchOptions);
 
+  // Without a mod-level change to point at, still say when the mounted files
+  // changed (a reorder, a file swapped by hand, another tool).
   if (mods.length === 0) {
     const paths = changedAddonPaths(previous, current);
     if (paths.length > 0) changes.push({ kind: "addonFiles", paths });
@@ -134,11 +146,15 @@ export const evaluateSession = (
 
   const uptime = report.uptimeSecs;
   const ranAWhile = uptime !== null && uptime >= CRASH_WINDOW_SECONDS;
+  // A stop from the app says nothing about a crash. A short stopped session
+  // may be a hang, so it must not become the setup later crashes are compared
+  // against; one that ran a while is a normal session cut short.
   if (report.classification === "stopped") {
     return ranAWhile
       ? { kind: "normal" }
       : { kind: "ignore", reason: "stoppedByApp" };
   }
+  // We can't tell how these ended, but the setup ran for a good while.
   if (report.classification !== "crash" && ranAWhile) {
     return { kind: "normal" };
   }
@@ -187,10 +203,15 @@ export type CrashCheckPrompt = {
 
 type ReportPlan = {
   acknowledgements: { sessionId: string; outcome: SessionAckOutcome }[];
+  /** The newest normal session's fingerprint, if any. */
   newBaseline: SessionFingerprint | null;
   prompt: CrashCheckPrompt | null;
 };
 
+/**
+ * Works through finished sessions oldest first. Only the latest crash is worth
+ * asking about, and not once a normal session has followed it.
+ */
 export const planReports = (
   reports: SessionReport[],
   lastNormal: SessionFingerprint | null,

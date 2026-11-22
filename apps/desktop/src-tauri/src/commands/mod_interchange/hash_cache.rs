@@ -1,3 +1,11 @@
+//! SHA-256 of large files, computed in parallel and remembered.
+//!
+//! Reading another manager's library needs a full-file hash per VPK (to
+//! verify recorded fingerprints and to key local mods). Libraries run into
+//! many gigabytes, so hashes are spread over all cores and cached by path,
+//! size and modification time: a file that did not change is never read
+//! twice, and any change (size or mtime) invalidates its entry.
+
 use super::format::sha256_file;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -7,6 +15,8 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 const CACHE_FILE: &str = "interchange-hash-cache.json";
+/// Entries for files that disappeared are dropped once the cache grows past
+/// this, so it cannot grow without bound across many libraries.
 const MAX_ENTRIES: usize = 20_000;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -23,6 +33,7 @@ struct CacheFile {
   entries: BTreeMap<String, Entry>,
 }
 
+/// File identity the cache trusts: size plus modification time.
 fn stamp(path: &Path) -> Option<(u64, u128)> {
   let metadata = fs::metadata(path).ok()?;
   let modified = metadata
@@ -41,6 +52,7 @@ pub struct HashCache {
 }
 
 impl HashCache {
+  /// A cache persisted in `dir`; `None` keeps it in memory only.
   pub fn open(dir: Option<&Path>) -> Self {
     let path = dir.map(|dir| dir.join(CACHE_FILE));
     let entries = path
@@ -84,12 +96,15 @@ impl HashCache {
     }
   }
 
+  /// Record `sha256` for a file whose bytes are known, such as a fresh copy
+  /// of a hashed file, so it is never read to be hashed.
   pub fn remember(&self, path: &Path, sha256: &str) {
     if let Some((size, modified)) = stamp(path) {
       self.store(path, size, modified, sha256);
     }
   }
 
+  /// The hash of `path`, from the cache if it did not change.
   pub fn hash(&self, path: &Path) -> Result<String, String> {
     self
       .hash_all(&[path.to_path_buf()], &|_, _, _| {})
@@ -97,6 +112,9 @@ impl HashCache {
       .unwrap_or_else(|| Err("not hashed".to_string()))
   }
 
+  /// Hash every path, cached ones instantly and the rest on all cores.
+  /// `progress(done, total, name)` fires after each file. Results keep the
+  /// input order; an unreadable file yields its error message.
   pub fn hash_all(
     &self,
     paths: &[PathBuf],
@@ -120,6 +138,7 @@ impl HashCache {
       }
     }
 
+    // Largest files first keeps every core busy until the end.
     pending.sort_by_key(|&index| std::cmp::Reverse(stamp(&paths[index]).map_or(0, |s| s.0)));
     let next = AtomicUsize::new(0);
     let workers = std::thread::available_parallelism()
@@ -163,6 +182,7 @@ impl HashCache {
       .collect()
   }
 
+  /// Write the cache back if anything was added. Failures only cost speed.
   pub fn save(&self) {
     let (Some(path), Ok(dirty)) = (&self.path, self.dirty.lock()) else {
       return;
@@ -227,11 +247,13 @@ mod tests {
     assert_eq!(first[0].as_ref().unwrap(), &sha256_file(&files[0]).unwrap());
     cache.save();
 
+    // Reopened: served from the cache, same answers.
     let reopened = HashCache::open(Some(dir.path()));
     assert_eq!(reopened.entries.lock().unwrap().len(), 6);
     let second = reopened.hash_all(&files, &|_, _, _| {});
     assert_eq!(second, first[..6].to_vec());
 
+    // A changed file is re-hashed, never served stale.
     std::thread::sleep(std::time::Duration::from_millis(20));
     fs::write(&files[1], "changed and longer content").unwrap();
     let third = reopened.hash_all(&files[1..2], &|_, _, _| {});

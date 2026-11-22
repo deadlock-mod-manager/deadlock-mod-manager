@@ -136,6 +136,10 @@ pub(super) fn model_overlaps(
   warnings
 }
 
+/// Mod-only models that nothing loads. The game cannot reference
+/// a path it does not ship, so such a model loads only when a mod file that
+/// replaces a game path, or an old hero model that relocation moves, reaches it
+/// through resource references.
 pub(super) fn unloaded_models<'a>(
   resources: &ResourceSnapshot,
   history: VdataHistory<'_>,
@@ -177,6 +181,7 @@ pub(super) fn unloaded_models<'a>(
     let bytes = match resources.resolve(&path) {
       Ok(Some((_, bytes))) => bytes,
       Ok(None) => continue,
+      // An unread file may reference any candidate, so none is proven unloaded.
       Err(error) => {
         log::warn!("Could not read {path} while tracing model references: {error}");
         return Ok(Vec::new());
@@ -213,6 +218,8 @@ fn may_reference_models(path: &str) -> bool {
     .any(|suffix| path.ends_with(suffix))
 }
 
+/// Compiled resources list their dependencies in RERL. VData also names
+/// resources in plain string fields, such as a hero's model path.
 fn referenced_names(path: &str, bytes: &[u8]) -> Vec<String> {
   let mut names: Vec<_> = vpkmanager::material_repair::references(bytes)
     .map(|references| references.into_iter().map(|(_, name)| name).collect())
@@ -406,6 +413,7 @@ pub(super) fn analyze(
           );
         }
       }
+      // A listed camera point that no mesh carries leaves that camera unusable.
       if let (Some(required), Some(present)) = (camera_points, mesh_points) {
         for name in required.difference(&present) {
           add(WarningKind::MissingCameraAttachments, name.clone());
@@ -490,6 +498,7 @@ pub(super) fn valid_skeleton(
   }) {
     return false;
   }
+  // Each node has one parent; finished paths keep cycle checking linear in bone count.
   let mut finished = vec![false; names.len()];
   for start in 0..names.len() {
     let mut visiting = BTreeSet::new();

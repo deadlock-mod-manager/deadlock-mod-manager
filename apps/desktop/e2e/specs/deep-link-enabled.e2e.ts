@@ -55,6 +55,7 @@ describe("GameBanana 1-click links", () => {
       ),
     );
 
+    // Find a broken mod tests only the mods the profile counts as enabled.
     await step("open Find a broken mod", async () => {
       await navigate("my-mods");
       await $('button[aria-label="More actions"]').click();

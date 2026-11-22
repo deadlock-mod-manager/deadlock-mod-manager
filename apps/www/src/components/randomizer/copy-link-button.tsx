@@ -7,6 +7,8 @@ const COPY_FEEDBACK_MS = 2000;
 
 export const CopyLinkButton = () => {
   const { t } = useTranslation("tool-randomizer");
+  // The clipboard is a permission the browser can refuse, so the button says
+  // which of the two happened rather than silently claiming success.
   const [result, setResult] = useState<"idle" | "copied" | "failed">("idle");
   const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 

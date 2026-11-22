@@ -58,12 +58,16 @@ interface LiveScoreboardProps {
   you: LiveScoreboardYou;
 }
 
+/** What the dev-only fixture switch needs to stand in for the live source. */
 export interface LiveMockSwitchProps {
   heroIdOf: (heroName: string) => number | undefined;
+  /** The tab on the running game, shown while no fixture is picked. */
   live: ReactNode;
   renderView: (source: LiveSource) => ReactNode;
 }
 
+// Development builds only: fixtures for each state, so they can be checked
+// without a running match. Production builds drop the import entirely.
 const LiveMockSwitch = import.meta.env.DEV
   ? lazy(() =>
       import("@/components/stats/live-mock-switch").then((module) => ({
@@ -74,6 +78,7 @@ const LiveMockSwitch = import.meta.env.DEV
 
 const MUTED = "hsl(var(--muted-foreground))";
 
+/** The running match as the in-game top bar shows it. */
 export const LiveScoreboard = ({
   heroesById,
   rankAssets,
@@ -81,6 +86,7 @@ export const LiveScoreboard = ({
   you,
 }: LiveScoreboardProps) => {
   const { heroByName } = useHeroCatalog();
+  // The top bar may have no readable hero id, only the hero's display name.
   const heroFor = useCallback<HeroFor>(
     (player) =>
       (player.heroId === null ? undefined : heroesById.get(player.heroId)) ??
@@ -162,6 +168,7 @@ const LiveView = ({
   const lastMatch = [...source.matches].sort(
     (a, b) => b.start_time - a.start_time,
   )[0];
+  // Between matches the outline's middle row shows how the day is going.
   const between = (
     <LivePreview
       left={
@@ -415,6 +422,8 @@ const LiveMatch = ({
           {minutes !== null &&
             localPlayer.souls !== null &&
             curve.length > 0 && (
+              // Side by side, the pace card sets the row's height and the
+              // chart fills what it leaves, but never below its own content.
               <div className='relative min-h-[26rem] xl:min-h-96'>
                 <LiveSoulsCurve
                   className='xl:absolute xl:inset-0'

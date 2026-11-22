@@ -264,6 +264,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const version = data?.version || "0.10.0";
 
   const videoId = getWhatsNewVideoId(version);
+  // Read once: closing the dialog marks this version as seen.
   const [lastSeen] = useState(getLastSeenVersion);
   const from =
     lastSeen && getReleaseVersion(lastSeen) !== getReleaseVersion(version)

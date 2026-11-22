@@ -17,6 +17,8 @@ import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
+// performInstall only toasts its failures, so install reads the outcome from
+// the store.
 const selectionDeps = (
   uninstall: (mod: LocalMod, remove: boolean) => Promise<boolean>,
   performInstall: (mod: LocalMod) => Promise<void>,
@@ -62,6 +64,8 @@ export const useHeroSelection = (): {
   const installAction = useInstallAction();
   const hideHeroMod = usePersistedStore((state) => state.hideHeroMod);
   const [busyHero, setBusyHero] = useState<string | null>(null);
+  // Two clicks in the same render both read the same `busyHero`, so the state
+  // alone cannot keep a second swap out while the first is still running.
   const busyRef = useRef<string | null>(null);
 
   const beginBusy = useCallback((hero: string) => {
@@ -84,12 +88,16 @@ export const useHeroSelection = (): {
         return;
       }
       try {
+        // Read the store fresh so a conflicted state (several installed skins)
+        // is fully collapsed even if the rendered props were stale.
         const state = usePersistedStore.getState();
         const group = groupModsByHero(state.localMods, {
           includeExtras: state.heroExtrasEnabled,
           hidden: new Set(Object.keys(state.hiddenHeroMods)),
         }).get(hero);
 
+        // Sounds and extras stack on top of a skin rather than replacing it,
+        // so the kinds never take each other's place.
         const activeByKind = {
           skin: group?.activeSkins,
           sound: group?.activeSounds,
@@ -125,6 +133,11 @@ export const useHeroSelection = (): {
     [beginBusy, endBusy, uninstall, installAction, t],
   );
 
+  /**
+   * Takes an entry off a hero's list while leaving it in the library. It is
+   * switched off on the way out: a hidden entry that stayed installed would
+   * leave the hero changed in game with nothing left on the page to undo it.
+   */
   const remove = useCallback(
     async (hero: string, mod: LocalMod) => {
       if (!beginBusy(hero)) {
@@ -138,6 +151,7 @@ export const useHeroSelection = (): {
             selectionDeps(uninstall, installAction.performInstall),
           );
           if (result === "aborted") {
+            // The uninstall already said what went wrong.
             return;
           }
         }

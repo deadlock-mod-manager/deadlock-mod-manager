@@ -17,7 +17,9 @@ import type { StatsScope } from "@/lib/stats/scope";
 import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
 import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
 
+/** Everything the Live tab shows, from the running game or from a fixture. */
 export interface LiveSource {
+  /** `undefined` until the console log has been read once. */
   status: LiveMatchStatus | undefined;
   gameRunning: boolean;
   bridge: {
@@ -27,26 +29,36 @@ export interface LiveSource {
     install: () => void;
   };
   lobby: LiveLobby;
+  /** The bracket's curve on your hero; empty until it loads. */
   curve: PerformanceCurvePoint[];
   benchmarkPending: boolean;
+  /** The curve request failed; it is asked for again in the background. */
   benchmarkFailed: boolean;
   trail: SoulsPoint[];
   matches: MatchHistoryEntry[];
   finalGrades: Record<string, Grade>;
   yourAccountId: number | null;
   badge: number | undefined;
+  /** How the match ended, when that is known before the API has it. */
   result: "win" | "loss" | null;
+  /** Keeps the grade a match ended on; `null` when nothing is to be kept. */
   rememberGrade: ((matchId: string, grade: Grade) => void) | null;
 }
 
 const NO_CURVE: PerformanceCurvePoint[] = [];
 
+/** What the page already knows about the selected account. */
 export interface LiveScoreboardYou {
   accountId: number | null;
   rank: PlayerRank | null;
   matches: MatchHistoryEntry[];
 }
 
+/**
+ * The Live tab's data from the running game. Everything live comes from the
+ * console log: the live bridge HUD mod prints the scoreboard there, so no API
+ * is asked to spectate anything.
+ */
 export const useRealLiveSource = ({
   you,
   scope,

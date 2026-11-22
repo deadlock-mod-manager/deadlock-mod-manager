@@ -1,3 +1,20 @@
+//! Keeps file operations off the game install while Deadlock is running.
+//!
+//! Installing, removing or reordering mods renames and moves VPKs inside
+//! `citadel/addons`, and the running game holds those files open. On Windows
+//! the rename fails outright; worse, a mod that is half-applied when the engine
+//! reads it can corrupt the load order. Every command that writes to the game
+//! folder therefore asks here first.
+//!
+//! Two escape hatches exist, both driven by the user: a setting that turns the
+//! whole guard off, and a one-shot override the app arms when someone confirms
+//! "continue anyway" in the warning dialog.
+//!
+//! The check is a point-in-time answer, not a lock: the game can always start
+//! a moment after it comes back idle, and a launch from outside the app cannot
+//! be made atomic with it at all. Scanning on every call keeps that window as
+//! narrow as a process scan allows.
+
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex, MutexGuard};
@@ -9,15 +26,23 @@ static ENFORCED: AtomicBool = AtomicBool::new(true);
 
 static NEXT_PERMIT: AtomicU64 = AtomicU64::new(1);
 
+/// Confirmations from the warning dialog, keyed by a token only the confirmed
+/// retry carries. A name alone is not enough: two `purge_mod` calls can be in
+/// flight at once, and the one the user never confirmed must not take the
+/// other's permit.
 static PERMITS: LazyLock<Mutex<HashMap<String, String>>> =
   LazyLock::new(|| Mutex::new(HashMap::new()));
 
+/// Nothing here can panic while the lock is held, so a poisoned map is
+/// recovered rather than left blocking every later operation.
 fn permits() -> MutexGuard<'static, HashMap<String, String>> {
   PERMITS
     .lock()
     .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
+/// Mirrors the user's setting. On by default: a fresh install protects itself
+/// before the frontend has had a chance to sync anything.
 pub fn set_enforced(enforced: bool) {
   ENFORCED.store(enforced, Ordering::SeqCst);
   log::info!(
@@ -30,6 +55,8 @@ pub fn is_enforced() -> bool {
   ENFORCED.load(Ordering::SeqCst)
 }
 
+/// Lets exactly one call of `operation` through: the one that comes back with
+/// the returned token. Armed when the user confirms the warning dialog.
 pub fn allow_next(operation: String) -> String {
   let token = NEXT_PERMIT.fetch_add(1, Ordering::Relaxed).to_string();
   log::warn!("Game file guard bypassed once for {operation} by user confirmation");
@@ -37,6 +64,8 @@ pub fn allow_next(operation: String) -> String {
   token
 }
 
+/// Takes the permit if this call carries its token and is the operation it
+/// was granted for. Anything else leaves it for its own caller.
 fn claim_permit(operation: &str, token: Option<&str>) -> bool {
   let Some(token) = token else {
     return false;
@@ -49,6 +78,7 @@ fn claim_permit(operation: &str, token: Option<&str>) -> bool {
   true
 }
 
+/// Whether the game state still has to be inspected for this call.
 fn needs_check(operation: &str, permit: Option<&str>) -> bool {
   if crate::runtime_environment::records_game_launches() {
     return false;
@@ -59,6 +89,8 @@ fn needs_check(operation: &str, permit: Option<&str>) -> bool {
   !claim_permit(operation, permit)
 }
 
+/// Blocks the caller when Deadlock is running and the guard applies. `permit`
+/// is the token from `allow_next`, passed only by a retry the user confirmed.
 pub fn ensure_game_idle_locked(operation: &str, permit: Option<&str>) -> Result<(), Error> {
   if !needs_check(operation, permit) {
     return Ok(());
@@ -77,6 +109,7 @@ pub fn ensure_game_idle_locked(operation: &str, permit: Option<&str>) -> Result<
 mod tests {
   use super::*;
 
+  /// The guard is process-global state, so the cases cannot run in parallel.
   static SERIAL: Mutex<()> = Mutex::new(());
 
   fn reset() {

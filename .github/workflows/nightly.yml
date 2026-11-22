@@ -2,8 +2,13 @@ name: Nightly Build
 
 env:
   NODE_VERSION: "24.22.1"
+  # Nightly-only trial: thin LTO with parallel codegen cuts Rust build time
+  # by roughly half for a ~10% larger binary. Stable releases keep the
+  # fat-LTO profile from apps/desktop/Cargo.toml.
   CARGO_PROFILE_RELEASE_LTO: thin
   CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+  # Keep the sccache server alive through long link and bundle steps so the
+  # end-of-job stats are not reset by the default 10-minute idle shutdown.
   SCCACHE_IDLE_TIMEOUT: "0"
 
 concurrency:
@@ -12,8 +17,9 @@ concurrency:
 
 on:
   schedule:
+    # Run at 2 AM UTC every day
     - cron: "0 2 * * *"
-  workflow_dispatch:
+  workflow_dispatch: # Allow manual triggering
     inputs:
       force_build:
         description: "Build even if no new desktop commits"
@@ -60,6 +66,7 @@ jobs:
 
           LAST_NIGHTLY_COMMIT=""
 
+          # The rolling "nightly" tag points at the commit used in the previous build
           if git rev-parse "nightly" >/dev/null 2>&1; then
             LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 nightly)
             echo "Last nightly commit: $LAST_NIGHTLY_COMMIT"
@@ -165,6 +172,8 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
           DATE=$(date +%Y%m%d)
           COMMIT_SHORT=${{ needs.check-commits.outputs.latest_commit }}
+          # This mirrors what update-nightly-version.ts will produce:
+          # bump minor only if the package version is already released
           if [ -n "$(git ls-remote --tags origin "refs/tags/v${PACKAGE_VERSION}")" ]; then
             MAJOR=$(echo "$PACKAGE_VERSION" | cut -d. -f1)
             MINOR=$(echo "$PACKAGE_VERSION" | cut -d. -f2)
@@ -192,10 +201,13 @@ jobs:
           echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # The previous nightly stays published until publish-nightly in
+      # sign-nightly-windows.yml swaps the new draft onto the nightly tag.
       - name: Delete stale draft nightly releases
         uses: actions/github-script@v9
         with:
           script: |
+            // Sweep any stale draft Nightly releases left behind by previously cancelled/killed runs
             let page = 1;
             while (true) {
               const { data: releases } = await github.rest.repos.listReleases({
@@ -254,6 +266,7 @@ jobs:
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
+              // Renamed to 'nightly' on publish. Drafts don't create their tag.
               tag_name: `nightly-${nightlyVersion}`,
               target_commitish: context.sha,
               name: `Nightly ${nightlyVersion}`,
@@ -348,6 +361,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      # Required by prost-build, pulled in transitively via steam-vent/valveprotos.
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -392,9 +406,10 @@ jobs:
           pnpm version:nightly ${{ needs.check-commits.outputs.latest_commit }}
           echo "version=$(node -p "require('./apps/desktop/package.json').version")" >> "$GITHUB_OUTPUT"
 
+      # Linux build - upload directly to release
       - name: Build the app (Linux)
         if: matrix.os == 'linux'
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -406,6 +421,8 @@ jobs:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
           tauriScript: pnpm tauri
+          # No RPM: since Tauri CLI 2.12 the bundler rejects the "-" in nightly
+          # versions, and RPM's "~" form isn't valid semver for the app.
           args: "--bundles deb,updater"
 
       - name: Build Flatpak bundle (Linux)
@@ -442,9 +459,10 @@ jobs:
             });
             console.log('Successfully uploaded Flatpak bundle');
 
+      # Windows build - upload unsigned artifact for separate SignPath workflow
       - name: Build the app (Windows)
         if: matrix.os == 'windows'
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}

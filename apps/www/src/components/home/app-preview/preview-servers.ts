@@ -1,3 +1,5 @@
+// Community servers as they appeared in the browser; player counts and ping
+// are illustrative.
 export const SERVERS = [
   {
     name: "DoomLock EU Unranked",

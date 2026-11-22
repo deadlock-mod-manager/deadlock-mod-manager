@@ -13,6 +13,7 @@ import { OrphanedOverlayNotice } from "./orphaned-overlay-notice";
 import { SyncNotice } from "./sync-notice";
 import { UnmanagedChangesNotice } from "./unmanaged-changes-notice";
 
+/** What the file holds versus what the user chose, with the fixes for any gap. */
 export const ActiveConfigStatus = () => {
   const { t } = useTranslation();
   const { statusQuery, desired, items, activeItem, activeCutScore } =

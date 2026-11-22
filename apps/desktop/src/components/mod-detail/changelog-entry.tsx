@@ -5,6 +5,8 @@ import { DateDisplay } from "@/components/date-display";
 import { GameBananaMarkup } from "@/components/mod-detail/gamebanana-markup";
 import type { CatalogChangelogEntryDto } from "@/types/generated/CatalogChangelogEntryDto";
 
+// GameBanana lets authors pick free-form labels, so match loosely and fall
+// back to a neutral badge for anything unrecognized.
 const categoryTone = (category: string) => {
   const label = category.toLowerCase();
   if (label.includes("fix")) return "border-red-500/40 text-red-500";

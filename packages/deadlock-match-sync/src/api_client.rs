@@ -1,3 +1,9 @@
+//! The deadlock-api calls this subsystem makes: read the to-fetch list (and release
+//! the global list's claims once done with it, reporting how the attempts went), the
+//! newest stored matches of the user's Steam friends and which matches already have
+//! salts, and POST recovered salts to the same route the httpcache scraper uses. Split
+//! into traits so [`super::sync`] can be tested with spies.
+
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -15,13 +21,26 @@ use super::model::{ActiveFriend, Attempt, FetchScope, SaltPayload, SaltsCheck};
 const DEFAULT_BASE_URL: &str = "https://api.deadlock-api.com";
 const POST_MAX_RETRIES: u32 = 5;
 const POST_RETRY_DELAY: Duration = Duration::from_secs(3);
+// The global to-fetch list claims its ids so other workers skip them; this cookie
+// identifies that list so it can be released once we're done with it.
 const CLAIM_COOKIE: &str = "to_fetch_claim";
+// The release runs inline at the end of a pass; an unresponsive API mustn't hold it up.
 const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
+// Friends who aren't picked would otherwise have their stored matches re-read every pass.
+// Short enough that matches deadlock-api ingested since are soon seen; picked friends go on
+// a cooldown at least this long anyway.
 const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
+// A stalled request must not hold up the pass, which only checks for cancellation between
+// requests.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+// Ids per batch request, which go in the query string: long request lines get rejected by
+// some proxies.
 const IDS_PER_REQUEST: usize = 100;
+// A friend whose newest stored match ended longer ago than this isn't active.
 const ACTIVE_WINDOW_SECS: i64 = 30 * 24 * 60 * 60;
 
+// Friends' newest stored matches, kept across passes so they aren't re-read every pass.
+// Stored matches belong to the friend, so accounts sharing a friend share the entry.
 #[derive(Default)]
 pub struct StoredHistories(Mutex<HistoryCache>);
 
@@ -35,6 +54,8 @@ impl StoredHistories {
   }
 }
 
+// Per friend: when their stored matches were read, and their summary (`None` if
+// deadlock-api has no stored match for them).
 #[derive(Default)]
 struct HistoryCache(HashMap<u32, (Instant, Option<ActiveFriend>)>);
 
@@ -66,13 +87,21 @@ pub trait BackfillSource: Send + Sync {
     scope: FetchScope,
   ) -> impl Future<Output = Result<Vec<u64>, MatchSyncError>> + Send;
 
+  // Hands the ids of the last global list we won't fetch back to other workers, with how
+  // the attempts at its ids went; ids missing from `attempts` weren't tried. Best effort: a
+  // failed release only means they stay claimed until the claim expires.
   fn release_claim(&self, attempts: &[Attempt]) -> impl Future<Output = ()> + Send;
 
+  // Of `account_ids`, the ones deadlock-api saw play in the last 30 days, with their
+  // newest stored matches. Friends whose matches can't be read are skipped.
   fn active_friends(
     &self,
     account_ids: &[u32],
   ) -> impl Future<Output = Result<Vec<ActiveFriend>, MatchSyncError>> + Send;
 
+  // Checks `match_ids` in order until `limit` of them have no salts in deadlock-api, or
+  // `cancel` is set. Stops at the first check that fails: fetching a match that can't be
+  // checked could spend a GC request on salts deadlock-api already has.
   fn missing_salts(
     &self,
     match_ids: &[u64],
@@ -88,11 +117,15 @@ pub trait SaltsSink: Send + Sync {
   ) -> impl Future<Output = Result<(), MatchSyncError>> + Send;
 }
 
+// Builds an HTTP client with the given request timeout. Called for every request, so the
+// app's proxy settings apply as soon as they change.
 pub type HttpClientFactory = Arc<dyn Fn(Duration) -> Result<reqwest::Client, String> + Send + Sync>;
 
 pub struct ApiClient {
   base_url: String,
   http: HttpClientFactory,
+  // The claim cookie of the last global to-fetch list, held here rather than in a
+  // cookie store since every request builds a fresh client.
   claim: Mutex<Option<String>>,
   histories: Arc<StoredHistories>,
 }
@@ -108,9 +141,11 @@ impl ApiClient {
   }
 }
 
+// One player of `GET /v1/players/recent-matches`.
 #[derive(Deserialize)]
 struct RecentMatches {
   account_id: u32,
+  // Newest first.
   matches: Vec<StoredMatch>,
 }
 
@@ -153,6 +188,8 @@ impl ApiClient {
       .map_err(MatchSyncError::from)
   }
 
+  // GETs one of the batch routes with `ids` (at most `IDS_PER_REQUEST`) in its `param`,
+  // plus the `extra` query pairs, and reads the list it answers.
   async fn get_batch<I: ToString, T: serde::de::DeserializeOwned>(
     &self,
     client: &reqwest::Client,
@@ -170,6 +207,10 @@ impl ApiClient {
   }
 }
 
+// Sends `req` and reads the list it answers. Both batch routes answer an empty list when
+// nothing is stored, so any error status, a 404 included, means the route can't be used
+// (an API without it, a proxy in the way). Reading that as "nothing stored" would send
+// stored matches to the GC, or cache friends as having no matches.
 async fn get_list<T: serde::de::DeserializeOwned>(
   req: reqwest::RequestBuilder,
 ) -> Result<Vec<T>, MatchSyncError> {
@@ -185,6 +226,7 @@ async fn read_list<T: serde::de::DeserializeOwned>(
     .map_err(|e| MatchSyncError::Api(format!("invalid response: {}", e.without_url())))
 }
 
+// Only the newest `GAP_SAMPLE` starts are kept: the cadence never reads further back.
 fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
   Some(ActiveFriend {
     account_id,
@@ -200,6 +242,8 @@ fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
   })
 }
 
+// The claim cookie's value from a `Set-Cookie` header: everything after `name=` up to
+// the first `;`. An empty value is the server clearing the cookie.
 fn parse_claim_cookie(set_cookie: &str) -> Option<String> {
   let pair = set_cookie.split(';').next()?;
   let (name, value) = pair.split_once('=')?;
@@ -222,6 +266,7 @@ impl BackfillSource for ApiClient {
       .get(format!("{}/v1/matches/to-fetch", self.base_url));
     match scope {
       FetchScope::Account(account_id) => req = req.query(&[("account_id", account_id)]),
+      // Sending the previous list's claim releases it before the new list is claimed.
       FetchScope::Global(limit) => {
         req = req.query(&[("limit", limit)]);
         if let Some(claim) = self.held_claim() {
@@ -230,6 +275,8 @@ impl BackfillSource for ApiClient {
       }
     }
     let resp = req.send().await.and_then(|r| r.error_for_status())?;
+    // A failed request keeps the held claim, so a later release still covers it. A
+    // response without the cookie claimed nothing (or comes from an older API).
     if let FetchScope::Global(_) = scope {
       self.set_claim(claim_from_headers(resp.headers()));
     }
@@ -246,6 +293,7 @@ impl BackfillSource for ApiClient {
     if let Err(e) = self.post_release(&claim, attempts).await {
       log::warn!("match-sync: releasing the to-fetch claim failed: {e}");
     }
+    // Cleared either way: the claim expires on its own, and retrying can't help.
     self.set_claim(None);
   }
 
@@ -265,8 +313,13 @@ impl BackfillSource for ApiClient {
     }
 
     if !uncached.is_empty() {
+      // One client for the whole batch, so the requests share a connection.
       let client = self.client()?;
       for chunk in uncached.chunks(IDS_PER_REQUEST) {
+        // A failed batch skips the friend step for this pass instead of picking from a
+        // partial set. Batches read before it stay cached.
+        // Only what deadlock-api stores: it never asks Steam here. Players without stored
+        // matches come back with none; protected ones are left out.
         let players: Vec<RecentMatches> = self
           .get_batch(
             &client,
@@ -276,6 +329,8 @@ impl BackfillSource for ApiClient {
             &[("limit", GAP_SAMPLE.to_string())],
           )
           .await?;
+        // Every friend of the chunk is cached, so one without stored matches (or a
+        // protected one, left out of the answer) isn't asked about again every pass.
         let mut read: HashMap<u32, Option<ActiveFriend>> =
           chunk.iter().map(|&account_id| (account_id, None)).collect();
         for player in players {
@@ -318,6 +373,7 @@ impl BackfillSource for ApiClient {
       if check.missing.len() >= limit || cancel.load(Ordering::Relaxed) {
         break;
       }
+      // Of the chunk, the ids deadlock-api stores salts for, without letting it ask Steam.
       let stored = self
         .get_batch(&client, "/v1/matches/salts/stored", "match_ids", chunk, &[])
         .await;
@@ -362,6 +418,7 @@ impl SaltsSink for ApiClient {
 
       match result {
         Ok(_) => return Ok(()),
+        // 400 means the payload itself is wrong; retrying can't help.
         Err(e)
           if attempt >= POST_MAX_RETRIES
             || e.status() == Some(reqwest::StatusCode::BAD_REQUEST) =>
@@ -381,6 +438,7 @@ mod tests {
 
   #[tokio::test]
   async fn api_errors_leave_the_url_out() {
+    // Nothing listens on port 1, so this fails without leaving the machine.
     let client = reqwest::Client::builder().no_proxy().build().unwrap();
     let e = client
       .get("http://127.0.0.1:1/v1/players/12345678/match-history")
@@ -391,6 +449,8 @@ mod tests {
     assert!(!MatchSyncError::from(e).to_string().contains("12345678"));
   }
 
+  // Answers the first request on a local port with `status` and `body`, and returns the
+  // URL to send it to.
   fn serve_once(status: &'static str, body: &'static str) -> String {
     use std::io::{Read as _, Write as _};
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -411,6 +471,7 @@ mod tests {
   #[tokio::test]
   async fn batch_lists_fail_on_a_missing_route() {
     let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    // A body that parses as an empty list, so only the status can fail it.
     let url = serve_once("404 Not Found", "[]");
     assert!(get_list::<u64>(client.get(url)).await.is_err());
   }

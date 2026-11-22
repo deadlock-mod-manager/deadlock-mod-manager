@@ -3,6 +3,7 @@ import { useLocation } from "react-router";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
 
+// Easter egg: "Incredible Gassy Viscous" on GameBanana.
 const GASSY_VISCOUS_PATH = "/mods/653571";
 
 const fartUrl = getPluginAssetUrl(

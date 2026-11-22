@@ -11,6 +11,7 @@ export const DetailsSection = ({
 }: {
   title: string;
   description?: string;
+  /** Shown beside the title. */
   action?: ReactNode;
   children: ReactNode;
 }) => (
@@ -28,6 +29,7 @@ export const DetailsSection = ({
   </section>
 );
 
+/** Convar name, or `Section.Key` for engine-section edits. */
 export const entryKey = (entry: ResolvedEntry) =>
   entry.path[0]?.toLowerCase() === "convars"
     ? entry.path.slice(1).join(".")
@@ -47,6 +49,7 @@ export const EntryKey = ({
   </span>
 );
 
+/** Why an entry isn't written, from its status and notes. */
 export const useEntryReason = () => {
   const { t } = useTranslation();
   return (entry: ResolvedEntry): string => {

@@ -38,6 +38,7 @@ export class MirrorService {
     );
 
     if (mirroredFile.isOk() && !mirroredFile.value.isStale) {
+      // Check if the file exists in S3 before attempting to stream
       const existsResult = await S3Service.instance.fileExists(
         mirroredFile.value.s3Key,
       );
@@ -47,21 +48,25 @@ export class MirrorService {
           .withError(existsResult.error)
           .warn("Failed to check S3 file existence, proceeding to re-mirror");
 
+        // Track cache miss and proceed to re-mirror the file
         await MetricsService.instance.incrementCacheMiss();
       } else if (!existsResult.value) {
         this.logger
           .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
           .info("File not found in S3, treating as cache miss");
 
+        // Track cache miss for missing S3 files
         await MetricsService.instance.incrementCacheMiss();
       } else {
         await this.mirroredFileRepository.update(mirroredFile.value.id, {
           lastDownloadedAt: new Date(),
         });
 
+        // Track cache hit
         await MetricsService.instance.incrementCacheHit();
         await MetricsService.instance.incrementDownload(mirroredFile.value.id);
 
+        // Stream file directly from S3
         const stream = await S3Service.instance.downloadFileStream(
           mirroredFile.value.s3Key,
         );
@@ -141,6 +146,7 @@ export class MirrorService {
         return;
       }
 
+      // Track download for newly mirrored file
       await MetricsService.instance.incrementDownload(mirroredFile.value.id);
     };
 

@@ -7,6 +7,7 @@ export const IMPORT_FAILURE_REASON_KEYS = {
   install: "profiles.importFailures.install",
 } satisfies Record<ImportFailureStep, string>;
 
+/** The mods of an import that weren't installed, in the profile's order. */
 export const collectImportFailures = (
   importedMods: SharedProfile["payload"]["mods"],
   modsDataByRemoteId: Map<string, ModDto>,
@@ -29,6 +30,8 @@ export const collectImportFailures = (
   });
 };
 
+/** The failures as one line for the log: the saved log file keeps a line's
+ *  message but drops its metadata. */
 export const summarizeImportFailures = (failures: ImportFailure[]): string =>
   failures
     .map(({ remoteId, step, error }) =>

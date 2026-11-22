@@ -17,6 +17,7 @@ export function useRemlockReleaseEnabled() {
   return isRemlockReleaseEnabled(flags);
 }
 
+/** Current local date, refreshed just after midnight so seasons switch without a restart. */
 function useToday() {
   const [today, setToday] = useState(() => new Date());
   useEffect(() => {

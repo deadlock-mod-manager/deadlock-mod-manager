@@ -2,6 +2,7 @@ import { sortPermissions } from "@/components/plugins/plugin-permissions";
 import type { ExternalPluginPendingUpdate } from "@/types/generated/ExternalPluginPendingUpdate";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
+/** Requests the update adds or widens, and the ones it keeps as they are. */
 export const updateChanges = (
   plugin: ExternalPluginSummary,
   update: ExternalPluginPendingUpdate,

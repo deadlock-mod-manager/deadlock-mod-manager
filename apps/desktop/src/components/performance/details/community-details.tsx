@@ -12,6 +12,7 @@ import { usePerformanceUi } from "../performance-context";
 import { DetailsHeader, LinkChip } from "./details-header";
 import { DetailsSection } from "./details-parts";
 
+/** A GameBanana config we only know from the catalog until the user imports it. */
 export const CommunityDetails = ({
   item,
   latestBuild,

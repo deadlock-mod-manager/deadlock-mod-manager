@@ -43,6 +43,7 @@ interface ModCardProps {
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
   curatedCollection?: CuratedCollectionNavigationTarget;
+  /** Built locally on first add; library actions use the standard mod control. */
   builtIn?: { onAdd: () => Promise<void>; onOpen: () => void };
 }
 
@@ -93,7 +94,9 @@ const ModCard = memo((props: ModCardProps) => {
     return <ModCardSkeleton />;
   }
 
+  // Source listings and built-in mods have no provider metrics or patch dates.
   const native = isNativeSourceMod(mod.remoteId) || !!builtIn;
+  // Config-only uploads do not contain VPKs a game patch can break.
   const isOutdated =
     !native && isModOutdated(mod) && configListingKind !== "confirmed";
 
@@ -164,6 +167,7 @@ const ModCard = memo((props: ModCardProps) => {
             />
           </NSFWBlur>
         ) : (
+          // Fallback for mods without images or audio
           <div className='flex h-48 w-full items-center justify-center rounded-t-xl bg-muted'>
             <div className='text-center text-muted-foreground'>
               <DownloadIcon className='mx-auto mb-2 h-12 w-12' />

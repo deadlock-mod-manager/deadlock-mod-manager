@@ -123,6 +123,8 @@ const Debug = () => {
   const wipeCatalog = useWipeLocalCatalog();
   const queryClient = useQueryClient();
   const { status: matchSyncStatus, setConsent, setEnabled } = useMatchSync();
+  // Onboarding and the status change in one render, so the existing-user
+  // notice never sees a fresh config while onboarding still reads as done.
   const simulateMatchSync = useMutation({
     mutationFn: async (scenario: "newInstall" | "update") => {
       await invoke("debug_reset_match_sync_config");
@@ -136,6 +138,7 @@ const Debug = () => {
     },
     onError: (error) => toast.error(String(error)),
   });
+  // No status forces the consent dialog even if consent was already given.
   const triggerMatchSyncConsent = useMatchSyncToggle({
     status: undefined,
     setConsent,

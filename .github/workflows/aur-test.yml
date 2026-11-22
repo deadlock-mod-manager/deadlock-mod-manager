@@ -9,6 +9,7 @@ on:
       - "distribution/aur/**"
     tags:
       - "v*.*.*"
+  # -git builds main, which can break without touching distribution/aur.
   schedule:
     - cron: "23 4 * * 1"
   workflow_dispatch:
@@ -47,17 +48,21 @@ jobs:
       matrix:
         include:
           - pkg: deadlock-modmanager-bin
+          # libvips makes sharp attempt a source build during pnpm install;
+          # keep it installed so that regression is caught here.
           - pkg: deadlock-modmanager
             extra-packages: libvips
           - pkg: deadlock-modmanager-git
             extra-packages: libvips git
     steps:
+      # Before checkout, so -git gets a real clone instead of a tarball.
       - name: Install build dependencies
         run: pacman -Syu --noconfirm base-devel ${{ matrix.extra-packages }}
 
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
         with:
+          # pkgver() runs `git describe --tags` against the full history.
           fetch-depth: ${{ matrix.pkg == 'deadlock-modmanager-git' && '0' || '1' }}
           fetch-tags: ${{ matrix.pkg == 'deadlock-modmanager-git' }}
 

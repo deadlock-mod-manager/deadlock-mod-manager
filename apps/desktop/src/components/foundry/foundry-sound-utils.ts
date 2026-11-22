@@ -7,12 +7,15 @@ import {
 } from "@phosphor-icons/react";
 import type { FoundrySoundGroupKind } from "@/types/foundry";
 
+/** Audio the backend can mint into a `.vsnd_c`, plus the compiled form itself. */
 export const SOUND_EXTENSIONS = ["mp3", "wav", "ogg", "flac", "vsnd_c"];
 
+/** The in-game volume range, in dB. Cuts go further than boosts, which clip. */
 export const GAIN_MIN_DB = -24;
 
 export const GAIN_MAX_DB = 12;
 
+/** Groups this small decode every clip's waveform up front. */
 export const EAGER_WAVEFORM_LIMIT = 40;
 
 export const KIND_ICONS = {
@@ -28,6 +31,7 @@ export const formatDuration = (seconds: number) => {
   return `${minutes}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
 };
 
+/** Words shared by every clip in a group, so rows can show what differs. */
 export const sharedPrefix = (names: string[]): string => {
   if (names.length < 2) return "";
   const split = names.map((name) => name.split("_"));

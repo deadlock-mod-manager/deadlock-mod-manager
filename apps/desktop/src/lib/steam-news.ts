@@ -33,7 +33,9 @@ const newsResponseSchema = z.object({
 export type PatchNote = {
   id: string;
   title: string;
+  /** Unix seconds. */
   publishedAt: number;
+  /** Tagged as patch notes by Valve, rather than a general announcement. */
   isPatch: boolean;
   url: string;
   html: string;
@@ -41,6 +43,7 @@ export type PatchNote = {
   image: string | null;
 };
 
+/** Valve's own announcements for Deadlock, newest first. */
 export const getPatchNotes = async (count = 5): Promise<PatchNote[]> => {
   const params = new URLSearchParams({
     appid: String(DEADLOCK_APP_ID),

@@ -37,8 +37,10 @@ export const queryGameBananaCatalog = async (
   };
 };
 
+/** Largest page the catalog serves; only for bounded result sets. */
 const CATALOG_MAX_PAGE_SIZE = 5_000;
 
+/** An unfiltered first page, to spread targeted overrides onto. */
 export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
   search: "",
   categories: [],
@@ -73,9 +75,11 @@ export const getGameBananaCatalogMods = async (
   return page.items;
 };
 
+/** Category/hero pairs for filter menus; only the query's scope applies. */
 export const getGameBananaCatalogFacets = (query: CatalogQuery) =>
   invoke<CatalogFacet[]>("get_gamebanana_catalog_facets", { query });
 
+/** Authors whose name matches the query's search, within its browse scope. */
 export const searchGameBananaCatalogAuthors = (query: CatalogQuery) =>
   invoke<CatalogAuthor[]>("search_gamebanana_catalog_authors", { query });
 
@@ -155,6 +159,7 @@ export const inspectGameBananaCatalog = () =>
 export const clearGameBananaCatalog = () =>
   invoke<void>("clear_gamebanana_catalog");
 
+/** Resolves to `null` until the catalog has finished a full crawl. */
 export const resolveLegacySoundIds = (ids: string[]) =>
   invoke<string[] | null>("resolve_legacy_sound_ids", { ids });
 

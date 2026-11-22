@@ -17,6 +17,7 @@ const catalog = new Map([
 const entries: MatchMetadataItem[] = [
   { game_time_s: 60, item_id: 10, upgrade_id: 1, sold_time_s: 300 },
   { game_time_s: 120, item_id: 20, upgrade_id: 1, sold_time_s: 0 },
+  // Ability upgrades share the metadata list and must never become purchases.
   { game_time_s: 30, item_id: 999, upgrade_id: 2, sold_time_s: 0 },
 ];
 

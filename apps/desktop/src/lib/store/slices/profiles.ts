@@ -82,6 +82,10 @@ export interface ProfilesState {
   syncProfilesWithFilesystem: () => Promise<void>;
   bumpProfileSyncRevision: (profileId: ProfileId) => number;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
+  /**
+   * Reconcile every profile with its manifest and the files on disk. Resolves
+   * to the names of mods removed because the user deleted all their VPKs.
+   */
   restoreModsFromManifest: () => Promise<string[]>;
   saveCurrentModsToProfile: () => void;
   loadModsFromProfile: (profileId: ProfileId) => void;
@@ -209,9 +213,16 @@ type ActiveProfileState = Pick<
   "profiles" | "activeProfileId" | "localMods"
 >;
 
+/**
+ * An active profile id with no profile behind it turns every profile-scoped
+ * write into a no-op, so downloads never leave "downloading". The default
+ * profile takes over, holding the library the user was looking at rather than
+ * its own, possibly stale, snapshot.
+ */
 export const repairMissingActiveProfile = <T extends ActiveProfileState>(
   state: T,
 ): T => {
+  // A corrupt persisted value would otherwise be spread character by character.
   const profiles: Record<ProfileId, ModProfile> = isPlainObject(state.profiles)
     ? state.profiles
     : {};
@@ -256,10 +267,25 @@ const matchesInstalledVpk = (installedVpk: string, vpk: ProfileVpkFile) => {
 type ManifestReconciliation = {
   repaired: ManifestRepair[];
   restored: LocalMod[];
+  /** Mods whose every VPK was deleted; already dropped from the manifest. */
   forgotten: string[];
+  /** Store-only removals without a manifest; require a fresh revision. */
   forgottenFromSnapshot?: string[];
 };
 
+/**
+ * Works out what a profile's library owes its manifest without entering the
+ * store: the snapshot read and any catalog lookup happen here, so the state is
+ * touched once, under the caller's revision guard.
+ *
+ * Adding back a mod the store never had needs catalog metadata, so it stays
+ * opt-in for the profile the user is actually in. Repairing a tracked mod's
+ * install state needs nothing but the manifest and runs for every profile.
+ *
+ * A mod whose every VPK the user deleted is dropped from the manifest here,
+ * so it cannot be restored later; one that lost only some files, or that the
+ * mods store can restore, is kept and flagged with what it lost.
+ */
 const planManifestReconciliation = async (
   profileId: ProfileId,
   profile: ModProfile,
@@ -280,6 +306,8 @@ const planManifestReconciliation = async (
 
   const manifestEntries = Object.entries(snapshot.manifest.mods);
   if (manifestEntries.length === 0) {
+    // Legacy profiles can have VPKs without a manifest. Keep a mod while any
+    // of its files remain, or while files exist but its locators are unknown.
     const forgottenFromSnapshot = profile.mods
       .filter((mod) => {
         const installedVpks = mod.installedVpks;
@@ -346,6 +374,7 @@ const planManifestReconciliation = async (
         installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
       installedVpks,
       missingVpks,
+      // An absent manifest order must not replace the saved library order.
       ...(entry.order === null || entry.order === undefined
         ? {}
         : { installOrder: entry.order }),
@@ -437,6 +466,10 @@ type SliceGet = Parameters<
   StateCreator<ProfilesSliceStore, [], [], ProfilesState>
 >[1];
 
+/**
+ * Reconcile every profile with its manifest and the files on disk. Resolves to
+ * the names of mods removed because the user deleted all their VPKs.
+ */
 const reconcileAllProfiles = async (
   set: SliceSet,
   get: SliceGet,
@@ -468,6 +501,9 @@ const reconcileAllProfiles = async (
       if (!current || current.folderName !== profile.folderName) {
         return state;
       }
+      // The manifest already forgot these mods, so they leave the library
+      // even when a newer sync superseded the rest of this plan; otherwise
+      // nothing would ever remove them.
       const fresh = state.profileSyncRevisions[profileId] === revision;
       const forgotten = new Set(
         [
@@ -552,6 +588,8 @@ const reconcileAllProfiles = async (
   return removedNames;
 };
 
+// Reconciliations run one at a time: a watcher burst during startup must not
+// read a manifest another run is about to change.
 let reconciliationQueue: Promise<unknown> = Promise.resolve();
 
 export const createProfilesSlice: StateCreator<
@@ -792,6 +830,9 @@ export const createProfilesSlice: StateCreator<
     modsDataByRemoteId: Map<string, ModDto>,
     downloadsByRemoteId: Map<string, ImportedModDownloads>,
   ) => {
+    // A sync that read the profile before the import would write the old
+    // mods and picks back over it. An import that installed nothing leaves
+    // that sync's result valid.
     if (installedMods.length > 0) get().bumpProfileSyncRevision(profileId);
     set((state) => {
       const profile = state.profiles[profileId];
@@ -839,6 +880,8 @@ export const createProfilesSlice: StateCreator<
 
         const nextMod: LocalMod = {
           ...(baseMod ?? modData),
+          // The files on disk now come from this import, so its picks replace
+          // any earlier ones; sharing the profile passes them on.
           ...downloadsByRemoteId.get(installedMod.modId),
           downloadedAt: baseMod?.downloadedAt ?? now,
           status: ModStatus.Installed,
@@ -1022,9 +1065,11 @@ export const createProfilesSlice: StateCreator<
   getAllProfiles: () => {
     const { profiles } = get();
     return Object.values(profiles).sort((a, b) => {
+      // Default profile first, then by last used, then by creation date
       if (a.isDefault) return -1;
       if (b.isDefault) return 1;
 
+      // Handle lastUsed being a Date or string (from deserialization)
       const aLastUsed = a.lastUsed
         ? typeof a.lastUsed === "string"
           ? new Date(a.lastUsed).getTime()
@@ -1037,9 +1082,10 @@ export const createProfilesSlice: StateCreator<
         : 0;
 
       if (aLastUsed !== bLastUsed) {
-        return bLastUsed - aLastUsed;
+        return bLastUsed - aLastUsed; // Most recently used first
       }
 
+      // Handle createdAt being a Date or string (from deserialization)
       const aCreated =
         typeof a.createdAt === "string"
           ? new Date(a.createdAt).getTime()
@@ -1049,7 +1095,7 @@ export const createProfilesSlice: StateCreator<
           ? new Date(b.createdAt).getTime()
           : b.createdAt.getTime();
 
-      return bCreated - aCreated;
+      return bCreated - aCreated; // Most recently created first
     });
   },
 
@@ -1260,13 +1306,16 @@ export const createProfilesSlice: StateCreator<
           disabledVpksForMod.length > 0 || enabledVpksForMod.length > 0;
 
         if (!hasVpksInProfile) {
+          // Mod doesn't have any VPKs in this profile
           updatedLocalMods.push(mod);
           continue;
         }
 
+        // Check if the mod has enabled VPKs
         const hasEnabledVpks = enabledVpksForMod.length > 0;
 
         if (hasEnabledVpks) {
+          // Mod is enabled in this profile
           updatedEnabledMods[mod.remoteId] = {
             remoteId: mod.remoteId,
             enabled: true,
@@ -1296,6 +1345,7 @@ export const createProfilesSlice: StateCreator<
             order: mod.installOrder ?? null,
           });
         } else {
+          // Mod has VPKs but they're disabled (prefixed)
           if (mod.status === ModStatus.Installed) {
             updatedLocalMods.push({
               ...mod,
@@ -1317,6 +1367,7 @@ export const createProfilesSlice: StateCreator<
         }
       }
 
+      // A completed removal must not be seeded back from an older snapshot.
       if (get().profileSyncRevisions[profileId] !== revision) return;
 
       if (seedEntries.length > 0) {
@@ -1463,6 +1514,8 @@ export const createProfilesSlice: StateCreator<
           if (!profilesToRemove.includes(state.activeProfileId)) {
             return { profiles: newProfiles };
           }
+          // The fallback switch failed. The deleted profile still cannot stay
+          // active; the next switch or launch rewrites gameinfo.gi.
           const fallbackProfile =
             newProfiles[DEFAULT_PROFILE_ID] ?? createDefaultProfile();
           return {

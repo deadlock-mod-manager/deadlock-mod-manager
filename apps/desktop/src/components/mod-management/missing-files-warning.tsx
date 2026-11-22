@@ -8,6 +8,10 @@ import { TriangleAlert } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 
+/**
+ * Marks a mod some of whose VPKs were deleted outside the mod manager. It
+ * stays in the library so the user can reinstall or delete it.
+ */
 export const MissingFilesWarning = ({
   missingVpks,
   className,

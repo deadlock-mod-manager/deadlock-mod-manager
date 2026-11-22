@@ -70,6 +70,8 @@ fn current() -> Vec<u8> {
   )
 }
 
+/// A game install with the current model and its sound table, plus a mod that
+/// provides its own sound tables.
 fn snapshot(root: &Path, mod_tables: &[(&str, &[u8])]) -> ResourceSnapshot {
   let citadel = root.join("citadel");
   let current = current();
@@ -179,6 +181,7 @@ fn authored_unknown_or_unverifiable_bindings_are_left_alone() {
       "{fields}"
     );
   }
+  // A conflicting authored reference to the same table is never overwritten.
   let source = model(
     &text(&binding(LEGACY_SETTINGS, GAME_TABLE)),
     &[(id(GAME_TABLE) ^ 1, GAME_TABLE)],

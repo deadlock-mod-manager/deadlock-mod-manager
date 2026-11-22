@@ -23,6 +23,7 @@ export async function healthCheck(): Promise<{
     },
   };
 
+  // Check Redis connection
   try {
     await redis.ping();
   } catch (error) {
@@ -32,6 +33,7 @@ export async function healthCheck(): Promise<{
     };
   }
 
+  // Check Redis read/write
   try {
     const testKey = "health-check";
     const testValue = Date.now().toString();
@@ -48,6 +50,7 @@ export async function healthCheck(): Promise<{
     };
   }
 
+  // Check disk health
   try {
     const diskStatus = await diskHealthMonitor.getHealthStatus();
     if (!diskStatus.isHealthy) {
@@ -95,5 +98,6 @@ if (import.meta.main) {
   if (status === "unhealthy") {
     logger.withMetadata({ checks }).error("Health check failed");
   }
+  // The Redis connection keeps the event loop alive, so exit explicitly.
   process.exit(status === "healthy" ? 0 : 1);
 }

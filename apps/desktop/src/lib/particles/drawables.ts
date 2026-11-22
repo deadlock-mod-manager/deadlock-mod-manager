@@ -11,13 +11,13 @@ export interface ParticleDrawable {
   dispose(): void;
 }
 
-const VARYINGS = `
+const VARYINGS = /* glsl */ `
 varying vec2 vUv;
 varying vec2 vMaskUv;
 varying vec4 vColor;
 `;
 
-const SPRITE_VERTEX = `
+const SPRITE_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec3 iPosition;
 attribute vec4 iColor;
@@ -67,7 +67,7 @@ void main() {
   vColor = trail > 0.5 ? mix(iTailColor, iColor, t.y) : iColor;
 }`;
 
-const ROPE_VERTEX = `
+const ROPE_VERTEX = /* glsl */ `
 attribute vec3 tangent;
 attribute vec4 tint;
 attribute float halfWidth;
@@ -88,7 +88,7 @@ void main() {
   vColor = tint;
 }`;
 
-const FRAGMENT = `
+const FRAGMENT = /* glsl */ `
 uniform sampler2D map;
 uniform float hasMap;
 uniform sampler2D mask;
@@ -197,6 +197,7 @@ const syncMaterial = (
   );
 };
 
+/** Stable back-to-front ordering in camera space, without modifying simulation indices. */
 export const particleDrawOrder = (
   count: number,
   positions: Float32Array,
@@ -438,6 +439,7 @@ export const spriteDrawable = (
   };
 };
 
+/** Catmull-Rom interpolation with endpoint clamping, bounded by renderer subdivisions. */
 export const curvePoint = (
   a: number,
   b: number,

@@ -27,6 +27,7 @@ export function useModelConflictInstall() {
   const confirm = useConfirm();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  // The dependency label is the author's free text, so prefer the mod's real name
   const requirementName = async (
     dependency: ModDependency,
     localMods: readonly LocalMod[],
@@ -37,6 +38,7 @@ export function useModelConflictInstall() {
     if (local) return local.name;
     const fallback = dependency.label || remoteId;
     try {
+      // Don't hold the warning back on a slow catalog lookup
       const details = await Promise.race([
         queryClient.fetchQuery({
           queryKey: modDetailQueryKey(remoteId),

@@ -16,7 +16,9 @@ type ReviewSectionProps = {
   icon: ReactNode;
   title: string;
   count: number;
+  /** Always visible under the header, also while collapsed. */
   summary?: ReactNode;
+  /** Controls in the header, such as an Include switch. */
   action?: ReactNode;
   defaultOpen?: boolean;
   children?: ReactNode;
@@ -133,6 +135,7 @@ export const EntryValue = ({ entry }: { entry: ResolvedEntry }) => {
 
 type EntryListProps = {
   entries: ResolvedEntry[];
+  /** Rows shown before "Show N more". */
   limit?: number;
   renderDetail?: (entry: ResolvedEntry) => ReactNode;
   footer?: ReactNode;
