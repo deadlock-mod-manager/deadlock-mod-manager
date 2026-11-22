@@ -13,12 +13,6 @@ import {
   type WidgetView,
 } from "./layout";
 
-/**
- * Picks sensible fields and chart types so a new widget shows something useful
- * before the user touches a single option, and so switching the chart type never
- * leaves it pointing at fields that type cannot draw.
- */
-
 const SERIES_LIMIT = {
   kpi: MAX_SERIES,
   line: MAX_SERIES,
@@ -34,7 +28,6 @@ const SERIES_LIMIT = {
   table: MAX_SERIES,
 } satisfies Record<ChartType, number>;
 
-/** Charts that plot values against a category and cannot do without one. */
 const NEEDS_CATEGORY: ReadonlySet<ChartType> = new Set([
   "line",
   "area",
@@ -59,7 +52,6 @@ const valueFields = (dataset: Dataset): DatasetField[] =>
 const categoryFields = (dataset: Dataset): DatasetField[] =>
   dataset.fields.filter(isCategoryField);
 
-// Ids and bucket keys are numbers, but plotting them says nothing.
 const ID_LIKE = /(^|_)(ids?|bucket)\d?$/;
 const PREFERRED = [
   "winrate",
@@ -74,7 +66,6 @@ const isConstant = (dataset: Dataset, key: string) =>
   dataset.rows.length > 1 &&
   dataset.rows.every((row) => row[key] === dataset.rows[0]?.[key]);
 
-/** The value fields worth suggesting, the familiar ones first. */
 const plottableValues = (dataset: Dataset, exclude: string): DatasetField[] => {
   const candidates = valueFields(dataset).filter(
     (field) =>
@@ -93,7 +84,6 @@ const plottableValues = (dataset: Dataset, exclude: string): DatasetField[] => {
   return [...candidates].sort((a, b) => rank(a) - rank(b));
 };
 
-/** A strictly rising integer column reads as an axis (match progress, a rank). */
 const isAxisLike = (dataset: Dataset, field: DatasetField) =>
   dataset.rows.length > 2 &&
   dataset.rows.every((row, index) => {
@@ -111,7 +101,6 @@ const suggestedCategory = (dataset: Dataset): DatasetField | undefined =>
   categoryFields(dataset)[0] ??
   valueFields(dataset).find((field) => isAxisLike(dataset, field));
 
-/** Whether the data can feed a chart type at all, for greying out the picker. */
 export const supportsChart = (dataset: Dataset, chart: ChartType): boolean => {
   const values = valueFields(dataset).length;
   if (values === 0) {
@@ -121,7 +110,6 @@ export const supportsChart = (dataset: Dataset, chart: ChartType): boolean => {
     return values >= 2;
   }
   if (needsCategory(chart)) {
-    // Any field can serve as the axis, but it needs something to plot against.
     return dataset.fields.length > 1 && dataset.rows.length > 1;
   }
   return true;
@@ -163,7 +151,6 @@ export const suggestView = (dataset: Dataset): WidgetView => {
   });
 };
 
-/** Re-fits a view to a chart type: fills a missing category, trims extra series. */
 export const adaptView = (
   view: WidgetView,
   dataset: Dataset,
@@ -197,7 +184,6 @@ export const adaptView = (
   };
 };
 
-/** The chart a match query reads best as, by what it groups on. */
 export const chartForGroup = (group: MatchGroup): ChartType => {
   switch (group) {
     case "none":

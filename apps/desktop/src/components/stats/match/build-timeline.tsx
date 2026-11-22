@@ -24,11 +24,6 @@ const PHASES = [
   { at: 1200, key: "lateGame" },
 ] as const;
 
-/**
- * Every purchase at the minute it was made, one lane per slot, over the
- * player's souls. Tiles that would overlap are nudged right so each stays
- * readable; the tooltip keeps the real time.
- */
 export const BuildTimeline = ({
   bought,
   me,

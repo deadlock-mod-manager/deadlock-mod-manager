@@ -39,7 +39,6 @@ export function resolveLaunchRepairMods(
   });
 }
 
-/** Before any repair pass (`failures` is `null`) every mod is a target. */
 export function launchRepairTargets(
   mods: LaunchRepairMod[],
   failures: LaunchRepairFailure[] | null,

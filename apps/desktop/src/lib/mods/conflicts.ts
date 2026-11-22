@@ -4,11 +4,6 @@ import type { ModConflict } from "@/types/generated/ModConflict";
 import type { LocalMod } from "@/types/mods";
 import { isInstalledModWithVpks } from "./installed-helpers";
 
-/**
- * Load order that makes `newWinner` win against `currentWinner`: `newWinner`
- * moves directly in front of `currentWinner` and everything else keeps its
- * relative position.
- */
 export function orderWithWinner(
   orderedIds: readonly string[],
   newWinner: string,
@@ -24,10 +19,6 @@ export function orderWithWinner(
   return order;
 }
 
-/**
- * Changes whenever the enabled mods, their files, or their load order change,
- * so conflict results are refetched after any of those.
- */
 export function enabledModsSignature(
   mods: readonly Pick<
     LocalMod,
@@ -49,21 +40,14 @@ const SEVERITY_RANK = { low: 0, normal: 1, critical: 2 } satisfies Record<
   number
 >;
 
-/** Files that the same set of mods all ship, with those mods in load order. */
 export interface ConflictGroup {
   key: string;
-  /** Mods providing these files; the first one is used in game. */
   providers: string[];
   severity: ConflictSeverity;
   files: ConflictFile[];
-  /** Every conflicting pair among the providers, as `[winner, loser]`. */
   pairs: [string, string][];
 }
 
-/**
- * Regroups pairwise conflicts by the exact set of mods that ship each file, so
- * three mods replacing one model read as one row instead of three pairs.
- */
 export function groupConflicts(
   conflicts: readonly ModConflict[],
 ): ConflictGroup[] {
@@ -131,10 +115,6 @@ export function groupConflicts(
 
 export type ModConflictStatus = "modelHidden" | "overlap";
 
-/**
- * How each mod is affected: `modelHidden` when another mod's copy of a model
- * it ships is used instead, `overlap` when it only shares less visible files.
- */
 export function conflictStatusByMod(
   groups: readonly ConflictGroup[],
 ): Map<string, ModConflictStatus> {

@@ -1,11 +1,6 @@
 import { type DeadlockHero, heroImage } from "@/lib/deadlock-assets";
 import { useState } from "react";
 
-/**
- * The hero's own wordmark, painted in the hero's colour. The SVG ships as white
- * artwork, so it is used as a mask over an accent fill; the hidden image behind
- * it is what gives the block its natural aspect ratio.
- */
 export const HeroWordmark = ({ hero }: { hero: DeadlockHero }) => {
   const source = heroImage(hero, "name");
   const [failedSource, setFailedSource] = useState<string | null>(null);

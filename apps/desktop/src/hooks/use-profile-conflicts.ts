@@ -55,7 +55,6 @@ export const useConflictIgnore = () => {
   });
 };
 
-/** Reorders the profile so one mod loads right before another and wins their shared files. */
 export const useMakeConflictWinner = () => {
   const { t } = useTranslation();
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);

@@ -1,5 +1,3 @@
-// Re-sharing an imported profile passes the archives the import fetched, so
-// a friend importing the re-share gets every mod with the same files.
 import { browser } from "@wdio/globals";
 import assert from "node:assert/strict";
 import { readdir, readFile, writeFile } from "node:fs/promises";
@@ -75,7 +73,6 @@ const archiveNames = new Map(
     archive.name,
   ]),
 );
-/** The archives fetched since the journal had `from` entries. */
 const downloadsSince = async (world: string, from: number) =>
   (await fixtureRequests(world))
     .slice(from)
@@ -107,8 +104,6 @@ const picksOf = (mods: LocalMod[]) =>
     ]),
   );
 
-/** Every shared mod is installed in the profile, from only the shared picks,
- *  and no other VPK sits in its folder. */
 const assertProfileMatchesShare = (
   world: string,
   profileId: string,
@@ -190,8 +185,6 @@ describe("re-sharing an imported profile", () => {
 
     await activateProfile(first.name);
     await navigate("my-mods");
-    // Sharing reads each mod's download list, which the library also fills
-    // in for mods that lack one; share once it's there.
     await browser.waitUntil(
       async () => {
         const state = await readState(world);
@@ -208,9 +201,6 @@ describe("re-sharing an imported profile", () => {
     );
 
     const shared = await step("share the imported profile", async () => {
-      // E2E builds have no hardware ID, so the header's Share button stays
-      // disabled. Build the payload with the share dialog's serializer from
-      // the persisted active profile and post it to the share API.
       const state = await readState(world);
       const active = state.profiles[state.activeProfileId];
       assert.ok(active);

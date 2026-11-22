@@ -1,12 +1,3 @@
-//! Hero identity tables the Foundry needs to find a hero's assets in a VPK.
-//!
-//! Deadlock namespaces a hero's assets under several different codenames: the
-//! panorama card namespace (`panorama/images/heroes/<codename>_*`), the model /
-//! material namespace, and the sound namespace
-//! (`sounds/abilities/<codename>/...`). They frequently diverge from each other
-//! and from the display name (Abrams is `atlas` in panorama, `bull` in ability
-//! art and `abrams` in sounds), so each mapping is its own table.
-
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -14,8 +5,6 @@ use serde::Deserialize;
 
 pub(crate) use hero_parser::{canonical_sound_codename, sound_codename_for_hero};
 
-/// Display-name to panorama `class_name` namespace, used to locate a hero's
-/// card textures (including the legacy packs that ship under an older name).
 pub(crate) fn panorama_codenames(hero_name: &str) -> Vec<&'static str> {
   match hero_name {
     "Abrams" => vec!["atlas", "bull"],
@@ -67,9 +56,6 @@ pub(crate) fn panorama_codenames(hero_name: &str) -> Vec<&'static str> {
   }
 }
 
-/// Every name a hero's 2D art is filed under. Cards use the codename, but the
-/// backgrounds, guns and ability icons mix codenames with the display name
-/// (`grey_talon_bg`, `ratking_gun`, `bull_charge`), so both forms are tried.
 pub(crate) fn art_names(hero_name: &str, codenames: &[&str]) -> Vec<String> {
   let mut names: Vec<String> = codenames.iter().map(|name| (*name).to_string()).collect();
   let words: Vec<String> = hero_name
@@ -81,15 +67,11 @@ pub(crate) fn art_names(hero_name: &str, codenames: &[&str]) -> Vec<String> {
   if let (Some(first), Some(last)) = (words.first(), words.last()) {
     names.extend([words.join(""), words.join("_"), first.clone(), last.clone()]);
   }
-  // Longest first, so stripping a name off a filename takes `lady_geist`
-  // before `lady`.
   names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
   names.dedup();
   names
 }
 
-/// Where a hero's swappable 2D art lives: cards and portraits, the hero-select
-/// background, the weapon art, and the ability icons.
 pub(crate) fn card_prefixes(names: &[String]) -> Vec<String> {
   names
     .iter()
@@ -105,7 +87,6 @@ pub(crate) fn card_prefixes(names: &[String]) -> Vec<String> {
     .collect()
 }
 
-/// Extra `models/heroes/<dir>` names that don't fall out of the display name.
 fn default_model_codenames(hero_name: &str) -> Vec<&'static str> {
   match hero_name {
     "Abrams" => vec!["abrams", "atlas_detective"],
@@ -135,7 +116,6 @@ fn normalized_hero_terms(hero_name: &str) -> Vec<String> {
     .collect()
 }
 
-/// Every path token that identifies an asset as belonging to `hero_name`.
 pub(crate) fn hero_asset_terms(hero_name: &str, codenames: &[&str]) -> Vec<String> {
   let mut terms = normalized_hero_terms(hero_name);
   terms.extend(codenames.iter().map(|codename| codename.to_string()));
@@ -152,11 +132,6 @@ pub(crate) fn hero_asset_terms(hero_name: &str, codenames: &[&str]) -> Vec<Strin
   terms
 }
 
-/// One ability slot's reference data, as shown in the sound browser.
-///
-/// Deliberately text only. The upstream table also carried an icon URL on
-/// deadlock-api.com, but the Foundry ships no assets it has to fetch at runtime,
-/// and the ability's name is what actually identifies the group.
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct AbilitySlotMeta {
   pub(crate) token: String,
@@ -165,15 +140,10 @@ pub(crate) struct AbilitySlotMeta {
 
 #[derive(Debug, Deserialize)]
 struct AbilityTables {
-  /// sound codename -> slot number (as a string key) -> ability metadata.
   slots: HashMap<String, HashMap<String, AbilitySlotMeta>>,
-  /// Hand-curated dev-token -> slot for tokens the ability's display name does
-  /// not match.
   curation: HashMap<String, HashMap<String, u8>>,
 }
 
-/// The ability tables are large reference data, so they live in JSON beside this
-/// module and are parsed once on first use rather than hand-written as literals.
 fn tables() -> &'static AbilityTables {
   static TABLES: OnceLock<AbilityTables> = OnceLock::new();
   TABLES.get_or_init(|| {
@@ -182,7 +152,6 @@ fn tables() -> &'static AbilityTables {
   })
 }
 
-/// The four ability slots for a sound codename, ordered 1-4 (4 = ultimate).
 pub(crate) fn ability_slots(codename: &str) -> Vec<(u8, &'static AbilitySlotMeta)> {
   let Some(slots) = tables().slots.get(codename) else {
     return Vec::new();

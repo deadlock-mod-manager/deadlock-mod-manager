@@ -4,18 +4,12 @@ import { MatchSyncHint } from "@/components/stats/match-sync-hint";
 import { useMissingLocalMatches } from "@/hooks/use-live-match";
 import { useMatchSync } from "@/hooks/use-match-sync";
 
-/** Long enough to read the confirmation, short enough not to linger. */
 const ENABLED_NOTE_MS = 5000;
 
 interface StatsHintsProps {
-  /** Match ids the API already knows about, to spot what it is still missing. */
   apiMatchIds: number[];
 }
 
-/**
- * Which nudge the Stats page shows, if any. One at a time. Owning the decision here
- * keeps the page itself from knowing anything about match sync.
- */
 export const StatsHints = ({ apiMatchIds }: StatsHintsProps) => {
   const [syncHintDismissed, setSyncHintDismissed] = useState(false);
   const [justEnabled, setJustEnabled] = useState(false);
@@ -23,13 +17,9 @@ export const StatsHints = ({ apiMatchIds }: StatsHintsProps) => {
 
   const { status } = useMatchSync();
   const enabled = status?.enabled;
-  // Explicitly false, not just absent: while the status loads, nothing is known
-  // and a hint would only flash.
   const syncDisabled = enabled === false;
   const missingLocal = useMissingLocalMatches(apiMatchIds, syncDisabled);
 
-  // Only an off -> on flip seen on this page earns the confirmation; arriving
-  // with sharing already on is not news.
   useEffect(() => {
     if (enabled === undefined) {
       return;

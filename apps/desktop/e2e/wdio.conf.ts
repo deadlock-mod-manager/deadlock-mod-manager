@@ -54,9 +54,6 @@ export const config: TauriWdioConfig = {
         appArgs: ["--disable-auto-update"],
         driverProvider: provider,
         autoInstallTauriDriver: false,
-        // v1.3.0 performs this preflight before branching on the provider.
-        // Keeping it enabled prevents an embedded run from aborting on the
-        // machine-global EdgeDriver that only the external provider needs.
         autoDownloadEdgeDriver: true,
         captureBackendLogs: true,
         captureFrontendLogs: false,
@@ -70,8 +67,6 @@ export const config: TauriWdioConfig = {
       process.env.DMM_E2E_CASE_ID === "local-mod-name-recovery" &&
       process.env.DMM_E2E_PHASE === "restart-delete"
     ) {
-      // Seed the affected store after the previous phase's exit was verified,
-      // before the next application process starts.
       await seedPendingLocalName(path.dirname(artifacts));
     }
   },
@@ -82,9 +77,6 @@ export const config: TauriWdioConfig = {
   connectionRetryCount: 0,
   framework: "mocha",
   reporters: [["spec", { addConsoleLogs: true }]],
-  // WDIO enforces this per test around the spec function; this.timeout() in a
-  // spec cannot extend it. The longest WebKitGTK scenarios need about 50s; the
-  // large local mod cases move a gigabyte.
   mochaOpts: {
     ui: "bdd",
     timeout:

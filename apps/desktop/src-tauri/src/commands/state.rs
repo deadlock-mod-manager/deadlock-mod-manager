@@ -25,8 +25,6 @@ pub(crate) static INGEST_WATCHER_GEN: LazyLock<Arc<AtomicUsize>> =
 pub(crate) static CONSOLE_LOG_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
   LazyLock::new(|| Arc::new(AtomicBool::new(false)));
 
-/// Cancellation handle for the in-flight server connect watchdog. Only one may
-/// run at a time so two join attempts cannot interleave their progress events.
 pub(crate) static SERVER_CONNECT_WATCHDOG: LazyLock<Mutex<Option<CancellationToken>>> =
   LazyLock::new(|| Mutex::new(None));
 

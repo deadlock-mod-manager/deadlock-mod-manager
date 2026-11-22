@@ -20,7 +20,6 @@ const GAMEBANANA_SECTION = {
   wip: "wips",
 } satisfies Record<SubmissionType, string>;
 
-/** Parses numeric Mod IDs, snd- Sound IDs, wip- WIP IDs, or local- UUIDs; returns null for invalid slugs. */
 export function parseSubmissionSlug(slug: string): SubmissionRef | null {
   if (matchesEntireValue(GAMEBANANA_ID_PATTERN, slug)) {
     return {
@@ -59,7 +58,6 @@ export function parseSubmissionSlug(slug: string): SubmissionRef | null {
   return null;
 }
 
-/** Returns a validated slug, lowercasing local UUIDs, or null for unsupported identities. */
 export function serializeSubmissionRef(
   submission: SubmissionRef,
 ): string | null {
@@ -80,7 +78,6 @@ export function serializeSubmissionRef(
   return `local-${submission.submissionId.toLowerCase()}`;
 }
 
-/** Extracts a canonical identity from an identity-prefixed filename, or null if absent. */
 export function extractSubmissionSlugFromFilename(
   filename: string,
 ): string | null {
@@ -94,7 +91,6 @@ export function extractSubmissionSlugFromFilename(
   return submission ? serializeSubmissionRef(submission) : null;
 }
 
-/** Returns the GameBanana page for a slug, or null for local mods and invalid slugs, which have none. */
 export function gameBananaPageUrl(slug: string): string | null {
   const submission = parseSubmissionSlug(slug);
   if (submission?.provider !== "gamebanana") return null;

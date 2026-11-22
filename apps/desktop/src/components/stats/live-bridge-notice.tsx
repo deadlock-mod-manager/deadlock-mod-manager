@@ -5,11 +5,6 @@ import { DANGER_COLOR, tint, WARN_COLOR } from "@/components/stats/chart-fx";
 import { useLiveBridge } from "@/hooks/use-live-bridge";
 import { useGameRunning } from "@/hooks/use-mod-health";
 
-/**
- * Says so when the live bridge was built for an older game or bridge. It is
- * rebuilt in the background as soon as the game is closed, so this mostly
- * explains the wait; the button covers an update that failed.
- */
 export const LiveBridgeNotice = () => {
   const { t } = useTranslation();
   const { status, isUpdating, update } = useLiveBridge();

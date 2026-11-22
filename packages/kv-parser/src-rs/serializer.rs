@@ -36,23 +36,18 @@ impl Serializer {
     fn serialize_keyvalue(kv: &KeyValueNode) -> String {
         let mut result = String::new();
 
-        // Serialize key
         result.push_str(&kv.key.raw);
 
-        // Serialize separator
         if let Some(sep) = &kv.separator {
             result.push_str(&sep.raw);
         }
 
-        // Serialize value
         result.push_str(&Self::serialize_value_node(&kv.value));
 
-        // Serialize conditional separator
         if let Some(sep) = &kv.conditional_separator {
             result.push_str(&sep.raw);
         }
 
-        // Serialize conditional
         if let Some(cond) = &kv.conditional {
             result.push_str(&cond.raw);
         }
@@ -83,7 +78,6 @@ impl Serializer {
         if keys.len() == 1 {
             let root_key = keys[0];
             if let Some(KeyValuesValue::Object(_)) = data.get(root_key) {
-                // Standard format with root key
                 let formatted_key = self.format_value(root_key);
                 return Ok(format!(
                     "{}\n{}\n",
@@ -93,7 +87,6 @@ impl Serializer {
             }
         }
 
-        // Multiple root keys or non-object root value
         self.serialize_object_data(data, 0)
     }
 
@@ -107,7 +100,6 @@ impl Serializer {
 
             match value {
                 KeyValuesValue::Array(arr) => {
-                    // Handle duplicate keys
                     for item in arr {
                         if matches!(item, KeyValuesValue::Object(_)) {
                             result.push_str(&format!("{}{}\n", next_indent_str, formatted_key));
@@ -172,15 +164,13 @@ impl Serializer {
         }
 
         if self.options.minimize_quotes {
-            // Only quote if contains special characters
             value.is_empty()
                 || value.contains(|c: char| c.is_whitespace() || c == '{' || c == '}' || c == '"')
                 || value.contains("://")
                 || value.starts_with('#')
                 || value.starts_with('[')
-                || value.parse::<f64>().is_ok() // Looks like a number
+                || value.parse::<f64>().is_ok()
         } else {
-            // More conservative: quote if contains special chars
             value.is_empty()
                 || value.contains(|c: char| {
                     c.is_whitespace() || c == '{' || c == '}' || c == '"' || c == '/' || c == '\\'
@@ -228,7 +218,6 @@ mod tests {
         let result = Parser::parse(input, ParseOptions::default()).unwrap();
         let serialized = Serializer::serialize_ast(&result.ast);
 
-        // Should preserve exact spacing
         assert_eq!(serialized, input);
     }
 
@@ -310,7 +299,6 @@ mod tests {
         });
         let result = serializer.serialize_data(&data).unwrap();
 
-        // Both key and value should be quoted
         assert!(result.contains("\"Key\""));
         assert!(result.contains("\"Value\""));
     }
@@ -328,7 +316,6 @@ mod tests {
         let serialized = Serializer::serialize_ast(&result.ast);
         let reparsed = Parser::parse(&serialized, ParseOptions::default()).unwrap();
 
-        // Data should be identical
         assert_eq!(result.data, reparsed.data);
     }
 

@@ -6,10 +6,6 @@ import { useNavigate } from "react-router";
 
 const REAPPLY_FAILED_EVENT = "performance-config-reapply-failed";
 
-/**
- * A launch puts the chosen config back into gameinfo.gi when an update or a
- * reset removed it. When that fails the game still starts, without the config.
- */
 export const ReapplyFailedListener = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -11,9 +11,7 @@ export const CATALOG_CATEGORIES: CatalogCategory[] = [
 ];
 
 export type CatalogEntry = {
-  /** The id the plugin installs under, used to tell whether it is installed. */
   id: string;
-  /** Key under `plugins.catalog` for its copy. */
   copyKey: string;
   name: string;
   author: string;
@@ -21,16 +19,12 @@ export type CatalogEntry = {
   icon: string;
   accent: string;
   category: CatalogCategory;
-  /** What its manifest asks for, so Discover can say so before installing. */
   permissions: ExternalPluginPermission[];
-  /** Unknown until the catalog service reports install counts. */
   installs?: number;
   updatedAt: string;
-  /** Where to download the release; entries without one aren't published yet. */
   archive?: { url: string; sha256: string };
 };
 
-/** The bundled catalog shown on Discover. */
 export const PLUGIN_CATALOG: CatalogEntry[] = [
   {
     id: "example.creator-workspace-bridge",

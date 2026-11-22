@@ -16,7 +16,6 @@ export type LaunchState =
       phase: "launching";
       mode: LaunchMode;
       modCount: number;
-      /** Number of checklist steps already ticked. */
       done: number;
       leaving: boolean;
     }
@@ -27,7 +26,6 @@ const STEP_COUNT = 3;
 const LEAVE_AT = STEP_MS * STEP_COUNT + 150;
 const FINISH_AT = LEAVE_AT + 200;
 
-/** Fake launch: ticks a short checklist, then the game counts as running. */
 export const useLaunchSequence = (screen: ScreenId) => {
   const { t } = useTranslation("preview");
   const { notify, installs } = usePreviewState();
@@ -44,7 +42,6 @@ export const useLaunchSequence = (screen: ScreenId) => {
 
   useEffect(() => clearTimeouts, [clearTimeouts]);
 
-  // Navigating away cancels a launch that is still in progress.
   const lastScreen = useRef(screen);
   useEffect(() => {
     if (lastScreen.current === screen) return;
@@ -105,7 +102,6 @@ const stepLabels = (
   t("launch.steps.starting"),
 ];
 
-/** Covers the sidebar and content while a launch is in progress. */
 export const LaunchOverlay = ({ state }: { state: LaunchState }) => {
   const { t } = useTranslation("preview");
   const { theme } = usePreviewNavigation();

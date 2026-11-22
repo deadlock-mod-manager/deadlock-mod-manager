@@ -5,16 +5,6 @@ import { PaintRail } from "./foundry-paint-rail";
 import { PreviewOverlay } from "./foundry-paint-preview-overlay";
 import { BrushPanel } from "./foundry-paint-brush-panel";
 
-/**
- * The paint tab: sections on the left, the hero in the middle, the brush on
- * the right. A section is one color map, so painting it rewrites exactly that
- * map; a whole part repaints every texture it covers, and for abilities the
- * particle colors too.
- *
- * The preview tints live as the color changes, which is instant but
- * approximate; Paint bakes the real thing into the workspace and the preview
- * then re-reads the actual textures.
- */
 export const FoundryPaintWorkspace = ({
   sidePanelClassName,
 }: {

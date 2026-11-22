@@ -76,7 +76,6 @@ export const useCatalogSyncMutation = (forceRefresh = false) => {
       void queryClient.invalidateQueries({ queryKey: ["check-mod-updates"] });
     },
     onError: (error) => {
-      // A newer sync (e.g. after a webview reload) replaced this one.
       if (isTauriError(error) && error.kind === "providerCancelled") return;
       logger.withError(error).warn("GameBanana catalog refresh failed");
     },
@@ -103,13 +102,10 @@ export const useGameBananaCatalogSync = (): void => {
   const synchronizeCatalog = useCatalogSyncMutation();
   useEffect(() => {
     synchronizeCatalog.mutate(false);
-    // Per-session jitter keeps clients that launched together (e.g. after an
-    // app update) from hitting GameBanana in lockstep.
     const period =
       REFETCH_INTERVAL_CATALOG_SYNC +
       (Math.random() * 2 - 1) * REFETCH_JITTER_CATALOG_SYNC;
     const timer = window.setInterval(() => {
-      // A new sync cancels the running one, which would restart a long full crawl.
       if (queryClient.isMutating({ mutationKey: CATALOG_SYNC_KEY }) > 0) return;
       synchronizeCatalog.mutate(false);
     }, period);

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import logger from "@/lib/logger";
 import { useFoundry } from "./foundry-context";
 
-/** Peaks kept per clip; drawn bars are resampled from these to fit. */
 const PEAK_RESOLUTION = 200;
 
 interface ClipInfo {
@@ -14,7 +13,6 @@ let audioContext: AudioContext | null = null;
 
 const clipInfoCache = new Map<string, Promise<ClipInfo | null>>();
 
-/** Decode a clip once and keep its loudness envelope and length. */
 const loadClipInfo = (
   key: string,
   url: () => Promise<string>,

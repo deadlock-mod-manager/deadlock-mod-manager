@@ -108,21 +108,13 @@ export class NotNullError extends BaseError {
   }
 }
 
-/**
- * Maps PostgreSQL/Drizzle ORM errors to our custom error classes
- *
- * @param error The original error from Drizzle/Postgres
- * @returns A mapped custom error
- */
 export const mapDrizzleError = (
   error: DatabaseError | Error | undefined | null | unknown,
 ): BaseError => {
-  // Handle null or undefined errors
   if (!error) {
     return new UnknownError("Unknown database error");
   }
 
-  // Handle errors that are not Error instances
   if (!(error instanceof Error)) {
     return new UnknownError("Unknown database error");
   }
@@ -143,66 +135,55 @@ export const mapDrizzleError = (
   const errMsg = currentError.message || "";
   const errCode = "code" in currentError ? currentError.code : "";
 
-  // Handle "not found" errors
   if (errMsg.includes("no rows returned") || errMsg.includes("not found")) {
     return new EntityNotFoundError("Entity", "unknown");
   }
 
-  // PostgreSQL error codes mapping
-  // See: https://www.postgresql.org/docs/current/errcodes-appendix.html
   switch (errCode) {
-    // Connection errors
     case "ECONNREFUSED":
     case "ECONNRESET":
     case "ENOTFOUND":
     case "EHOSTUNREACH":
-    case "08000": // connection_exception
-    case "08003": // connection_does_not_exist
-    case "08006": // connection_failure
-    case "08001": // sqlclient_unable_to_establish_sqlconnection
-    case "08004": // sqlserver_rejected_establishment_of_sqlconnection
+    case "08000":
+    case "08003":
+    case "08006":
+    case "08001":
+    case "08004":
       return new DatabaseConnectionError(errMsg);
 
-    // Authentication errors
-    case "28000": // invalid_authorization_specification
-    case "28P01": // invalid_password
+    case "28000":
+    case "28P01":
       return new DatabaseAuthError(errMsg);
 
-    // Constraint violations
-    case "23505": // unique_violation
+    case "23505":
       return new UniqueConstraintError(errMsg);
 
-    case "23503": // foreign_key_violation
+    case "23503":
       return new ForeignKeyConstraintError(errMsg);
 
-    case "23502": // not_null_violation
+    case "23502":
       return new NotNullError(errMsg);
 
-    // Query syntax errors
-    case "42601": // syntax_error
-    case "42P01": // undefined_table
-    case "42703": // undefined_column
+    case "42601":
+    case "42P01":
+    case "42703":
       return new QuerySyntaxError(errMsg);
 
-    // Transaction errors
-    case "25P02": // in_failed_sql_transaction
-    case "40001": // serialization_failure
-    case "40P01": // deadlock_detected
+    case "25P02":
+    case "40001":
+    case "40P01":
       return new TransactionError(errMsg);
 
-    // Permission errors
-    case "42501": // insufficient_privilege
+    case "42501":
       return new PermissionError(errMsg);
 
-    // Timeout errors
     case "ETIMEDOUT":
-    case "57014": // query_canceled
-    case "57P01": // admin_shutdown
-    case "57P02": // crash_shutdown
-    case "57P03": // cannot_connect_now
+    case "57014":
+    case "57P01":
+    case "57P02":
+    case "57P03":
       return new DatabaseTimeoutError(errMsg);
 
-    // Default: return the original error with improved context
     default:
       return new UnknownError(currentError);
   }

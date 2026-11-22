@@ -1,19 +1,15 @@
-# deps
 /node_modules
 
-# generated content
 .contentlayer
 .content-collections
 .source
 
-# test & build
 /coverage
 /.next/
 /out/
 /build
 *.tsbuildinfo
 
-# misc
 .DS_Store
 *.pem
 /.pnp
@@ -22,7 +18,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# others
 .env*.local
 .vercel
 .wrangler

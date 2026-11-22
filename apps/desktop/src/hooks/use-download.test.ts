@@ -45,8 +45,6 @@ mock.module("@deadlock-mods/ui/components/sonner", () => ({
   },
 }));
 const REFUSED_MOD = "2";
-// The backend refuses REFUSED_MOD; it accepts any other request and is still
-// downloading it.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
   invoke: (_command: string, args?: { modId?: string }) =>

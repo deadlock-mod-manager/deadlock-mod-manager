@@ -61,7 +61,6 @@ import { badgeToStep } from "@/lib/stats/rank";
 
 const EMPTY_RANK_ASSETS: RankAsset[] = [];
 
-/** The ranked badge after this match against the one shown before it. */
 const rankChangeFor = (
   history: MatchHistoryEntry[],
   matchId: number,
@@ -208,7 +207,6 @@ const MatchSkeleton = () => (
   </div>
 );
 
-/** One match on its own page: what happened, what was built, and who was there. */
 const StatsMatch = () => {
   const { t } = useTranslation();
   const matchId = Number(useParams().matchId);
@@ -233,7 +231,6 @@ const StatsMatch = () => {
   const profiles = useMatchProfiles(matchId, playerIds);
 
   const { previousId, nextId } = useMemo(() => {
-    // `matches` is already limited to normal games, so Street Brawl is skipped.
     const ordered = [...stats.matches].sort(
       (a, b) => b.start_time - a.start_time,
     );

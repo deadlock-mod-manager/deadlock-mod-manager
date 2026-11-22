@@ -134,15 +134,8 @@ const FeatureRow = ({
   );
 };
 
-/**
- * Fix commits since the last V1 release that touch the desktop app or the
- * shared packages. Git history isn't in the image build, so refresh by hand:
- *   git log v1.1.0..origin/main --no-merges --format=%s -- apps/desktop packages \
- *     | grep -cE '^fix(\(|:|!)'
- */
 const FIX_COMMITS_SINCE_V1 = 62;
 
-/** Hero lines rise in one after another on first paint. */
 const riseDelay = (index: number) => ({ animationDelay: `${index * 90}ms` });
 
 function V2Page() {

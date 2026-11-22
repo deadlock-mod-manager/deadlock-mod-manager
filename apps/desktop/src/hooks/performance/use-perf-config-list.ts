@@ -8,10 +8,6 @@ import { buildConfigList } from "@/lib/performance/config-list";
 import { savedDraftFor } from "@/lib/performance/editor/configs";
 import { usePersistedStore } from "@/lib/store";
 
-/**
- * The user's saved tweaks, engine-section and video.txt choices for one config, with the
- * same fallback to the applied request as the settings editor.
- */
 export const useStoredRequestOptions = (configId: string) => {
   const { data: status } = usePerfStatus();
   const desired = status?.desired ?? null;
@@ -35,7 +31,6 @@ export const useStoredRequestOptions = (configId: string) => {
   );
 };
 
-/** Presets, GameBanana configs and the user's own configs, with the active one. */
 export const usePerfConfigList = () => {
   const catalogQuery = usePerfCatalog();
   const statusQuery = usePerfStatus();

@@ -32,21 +32,14 @@ type FileWithPath = File & {
 export type DetectedSource =
   | { kind: "archive"; file: File }
   | { kind: "vpk"; file: File }
-  // Loose VPKs imported as one mod, each a part Manage files can turn off.
   | { kind: "vpks"; files: File[] };
 
-// A VPK or archive Rust staged, from DeadlockForge or a mod site, placed
-// natively rather than read through the renderer.
 export type StagedSource = { kind: "staged"; path: string; fileName: string };
 
-/** The live bridge HUD mod, built from the installed game by the backend. */
 type LiveBridgeSource = { kind: "liveBridge" };
 
 export type ModSource = DetectedSource | StagedSource | LiveBridgeSource;
 
-/**
- * File utility functions
- */
 const getFileName = (file: File): string =>
   (file as FileWithPath).webkitRelativePath || file.name;
 
@@ -60,7 +53,6 @@ export const getFileBaseName = (file: File): string => {
 export const fileToBytes = async (file: File): Promise<Uint8Array> =>
   new Uint8Array(await file.arrayBuffer());
 
-// A file on disk known only by its path, from the picker or a staged drop.
 type PathBackedFile = File & { path?: string };
 
 export const createPathBackedFile = (filePath: string): File => {
@@ -92,8 +84,6 @@ export const writeFileBytes = async (
 
 const WRITE_CHUNK_BYTES = 8 * 1024 * 1024;
 
-// Written in slices: a mod can be close to a gigabyte, and holding it whole in
-// the renderer, then sending it in one IPC body, can crash the webview.
 export const writeFileInChunks = async (
   absolutePath: string,
   file: Blob,
@@ -129,11 +119,6 @@ export const discardStagedDrops = async (): Promise<void> => {
   }
 };
 
-/**
- * Flushes dropped files to disk as soon as they are dropped, so the rest of the
- * import handles them by path, like files chosen in the picker. Only the latest
- * drop is kept.
- */
 export const stageDroppedFiles = async (
   files: File[],
   onProgress?: (written: number, total: number) => void,
@@ -171,17 +156,12 @@ export const fileToDataUrl = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-/**
- * Detects the source type from uploaded files
- */
 export const detectSource = (files: File[]): DetectedSource | null => {
   if (!files?.length) {
     return null;
   }
 
   const validFiles = files.filter(Boolean);
-  // The parts share one folder, so a second file with the same name (Windows
-  // ignores case) would overwrite the first.
   const seenNames = new Set<string>();
   const vpkFiles = validFiles.filter((file) => {
     const name = getFileBaseName(file);
@@ -209,10 +189,6 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   return null;
 };
 
-/**
- * One archive is one mod, so it can't be added alongside other mod files.
- * Other files, such as a readme in a dropped folder, don't count.
- */
 export const combinesArchives = (files: File[]): boolean => {
   const names = files.map(getFileBaseName);
   const archives = names.filter((name) => ARCHIVE_PATTERN.test(name)).length;
@@ -223,9 +199,6 @@ export const combinesArchives = (files: File[]): boolean => {
 export const sourceFiles = (source: DetectedSource): File[] =>
   source.kind === "vpks" ? source.files : [source.file];
 
-/**
- * Recursively reads files from DataTransfer items
- */
 export const readFromDataTransferItems = async (
   items: ArrayLike<DataTransferItem>,
 ): Promise<File[]> => {

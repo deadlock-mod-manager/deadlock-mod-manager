@@ -24,16 +24,12 @@ const SEGMENT_DESCRIPTION =
 const SEGMENT_RANK = 10;
 
 export function parseUsername(content: string): string | null {
-  // Pattern 1 (most common): "Username: <value>" - case-insensitive, flexible spacing
   const usernameMatch = content.match(/username\s*:\s*(.+)/i);
   if (usernameMatch?.[1]) {
     const parsed = usernameMatch[1].trim();
     if (parsed.length > 0) return parsed;
   }
 
-  // Pattern 2: Two-line format with no explicit "Username:" label
-  // First line starts with an OS indicator, second line is just the username.
-  // e.g. "windows 11\nzax"
   const lines = content
     .split("\n")
     .map((l) => l.trim())
@@ -233,7 +229,6 @@ export class NightlyTestersSyncService {
     const entries: ParsedTesterEntry[] = [];
 
     for (const message of messages.values()) {
-      // Skip the original channel post by the bot/admin (the signup instructions message)
       if (message.author.bot) continue;
 
       const parsedAppUsername = parseUsername(message.content);
@@ -266,11 +261,9 @@ export class NightlyTestersSyncService {
   private async resolveUserId(
     entry: ParsedTesterEntry,
   ): Promise<string | null> {
-    // Primary: Discord account link
     const userIdByDiscord = await findUserIdByDiscordId(entry.discordAuthorId);
     if (userIdByDiscord) return userIdByDiscord;
 
-    // Fallback: name match using the username they typed in the message
     if (entry.parsedAppUsername) {
       const userIdByName = await findUserIdByName(entry.parsedAppUsername);
       if (userIdByName) return userIdByName;

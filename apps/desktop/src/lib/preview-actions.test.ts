@@ -24,8 +24,6 @@ describe("preview ability slots", () => {
         ability("frank_revive", "Shocking Reanimation"),
       ],
     );
-    // `pain` is a whole word of "Pain Battery" and only part of `painaura`;
-    // `frank` names every slot, so it is left for the action list.
     expect(slots.map((slot) => slot.action?.id ?? null)).toEqual([
       "ability:pain",
       "ability:jumpstart",
@@ -85,7 +83,6 @@ describe("preview ability slots", () => {
         ability("ability_deadpack_rocketeer", "Chimera Mk1"),
       ],
     );
-    // `last` is part of `chargeblast`, but the salvo clips spell the name.
     expect(slots[0].action?.id).toBe("ability:strix_salvo");
     expect(rest.map((entry) => entry.id)).toEqual(["ability:last"]);
   });

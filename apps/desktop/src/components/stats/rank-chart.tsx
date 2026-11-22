@@ -17,22 +17,12 @@ interface RankChartProps {
   rankAssets: RankAsset[];
 }
 
-/**
- * Rank over time, straight off the match history: `ranked_display_badge` is what
- * Valve showed the player after each ranked match. This used to read
- * `/mmr-history`, which deadlock-api deprecated once Valve's MMR estimate went
- * away - the badge is the real number now, and it comes for free with a request
- * the page already makes.
- */
 export const RankChart = ({ matches, rankAssets }: RankChartProps) => {
   const { t, i18n } = useTranslation();
 
   const data = useMemo(
     () =>
       matches
-        // Unranked matches and placements carry no badge; plotting them as 0
-        // would drop the line to Obscurus between every ranked game. The
-        // predicate is what lets the badge stay a number below.
         .filter(
           (
             match,
@@ -55,8 +45,6 @@ export const RankChart = ({ matches, rankAssets }: RankChartProps) => {
     },
   } satisfies ChartConfig;
 
-  // Valve packs tier and subrank into one number, so the raw value is not a
-  // scale anybody can read - every tick goes through the rank assets.
   const badgeLabel = (badge: number) =>
     rankLabel(badge, rankAssets) ?? String(badge);
 
@@ -114,8 +102,6 @@ export const RankChart = ({ matches, rankAssets }: RankChartProps) => {
               />
             }
           />
-          {/* Stepped: a badge holds until a match actually moves it, and a
-              smoothed curve would invent ranks the player never had. */}
           <Line
             dataKey='badge'
             dot={false}

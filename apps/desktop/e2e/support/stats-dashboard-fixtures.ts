@@ -5,18 +5,6 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import { readPersistedDocument } from "./observations";
 import { assertOwnedWorld, type CreatedWorld } from "./world";
 
-/**
- * deadlock-api as the Stats dashboard sees it: one pinned account, a twenty
- * match history, two heroes and every global endpoint the presets and tab
- * templates read. Shapes mirror the live API (the stats-dashboard-endpoints
- * skill keeps them in step); values are small and exact so the specs can
- * assert what the widgets compute, not just that they render.
- *
- * The history alternates wins and losses, with every third match on Seven:
- *   Infernus 13 matches, 6 wins (46%), KDA (84 + 104) / 52 = 3.62
- *   Seven     7 matches, 4 wins (57%), KDA (46 + 56) / 28 = 3.64
- */
-
 const STATS_ACCOUNT_ID = 1001;
 const HOUR_S = 60 * 60;
 const INFERNUS = 1;
@@ -36,7 +24,6 @@ const matchHistory = () => {
     game_mode: 1,
     match_mode: 1,
     player_team: 0,
-    // Team 0 wins every even match.
     match_result: index % 2,
     player_kills: 5 + (index % 4),
     player_deaths: 4,
@@ -80,7 +67,6 @@ const globalHeroStats = [INFERNUS, SEVEN].map((heroId) => ({
   total_shots_missed: 40_000,
 }));
 
-/** How the "Hero bans" table renders the fixture, highest first. */
 export const HERO_BAN_ROWS = [
   ["Infernus", "4,900"],
   ["Seven", "2,100"],
@@ -161,7 +147,6 @@ const baseRoutes = (): FixtureRoute[] => [
     body: json(matchHistory()),
   },
   { method: "GET", path: "/v1/players/hero-stats", status: 200, body: "[]" },
-  // The Squad section: no mates or enemies with three shared matches yet.
   {
     method: "GET",
     path: `/v1/players/${STATS_ACCOUNT_ID}/mate-stats`,
@@ -199,7 +184,6 @@ const baseRoutes = (): FixtureRoute[] => [
       },
     ]),
   },
-  // The Heroes panel's benchmark and the "Hero meta" preset alike.
   {
     method: "GET",
     path: "/v1/analytics/hero-stats",
@@ -234,11 +218,6 @@ const baseRoutes = (): FixtureRoute[] => [
   },
 ];
 
-/**
- * How deadlock-api actually breaks: an endpoint that 404s once and then
- * recovers, and one whose field got renamed. Listed first, so they shadow the
- * healthy versions in `baseRoutes`.
- */
 const brokenRoutes = (): FixtureRoute[] => [
   {
     method: "GET",
@@ -293,11 +272,6 @@ const builtInTab = (id: string, icon: string, panels: string[]) => ({
   })),
 });
 
-/**
- * A layout as an earlier session left it: one tab whose widgets each meet a
- * different breakage. Seeding it skips the editor, so the first request each
- * widget makes is the one the spec observes.
- */
 const brokenLayout = {
   version: 1,
   tabs: [
@@ -337,7 +311,6 @@ const brokenLayout = {
   ],
 };
 
-/** Pins the account so the page never depends on Steam being installed. */
 export const prepareStatsDashboardWorld = async (world: CreatedWorld) => {
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
@@ -396,7 +369,6 @@ export const assertStatsDashboardNetwork = (
   }
 };
 
-/** Four cold-cache processes share one fixture server and its response sequences. */
 export const statsItemsErrorRoutes = async () => (): FixtureRoute[] => {
   const failure = {
     status: 404,
@@ -414,7 +386,6 @@ export const statsItemsErrorRoutes = async () => (): FixtureRoute[] => {
       path: "/v1/analytics/item-stats",
       query: { account_id: String(STATS_ACCOUNT_ID), min_matches: "3" },
       ...healthy,
-      // Initial query + automatic retry fail; the button's request recovers.
       sequence: [
         failure,
         { ...healthy, repeat: 3 },

@@ -1,4 +1,3 @@
-//! Migrate authored NM tracks using named poses and the model hierarchy.
 use super::asset_compatibility::{AssetRepair, AssetWarning, RepairKind, WarningKind};
 use super::repair_scope::RepairScope;
 use super::resources::{ResourceSnapshot, resource_path};
@@ -46,7 +45,6 @@ pub(super) fn prepare(
     let Some((owner, skeleton_bytes)) = resources.resolve(&skeleton_path)? else {
       continue;
     };
-    // A bundled skeleton can intentionally keep a custom animation contract.
     if owner.mod_id.is_some() {
       continue;
     }
@@ -186,7 +184,6 @@ fn static_track(
   };
   *result.get_mut("m_constantRotation")? =
     Kv3Value::Array(pose[4..].iter().copied().map(Kv3Value::Double).collect());
-  // No new frame bytes are needed for static tracks; existing offsets stay valid.
   *result.get_mut("m_nTrackReadOffset")? = Kv3Value::UInt(offset as u64);
   for (field, start) in [
     ("m_translationRangeX", pose[0]),

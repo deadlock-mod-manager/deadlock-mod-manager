@@ -165,7 +165,6 @@ const PrivacySettings = () => {
         />
       </div>
 
-      {/* Telemetry Settings */}
       <div className='border-t pt-4'>
         <h3 className='mb-4 font-semibold text-lg'>
           {t("privacy.telemetryTitle")}

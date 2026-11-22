@@ -25,25 +25,17 @@ const cleanUpStagedDownload = async (path: string): Promise<void> => {
   }
 };
 
-/**
- * Installs 1-click links from allowlisted mod sites. The mod is added as a
- * local mod that links back to its page on the site.
- */
 export const useSourceInstall = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const { setProcessing } = useProgress();
   const { processMod } = useModProcessor();
 
-  // Registered once, so it must read current values rather than captured ones.
   const processRef = useRef(processMod);
   processRef.current = processMod;
   const setProcessingRef = useRef(setProcessing);
   setProcessingRef.current = setProcessing;
 
-  // One link at a time: the confirm dialog and the progress toast each hold a
-  // single request. Kept across effect runs so a remount cannot start a second
-  // queue.
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
@@ -54,7 +46,6 @@ export const useSourceInstall = () => {
       releaseId,
     }: InstallLink): Promise<void> => {
       const ids = { source, modId, releaseId };
-      // Release-agnostic, so a newer release of an added mod is caught too.
       const installSource = `${source}/${modId}`;
       let stagedPath: string | null = null;
 
@@ -143,8 +134,6 @@ export const useSourceInstall = () => {
       }
     };
 
-    // Rust holds the links, so one that started the app is not lost before
-    // this listener exists.
     const drain = () => {
       queueRef.current = queueRef.current.then(async () => {
         try {
@@ -163,7 +152,6 @@ export const useSourceInstall = () => {
     };
 
     const unlisten = listen<null>(SOURCE_INSTALL_EVENT, drain);
-    // Links already waiting are still installed if the listener fails.
     unlisten.then(drain, (error) => {
       logger.withError(error).error("Failed to listen for source installs");
       drain();

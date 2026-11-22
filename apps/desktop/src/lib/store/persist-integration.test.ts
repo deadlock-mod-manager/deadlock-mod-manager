@@ -58,7 +58,6 @@ mock.module("@/lib/mods/local-metadata", () => ({
   },
 }));
 
-// Stub Tauri IPC. The store imports through to slices that import @tauri-apps/api/core.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
   invoke: async () => undefined,
@@ -72,16 +71,10 @@ mock.module("@tauri-apps/plugin-log", () => ({
   warn: () => {},
 }));
 
-// Stub the plugins module: real implementation calls `import.meta.glob` which
-// only Vite understands (bun returns undefined). The slice only uses
-// getPlugins() inside the `setEnabledPlugin` action, never during hydration.
 mock.module("@/lib/plugins", () => ({
   getPlugins: () => [],
 }));
 
-// Production-shaped state fragment (anonymized) representing a real user
-// currently on schema version 15. We only seed the fields relevant to the
-// idempotent migration assertions below.
 const seededState = {
   localMods: [
     { id: "mod_a", remoteId: "1", name: "A", status: "downloaded" },
@@ -184,9 +177,6 @@ const seedFromVersion = (version: number, state: unknown) => {
 };
 
 const importStoreFreshly = async () => {
-  // Reset the storage module's gate. The store module itself is reused across
-  // tests because zustand's `persist.rehydrate()` rebuilds in-memory state on
-  // each call from the seeded backing store, so we don't need to re-evaluate.
   const storageModule = await import("./storage");
   storageModule["__resetForTests"]();
   const storeModule = await import("./index");
@@ -261,8 +251,6 @@ describe("persisted store integration with real production fixture", () => {
 
     const s = usePersistedStore.getState();
 
-    // Every field that the buggy unconditional-assign migration steps would
-    // have clobbered on the upgrade from v15 -> v18 must survive.
     expect(s.proxyConfig).toEqual(seededState.proxyConfig);
     expect(s.fileserverPreference).toBe(seededState.fileserverPreference);
     expect(s.nsfwSettings).toEqual(seededState.nsfwSettings);
@@ -287,7 +275,6 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.maxBackupCount).toBe(seededState.maxBackupCount);
     expect(s.gamePath).toBe(seededState.gamePath);
 
-    // Local mod and profile mod arrays survive the migration with their length.
     expect(s.localMods.length).toBe(seededState.localMods.length);
     const profile = s.profiles[createProfileId("default")];
     expect(profile).toBeDefined();
@@ -295,7 +282,6 @@ describe("persisted store integration with real production fixture", () => {
   });
 
   it("deep merge picks up new defaults inside opted-in nested objects (proxyConfig)", async () => {
-    // Simulate a persisted state that was written before `noProxy` existed.
     const partialProxy = { ...seededState.proxyConfig } as Record<
       string,
       unknown
@@ -310,17 +296,15 @@ describe("persisted store integration with real production fixture", () => {
     await usePersistedStore.persist.rehydrate();
 
     const merged = usePersistedStore.getState().proxyConfig;
-    // Existing seeded fields are preserved.
     expect(merged.enabled).toBe(false);
     expect(merged.protocol).toBe("http");
-    // Missing field picks up its default.
     expect(merged.noProxy).toBe("");
   });
 
   it("malformed state.profiles does not nuke other persisted keys", async () => {
     seedFromVersion(18, {
       ...seededState,
-      profiles: "not-an-object", // intentionally corrupt
+      profiles: "not-an-object",
     });
 
     const { usePersistedStore } = await importStoreFreshly();
@@ -330,9 +314,6 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.gamePath).toBe(seededState.gamePath);
     expect(s.crosshairsEnabled).toBe(true);
     expect(s.proxyConfig).toEqual(seededState.proxyConfig);
-    // profiles falls back to whatever the merge produces; either the corrupt
-    // value (if shallow) or default. Either way, the rest of state survives,
-    // which is the bug we are fixing.
   });
 
   it("v18->v19 step adds heroParserIntervalSeconds without touching other fields", async () => {

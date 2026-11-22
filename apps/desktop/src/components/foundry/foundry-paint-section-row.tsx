@@ -25,16 +25,12 @@ export const SectionRow = ({
   part: FoundryPaintPart;
   selected: boolean;
   hidden: boolean;
-  /** Removed from the game, not just hidden in the preview. */
   removed: boolean;
   appliedColor: string | undefined;
-  /** A color picked for this section but not painted yet. */
   pendingColor: string | undefined;
-  /** Restores the section's original color map; absent while it is unedited. */
   onReset: (() => void) | undefined;
   onToggle: () => void;
   onToggleHidden: () => void;
-  /** Removes the section from the game or puts it back; absent when unavailable. */
   onToggleRemoved: (() => void) | undefined;
 }) => {
   const { t } = useTranslation();

@@ -1,5 +1,3 @@
-//! Resolve effective defaults and choose a gap that keeps bootstrap → profile → base priority.
-
 use super::*;
 
 const BOOTSTRAP: &str = "citadel/deadworks_mods";
@@ -36,8 +34,6 @@ pub(super) fn build(
   saved_roles: &[(&'static str, Option<&str>); 2],
   deadworks: bool,
 ) -> Result<Option<Plan>, Error> {
-  // Cleanup needs no engine-condition evaluation when there are no owned
-  // defaults to preserve; unrelated conditional mounts remain untouched.
   if matches!(mode, MountMode::Disabled) && saved_roles.iter().all(|(_, value)| value.is_none()) {
     return Ok(None);
   }
@@ -55,8 +51,6 @@ pub(super) fn build(
   if roles.is_empty() && matches!(mode, MountMode::Disabled) {
     return Ok(None);
   }
-  // The selected Mod/Write roots identify the base mounts that profiles must
-  // outrank. With no matching Game mount, use the first non-bootstrap Game.
   let base = entries
     .iter()
     .find(|entry| {
@@ -151,8 +145,6 @@ fn resolve_roles<'a>(
         .map(|entry| entry.value);
       let value = match mode {
         MountMode::Enabled(_) => Some(existing.or(*saved).unwrap_or(default)),
-        // Deadworks can depend on anchors DMM wrote earlier. Keep only those
-        // whose removal would change the effective default.
         MountMode::Disabled => {
           saved.filter(|value| existing.is_none() && !value.eq_ignore_ascii_case(first_game.value))
         }
@@ -205,8 +197,6 @@ fn place<'a>(
     .find(|site| site.key_start == first_game.key_start && is_mount(text, site, "Game", BOOTSTRAP))
     .and_then(|site| after_bootstrap(text, doc, site))
     .filter(|after| *after <= before);
-  // If a foreign fence also encloses base mounts, reusing its bootstrap would
-  // put profiles below stock assets. Keep the fence intact and add our own fallback.
   let mut at = reusable.map_or(ordinary, |after| ordinary.max(after));
   if let Some(fence) = doc
     .fences

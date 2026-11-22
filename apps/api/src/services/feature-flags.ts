@@ -43,13 +43,6 @@ export class FeatureFlagsServiceSingleton {
     return FeatureFlagsServiceSingleton.instance;
   }
 
-  /**
-   * Check if a feature flag is enabled by name
-   *
-   * @param featureFlagName - The name of the feature flag
-   * @param userId - Optional user ID for segment-based overrides
-   * @returns Result with boolean indicating if the feature flag is enabled
-   */
   isFeatureEnabled(
     featureFlagName: string,
     userId?: string,
@@ -69,9 +62,6 @@ export class FeatureFlagsServiceSingleton {
     });
   }
 
-  /**
-   * Get all feature flags
-   */
   getAllFeatureFlags(options?: { userId?: string }) {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllFeatureFlags(options),
@@ -82,9 +72,6 @@ export class FeatureFlagsServiceSingleton {
     });
   }
 
-  /**
-   * Get all feature flags formatted for client consumption with user-specific overrides applied
-   */
   getClientFeatureFlags(options?: { userId?: string }) {
     return ResultAsync.fromPromise(
       this.featureFlagService.getClientFeatureFlags(options),
@@ -95,9 +82,6 @@ export class FeatureFlagsServiceSingleton {
     });
   }
 
-  /**
-   * Get all exposed feature flags
-   */
   getAllExposedFeatureFlags() {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllExposedFeatureFlags(),
@@ -108,26 +92,14 @@ export class FeatureFlagsServiceSingleton {
     });
   }
 
-  /**
-   * Get the underlying feature flag service for advanced operations
-   */
   getService(): FeatureFlagService {
     return this.featureFlagService;
   }
 
-  /**
-   * Get the segment service for segment operations
-   */
   getSegmentService(): SegmentService {
     return this.segmentService;
   }
 
-  /**
-   * Bootstrap feature flags by registering definitions
-   *
-   * @param definitions - Array of feature flag definitions to register
-   * @returns Result with number of successfully registered flags
-   */
   bootstrap(definitions: FeatureFlagDefinition[]): ResultAsync<number, Error> {
     return ResultAsync.fromPromise(
       this.registry.bootstrap(definitions),
@@ -135,33 +107,14 @@ export class FeatureFlagsServiceSingleton {
     );
   }
 
-  /**
-   * Add a user to a segment
-   *
-   * @param segmentId - The ID of the segment
-   * @param userId - The ID of the user
-   */
   addUserToSegment(segmentId: string, userId: string) {
     return this.segmentService.addUserToSegment(segmentId, userId);
   }
 
-  /**
-   * Remove a user from a segment
-   *
-   * @param segmentId - The ID of the segment
-   * @param userId - The ID of the user
-   */
   removeUserFromSegment(segmentId: string, userId: string) {
     return this.segmentService.removeUserFromSegment(segmentId, userId);
   }
 
-  /**
-   * Create or update a segment feature flag override
-   *
-   * @param segmentId - The ID of the segment
-   * @param featureFlagId - The ID of the feature flag
-   * @param value - The override value
-   */
   setSegmentOverride(segmentId: string, featureFlagId: string, value: unknown) {
     return this.segmentService.createSegmentFeatureFlagOverride(
       segmentId,
@@ -170,13 +123,6 @@ export class FeatureFlagsServiceSingleton {
     );
   }
 
-  /**
-   * Get a feature flag value with type support
-   *
-   * @param featureFlagName - The name of the feature flag
-   * @param userId - Optional user ID for segment-based overrides
-   * @returns Result with the feature flag value
-   */
   getFeatureFlagValue<T = unknown>(
     featureFlagName: string,
     userId?: string,
@@ -197,13 +143,6 @@ export class FeatureFlagsServiceSingleton {
     });
   }
 
-  /**
-   * Set user override for a feature flag
-   *
-   * @param userId - The id of the user
-   * @param featureFlagId - The id of the feature flag
-   * @param value - The override value
-   */
   setUserOverride(userId: string, featureFlagId: string, value: unknown) {
     return ResultAsync.fromPromise(
       this.featureFlagService.setUserOverride(userId, featureFlagId, value),
@@ -221,12 +160,6 @@ export class FeatureFlagsServiceSingleton {
       });
   }
 
-  /**
-   * Delete user override for a feature flag
-   *
-   * @param userId - The id of the user
-   * @param featureFlagId - The id of the feature flag
-   */
   deleteUserOverride(userId: string, featureFlagId: string) {
     return ResultAsync.fromPromise(
       this.featureFlagService.deleteUserOverride(userId, featureFlagId),
@@ -245,5 +178,4 @@ export class FeatureFlagsServiceSingleton {
   }
 }
 
-// Export singleton instance
 export const featureFlagsService = FeatureFlagsServiceSingleton.getInstance();

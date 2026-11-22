@@ -1,12 +1,3 @@
-//! Exporter: DMM profiles -> interchange bundle on disk.
-//!
-//! The frontend store owns the descriptive metadata (names, authors, images,
-//! profiles, crosshairs), the profile manifests own where the VPKs are. Files
-//! are taken from the profile first and fall back to the mod store, so a mod
-//! whose addon files drifted away (deleted by hand, moved by another tool) is
-//! still exported. Every mod is written once, even when several profiles use
-//! it; profiles only reference it.
-
 use super::format::{
   FORMAT_ID, GameBananaOrigin, InterchangeCrosshair, InterchangeDocument, InterchangeFile,
   InterchangeMod, InterchangeOrigin, InterchangeProfile, InterchangeProfileMod, InterchangeSource,
@@ -65,8 +56,6 @@ pub struct ExportProfileInput {
 pub struct InterchangeExportRequest {
   pub destination_dir: String,
   pub manager_version: Option<String>,
-  /// The active profile first; only it is exported when `include_profiles`
-  /// is false.
   pub profiles: Vec<ExportProfileInput>,
   #[serde(default)]
   pub include_profiles: bool,
@@ -172,7 +161,6 @@ fn source_files(
     }
   }
 
-  // The store holds every VPK of the download, including unselected variants.
   let from_profile = !files.is_empty();
   for path in vpks_in(&store.join(mod_id).join("files")) {
     let Some(name) = path
@@ -226,7 +214,6 @@ struct ProfileSource {
   manifest: Option<ProfileVpkManifest>,
 }
 
-/// Removes a half-written bundle folder unless the export finished.
 struct PartialBundle<'a>(Option<&'a Path>);
 
 impl Drop for PartialBundle<'_> {
@@ -251,7 +238,6 @@ pub fn export(
   export_from(manager, &store, request, progress)
 }
 
-/// [`export`] with DMM's mod store folder given.
 pub fn export_from(
   manager: &ModManager,
   store: &Path,
@@ -267,7 +253,6 @@ pub fn export_from(
   }
 
   let mut profiles = request.profiles;
-  // Active profile first: its state becomes the library's enabled/order.
   profiles.sort_by_key(|p| !p.active);
   if !request.include_profiles {
     profiles.truncate(1);
@@ -287,7 +272,6 @@ pub fn export_from(
     );
   }
 
-  // One library entry per mod, in the active profile's order.
   struct Planned<'a> {
     input: &'a ExportModInput,
     key: String,
@@ -358,7 +342,6 @@ pub fn export_from(
       &plan.input.mod_id,
     );
     if files_on_disk.is_empty() {
-      // Another profile may still have it (same id, own copy).
       for other in sources.values() {
         files_on_disk = source_files(
           other.manifest.as_ref(),

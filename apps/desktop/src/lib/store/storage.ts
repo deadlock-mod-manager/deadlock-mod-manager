@@ -5,16 +5,8 @@ import { STORE_NAME } from "../constants";
 
 const RETRY_DELAYS_MS: readonly number[] = [50, 150, 400];
 let stateStorePath = STORE_NAME;
-// Persist supplies whole-state snapshots; overlapping IPC lookups can otherwise
-// let an older snapshot overwrite a newer one.
 let pendingWrite: Promise<void> = Promise.resolve();
-// Persist also hands over a snapshot when only unpersisted fields change, such
-// as download progress, so most snapshots repeat the previous one. Writing each
-// repeat backs up the queue, and closing the window then saves whatever reached
-// the store, which can be several state changes old.
 const lastQueued = new Map<string, string>();
-// A newer snapshot of the same key replaces a write that is still waiting at the
-// end of the queue instead of queuing another whole-state write.
 let waitingWrite: { key: string; value: string } | undefined;
 
 export const setStateStorePath = (path: string): void => {
@@ -34,26 +26,15 @@ let storageReadyPromise: Promise<StorageReadyStatus> =
     storageReadyResolve = resolve;
   });
 
-// Returns the promise that resolves once the very first getItem settles.
-// `ok: true` means the persisted state was loaded (or was missing entirely);
-// `ok: false` means the read failed permanently and the write gate stayed
-// closed for this session, so subsequent setItem calls will no-op rather than
-// clobber the on-disk blob with default state.
-//
-// Exposed as a function so tests (and dynamic re-imports) can observe the
-// current latch even after `__resetForTests()` swaps it.
 export const storageReady = (): Promise<StorageReadyStatus> =>
   storageReadyPromise;
 
-// Idempotent. Callable from bootstrap to flip the write gate manually.
 export const markStorageReady = (): void => {
   if (firstReadDone || writeGateLocked) return;
   firstReadDone = true;
   storageReadyResolve({ ok: true });
 };
 
-// For a state file the backend could neither read nor move aside: the store
-// opens empty, so every save would overwrite the real file with defaults.
 export const lockWriteGate = (reason: string): void => {
   if (firstReadDone) return;
   writeGateLocked = true;
@@ -91,11 +72,6 @@ const storage: StateStorage = {
       markStorageReady();
       return value;
     } catch (error) {
-      // Permanent read failure: do NOT flip the gate. Leaving it closed means
-      // subsequent setItem calls drop instead of clobbering the on-disk state
-      // with whatever defaults the store has fallen back to. The app remains
-      // usable in-memory; surfacing the failure is the App's responsibility
-      // via the `storageReady` promise.
       const reason =
         error instanceof Error ? error.message : String(error ?? "unknown");
       storageReadyResolve({ ok: false, reason });
@@ -129,14 +105,12 @@ const storage: StateStorage = {
       const write = { key, value };
       waitingWrite = write;
       pendingWrite = pendingWrite.then(async () => {
-        // Snapshots arriving from here on queue behind this write.
         if (waitingWrite === write) waitingWrite = undefined;
         try {
           const store = await getStore(stateStorePath);
           await store?.set(key, write.value);
           await store?.save();
         } catch (error) {
-          // Let the next identical snapshot retry the write.
           if (lastQueued.get(key) === write.value) lastQueued.delete(key);
           logger
             .withError(error)
@@ -158,7 +132,6 @@ const storage: StateStorage = {
       return;
     }
     lastQueued.delete(key);
-    // A snapshot after the deletion must not be written before it.
     waitingWrite = undefined;
     pendingWrite = pendingWrite.then(async () => {
       try {
@@ -178,13 +151,9 @@ const storage: StateStorage = {
 
 export default storage;
 
-// Resolves once every queued write has reached the store, or after the timeout
-// so a stuck write cannot block the app from exiting.
 export const flushPendingWrites = (timeoutMs = 2000): Promise<void> =>
   Promise.race([pendingWrite, sleep(timeoutMs)]);
 
-// Test-only escape hatch. Resets module state between test cases so each test
-// can exercise the write gate from a clean slate. Not exported from index.
 export const __resetForTests = (): void => {
   stateStorePath = STORE_NAME;
   pendingWrite = Promise.resolve();

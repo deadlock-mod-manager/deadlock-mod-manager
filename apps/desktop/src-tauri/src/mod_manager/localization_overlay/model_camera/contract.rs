@@ -1,7 +1,5 @@
 use super::*;
 
-/// Metadata can use authored attachments when every embedded mesh already
-/// supplies valid transforms for the entire current camera interface.
 pub(super) fn satisfied(
   resource: &Resource<'_>,
   model: &Kv3Value,

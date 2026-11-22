@@ -13,11 +13,6 @@ import type { CreatedWorld } from "./world";
 
 export const DEFAULT_MOD = "local-default-skin";
 
-/**
- * The Default profile owns an enabled mod in the root addons folder and Beta
- * owns its own mods. gameinfo.gi carries the unmarked `Game citadel/addons`
- * line that manual modding guides tell players to add before they use DMM.
- */
 export const prepareProfileSwitchLeakWorld = async (world: CreatedWorld) => {
   await prepareInstalledProfiles(
     world,
@@ -92,7 +87,6 @@ export const prepareProfileSwitchLeakWorld = async (world: CreatedWorld) => {
     "Game citadel\n",
     "Game citadel/addons\n      Game citadel\n",
   );
-  // Without the line the case would pass without exercising the leak.
   if (withStray === original)
     throw new Error("gameinfo.gi has no Game citadel line to follow");
   await writeFile(gameinfo, withStray);

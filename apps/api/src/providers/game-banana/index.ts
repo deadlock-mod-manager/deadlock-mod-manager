@@ -202,7 +202,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const data = (await response.json()) as
       | (D & { _idRow?: number; _sErrorCode?: string; _sErrorMessage?: string })
       | null;
-    // GameBanana sometimes answers 200 with an error envelope instead of a profile
     if (data && typeof data._idRow !== "number") {
       throw new ProviderError(
         `Invalid ${modType} ${remoteId} profile: ${data._sErrorCode ?? "missing _idRow"}${data._sErrorMessage ? ` (${data._sErrorMessage})` : ""}`,
@@ -223,7 +222,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     let anyContentChanged = false;
     const startTime = Date.now();
 
-    // A swallowed error leaves the mod unmarked, so the next run retries it
     const syncSubmission = async (
       submission: GameBananaSubmission,
       source: GameBananaSubmissionSource,
@@ -281,8 +279,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       for (const { remoteId, isAudio, category } of stale) {
         signal?.throwIfAborted();
         refreshedCount++;
-        // Profiles name only a category and its parent; the stored category is
-        // the root the index reported, and nested categories need it.
         await syncSubmission(
           {
             _idRow: Number(remoteId),
@@ -310,8 +306,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         syncChangedCount: changedCount,
         syncRefreshedCount: refreshedCount,
       });
-      // Mods acknowledged before the failure aren't synced again, so their
-      // listing change can't wait for the next run.
       if (anyFilesUpdated || anyContentChanged) {
         try {
           await modCache.invalidateListing();
@@ -554,8 +548,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
       t0 = Date.now();
       const { modAuthor, ...modPayload } = payload;
-      // The lock is checked once before a mod's writes start; a started mod
-      // finishes so its downloads, timestamp, hooks and cache stay in step.
       options?.signal?.throwIfAborted();
       const author = modAuthor
         ? await modAuthorRepository.upsert(modAuthor)

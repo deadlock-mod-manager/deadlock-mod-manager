@@ -156,7 +156,6 @@ export const ProfileImportDialog = ({
 
   const handleOpenChange = (next: boolean) => {
     if (next) return setOpen(true);
-    // Closing mid-import would lose the result while the install carries on.
     if (createProfileMutation.isPending) return;
     if (result) handleCancel();
     else setOpen(false);

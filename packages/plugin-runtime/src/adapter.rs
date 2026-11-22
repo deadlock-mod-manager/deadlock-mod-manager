@@ -2,7 +2,6 @@ use crate::Error;
 use serde::Serialize;
 use std::path::Path;
 
-/// A runtime-validated staged snapshot and its approved destination.
 pub struct Deployment<'a> {
   pub plugin_id: &'a str,
   pub plugin_name: &'a str,
@@ -10,7 +9,6 @@ pub struct Deployment<'a> {
   pub source: &'a Path,
 }
 
-/// One mod of a profile, as `mods.list` reports it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileMod {
@@ -18,15 +16,12 @@ pub struct ProfileMod {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub name: Option<String>,
   pub enabled: bool,
-  /// File names of the mod's VPKs in the profile.
   pub files: Vec<String>,
 }
 
-/// A request the runtime has checked against the plugin's `network` grant.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRequest {
   pub url: String,
-  /// The approved host the URL names; the adapter must not reach another.
   pub host: String,
   pub method: String,
   pub headers: Vec<(String, String)>,
@@ -40,23 +35,13 @@ pub struct HttpResponse {
   pub body: Vec<u8>,
 }
 
-/// Integration with the application. The runtime handles grants, staging,
-/// quotas, request policy and recovery records; the adapter handles game
-/// files, profile manifests, transactional installation, game detection and
-/// the network.
 pub trait HostAdapter: Send + Sync {
-  /// Checks that a profile folder exists. `"default"` names the default
-  /// profile.
   fn validate_profile(&self, folder: &str) -> Result<(), Error>;
-  /// Every profile folder, `"default"` included.
   fn profiles(&self) -> Result<Vec<String>, Error>;
   fn profile_mods(&self, folder: &str) -> Result<Vec<ProfileMod>, Error>;
   fn installed_hash(&self, plugin_id: &str, folder: &str) -> Result<Option<String>, Error>;
   fn deploy(&self, deployment: Deployment<'_>) -> Result<(), Error>;
   fn retain_source(&self, plugin_id: &str, folder: &str, source: &Path) -> Result<(), Error>;
-  /// Performs a request without following redirects, refusing destinations
-  /// that resolve to private, loopback or link-local addresses, with a 15 s
-  /// timeout and a 4 MiB response cap. Runs on a plain thread.
   fn fetch(&self, request: &HttpRequest) -> Result<HttpResponse, Error>;
   fn game_running(&self) -> Result<bool, Error>;
 }

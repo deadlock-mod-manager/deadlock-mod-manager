@@ -31,8 +31,6 @@ pub(crate) fn sanitize_server_id(server_id: &str) -> Result<String, Error> {
   Ok(trimmed_sanitized.to_string())
 }
 
-/// Addons folder for a server: `server_` plus the sanitized id. Deterministic
-/// so preview can look at already-installed files before staging creates it.
 pub(crate) fn server_addons_folder_name(server_id: &str) -> Result<String, Error> {
   let sanitized = sanitize_server_id(server_id)?;
   Ok(format!("{SERVER_FOLDER_PREFIX}{sanitized}"))
@@ -227,8 +225,6 @@ pub async fn cleanup_stale_server_gameinfo(
     log::warn!(
       "Stale server entry present but caller passed no active profile; preserving existing profile reference {existing:?}"
     );
-    // `existing` is the profile's shard-1 (base) line since base is emitted
-    // before its shard folders, so this recovers the base folder name.
     let recovered = existing
       .strip_prefix("citadel/addons/")
       .map(|s| s.to_string());

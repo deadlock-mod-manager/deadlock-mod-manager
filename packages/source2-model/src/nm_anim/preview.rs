@@ -17,8 +17,6 @@ pub struct PreviewAction {
     pub id: String,
     pub kind: PreviewActionKind,
     pub clips: Vec<String>,
-    /// The ability name a clip group was found by, when its clip names spell
-    /// one.
     pub ability: Option<String>,
 }
 
@@ -77,10 +75,6 @@ fn squash(text: &str) -> String {
         .collect()
 }
 
-/// A clip group named after an ability, and the ability it names: the one to
-/// three tokens after any `ability_` prefix spell the whole name. That finds
-/// Bebop's `hyperbeam_fire` for "Hyper Beam", and keeps Warden's
-/// `ability_last_stand_idle` whole although `stand` reads as a stance.
 fn named_family<'a>(path: &str, ability_names: &'a [String]) -> Option<(String, &'a str)> {
     let stem = clip_stem(path);
     let (prefix, name) = match stem.find("ability_") {
@@ -88,7 +82,6 @@ fn named_family<'a>(path: &str, ability_names: &'a [String]) -> Option<(String, 
         None => ("", stem),
     };
     let tokens: Vec<_> = name.split('_').collect();
-    // An unprefixed clip needs a phase after the name to read as an ability.
     let longest = tokens.len() - usize::from(prefix.is_empty());
     (1..=longest.min(3)).rev().find_map(|count| {
         let words = &tokens[..count];
@@ -99,10 +92,6 @@ fn named_family<'a>(path: &str, ability_names: &'a [String]) -> Option<(String, 
     })
 }
 
-/// Select whole playable moves, excluding additive layers and stance fragments.
-/// Ability phases share the resolver's ordering and directional policy.
-/// `ability_names` (display names such as "Hyper Beam") find abilities whose
-/// clips do not carry the `ability_` prefix.
 pub fn preview_actions(
     paths: impl IntoIterator<Item = String>,
     ability_names: &[String],
@@ -252,8 +241,6 @@ mod tests {
 
     #[test]
     fn multi_word_and_unprefixed_ability_names_form_actions() {
-        // Haze's Sleep Dagger, Warden's Last Stand, Mina's Rake and Bebop's
-        // Grapple Arm and Hyper Beam, as the game names them.
         let selected = preview_actions(
             [
                 "ability_sleep_dagger",

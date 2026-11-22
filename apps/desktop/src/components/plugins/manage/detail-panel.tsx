@@ -40,7 +40,6 @@ type DetailPanelProps = {
   onTabChange: (tab: PanelTab) => void;
 };
 
-/** Everything about one installed plugin: identity, health, access, history. */
 export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();

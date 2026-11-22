@@ -50,7 +50,6 @@ const clearActiveTheme = (
   };
 };
 
-/** Always-enabled plugins have no persisted switch, so a missing flag is not "disabled". */
 export const resolvePluginEnabled = (
   enabledPlugins: State["enabledPlugins"],
   pluginId: string,
@@ -71,8 +70,6 @@ export const enablePlugin = (
   let pluginSettings = state.pluginSettings;
 
   for (const excludedId of getExcludedPluginIds(manifests, pluginId)) {
-    // Always-enabled plugins have no toggle to switch them back on, so clear
-    // their selection rather than disabling them.
     if (isAlwaysEnabled(manifests, excludedId)) {
       pluginSettings = clearActiveTheme(pluginSettings, excludedId);
     } else {
@@ -101,7 +98,6 @@ export const applyPluginSettings = (
     return { pluginSettings };
   }
 
-  // Always-enabled plugins have no switch; their selection activates them.
   const manifests = getManifests();
   if (!isAlwaysEnabled(manifests, pluginId)) {
     return { pluginSettings };

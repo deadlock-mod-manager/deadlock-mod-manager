@@ -27,7 +27,6 @@ const ids = REPAIR_MODS.map((mod) => mod.id);
 const row = (id: string) =>
   $(`[data-testid="launch-repair-mod"][data-mod-id="${id}"]`);
 
-/** Only `enabled` mods are installed; mods in `gone` may leave the library. */
 const holds = (
   observed: BrokenState,
   enabled: readonly string[],
@@ -122,8 +121,6 @@ describe("launch repair after a reinstall", () => {
       await step(
         "Reinstall restores both mods, then the launch fails",
         async () => {
-          // The E2E build records each launch in this journal; a directory in
-          // its place makes the launch itself fail after the repair.
           const journal = path.join(world, "artifacts", "game-launches.ndjson");
           await mkdir(journal);
           await $("button*=Launch modded").click();
@@ -141,7 +138,6 @@ describe("launch repair after a reinstall", () => {
             expect.stringContaining("Some mods could not be repaired"),
           );
           await rmdir(journal);
-          // The store persists shortly after the dialog updates.
           await observeUntil(
             "Both mods reinstalled and enabled",
             () => readBrokenState(world),
@@ -164,7 +160,6 @@ describe("launch repair after a reinstall", () => {
           expect.stringContaining("Some mods could not be repaired"),
           { wait: 60_000 },
         );
-        // A failed row adds its error under the name; a repaired one shows none.
         assert.notEqual(
           (await (await row(UNREPAIRABLE.id)).getText()).trim(),
           UNREPAIRABLE.name,

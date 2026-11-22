@@ -22,7 +22,6 @@ const average = (values: number[]) =>
     ? 0
     : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 
-/** In-process counters since start, read by the metrics endpoint */
 class IngestionStats {
   readonly startedAt = Date.now();
   readonly inFlight = { downloading: 0, waitingForSlot: 0, processing: 0 };
@@ -57,7 +56,6 @@ class IngestionStats {
     this.lastBackfill = { at: new Date().toISOString(), scheduled };
   }
 
-  /** Files settled (indexed or given up on) per hour over the last hour */
   filesPerHour(): number {
     this.pruneFinished();
     const windowMs = Math.min(RATE_WINDOW_MS, Date.now() - this.startedAt);

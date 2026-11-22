@@ -16,14 +16,11 @@ pub struct Salts {
 
 impl Salts {
   pub fn from_url(url: &str, username: &str) -> Option<Self> {
-    // Expect URLs like: http://replay404.valve.net/1422450/37959196_937530290.meta.bz2 or http://replay183.valve.net/1422450/42476710_428480166.dem.bz2
-    // Strip query parameters if present
     let base_url = url.split_once('?').map_or(url, |(path, _)| path);
 
     let (cluster_str, remaining) = base_url
       .strip_prefix("http://replay")?
       .split_once(".valve.net/")?;
-    // remaining should be like "1422450/37959196_937530290.meta.bz2"
     let name = remaining.rsplit_once('/').map(|(_, name)| name)?;
     if name.ends_with(".meta.bz2") {
       let name = name.strip_suffix(".meta.bz2")?;
@@ -80,7 +77,7 @@ impl Salts {
         Err(e) if e.status() == Some(reqwest::StatusCode::BAD_REQUEST) => {
           return Err(IngestError::RequestError(e));
         }
-        _ => sleep(Duration::from_secs(3)).await, // Retry on error
+        _ => sleep(Duration::from_secs(3)).await,
       }
     }
   }
@@ -115,7 +112,7 @@ impl Salts {
         Err(e) if e.status() == Some(reqwest::StatusCode::BAD_REQUEST) => {
           return Err(IngestError::RequestError(e));
         }
-        _ => sleep(Duration::from_secs(3)).await, // Retry on error
+        _ => sleep(Duration::from_secs(3)).await,
       }
     }
   }

@@ -96,7 +96,6 @@ describe("catalog mod deletion", () => {
       .parse(JSON.parse(await readFile(checkpoint, "utf8")));
     assert.notEqual(runtime.processId, previous.processId);
     await assertNothingLeft(world);
-    // A leftover parked copy would be picked back up by the next download.
     await installCatalog(world, scenario, files);
     await checkCatalog(world, scenario, "reinstalled", files, downloads);
     await closeApplication(world, runtime.processId);

@@ -31,7 +31,6 @@ const isNonComputedPropertyName = (node: NamedIdentifier): boolean => {
   return false;
 };
 
-/** Ban the case-insensitive substring "shape" in every JavaScript and TypeScript symbol name. */
 export const noForbiddenTermInSymbolNamesRule = defineRule({
   meta: {
     type: "problem",

@@ -2,7 +2,6 @@ import type * as THREE from "three";
 
 export type MaterialShader = Parameters<THREE.Material["onBeforeCompile"]>[0];
 
-/** Compose preview features without replacing paint/highlight shader hooks. */
 export function addMaterialShaderHook(
   material: THREE.Material,
   key: string,

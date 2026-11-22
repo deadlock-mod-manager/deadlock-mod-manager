@@ -1,14 +1,8 @@
-/**
- * File patterns and constants for file type detection and validation
- */
-
-// File extension patterns
 export const VPK_PATTERN = /\.vpk$/i;
 export const ARCHIVE_PATTERN = /\.(zip|rar|7z)$/i;
 export const IMAGE_PATTERN = /\.(png|jpe?g|webp|gif|svg)$/i;
 export const ALL_SUPPORTED_PATTERN = /\.(zip|rar|7z|vpk)$/i;
 
-// Supported file formats
 export const SUPPORTED_ARCHIVE_EXTENSIONS = ["zip", "rar", "7z"] as const;
 export const SUPPORTED_IMAGE_EXTENSIONS = [
   "png",
@@ -19,7 +13,6 @@ export const SUPPORTED_IMAGE_EXTENSIONS = [
   "svg",
 ] as const;
 
-// MIME types for file input
 export const ACCEPTED_FILE_TYPES =
   ".vpk,.zip,.rar,.7z,application/zip,application/x-7z-compressed,application/x-rar-compressed";
 

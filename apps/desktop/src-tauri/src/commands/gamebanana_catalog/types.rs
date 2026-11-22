@@ -75,7 +75,6 @@ pub struct WithholdRuleDto {
 }
 
 impl WithholdNoticeDto {
-  /// The profile can flag a withhold without a notice GameBanana lets us parse.
   fn new(notice: Option<&WithholdNotice>) -> Self {
     Self {
       rules: notice

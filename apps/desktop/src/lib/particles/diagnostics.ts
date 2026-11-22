@@ -1,7 +1,6 @@
 import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import type { ParticleDiagnostic } from "./types";
 
-/** Convert transport failures to the same localized diagnostics as compilation. */
 export function particleAssetDiagnostics(
   data: PreviewParticles,
 ): ParticleDiagnostic[] {

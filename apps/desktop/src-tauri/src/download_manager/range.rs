@@ -1,10 +1,6 @@
-//! Checks a server's answer to a Range request before any of its bytes are
-//! written, so a resume or a segment never lands at the wrong offset.
-
 use reqwest::StatusCode;
 use reqwest::header::{CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, HeaderMap};
 
-/// The span a 206 says it carries. `end` is inclusive, as in the header.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ContentRange {
   pub start: u64,
@@ -45,8 +41,6 @@ pub enum RangeError {
   Multipart,
 }
 
-/// Exactly one `bytes <start>-<end>/<total>` with a known total; anything
-/// looser can't tell where the bytes belong.
 pub fn parse_content_range(headers: &HeaderMap) -> Result<ContentRange, RangeError> {
   let mut values = headers.get_all(CONTENT_RANGE).iter();
   let value = values.next().ok_or(RangeError::MissingContentRange)?;
@@ -80,9 +74,6 @@ pub fn parse_content_range(headers: &HeaderMap) -> Result<ContentRange, RangeErr
   Ok(range)
 }
 
-/// Accepts only a 206 covering exactly the bytes asked for. `requested_end` is
-/// inclusive; `None` is an open-ended `bytes=<start>-` request, which must run to
-/// the end of the file.
 pub fn validate_range_response(
   status: StatusCode,
   headers: &HeaderMap,

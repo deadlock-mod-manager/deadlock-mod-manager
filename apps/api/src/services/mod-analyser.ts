@@ -65,7 +65,6 @@ export class ModAnalyser {
       fingerprint.contentSignature,
     );
     if (contentSigMatches.length > 0) {
-      // If multiple matches, prefer the one with the closest file count
       const bestContentMatch = contentSigMatches.reduce((best, current) => {
         const bestDiff = Math.abs(best.fileCount - fingerprint.fileCount);
         const currentDiff = Math.abs(current.fileCount - fingerprint.fileCount);
@@ -82,13 +81,11 @@ export class ModAnalyser {
       };
     }
 
-    // 3. Fast hash + size match (70% certainty - quick duplicate detection)
     const fastHashMatches = await this.vpkRepository.findByFastHashAndSize(
       fingerprint.fastHash,
       fingerprint.fileSize,
     );
     if (fastHashMatches.length > 0) {
-      // If multiple matches, prefer the one with matching VPK version and file count
       const bestFastMatch = fastHashMatches.reduce((best, current) => {
         const bestScore = this.calculateMatchScore(best, fingerprint);
         const currentScore = this.calculateMatchScore(current, fingerprint);
@@ -105,14 +102,11 @@ export class ModAnalyser {
       };
     }
 
-    // 4. Merkle root match (40% certainty - partial content similarity)
-    // Only if merkle data is available
     if (fingerprint.merkleRoot) {
       const merkleMatches = await this.vpkRepository.findByMerkleRoot(
         fingerprint.merkleRoot,
       );
       if (merkleMatches.length > 0) {
-        // Filter out exact matches we might have already found
         const uniqueMerkleMatches = merkleMatches.filter(
           (match) =>
             match.sha256 !== fingerprint.sha256 &&
@@ -120,7 +114,6 @@ export class ModAnalyser {
         );
 
         if (uniqueMerkleMatches.length > 0) {
-          // Use the same scoring system but with lower base certainty
           const bestMerkleMatch = uniqueMerkleMatches.reduce(
             (best, current) => {
               const bestScore = this.calculateMatchScore(best, fingerprint);
@@ -209,7 +202,6 @@ export class ModAnalyser {
   }): Promise<HashAnalysisResult[]> {
     const results: HashAnalysisResult[] = [];
 
-    // 1. SHA256 match (100% certainty - exact match)
     if (hashes.sha256) {
       const sha256Match = await this.vpkRepository.findBySha256(hashes.sha256);
       if (sha256Match) {
@@ -220,12 +212,10 @@ export class ModAnalyser {
             matchType: "sha256",
           },
         });
-        // For SHA256 matches, we can return early as it's definitive
         return results;
       }
     }
 
-    // 2. Content signature match (90% certainty - content-based match)
     const contentSigMatches = await this.vpkRepository.findByContentSignature(
       hashes.contentSignature,
     );
@@ -249,14 +239,12 @@ export class ModAnalyser {
       });
     }
 
-    // 3. Fast hash + size match (70% certainty - quick duplicate detection)
     if (hashes.fastHash && hashes.fileSize !== undefined) {
       const fastHashMatches = await this.vpkRepository.findByFastHashAndSize(
         hashes.fastHash,
         hashes.fileSize,
       );
       if (fastHashMatches.length > 0) {
-        // Filter out matches we already found
         const uniqueFastMatches = fastHashMatches.filter(
           (match) =>
             !results.some((result) => result.matchedVpk.id === match.id),
@@ -284,13 +272,11 @@ export class ModAnalyser {
       }
     }
 
-    // 4. Merkle root match (40% certainty - partial content similarity)
     if (hashes.merkleRoot) {
       const merkleMatches = await this.vpkRepository.findByMerkleRoot(
         hashes.merkleRoot,
       );
       if (merkleMatches.length > 0) {
-        // Filter out matches we already found and exact matches
         const uniqueMerkleMatches = merkleMatches.filter(
           (match) =>
             match.sha256 !== hashes.sha256 &&
@@ -325,11 +311,6 @@ export class ModAnalyser {
     return results;
   }
 
-  /**
-   * Hash-only lookups carry the VPK byte size but not its file count, so
-   * candidates are ranked by distance to the cached `sizeBytes`. Without a size
-   * the first candidate wins.
-   */
   private closestBySize(
     candidates: CachedVPK[],
     fileSize: number | undefined,

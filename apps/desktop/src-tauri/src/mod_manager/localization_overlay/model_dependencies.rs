@@ -1,5 +1,3 @@
-//! Explain mixed original-file animation dependencies using effective VPK order.
-//! This is provenance evidence for overlap review, not a playback validation.
 use super::{
   Kv3Value, LocalizationModInput, compiled_resource,
   resources::{ResourceSnapshot, resource_path},
@@ -55,9 +53,6 @@ pub(super) fn describe(dependencies: &[MixedDependency]) -> String {
     .join("; ")
 }
 
-/// Follow the selected model's actual references, including graph/clip children.
-/// Identical dependencies and overrides outside that closure do not mix assets.
-/// Callers retain the general overlap warning when files cannot be decoded.
 pub(super) fn mixed_animation_dependencies(
   resources: &ResourceSnapshot,
   owner: &LocalizationModInput,
@@ -99,7 +94,6 @@ pub(super) fn mixed_animation_dependencies(
         });
       }
     }
-    // Skeletons and clips are leaves except for their explicit skeleton binding.
     let Ok(decoded) = compiled_resource::decode(&bytes, &path) else {
       continue;
     };

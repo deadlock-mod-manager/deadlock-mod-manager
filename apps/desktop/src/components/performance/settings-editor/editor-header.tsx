@@ -86,7 +86,6 @@ export const ConfigPicker = ({
 type EditorHeaderProps = ConfigPickerProps & {
   resolved: ResolvedConfig | undefined;
   isUpdating: boolean;
-  /** View controls shown at the end of the row. */
   actions: ReactNode;
 };
 

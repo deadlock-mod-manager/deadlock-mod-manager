@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 
 type DemoMod = { id: string; name: string };
 
-/** Real GameBanana mods, sorted into groups the way a player might. */
 const GROUPS: { id: "mains" | "testing"; mods: DemoMod[] }[] = [
   {
     id: "mains",
@@ -24,10 +23,6 @@ const GROUPS: { id: "mains" | "testing"; mods: DemoMod[] }[] = [
   },
 ];
 
-/**
- * Two groups from My Mods: the header expands a group, and the power button
- * turns all of its mods on or off at once, the way it does in the app.
- */
 export const GroupsDemo = () => {
   const { t } = useTranslation("v2");
   const baseId = useId();

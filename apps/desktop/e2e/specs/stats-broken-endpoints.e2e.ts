@@ -20,7 +20,6 @@ import {
 
 const HEALTH_TAB = "tab-health";
 
-/** A broken widget names what failed and where, in its alert. */
 const expectBroken = (id: string, reason: string, endpoint?: string) =>
   step(`${id} reports: ${reason}`, async () => {
     const container = widgetById(id);
@@ -37,7 +36,6 @@ describe("stats dashboard broken endpoints", () => {
     const world = runtime.roots.world;
     assert.equal(process.env.DMM_E2E_PHASE, "broken");
 
-    // The layout an earlier session saved, before deadlock-api changed.
     await openStats(["overview", "live", HEALTH_TAB]);
     await expect(tabTrigger("overview")).toHaveAttribute(
       "data-broken",
@@ -82,13 +80,11 @@ describe("stats dashboard broken endpoints", () => {
       const recovering = widgetById("widget-recovering");
       await recovering.$("button=Try again").click();
       await waitForWidgetState(recovering, "ready");
-      // 5,100 of 10,000 matches won with the item.
       await expectTable(
         recovering,
         ["Item", "Winrate"],
         [["Extra Charge", "51%"]],
       );
-      // Three widgets are still broken, so the tab keeps its marker.
       await expect(tabTrigger(HEALTH_TAB)).toHaveAttribute(
         "data-broken",
         "true",

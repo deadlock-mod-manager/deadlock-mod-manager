@@ -9,7 +9,6 @@ interface SoundPreviewButtonProps {
   audioUrl: string | null | undefined;
 }
 
-/** Plays the clip the author uploaded; a note icon stands in when there is none. */
 export const SoundPreviewButton = ({
   modId,
   audioUrl,

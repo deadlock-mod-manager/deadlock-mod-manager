@@ -1,5 +1,3 @@
-//! Reconcile a current animation hierarchy without changing authored skin binding.
-//! This fallback is atomic: every mesh, attachment and hitbox must be proven.
 use super::*;
 use transforms::{Transform, numbers, replace_numbers, source_float, worlds};
 #[cfg(test)]
@@ -57,7 +55,6 @@ fn try_prepare(
   let (format, old, mut encoding) =
     decode_compiled_data(source, "authored deformation rig").ok()?;
   let (_, current, _) = decode_compiled_data(base, "current deformation rig").ok()?;
-  // External meshes/physics and bone-indexed procedural drivers require their own adapter.
   for key in ["m_refMeshes", "m_refPhysicsData", "m_refPhysicsHitboxData"] {
     if old
       .get(key)?
@@ -94,8 +91,6 @@ fn try_prepare(
     return None;
   }
   *stage = "bone-index preservation and canonical hierarchy mapping".into();
-  // Include only canonical bones shared with the mod, animation samples and camera dependencies.
-  // Copying unrelated current cloth branches would invent geometry dependencies.
   let mut required: BTreeSet<String> = current_indices
     .keys()
     .filter(|name| old_indices.contains_key(*name))
@@ -134,7 +129,6 @@ fn try_prepare(
     }
   }
   let mut value = old.clone();
-  // Append in current declaration order; existing mesh, animation and remap indices stay valid.
   for (index, name) in base_rig.get("m_boneName")?.as_array()?.iter().enumerate() {
     let key = name.as_str()?.to_ascii_lowercase();
     if !required.contains(&key) || merged_indices.contains_key(&key) {
@@ -162,8 +156,6 @@ fn try_prepare(
       else {
         return None;
       };
-      // Keep the authored typed array's item schema; the current compiler may
-      // use different numeric widths for the same runtime field.
       encodings.push(encodings.first()?.clone());
     }
   }
@@ -195,8 +187,6 @@ fn try_prepare(
     };
     *array_item_mut(target_rig, "m_nParent", target)? = Kv3Value::Int(parent);
   }
-  // NM maps sampled world poses by name. Bind frames describe the authored mesh,
-  // not the animation skeleton: replacing them changes every animated skin matrix.
   *stage = "sampled hierarchy validation".into();
   sampled_contract(&value, &current, skeleton)
     .map_err(|error| *stage = format!("sampled hierarchy validation: {error}"))
@@ -234,8 +224,6 @@ fn try_prepare(
   if mesh_indices.is_empty() {
     return None;
   }
-  // Geometry, inverse binds, attachments, hitboxes and embedded physics remain
-  // byte-identical. They were authored against the retained model-space frames.
   *stage = "authored mesh skin binding and procedural dependency validation".into();
   for index in mesh_indices {
     let mesh = kv3::decode(resource.get_block_by_index(index)?).ok()?;

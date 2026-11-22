@@ -96,6 +96,5 @@ export const prepareGameinfoPreservationWorld = async (world: CreatedWorld) => {
       ? LEGACY_GAMEINFO
       : PRESERVED_GAMEINFO,
   );
-  // This stale backup must never replace the user's newer custom configuration.
   await writeFile(path.join(citadel, "gameinfo.gi.bak"), VANILLA_GAMEINFO);
 };

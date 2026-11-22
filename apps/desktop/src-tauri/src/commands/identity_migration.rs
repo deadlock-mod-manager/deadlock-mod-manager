@@ -92,11 +92,6 @@ fn migrate_on_disk(
   )
 }
 
-/// Give one mod a new id everywhere it lives: the mod store and every profile
-/// (parked files, manifests, font markers). Used when the user links an
-/// imported local mod to its GameBanana page. Refuses when the new id is
-/// already in use, so two mods never merge by accident. A failure partway is
-/// rolled back, so the mod keeps its old id and a retry starts clean.
 pub(crate) fn relabel_mod_on_disk(
   mods_store: &Path,
   game_path: &Path,
@@ -130,8 +125,6 @@ pub(crate) fn relabel_mod_on_disk(
   let result =
     migrate_mod_cache(mods_store, &forward).and_then(|()| migrate_game_files(game_path, &forward));
   if result.is_err() {
-    // Nothing used `to` before (checked above), so renaming every `to` back
-    // to `from` restores exactly what moved.
     let backward = [IdentityMigration {
       from: to.to_string(),
       to: from.to_string(),
@@ -141,7 +134,6 @@ pub(crate) fn relabel_mod_on_disk(
   result
 }
 
-/// Best effort: every step runs even if an earlier one fails.
 fn undo_relabel(mods_store: &Path, game_path: &Path, backward: &[IdentityMigration]) {
   let citadel = game_path.join("game").join("citadel");
   let addons = citadel.join("addons");
@@ -395,8 +387,6 @@ mod tests {
     }
     .save(&addons)
     .unwrap();
-    // An unreadable fonts.conf fails the last step, after the mod store, the
-    // VPK and the manifest were already renamed.
     let fonts_conf = game_path.join("game/citadel/panorama/fonts/fonts.conf");
     fs::create_dir_all(&fonts_conf).unwrap();
 

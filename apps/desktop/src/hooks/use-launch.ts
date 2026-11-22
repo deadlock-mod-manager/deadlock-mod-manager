@@ -27,8 +27,6 @@ import { getAdditionalArgs } from "@/lib/launch-options";
 import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
-// The game is already running when the last step finishes, so the finished
-// checklist only stays up long enough to read.
 const FINISHED_STEPS_MS = 1200;
 
 const BACKEND_TAIL: LaunchStep[] = [
@@ -87,9 +85,7 @@ export const useLaunch = () => {
       if (shouldRemove) {
         await invoke("remove_map_command_from_autoexec");
       }
-    } catch {
-      // Autoexec check is best-effort; don't block game launch
-    }
+    } catch {}
   };
 
   const disableInstalledMapMods = async () => {
@@ -167,7 +163,6 @@ export const useLaunch = () => {
             "writingSearchPaths",
             ...BACKEND_TAIL,
           ];
-      // A vanilla launch loads no mods, so there is nothing to roll.
       const randomizerStep = vanilla
         ? null
         : launchRandomizerStep(usePersistedStore.getState());
@@ -186,7 +181,6 @@ export const useLaunch = () => {
         ? null
         : (activeProfile?.folderName ?? null);
 
-      // Dialogs replace the checklist; starting the game brings it back.
       if (!vanilla && !(await prepareModFixes(profileFolder, clearProgress))) {
         clearProgress();
         logger.info("Launch cancelled at the mod fix prompt");
@@ -216,14 +210,12 @@ export const useLaunch = () => {
         launched = await launchWithCompatibilityReview(
           async () => {
             if (useLaunchProgress.getState().cancelled) return false;
-            // Shows the checklist again when a launch resumes after review.
             if (!useLaunchProgress.getState().progress) {
               startProgress(backendSteps, modCount);
             }
             return startGame(args);
           },
           () => {
-            // The review dialog takes over until it launches or is closed.
             clearProgress();
             return reviewCompatibility(profileFolder);
           },

@@ -548,8 +548,6 @@ pub fn decode_embedded_model_render_model_from_resource(
     Ok(model)
 }
 
-/// Embedded meshes are LOD0 by their mask, or by name when the model has no
-/// mask table.
 fn embedded_mesh_is_lod0(lod_masks: Option<&[u64]>, source_index: usize, name: &str) -> bool {
     match lod_masks {
         Some(_) => mesh_is_lod0(lod_masks, source_index),
@@ -557,9 +555,6 @@ fn embedded_mesh_is_lod0(lod_masks: Option<&[u64]>, source_index: usize, name: &
     }
 }
 
-/// The embedded meshes the game draws by default: LOD0 and the default body
-/// groups, as `(index, name, mesh)`. Falls back to every mesh when the tables
-/// select none, so a model never decodes to nothing.
 pub(crate) fn default_embedded_meshes<'a>(
     res: &Resource,
     meshes: &'a [KvValue],
@@ -594,7 +589,6 @@ pub(crate) fn default_embedded_meshes<'a>(
         .collect()
 }
 
-/// The materials of a model's default embedded meshes, in draw order.
 pub fn default_embedded_materials(res: &Resource) -> Vec<String> {
     let root = res
         .block_bytes("CTRL")
@@ -637,8 +631,6 @@ pub fn decode_embedded_model_glb_from_resource(
         ));
     }
 
-    // With body groups to switch between, every group's LOD0 meshes are kept
-    // and tagged; the viewer shows the default ones.
     let mesh_groups = model_mesh_groups(res);
     let source_index = |mesh_index: usize, mesh: &KvValue| {
         kv_usize(mesh, "m_nMeshIndex")

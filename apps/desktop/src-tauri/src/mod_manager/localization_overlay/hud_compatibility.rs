@@ -1,5 +1,3 @@
-//! Advisory comparisons only: removed IDs can be intentional. Console evidence
-//! cannot establish which mod was active when a historical line was written.
 use super::{Kv3Value, Resource, kv3, resources::ResourceSnapshot};
 use serde::Serialize;
 use std::{
@@ -121,7 +119,6 @@ fn collect_ids(root: &Kv3Value) -> Result<BTreeSet<String>, String> {
     if kind.is_empty() && node.get("name").and_then(Kv3Value::as_str).is_none() {
       return Err("Unsupported layout node".into());
     }
-    // Snippet IDs are templates, not guaranteed instantiated panels.
     if kind == "SNIPPET" {
       continue;
     }
@@ -205,8 +202,6 @@ pub(super) fn refresh_console(checks: &mut [HudCheck], path: &std::path::Path) {
 }
 
 fn correlate(check: &mut HudCheck) {
-  // Matching IDs may occur in several layouts. Preserve every association;
-  // historical log lines never establish which profile or mod caused them.
   check.console.lines.retain(|line| {
     check
       .missing_panels

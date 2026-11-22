@@ -4,7 +4,6 @@ const CACHE_CONTROL = "public, max-age=3600";
 
 let catalog: Catalog | null = null;
 
-/** The catalog this build of the API ships, validated once on first use. */
 const currentCatalog = (): Catalog => {
   catalog ??= loadCatalog();
   return catalog;

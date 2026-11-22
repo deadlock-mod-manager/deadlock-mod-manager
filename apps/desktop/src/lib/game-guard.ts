@@ -3,11 +3,6 @@ import { isTauriError } from "@/types/tauri";
 import logger from "./logger";
 import { withWritableRecovery } from "./file-permissions";
 
-/**
- * Operations that rename, move or delete files inside the game install. The
- * backend refuses them while Deadlock is running; going through here means the
- * user gets the warning dialog and can override it for a single call.
- */
 export type GuardedCommand =
   | "install_mod"
   | "uninstall_mod"
@@ -54,15 +49,9 @@ type InvokeFn = <T>(
 
 export type GameGuardDeps = {
   invoke: InvokeFn;
-  /** Resolves true when the user picked "continue anyway". */
   confirmOverride: () => Promise<boolean>;
 };
 
-/**
- * Runs a guarded command, and on a block asks the user before retrying. The
- * retry is armed with a one-shot backend override rather than by turning the
- * guard off, so the next operation is protected again.
- */
 export const runGuarded = async <T>(
   deps: GameGuardDeps,
   command: GuardedCommand,
@@ -73,8 +62,6 @@ export const runGuarded = async <T>(
   } catch (error) {
     if (!isGameRunningError(error)) throw error;
     if (!(await deps.confirmOverride())) throw error;
-    // The token ties the permit to this retry, so another guarded call running
-    // alongside it, even of the same command, cannot claim the confirmation.
     const guardPermit = await deps.invoke<string>(
       "allow_next_game_file_operation",
       { operation: command },
@@ -87,7 +74,6 @@ type OverridePrompt = (command: GuardedCommand) => Promise<boolean>;
 
 let overridePrompt: OverridePrompt | null = null;
 
-/** Registered by the renderer that owns the confirmation dialog. */
 export const setGameGuardPrompt = (prompt: OverridePrompt | null): void => {
   overridePrompt = prompt;
 };
@@ -113,10 +99,6 @@ export const invokeGuarded = <T>(
     ),
   );
 
-/**
- * Mirrors the user's setting into the backend, where the guard runs. Throws on
- * failure so the caller can keep the displayed setting truthful.
- */
 export const applyGameGuardSetting = async (
   enabled: boolean,
 ): Promise<void> => {

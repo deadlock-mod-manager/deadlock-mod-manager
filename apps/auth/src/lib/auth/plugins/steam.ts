@@ -42,32 +42,11 @@ export type SteamProfile = {
 };
 
 export interface SteamAuthPluginOptions {
-  /**
-   * Your Steam API key.
-   *
-   * Register a key here:
-   * https://steamcommunity.com/dev/apikey
-   */
   steamApiKey: string;
-  /**
-   * A function to map the Steam profile to a user.
-   *
-   * @param profile The Steam profile.
-   * @returns The Better Auth user.
-   */
   mapProfileToUser?: (
     profile: SteamProfile & { email: string },
   ) => Promise<Omit<Partial<User>, "id" | "createdAt" | "updatedAt">>;
-  /**
-   * Whether to disable implicit sign up. If true, the user will be redirected to the error callback URL if the user is not found.
-   * Read more here:
-   * https://better-auth.com/docs/concepts/oauth#other-provider-configurations
-   */
   disableImplicitSignUp?: boolean;
-  /**
-   * Whether to enable account linking.
-   * @default false
-   */
   accountLinking?: boolean;
 }
 
@@ -471,7 +450,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
             throw ctx.redirect(withError(errorURL, "steam_profile_not_found"));
           }
 
-          // Handle account linking flow
           if (linkAccount === "true") {
             const session = await getSessionFromCtx(ctx);
             if (!session) {
@@ -481,7 +459,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
             }
             const user = session.user;
 
-            // Check if account is already linked
             const existingAccount =
               await ctx.context.internalAdapter.findAccountByKey({
                 providerId: "steam",
@@ -496,11 +473,9 @@ export const steam = (config: SteamAuthPluginOptions) =>
                   ),
                 );
               }
-              // Account already linked to this user, redirect to success
               throw ctx.redirect(callbackURL);
             }
 
-            // Create the account link
             const newAccount = await ctx.context.internalAdapter.createAccount({
               userId: user.id,
               providerId: "steam",
@@ -513,7 +488,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
               );
             }
 
-            // Update user info if configured
             if (
               ctx.context.options.account?.accountLinking
                 ?.updateUserInfoOnLink === true
@@ -527,7 +501,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
             throw ctx.redirect(callbackURL || baseOrigin);
           }
 
-          // Regular sign-in flow
           if (!email) {
             ctx.context.logger.error(
               `Email is required for sign in with steam`,
@@ -537,7 +510,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
           const isValidEmail = z.string().email().safeParse(email);
 
-          // If no email, throw. We need this since Steam OAuth doesn't provide an email.
           if (!isValidEmail.success) {
             ctx.context.logger.error(
               `Invalid email during sign in with steam:`,
@@ -565,8 +537,6 @@ export const steam = (config: SteamAuthPluginOptions) =>
               email,
             });
 
-            // The email is typed by the user and unverified, so never link
-            // this Steam ID to the account that already owns it.
             const existingUser =
               await ctx.context.internalAdapter.findUserByEmail(
                 userDetails?.email || email,

@@ -30,7 +30,6 @@ export const UpdateChangelog = ({
     return null;
   }
 
-  // Only the first page: the mod page has the full history.
   const newEntries =
     data?.pages[0]?.entries.filter((entry) =>
       isPublishedAfter(entry, installedAt),

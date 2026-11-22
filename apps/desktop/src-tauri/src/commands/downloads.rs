@@ -143,8 +143,6 @@ pub(crate) async fn resolve_download_files(
     ));
   }
 
-  // One cache lookup at a time among this mod's files, as when each file
-  // looked its caches up while resolving.
   let lookup_turn = Arc::new(tokio::sync::Mutex::new(()));
   let mut resolved_files = Vec::with_capacity(files.len());
   for file in files {
@@ -218,8 +216,6 @@ async fn resolve_gamebanana_file(
     .client
     .download_page(&submission, &tokio_util::sync::CancellationToken::new())
     .await?;
-  // The cached update snapshot either predates this install or offered a file
-  // the author has since deleted; the next check should see live files.
   backend
     .catalog
     .delete_cached_update(submission.clone())
@@ -244,8 +240,6 @@ async fn resolve_gamebanana_file(
     .map(|configuration| configuration.endpoint(crate::runtime_environment::ServiceName::Downloads))
     .unwrap_or("https://gamebanana.com");
   let category = submission.submission_type.gamebanana_path();
-  // Default uses the caches only once its standard links have failed, so it
-  // looks them up then instead of delaying every download.
   let (caches, late_sources) = match fileserver_preference {
     FileserverPreference::Auto => {
       let servers = backend.fileservers(false).await;
@@ -301,11 +295,6 @@ async fn online_caches(
   }
 }
 
-/// The URLs a GameBanana file can be downloaded from, deduplicated, in the
-/// order the download manager tries them. `standard` is the file's own link
-/// and its `/dl/<id>` link. Auto tries the caches first. Default tries only
-/// the standard links here; its caches are `LateSources`, tried after them
-/// because `/dl/` can keep redirecting to the same dead cache.
 fn download_sources(
   preference: FileserverPreference,
   standard: [String; 2],
@@ -326,7 +315,6 @@ fn download_sources(
 
 const MAX_FILESERVER_PROBES: usize = 3;
 
-/// Orders online caches by activity and keeps those serving this file.
 async fn find_fileservers_with_file(
   servers: &[super::gamebanana_catalog::GameBananaFileserverDto],
   category: &str,
@@ -385,7 +373,6 @@ async fn find_fileservers_with_file(
         }
       }
     });
-  // Probes run together, but the busiest server that serves the file still wins.
   let found = futures::future::join_all(probes)
     .await
     .into_iter()
@@ -397,8 +384,6 @@ async fn find_fileservers_with_file(
   found
 }
 
-/// E2E worlds serve every cache from the fixture origin, under
-/// `/fileservers/<domain>/`.
 fn fileserver_url(domain: &str, category: &str, file_name: &str) -> String {
   let origin = crate::runtime_environment::current()
     .e2e()
@@ -493,8 +478,6 @@ pub async fn resume_download(app_handle: AppHandle, mod_id: String) -> Result<()
   manager.resume_download(&mod_id).await
 }
 
-/// Mirrors the "Faster downloads" setting into the downloader. A file that
-/// already started keeps the mode it started with.
 #[tauri::command]
 pub async fn set_segmented_downloads(enabled: bool) -> Result<(), Error> {
   log::info!("Segmented downloads {}", if enabled { "on" } else { "off" });
@@ -545,7 +528,6 @@ pub async fn get_download_cache_location(
   download_cache_location(&app_handle)
 }
 
-/// Moves the mod store into `path`, or back to app data when `path` is None.
 #[tauri::command]
 pub async fn set_download_cache_location(
   app_handle: AppHandle,
@@ -560,7 +542,6 @@ pub async fn set_download_cache_location(
   }
 
   tokio::task::spawn_blocking(move || {
-    // Held for the whole move so installs never read a half-moved store.
     let manager = MANAGER
       .lock()
       .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
@@ -628,9 +609,6 @@ fn validate_custom_file_name(file_name: &str) -> Result<(), Error> {
   Ok(())
 }
 
-/// Rejects anything that is not a public https endpoint, including hosts that
-/// resolve to loopback/private/link-local addresses. Every command that
-/// downloads from a caller- or manifest-supplied URL must go through this.
 pub(crate) async fn validate_custom_provider_url(url_str: &str) -> Result<(), Error> {
   let parsed = reqwest::Url::parse(url_str)
     .map_err(|e| Error::InvalidInput(format!("Invalid custom provider URL: {e}")))?;

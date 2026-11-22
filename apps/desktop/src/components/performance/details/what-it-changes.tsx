@@ -7,7 +7,6 @@ import { DetailsSection } from "./details-parts";
 type WhatItChangesProps = {
   categories: CategoryInfo[];
   resolved: ResolvedConfig;
-  /** The active config, when it is a different one. */
   current: ResolvedConfig | null;
   isCurrent: boolean;
 };

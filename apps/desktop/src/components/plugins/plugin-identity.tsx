@@ -37,7 +37,6 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
-/** Manifest `icon` names the host can draw. Anything else falls back to a puzzle piece. */
 const GLYPHS = {
   binoculars: BinocularsIcon,
   broadcast: BroadcastIcon,
@@ -75,7 +74,6 @@ const GLYPHS = {
   wrench: WrenchIcon,
 } satisfies Record<string, Icon>;
 
-/** Plugins without an `accent` use the app's primary colour. */
 const DEFAULT_ACCENT = "hsl(var(--primary))";
 
 const isGlyphName = (name: string): name is keyof typeof GLYPHS =>
@@ -84,26 +82,20 @@ const isGlyphName = (name: string): name is keyof typeof GLYPHS =>
 export const pluginGlyph = (icon: string | null): Icon =>
   icon && isGlyphName(icon) ? GLYPHS[icon] : PuzzlePieceIcon;
 
-/** A colour at reduced strength; works with theme variables as well as hex accents. */
 export const tint = (color: string, percent: number) =>
   `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
 type PluginTileProps = {
   icon: string | null;
   accent: string | null;
-  /** Tile edge in px. */
   size: number;
-  /** Glyph edge in px. */
   glyphSize: number;
   radius: number;
-  /** Background strength in percent. */
   fillAlpha: number;
-  /** Outline strength in percent; omit for no outline. */
   outlineAlpha?: number;
   className?: string;
 };
 
-/** A plugin's glyph on a tile tinted with its accent. */
 export const PluginTile = ({
   icon,
   accent,

@@ -10,7 +10,6 @@ import { createProfileId, type ProfileVpkSnapshot } from "@/types/profiles";
 import type { ModsState } from "./mods";
 import type { ProfilesState } from "./profiles";
 
-// Load the slices after the shared IPC/API mocks, as in profiles.test.ts.
 const { createModsSlice } = await import("./mods");
 const { createProfilesSlice } = await import("./profiles");
 

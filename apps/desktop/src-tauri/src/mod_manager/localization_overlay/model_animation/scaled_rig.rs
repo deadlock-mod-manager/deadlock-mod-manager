@@ -1,7 +1,5 @@
 use super::*;
 
-/// A small uniform authored size change may keep the same animation interface.
-/// This proves correspondence; it never scales or rewrites the authored poses.
 pub(super) fn compatible(poses: &[(String, Kv3Value, Kv3Value)]) -> bool {
   let numbers = |pose: &Kv3Value| -> Option<Vec<f64>> {
     let values: Option<Vec<_>> = pose.as_array()?.iter().map(Kv3Value::as_f64).collect();

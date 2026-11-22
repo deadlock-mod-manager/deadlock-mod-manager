@@ -195,7 +195,6 @@ export const AddonsBackupManagement = () => {
         await restoreModsFromManifest();
         await syncProfileEnabledMods(activeProfile.id);
       }
-      // Mod Options reads the file tree, which the manifest doesn't record.
       const { profiles, setInstalledVpks, setModSource } =
         usePersistedStore.getState();
       const restoredProfile = Object.values(profiles).find(
@@ -223,7 +222,6 @@ export const AddonsBackupManagement = () => {
         }
       }
       if (restored.mods.length === 0) {
-        // Older/full backups carry files but no exact native release evidence.
         for (const profile of Object.values(profiles)) {
           for (const mod of profile.mods) {
             if (mod.source)

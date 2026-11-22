@@ -52,7 +52,6 @@ interface ModButtonProps {
   remoteMod: ModDto | undefined;
   analyticsEntryPoint?: ModEntryPoint;
   variant: "iconOnly" | "default";
-  /** Build a local mod on first add instead of downloading a provider file. */
   onAdd?: () => Promise<void>;
 }
 
@@ -151,8 +150,6 @@ const InstallModButton = ({
   );
 
   const queryClient = useQueryClient();
-  // Every catalog card renders this button, so the file list is fetched on
-  // click rather than per row; the observer still picks up the cached result.
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
     isDownloadable: remoteMod?.downloadable,
@@ -179,8 +176,6 @@ const InstallModButton = ({
     currentMod,
   } = useInstallAction();
   const { uninstall } = useUninstall();
-  // Progress is written on every chunk; subscribing to the rounded number keeps
-  // each card to at most one re-render per percent.
   const progressPercent = usePersistedStore((state) => {
     const percentage = remoteMod?.remoteId
       ? state.modProgress[remoteMod.remoteId]?.percentage
@@ -202,8 +197,6 @@ const InstallModButton = ({
   const heroConflictResolverRef = useRef<
     ((resolution: HeroConflictResolution) => void) | null
   >(null);
-  // Every catalog and library card renders this button, so its dialogs mount
-  // only once they are first opened.
   const fileSelectorOpened = useHasOpened(showFileSelector);
   const downloadDialogOpened = useHasOpened(isDialogOpen);
   const heroConflictOpened = useHasOpened(heroConflict !== null);
@@ -258,8 +251,6 @@ const InstallModButton = ({
           const resolvedHero = resolveLocalModHero(localMod).hero;
           let keepBothWith: string[] | undefined;
           if (resolvedHero && heroConflictWarningEnabled) {
-            // Read at click time: subscribing to the whole library would
-            // re-render every card's button on any mod change.
             const conflictingMod = usePersistedStore
               .getState()
               .localMods.find(
@@ -550,10 +541,6 @@ const InstallModButton = ({
   );
 };
 
-/**
- * Install for mods. A GameBanana upload that is a performance config opens the
- * Performance page instead, unless the user already has it as a mod.
- */
 const ModButton = (props: ModButtonProps) => {
   const listing = useConfigListing(props.remoteMod);
   const hasLocalMod = usePersistedStore(

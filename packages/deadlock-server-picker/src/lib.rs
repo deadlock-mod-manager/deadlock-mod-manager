@@ -1,5 +1,3 @@
-//! Framework-independent Deadlock relay selection. Only the firewall helper
-//! requires elevation; catalog access, preferences and measurements do not.
 pub mod catalog;
 mod engine;
 pub mod firewall;

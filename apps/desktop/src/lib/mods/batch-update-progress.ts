@@ -1,6 +1,5 @@
 import type { UpdateProgress } from "@/types/mods";
 
-// Matches the share of a mod's slot that batch_update_mods assigns to downloading.
 const DOWNLOAD_SHARE = 0.8;
 
 export const applyDownloadProgress = (
@@ -26,7 +25,6 @@ export const applyDownloadProgress = (
   };
 };
 
-// Rounded so store subscribers only re-render when the shown percent changes.
 export const getUpdatePercent = (
   progress: UpdateProgress | null,
   remoteId?: string,

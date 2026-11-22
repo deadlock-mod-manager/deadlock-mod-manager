@@ -80,7 +80,6 @@ describe("Analyze with a disabled mod's parked copy in addons", () => {
         () => readEntry(world),
         (entry) => entry.enabled,
       );
-      // The background refresh rebuilds the repair for the enabled mod.
       await observeUntil(
         "repair rebuilt after Analyze",
         () => observe(world),

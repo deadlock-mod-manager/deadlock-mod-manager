@@ -19,7 +19,6 @@ mock.module("@/lib/api-client", () => ({
   getModDownloads: async () => ({ downloads: catalog, count: catalog.length }),
 }));
 
-// Bun evaluates static imports before module mocks; load this after them.
 const { prepareProfileImportMods } = await import("./import-profile-prep");
 
 const download = (name: string): ModDownloadItem => ({
@@ -87,7 +86,6 @@ const prepare = async (importedMod: Partial<OrderedImportedMod>) => {
   ]);
   expect(failed).toEqual([]);
   const [prepared] = preparedMods;
-  // What the import stores must be exactly what it fetches.
   expect(
     prepared.downloads.selectedDownloads.map(({ name, url }) => ({
       name,

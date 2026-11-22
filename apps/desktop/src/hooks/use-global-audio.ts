@@ -56,10 +56,6 @@ export { useGlobalAudioStore };
 
 let playbackRequestId = 0;
 
-/**
- * Hook for the single global <audio> element to wire DOM events to the store.
- * Should only be used by GlobalAudioPlayer.
- */
 export const useGlobalAudioElement = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioVolume = usePersistedStore((state) => state.audioVolume);
@@ -98,10 +94,6 @@ export const useGlobalAudioElement = () => {
   return { audioRef, handleEnded, handleLoadedMetadata, handleTimeUpdate };
 };
 
-/**
- * Play/pause controls scoped to a specific mod.
- * Multiple cards can call this -- only one plays at a time.
- */
 export const useGlobalAudio = (modId: string, audioUrl: string) => {
   const isPlaying = useGlobalAudioStore(
     (s) => s.isPlaying && s.currentModId === modId && s.currentUrl === audioUrl,

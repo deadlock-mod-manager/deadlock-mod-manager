@@ -29,9 +29,6 @@ pub fn parse_nm_skeleton(resource: &Resource) -> Result<NmSkeleton> {
     })
 }
 
-/// Parses `m_parentSpaceReferencePose`: one array of 8 floats per bone laid out
-/// as `[posX, posY, posZ, scale, quatX, quatY, quatZ, quatW]`. A missing or
-/// malformed pose falls back to identity so additive clips still resolve.
 pub(crate) fn parse_reference_pose(root: &KvValue, bone_count: usize) -> Vec<ReferenceTransform> {
     let entries = root
         .get("m_parentSpaceReferencePose")

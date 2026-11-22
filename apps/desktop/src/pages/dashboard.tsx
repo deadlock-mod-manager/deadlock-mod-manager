@@ -66,8 +66,6 @@ const Dashboard = () => {
     [trending],
   );
 
-  // Themes that ship a `dashboardPage` override expect the legacy children
-  // API (Latest / Announcements / What's New cards). Keep them working.
   if (DashboardPage) {
     return (
       <DashboardPage>

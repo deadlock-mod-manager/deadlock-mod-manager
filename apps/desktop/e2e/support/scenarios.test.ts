@@ -12,7 +12,6 @@ import {
   criticalScenarios,
 } from "./scenarios";
 
-// Legacy native-input cases and filesystem-lock are Windows-only.
 const windows = process.platform === "win32";
 
 describe("scenario selection", () => {
@@ -117,8 +116,6 @@ describe("scenario selection", () => {
     const ids = selectScenarios("all");
     expect(ids).toHaveLength(windows ? 190 : 180);
     expect(ids).toContain("downloads-segmented-range-error");
-    // Some of these specs don't dispatch on their case ID, so a rename
-    // wouldn't fail them.
     expect(ids).toEqual(
       expect.arrayContaining([
         "compatibility-rebuild-after-close",
@@ -291,13 +288,10 @@ describe("scenario selection", () => {
     }
   });
 
-  // Pull requests skip Desktop E2E, so a case outside these lists never runs
-  // upstream.
   it("schedules every case in a default CI job", async () => {
     const { jobs } = z
       .object({
         jobs: z.object({
-          // Strict, so a matrix key this check doesn't read fails it.
           scenarios: z.object({
             strategy: z.object({
               matrix: z.strictObject({
@@ -331,7 +325,6 @@ describe("scenario selection", () => {
           ),
         ),
       );
-    // The Windows default is the fallback inside the matrix expression.
     const windows = z
       .array(z.string())
       .parse(

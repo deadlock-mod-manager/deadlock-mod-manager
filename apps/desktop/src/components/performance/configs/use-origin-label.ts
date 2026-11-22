@@ -4,7 +4,6 @@ import { presetIdFromConfigId } from "@/lib/performance/request";
 import { usePersistedStore } from "@/lib/store";
 import type { UserPerfConfig } from "@/lib/store/slices/performance";
 
-/** Where one of the user's configs came from, as a short label. */
 export const useOriginLabel = () => {
   const { t } = useTranslation();
   const { data: catalog } = usePerfCatalog();

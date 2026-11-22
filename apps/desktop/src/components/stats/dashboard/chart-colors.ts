@@ -1,6 +1,5 @@
 import type { WidgetView } from "@/lib/stats/dashboard/layout";
 
-/** Two validated series colours first, then the theme's chart tokens. */
 export const SERIES_COLORS = [
   "var(--viz-series-1)",
   "var(--viz-series-2)",

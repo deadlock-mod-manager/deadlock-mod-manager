@@ -5,9 +5,6 @@ import { prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
-// One fixable catalog mod, the one `detectedModRoutes` identifies every
-// analyzed file as.
-
 export const PARKED = {
   id: "profile_440_parked",
   folder: "profile_440_parked_parked",
@@ -38,7 +35,6 @@ export const prepareParkedCopyWorld = async (
       {
         profile: PARKED,
         modIds: [PARKED_MOD],
-        // Fixable: its copy of a game text file lacks a game token.
         payload: () =>
           buildSyntheticVpk([
             {

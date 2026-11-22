@@ -10,13 +10,10 @@ import { buildSyntheticVpk } from "./vpk";
 
 export const CATALOG_MOD_ID = "900001";
 export const CATALOG_MOD_NAME = "E2E GameBanana Mod";
-// Mirrors BULK_FIELDS / UPDATE_FIELDS in src-tauri/src/providers/gamebanana/client.rs.
 export const BULK_HYDRATION_FIELDS =
   "name,downloads,Category().name,RootCategory().name,description,text,Files().aFiles()";
 export const BULK_UPDATE_FIELDS = "Url().sProfileUrl(),mdate,Files().aFiles()";
 const timestamp = 1_780_000_000;
-// Far-future file dates postdate any real install time, so they read as changes
-// made after the user installed the mod.
 export const UPDATE_SKIP_DATES = {
   optionalFile: 4_100_000_000,
   updatedFile: 4_100_086_400,
@@ -24,7 +21,6 @@ export const UPDATE_SKIP_DATES = {
 } as const;
 export const OPTIONAL_FILE_ID = 910002;
 
-/** A healthy `/apiv11/Util/Fileservers` record. */
 export const fileserver = (id: number, domain: string, rate: number) => ({
   _idRow: id,
   _sDomain: domain,
@@ -72,8 +68,6 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
         selected: false,
       },
     ];
-  // A single download records no archive choice, so enabling it still asks
-  // which of its VPKs to install.
   if (scenario === "gamebanana-unremembered")
     return [
       {
@@ -155,8 +149,6 @@ export const installedCatalogFiles = (scenario: string): string[] =>
     .sort();
 
 type CatalogFile = { _idRow: number; _tsDateAdded: number };
-// One bulk update response per expired update check: the author adds an
-// optional file, then updates the installed file, then updates it again.
 const updateSkipSnapshots = (
   profileUrl: string,
   files: readonly CatalogFile[],
@@ -231,8 +223,6 @@ export const createCatalogRoutes = async (scenario: string) => {
       `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`,
       JSON.stringify({ _aFiles: files }),
     );
-    // The author removes the file after the mod page listed it, so the backend
-    // refuses to queue it.
     if (scenario.startsWith("downloads-queue-error-"))
       downloadPage.sequence = [
         { status: 200, body: downloadPage.body },
@@ -334,13 +324,10 @@ export const assertCatalogNetwork = (
   if (
     [
       "gamebanana-reselect",
-      // Enabling a VPK that was never installed extracts it from a fresh
-      // download; switching back to a parked VPK downloads nothing.
       "gamebanana-file-toggle",
       "gamebanana-reinstall",
       "gamebanana-reinstall-disabled",
       "gamebanana-force-update",
-      // Deleting the mod purges its download, so reinstalling fetches it again.
       "gamebanana-delete-parked",
       "gamebanana-delete-parked-disabled",
     ].includes(scenario)
@@ -351,7 +338,6 @@ export const assertCatalogNetwork = (
       { path: "/dl/910003", status: 200 },
       { path: "/dl/910004", status: 200 },
     );
-  // Reinstall re-fetches every download in selectedDownloads, blue.zip included.
   if (scenario === "gamebanana-switch-reinstall")
     expected.push(
       { path: "/dl/910003", status: 200 },

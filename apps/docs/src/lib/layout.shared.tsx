@@ -1,9 +1,6 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { RxDiscordLogo, RxGithubLogo } from "react-icons/rx";
 
-/**
- * Shared layout configurations
- */
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {

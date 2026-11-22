@@ -10,16 +10,10 @@ const CATALOG = path.resolve(
   "../../../../packages/perf-catalog/data/catalog.json",
 );
 
-/** Two bundled presets that both ship a video.txt, with different values. */
 export const FIRST_PRESET = "sqooky-max-fps";
 export const SECOND_PRESET = "optilock-fps";
-/** A setting both presets write, which the player changes in game. */
 export const CHANGED_KEY = "r_citadel_antialiasing";
 
-/**
- * The player's own file as Deadlock writes it: CRLF, tabs, a header the app
- * must keep, and a setting the presets overwrite.
- */
 export const PLAYER_VIDEO = [
   '"video.cfg"',
   "{",
@@ -27,7 +21,6 @@ export const PLAYER_VIDEO = [
   '\t"DeviceID"\t\t"9988"',
   '\t"setting.defaultres"\t\t"2560"',
   '\t"setting.defaultresheight"\t\t"1440"',
-  // No preset writes this one, so every apply must leave it.
   '\t"setting.e2e_player_only"\t\t"7"',
   `\t"setting.${CHANGED_KEY}"\t\t"3"`,
   '\t"setting.mat_viewportscale"\t\t"0.770000"',
@@ -48,13 +41,8 @@ const catalogSchema = z.object({
   ),
 });
 
-/** A preset that ships two video.txt files to pick from. */
 export const VARIANT_PRESET = "optilock-ultra-potato";
 
-/**
- * The video.txt settings a bundled preset writes, by lower-case key: its own,
- * or those of the named variant.
- */
 export const presetVideo = async (
   presetId: string,
   variant?: string,
@@ -83,7 +71,6 @@ export const videoPaths = (world: CreatedWorld["configuration"]) => {
   };
 };
 
-/** `setting.*` values by lower-case key, without the prefix. */
 export const readVideoSettings = async (
   file: string,
 ): Promise<Map<string, string>> => {
@@ -96,7 +83,6 @@ export const readVideoSettings = async (
   return settings;
 };
 
-/** Rewrites one setting the way the game does when it's changed in game. */
 export const changeInGame = async (
   file: string,
   key: string,
@@ -118,7 +104,6 @@ const recordSchema = z.object({
   ),
 });
 
-/** The app's record of what it wrote, as `setting.*` key to kept flag. */
 export const readVideoRecord = async (file: string) =>
   new Map(
     recordSchema
@@ -126,27 +111,20 @@ export const readVideoRecord = async (file: string) =>
       .keys.map((key) => [key.key.toLowerCase(), key.kept]),
   );
 
-/** Valve's own gameinfo.gi, which a game update writes over ours. */
 export const STOCK_GAMEINFO = path.resolve(
   HERE,
   "../../src-tauri/tests/fixtures/perf_config/stock-2026-09-29.gi",
 );
-/** A convar the first preset sets and the stock file doesn't have. */
 export const CONFIG_CONVAR = "r_farz";
 
 export const gameinfoPath = (world: CreatedWorld["configuration"]) =>
   path.join(world.roots.game, "game", "citadel", "gameinfo.gi");
 
-/** The value gameinfo.gi gives `name`, quoted or not; `undefined` if unset. */
 export const readConvar = async (file: string, name: string) =>
   new RegExp(`^\\s*"?${name}"?\\s+"?([^"\\s]+)"?`, "im").exec(
     await readFile(file, "utf8"),
   )?.[1];
 
-/**
- * Valve's file with one line the player added by hand, as a game update
- * leaves it: the config's lines gone, the hand edit kept.
- */
 export const stockWithHandEdit = async () =>
   (await readFile(STOCK_GAMEINFO, "utf8")).replace(
     /(\n\tConVars\s*\n\t\{[^\n]*\n)/,

@@ -13,7 +13,6 @@ const isGlobalReflect = (
   return variable === null || variable.defs.length === 0;
 };
 
-/** Reports whether a call target names one method on the global Reflect object. */
 export const isGlobalReflectMethodCall = (
   sourceCode: SourceCode,
   callee: ESTree.CallExpression["callee"],

@@ -17,7 +17,6 @@ import {
 import { SectionRow } from "./foundry-paint-section-row";
 import { Swatch } from "./foundry-paint-swatch";
 
-/** The left column: pick sections, or whole parts of the hero. */
 export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
   const {
@@ -43,8 +42,6 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
   const removed = new Set(
     (primaryModelPath && removedParts[primaryModelPath]?.textures) || [],
   );
-  // The backend refuses to remove the last body section (it would make the
-  // hero invisible in game), so that toggle is not offered.
   const lastBody = (part: FoundryPaintPart) =>
     part.target === "body" &&
     !removed.has(part.texture) &&
@@ -60,7 +57,6 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
       toast.error(t("foundry.paint.removeFailed"));
     });
   const hasSections = paintParts.length > 0;
-  // A hero without sections can only be painted part by part.
   const scope =
     paintSelection.kind === "target" || !hasSections ? "whole" : "sections";
   const selected = useMemo(

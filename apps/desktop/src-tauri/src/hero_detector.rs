@@ -208,8 +208,6 @@ impl LocalPartContents {
     if path.starts_with("panorama/") {
       self.hud_files += 1;
     }
-    // Skins ship their hero-select scene under maps/ui/; a map mod ships the
-    // map's own VPK.
     if path.starts_with("maps/") && !path.starts_with("maps/ui/") {
       let name = path
         .strip_suffix(".vpk")
@@ -239,8 +237,6 @@ fn part_contents(path: &Path) -> LocalPartContents {
   contents
 }
 
-/// Reads the VPKs a custom mod is about to be imported from, so the import
-/// dialog can suggest a category and say what each part changes.
 #[tauri::command]
 pub async fn inspect_local_mod_files(
   file_paths: Vec<String>,

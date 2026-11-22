@@ -6,10 +6,6 @@ import { readPersistedDocument } from "./observations";
 import { ALPHA, prepareInstalledProfiles } from "./profile-fixtures";
 import type { CreatedWorld } from "./world";
 
-/**
- * One Grey Talon skin split across two archives, both switched on, next to two
- * Haze skins that are genuinely on together. Only Haze is in conflict.
- */
 export const heroSkinMods = {
   talon: { id: "local-talon-archer", name: "E2E Talon Archer" },
   hazeOne: { id: "local-haze-one", name: "E2E Haze One" },

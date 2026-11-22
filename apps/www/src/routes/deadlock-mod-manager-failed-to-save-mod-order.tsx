@@ -22,7 +22,6 @@ const getPage = (t: TFunction<"error-mod-order">): GuidePageData => ({
   faqs: Object.values(t("faqs", { returnObjects: true })),
 });
 
-/** The cause that has its own guide. */
 const OS_ERROR_5_CAUSE = "accessDenied";
 
 export const Route = createFileRoute(

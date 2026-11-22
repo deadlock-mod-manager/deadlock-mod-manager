@@ -1,7 +1,3 @@
-//! Local Steam session recovery: read the `local.vdf` ConnectCache blob and decrypt
-//! the refresh-token JWT (AES on Linux/macOS, DPAPI on Windows).
-//! The token is a live account credential: in-memory only, never logged/persisted/sent.
-
 use std::path::{Path, PathBuf};
 
 use base64::Engine;
@@ -30,7 +26,6 @@ fn child<'a>(value: &'a Value<'a>, key: &str) -> Option<&'a Value<'a>> {
   value.get_obj()?.get(key)?.first()
 }
 
-// The auth file location differs on Windows.
 #[cfg(windows)]
 fn local_vdf_path(_steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
   dirs::data_local_dir()
@@ -54,8 +49,6 @@ fn parse_local_vdf(text: &str) -> Result<Vdf<'_>, MatchSyncError> {
     .map_err(|e| err(format!("cannot parse local.vdf: {e}")))
 }
 
-// Of the remembered `accounts` (SteamID64, lowercase account name), the ones with a
-// usable session. Quiet about the rest, since the status is read often.
 pub fn list_available_accounts(
   steam_dir: &Path,
   accounts: Vec<(u64, String)>,
@@ -74,7 +67,6 @@ pub fn list_available_accounts(
   )
 }
 
-// The usable session of each remembered account (SteamID64, lowercase account name).
 pub fn recover_all(
   steam_dir: &Path,
   accounts: Vec<(u64, String)>,
@@ -107,7 +99,6 @@ pub(super) fn now_secs() -> i64 {
     .map_or(0, |d| d.as_secs() as i64)
 }
 
-// The account's refresh token, if Steam keeps one this user can decrypt and it is usable.
 fn recover_session(
   vdf: &Vdf,
   steam_id64: u64,
@@ -120,8 +111,6 @@ fn recover_session(
   Ok(jwt)
 }
 
-// `local.vdf` is read and parsed once per caller (`list_available_accounts`/
-// `recover_all`) and shared across every account's lookup in that call's loop.
 fn connect_cache_hex(vdf: &Vdf, account: &str) -> Result<Option<String>, MatchSyncError> {
   let cache = ["Software", "Valve", "Steam", "ConnectCache"]
     .into_iter()
@@ -160,7 +149,6 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   }
   let key = Sha256::digest(account.as_bytes());
 
-  // The first block is the real IV, encrypted with AES-256-ECB.
   let cipher =
     Aes256::new_from_slice(key.as_slice()).map_err(|e| err(format!("aes key error: {e}")))?;
   let mut iv = GenericArray::clone_from_slice(&blob[0..16]);
@@ -179,7 +167,6 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   use windows::Win32::Foundation::{HLOCAL, LocalFree};
   use windows::Win32::Security::Cryptography::{CRYPT_INTEGER_BLOB, CryptUnprotectData};
 
-  // DPAPI with the ASCII account name as the mandatory optional entropy.
   let data_in = CRYPT_INTEGER_BLOB {
     cbData: blob.len() as u32,
     pbData: blob.as_ptr() as *mut u8,
@@ -203,8 +190,6 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   }
 }
 
-// Steam keeps the session of a remembered account after its token expires; logging in
-// with it only fails.
 fn check_token(jwt: &str, steam_id64: u64, now: i64) -> Result<(), MatchSyncError> {
   let payload = jwt
     .split('.')
@@ -224,8 +209,6 @@ fn check_token(jwt: &str, steam_id64: u64, now: i64) -> Result<(), MatchSyncErro
     .and_then(serde_json::Value::as_str)
     .and_then(|s| s.parse::<u64>().ok())
     .ok_or_else(|| err("token has no SteamID"))?;
-  // The ConnectCache lookup is keyed by account name, not steam_id64 - reject a
-  // blob whose token identity doesn't match the loginusers.vdf entry it came from.
   if sub != steam_id64 {
     return Err(err("token identity does not match loginusers.vdf entry"));
   }

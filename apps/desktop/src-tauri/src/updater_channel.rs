@@ -3,8 +3,6 @@ use std::path::PathBuf;
 
 use crate::app_runtime::{AppHandle, AppRuntime};
 
-// API first: Kaspersky flags processes that poll GitHub release downloads
-// (NetTool.GitHubGetRepo.HTTP.C&C). GitHub stays as the fallback.
 const STABLE_ENDPOINTS: [&str; 2] = [
   "https://api.deadlockmods.app/updates/stable/latest.json",
   "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest.json",

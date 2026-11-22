@@ -47,9 +47,6 @@ impl ConnectionPool {
       .to_string();
 
     let inner = tokio::task::spawn_blocking(move || {
-      // WAL changes file-level state. Initialize it and the schema before the
-      // pool opens connections concurrently, or fresh catalogs can lock during
-      // connection acquisition before their busy timeout has been installed.
       let mut initial =
         SqliteConnection::establish(&database_url).map_err(schema::catalog_error)?;
       initial

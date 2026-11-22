@@ -17,7 +17,6 @@ import {
   openExternalPluginView,
 } from "@/lib/external-plugins";
 
-/** How long a frame may take to post `ready` before the page says it didn't answer. */
 const READY_TIMEOUT_MS = 10_000;
 
 export type FramePhase = "starting" | "ready" | "noAnswer";
@@ -25,7 +24,6 @@ export type FramePhase = "starting" | "ready" | "noAnswer";
 const readColorScheme = () =>
   document.documentElement.classList.contains("light") ? "light" : "dark";
 
-// `cardForeground` -> `--card-foreground`
 const themeVariable = (name: string) =>
   `--${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
 
@@ -43,8 +41,6 @@ const readHostContext = (locale: string): HostContext => {
   };
 };
 
-/** Bridges the sandboxed plugin frame: relays its calls, sends theme and
- * locale, and tracks whether it has started. */
 export const usePluginFrame = (pluginId: string, live: boolean) => {
   const { i18n } = useTranslation();
   const view = useQuery({
@@ -55,8 +51,6 @@ export const usePluginFrame = (pluginId: string, live: boolean) => {
   });
   const token = live ? view.data : undefined;
   const frameRef = useRef<HTMLIFrameElement>(null);
-  // The frame element must share the plugin page's color-scheme, or the
-  // browser paints an opaque backdrop behind the frame.
   const [colorScheme, setColorScheme] = useState(readColorScheme);
   const [phase, setPhase] = useState<FramePhase>("starting");
   const [frameKey, setFrameKey] = useState(0);
@@ -75,7 +69,6 @@ export const usePluginFrame = (pluginId: string, live: boolean) => {
     const frame = frameRef.current;
     if (!token || !frame) return;
     const send = (message: HostMessage) =>
-      // Sandboxed frames have an opaque origin, so the target cannot be named.
       frame.contentWindow?.postMessage(encodeMessage(message), "*");
     const sendContext = () => {
       const context = readHostContext(i18n.language);
@@ -83,8 +76,6 @@ export const usePluginFrame = (pluginId: string, live: boolean) => {
       send({ type: "context", context });
     };
 
-    // Calls are attributed to the view this page embedded, never to
-    // anything the frame says about itself.
     const onMessage = async (event: MessageEvent<JsonValue>) => {
       if (event.source !== frame.contentWindow) return;
       const message = parseFrameMessage(event.data);
@@ -131,7 +122,6 @@ export const usePluginFrame = (pluginId: string, live: boolean) => {
     colorScheme,
     phase: shownPhase,
     src: token ? externalPluginFrameUrl(token) : undefined,
-    /** Changes whenever the frame must be remounted. */
     frameKey: `${token ?? ""}:${frameKey}`,
     reload: () => {
       setFrameKey((key) => key + 1);

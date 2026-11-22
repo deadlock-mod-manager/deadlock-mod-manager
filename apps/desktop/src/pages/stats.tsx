@@ -100,13 +100,10 @@ const Stats = () => {
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
 
   useEffect(() => {
-    // Custom tab ids are random; one bucket keeps the page-view report readable.
     const tab = DEFAULT_TAB_IDS.has(activeTab.id) ? activeTab.id : "custom";
     analytics.trackPageViewed(`stats-${tab}`, { tab });
   }, [analytics, activeTab.id]);
 
-  // Gate the whole page only when no widget could render without it; mixed
-  // tabs fall through to the grid and each widget shows its own notice.
   const hasWidgets = activeTab.widgets.length > 0;
   const needsAccount =
     hasWidgets && activeTab.widgets.every(widgetNeedsAccount);
@@ -154,7 +151,6 @@ const Stats = () => {
   const bodyState: BodyState = (() => {
     if (editing) return "grid";
     if (needsAccount && !accountsPending && !hasAccount) return "accountPrompt";
-    // While loading, the grid draws each widget's own skeleton in its cell.
     if (accountsPending || (hasAccount && stats.isPending)) return "grid";
     if (needsHistory && stats.isError) return "error";
     if (needsHistory && stats.allMatches.length === 0) return "noMatches";
@@ -227,8 +223,6 @@ const Stats = () => {
   };
 
   const displayName = accountDisplayName(stats.profile, account);
-  // The profile panel carries its own switcher, but only while the grid is on
-  // screen; an empty or error state in its place would leave no way to switch.
   const showsProfile =
     bodyState === "grid" &&
     activeTab.widgets.some(
@@ -250,8 +244,6 @@ const Stats = () => {
         rankAssets: rankAssets.data?.data ?? [],
       }}>
       <div className='flex h-full min-h-0 w-full flex-col'>
-        {/* Status (freshness, attribution, match sharing) takes the title row's
-            empty right side, so the row below only has to fit account and tabs. */}
         <div className='flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pr-2'>
           <PageTitle subtitle={t("stats.subtitle")} title={t("stats.title")} />
           <StatsStatus
@@ -269,17 +261,12 @@ const Stats = () => {
           />
         </div>
 
-        {/* Tabs and filters share one pinned row. The account lives in the
-            Overview's profile panel; tabs without one get a compact chip so
-            switching accounts is always one click away. */}
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
           <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
             {tabBar}
             {!editing && TabToolbar && <TabToolbar />}
             {!editing && !TabToolbar && (
               <div className='flex flex-wrap items-center gap-2'>
-                {/* Tabs with the profile panel keep the chip's space, so
-                    switching tabs never moves the filters. */}
                 {hasAccount && (
                   <div
                     aria-hidden={showsProfile || undefined}
@@ -339,7 +326,6 @@ const Stats = () => {
         <div
           className={cn(
             "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
-            // The account prompt is a centred card; every tab body is a full page.
             bodyState === "accountPrompt" && "flex items-center justify-center",
           )}>
           {renderBody()}

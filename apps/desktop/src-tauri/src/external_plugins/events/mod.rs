@@ -1,4 +1,3 @@
-//! Trusted desktop producers for the plugin host's typed observation journal.
 pub mod downloads;
 pub mod game;
 

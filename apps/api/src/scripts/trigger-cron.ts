@@ -1,16 +1,5 @@
 #!/usr/bin/env bun
 
-/**
- * Queues an immediate run of a cron job on the API cron queue. The worker
- * deployment owns the consumer, so it has to be running for the job to be
- * picked up, and the run shows up in its logs rather than the API's. Use this
- * to exercise the full queue path; `sync-mods` calls the service directly and
- * skips the worker, dispatch and Sentry check-in.
- *
- * Usage:
- * pnpm --filter api trigger-cron            # defaults to the mod sync
- */
-
 import { logger } from "@/lib/logger";
 import { ModsSyncProcessor } from "@/processors/mods-sync";
 import { cronService } from "@/services/cron";

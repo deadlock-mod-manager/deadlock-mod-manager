@@ -49,8 +49,6 @@ const installed: RenamedExpectation = {
   },
   [PICKED_PACK.id]: { version: "v1", vpks: ["blue.vpk"] },
 };
-// The renamed pack keeps its pick and leaves out the VPK it gained; the
-// picked pack installs what was chosen in the picker.
 const updated: RenamedExpectation = {
   [RENAMED_PACKS.id]: { ...installed[RENAMED_PACKS.id], version: "v2" },
   [PICKED_PACK.id]: { version: "v2", vpks: ["green.vpk"] },
@@ -116,7 +114,6 @@ describe("packs re-uploaded under a new name", () => {
         assert(identity);
         const [, filePath] = installFileIdentity.parse(JSON.parse(identity));
         names.push(path.posix.basename(filePath));
-        // Blue is gone, so nothing in the re-upload starts picked.
         await expect(row.$('[role="checkbox"]')).toHaveAttribute(
           "aria-checked",
           "false",
@@ -125,8 +122,6 @@ describe("packs re-uploaded under a new name", () => {
       assert.deepEqual(names.toSorted(), ["green.vpk", "red.vpk"]);
       await rows[names.indexOf("green.vpk")].click();
       await picker.$("button=Install Selected").click();
-      // The pick re-runs the update with the renamed mod, whose first
-      // download failed.
       await expect($('[role="dialog"]')).not.toBeDisplayed({ wait: 30_000 });
       await observeUntil(
         "v2 picks recorded",

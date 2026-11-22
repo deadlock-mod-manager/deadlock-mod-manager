@@ -37,8 +37,6 @@ import { jsonValueSchema } from "@/lib/validation/json";
 
 export { DeadlockApiError };
 export type { RankAsset };
-// The shapes live with their schemas so the two cannot drift; everything on the
-// Stats page still imports them from here.
 export type {
   AnalyticsHeroStats,
   BadgeDistributionEntry,
@@ -67,16 +65,6 @@ export type {
 const BASE_URL = "https://api.deadlock-api.com";
 const apiBaseUrl = (): string => runtimeServiceOrigin("deadlockApi", BASE_URL);
 
-// Endpoints deliberately avoided: /card and /account-stats are Patreon-only and
-// capped at 5 req/min per IP, and match-history?force_refetch=true is 1 req/h.
-// Everything used here is 100 req/s per IP (players) or 200 req/min (analytics).
-
-/**
- * Every endpoint used here is public - a Patreon subscription is tied to the
- * Steam accounts a supporter registers on deadlock-api.com, not to a credential
- * the client has to send. Requests for a prioritized account get the better data
- * on their own, so the app never asks for one.
- */
 const API_HEADERS = {
   Accept: "application/json",
 } as const;
@@ -91,22 +79,16 @@ const request = async (path: string) => {
   return response;
 };
 
-/** Custom widgets accept any JSON shape; dataset conversion happens separately. */
 export const requestJson = async (path: string) => {
   const response = await request(path);
   return jsonValueSchema.parse(await response.json());
 };
 
-/**
- * A list endpoint. Entries that no longer match their schema are dropped rather
- * than failing the request: one unexpected row should not empty a scoreboard.
- */
 const getList = async <T>(path: string, schema: z.ZodType<T>): Promise<T[]> => {
   const response = await request(path);
   return parseList(schema, await response.json(), path);
 };
 
-/** A single-object endpoint, where there is nothing to salvage from a bad shape. */
 const getOne = async <T>(path: string, schema: z.ZodType<T>): Promise<T> => {
   const response = await request(path);
   return parseOne(schema, await response.json(), path);
@@ -115,22 +97,12 @@ const getOne = async <T>(path: string, schema: z.ZodType<T>): Promise<T> => {
 export const getMatchHistory = (accountId: number) =>
   getList(`/v1/players/${accountId}/match-history`, matchHistoryEntrySchema);
 
-/**
- * Full post-match data. Steam fallback is disabled deliberately: opening a
- * player card must never enqueue a Steam fetch or consume the API's scarce
- * three-per-hour fallback allowance. Cached/S3 metadata is enough here.
- *
- * The schema doubles as the trim: raw metadata also carries pings, damage
- * matrices and tracked-stat trees, and parsing drops every field it does not
- * declare before the response reaches React Query and the disk cache.
- */
 export const getMatchMetadata = (matchId: number) =>
   getOne(
     `/v1/matches/${matchId}/metadata?disable_steam=true`,
     matchMetadataSchema,
   );
 
-/** Takes several accounts at once, so the squad view costs a single request. */
 export const getPlayerHeroStats = (
   accountIds: number | number[],
   scope?: StatsScope,
@@ -143,14 +115,12 @@ export const getPlayerHeroStats = (
 export const getPlayerRank = (accountId: number) =>
   getOne(`/v1/players/${accountId}/rank`, playerRankSchema);
 
-/** Matches per month and game server cluster, newest month first. */
 export const getPlayerRegionHistory = async (accountId: number) => {
   const path = `/v1/players/${accountId}/region`;
   const region = await getOne(path, playerRegionSchema);
   return parseList(regionHistoryEntrySchema, region.history, path);
 };
 
-/** `sameParty` restricts the result to premades instead of any shared match. */
 export const getMateStats = (accountId: number, sameParty = false) =>
   getList(
     `/v1/players/${accountId}/mate-stats?min_matches_played=3${
@@ -165,20 +135,16 @@ export const getEnemyStats = (accountId: number) =>
     enemyStatsSchema,
   );
 
-/** One batched call for every mate, so the Squad tab costs a single request. */
 export const getSteamProfiles = (accountIds: number[]) => {
   if (accountIds.length === 0) {
     return Promise.resolve<z.infer<typeof steamProfileSchema>[]>([]);
   }
-  // `refresh` is left off on purpose: the read path is 100 req/s, the refresh
-  // path only 3 req/min.
   return getList(
     `/v1/players/steam?account_ids=${accountIds.join(",")}`,
     steamProfileSchema,
   );
 };
 
-/** Global per-hero totals, used to benchmark the player against everyone else. */
 export const getAnalyticsHeroStats = (
   sinceUnix: number,
   mode: StatsMatchMode = "all",
@@ -188,18 +154,9 @@ export const getAnalyticsHeroStats = (
     analyticsHeroStatsSchema,
   );
 
-/**
- * How the whole ranked population is spread across the badges. Only badges with a
- * subrank of 1-6 ever carry players, so the response has holes by design.
- */
 export const getBadgeDistribution = () =>
   getList("/v1/analytics/badge-distribution", badgeDistributionEntrySchema);
 
-/**
- * How every player inside a badge range performs per match: average and
- * percentiles for each metric. `minBadge`/`maxBadge` filter on the match's
- * average badge, so a whole tier is `tier * 10 + 1` to `tier * 10 + 6`.
- */
 export const getBracketMetrics = async ({
   minBadge,
   maxBadge,
@@ -218,21 +175,12 @@ export const getBracketMetrics = async ({
   );
 };
 
-/**
- * How an account's souls usually grow over a match on one hero, bucketed in
- * absolute game seconds. The baseline the match page compares a game with.
- */
 export const getPerformanceCurve = (accountId: number, heroId: number) =>
   getList(
     `/v1/analytics/player-performance-curve?account_ids=${accountId}&hero_ids=${heroId}&resolution=0`,
     performancePointSchema,
   );
 
-/**
- * How players on one hero inside a badge range stand at each point of a match,
- * in steps of game time. What a running match is graded against. `badges` is
- * null for everyone, which leaves the badge filter out of the request.
- */
 export const getBracketCurve = ({
   heroId,
   badges,
@@ -247,7 +195,6 @@ export const getBracketCurve = ({
     performanceCurvePointSchema,
   );
 
-/** A match's average badge range, or null for every rank. */
 export type BadgeRange = { minBadge: number; maxBadge: number } | null;
 
 const badgeQuery = (badges: BadgeRange) =>
@@ -255,11 +202,6 @@ const badgeQuery = (badges: BadgeRange) =>
     ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}`
     : "";
 
-/**
- * Every set of `size` heroes that shared a team, with its record. Pairs (~60 KB)
- * and trios (~900 KB, every one of them) are the only sizes small enough to
- * fetch whole: sets of four already run past 8 MB.
- */
 export const getHeroCombStats = ({
   size,
   badges,
@@ -274,25 +216,15 @@ export const getHeroCombStats = ({
     heroCombStatsSchema,
   );
 
-/** The season definitions the game client ships, including its entry requirements. */
 export const getRankedSeasons = () =>
   getList("/v1/assets/ranked-seasons", rankedSeasonSchema);
 
-/**
- * The player's own record against every enemy hero. Scoped to `accountId`, so
- * this is their matchups rather than the global ones.
- */
 export const getHeroCounterStats = (accountId: number, minMatches = 2) =>
   getList(
     `/v1/analytics/hero-counter-stats?account_id=${accountId}&min_matches=${minMatches}`,
     heroCounterStatsSchema,
   );
 
-/**
- * Item performance. Without `accountId` this is everyone's data, which is the
- * baseline the player's own numbers get compared against; with `heroId` it is
- * narrowed to the builds that player ran on that one hero.
- */
 export const getItemStats = ({
   accountId,
   heroId,
@@ -308,18 +240,11 @@ export const getItemStats = ({
     `/v1/analytics/item-stats?min_matches=${minMatches}${
       accountId ? `&account_id=${accountId}` : ""
     }${
-      // `hero_ids` (plural) is the filter that applies; the singular `hero_id`
-      // parameter the schema also lists comes back empty for every account.
       heroId ? `&hero_ids=${heroId}` : ""
     }${scope ? `&${statsScopeQuery(scope)}` : ""}`,
     itemStatsSchema,
   );
 
-/**
- * Valve packs division and tier into one badge number: 26 reads as division 2,
- * tier 6. Resolving it against the asset list is the same job in the page header
- * and in the live player card, so it lives here.
- */
 export const resolveRank = (
   badge: number | undefined,
   rankAssets: RankAsset[],
@@ -334,10 +259,6 @@ export const resolveRank = (
   };
 };
 
-/**
- * The badges of a badge's rank tier, or every badge for the unranked. Tiers
- * hold subranks 1 to 6, so tier 7 spans badges 71 to 76.
- */
 export const badgeBracket = (badge: number | undefined) => {
   const tier = Math.floor((badge ?? 0) / 10);
   return tier > 0
@@ -345,7 +266,6 @@ export const badgeBracket = (badge: number | undefined) => {
     : { tier: null, minBadge: 0, maxBadge: 116 };
 };
 
-/** "Name subrank" for a badge, or null when no asset names its tier. */
 export const rankLabel = (
   badge: number | undefined,
   rankAssets: RankAsset[],

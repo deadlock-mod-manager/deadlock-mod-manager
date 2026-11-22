@@ -2,7 +2,7 @@ name: Download Gameinfo.gi from Deadlock Steam
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # Run daily at midnight UTC
+    - cron: "0 0 * * *"
 
 jobs:
   fetch:
@@ -14,7 +14,7 @@ jobs:
     env:
       APPID: "1422450"
       DEPOTID: "1422456"
-      MANIFESTID: "" # set a manifest ID to pin; empty = latest
+      MANIFESTID: ""
       OUTDIR: "_depot"
     steps:
       - name: Get bot token

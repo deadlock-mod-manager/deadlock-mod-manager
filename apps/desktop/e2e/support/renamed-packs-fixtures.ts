@@ -26,8 +26,6 @@ type PackFile = {
   vpks: Record<RenamedVersion, readonly string[]>;
 };
 
-// GameBanana tells uploads that share a name apart with a random `_xxxxx`
-// suffix, so a re-uploaded pack only keeps its name up to that suffix.
 export const RENAMED_PACKS = {
   id: "930201",
   name: "E2E Renamed Packs",
@@ -50,7 +48,6 @@ export const RENAMED_PACKS = {
     },
   ],
 } as const satisfies { id: string; name: string; files: readonly PackFile[] };
-// The chosen VPK is gone from the re-upload, so nothing carries over.
 export const PICKED_PACK = {
   id: "930202",
   name: "E2E Picked Pack",
@@ -70,8 +67,6 @@ export const renamedVpk = (id: string, version: RenamedVersion, name: string) =>
   ]);
 const downloadPath = (id: string, key: string, version: RenamedVersion) =>
   `/dl/${id}/${key}/${version}`;
-// The first v2 transfer of pack A fails, so that mod waits in the batch's
-// failures while the other one asks for a pick.
 const FAILING_DOWNLOAD = downloadPath(RENAMED_PACKS.id, "a", "v2");
 
 export const renamedPacksRoutes = async () => {
@@ -104,7 +99,6 @@ export const renamedPacksRoutes = async () => {
     const timestamp = 1_780_000_000;
     const files = (mod: (typeof mods)[number], version: RenamedVersion) =>
       mod.files.map((file, index) => ({
-        // A re-upload is a new GameBanana file.
         _idRow: Number(mod.id) * 100 + index * 2 + (version === "v2" ? 1 : 0),
         _sFile: file.archive[version],
         _nFilesize: mod.bodies[index][version].length,
@@ -148,7 +142,6 @@ export const renamedPacksRoutes = async () => {
         ),
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
-      // Automatic checks can request either mod before both installs finish.
       ...[mods, [mods[1]]].map((checked) =>
         Object.assign(
           json(
@@ -179,8 +172,6 @@ export const renamedPacksRoutes = async () => {
           json(`/apiv11/Mod/${mod.id}/ProfilePage`, profiles[index]),
           {
             ...json(`/apiv11/Mod/${mod.id}/DownloadPage`, {}),
-            // At install the chooser fetches metadata once, then the Rust URL
-            // resolver once per archive; every later request sees v2.
             sequence: [
               ...Array.from(
                 { length: mod.files.length + 1 },
@@ -244,7 +235,6 @@ export const assertRenamedPacksNetwork = (
     transfers.join("\n"),
   );
   assert.equal(count(`${FAILING_DOWNLOAD} 200`), 1, transfers.join("\n"));
-  // The pick runs the update again, so the picked pack downloads twice.
   assert.equal(
     count(`${downloadPath(PICKED_PACK.id, "pick", "v2")} 200`),
     2,

@@ -1,5 +1,3 @@
-# Standalone guest workspace with its own Cargo.lock and target directory, so
-# plugin builds never contend with the desktop Cargo workspace.
 [workspace]
 members = ["backend"]
 resolver = "3"

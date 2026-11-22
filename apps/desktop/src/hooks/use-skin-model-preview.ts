@@ -13,7 +13,6 @@ import { cacheFoundryModel, releaseFoundryModel } from "@/lib/model-assets";
 import type { FoundryModel } from "@/types/foundry";
 import type { LocalMod } from "@/types/mods";
 
-/** `unsupported` is not a failure: the VPK simply holds no hero model. */
 export type SkinModel =
   | {
       kind: "model";
@@ -26,13 +25,8 @@ export type SkinModel =
   | { kind: "unsupported" }
   | { kind: "missingAssets" };
 
-/** How long a decoded model survives with nothing on screen showing it. */
 const MODEL_CACHE_TIME_MS = 0;
 
-/**
- * The Foundry's model pipeline without the editor around it: no workspace is
- * prepared. Analysis stages a local VPK copy; source mods stay unchanged.
- */
 const decodeSkinModel = async (
   mod: LocalMod | null,
   hero: string,
@@ -62,12 +56,6 @@ const decodeSkinModel = async (
   };
 };
 
-/**
- * The 3D preview for one hero skin, or for the hero's default look when `mod`
- * is null, as everywhere else on the page. Only mounted while the preview
- * setting is on — the decode is the expensive part, and that is the point of
- * the setting.
- */
 export const useSkinModelPreview = (
   hero: string,
   mod: LocalMod | null,
@@ -77,8 +65,6 @@ export const useSkinModelPreview = (
   const client = useQueryClient();
   const info = useModPreviewInfo(mod, enabled);
 
-  // Parsed VPK indexes stay cached in the backend so switching skins is quick;
-  // a parsed pak01 is a large thing to hold onto once the page is gone.
   useEffect(() => () => void releaseFoundryArchives(), []);
 
   const queryKey = [
@@ -111,12 +97,9 @@ export const useSkinModelPreview = (
       }
       return preview;
     },
-    // Keep decoded models only while a preview is mounted.
     staleTime: 60_000,
     gcTime: MODEL_CACHE_TIME_MS,
     retry: false,
-    // The panel shows the failure in place, with a retry; a toast on top of
-    // that would say the same thing twice.
     meta: { skipGlobalErrorHandler: true },
   });
   return info.isError

@@ -22,7 +22,6 @@ export const createGroup = async (name: string) => {
   await $('input[placeholder="e.g. Map cosmetics"]').setValue(name);
   await $("button=Create group").click();
   await expect(group(name)).toBeDisplayed();
-  // The fading overlay still covers the page, so native input would hit it.
   await expect($('[role="dialog"]')).not.toBeExisting();
   await expect(
     $('//div[@data-state and contains(@class, "bg-black/80")]'),
@@ -109,8 +108,6 @@ const revealDragTarget = async (element: ChainablePromiseElement) => {
 
 type ProbeWindow = Window & { dragProbe?: string[] };
 
-// Records which element each native pointer event reaches, so a drag that
-// never starts shows whether the press or the moves went missing.
 const startDragProbe = () =>
   browser.execute(() => {
     const probe: string[] = [];

@@ -113,7 +113,6 @@ export const HistoryTab = () => {
   const history = usePersistedStore((state) => state.perfHistory);
   const { data: status } = usePerfStatus();
   const currentConfigId = status?.desired?.request.configId ?? null;
-  // Video.txt entries in between don't change which config is current.
   const latestConfigEntry = history.find(isConfigHistoryEntry);
 
   if (history.length === 0) {

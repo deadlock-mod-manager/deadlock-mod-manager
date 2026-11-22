@@ -10,7 +10,6 @@ import {
 } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 
-/** Mirrors `commands/mod_interchange/format.rs` (rfcs/001-mod-interchange/proposal.md). */
 type InterchangeFile = {
   name: string;
   path: string;
@@ -161,9 +160,6 @@ export type InterchangeExportReport = {
 const LOCAL_ID = /^local-[0-9a-f-]{36}$/i;
 export const isLocalModId = (id: string) => LOCAL_ID.test(id);
 
-/** The library id DMM gives an entry; must match `import.rs::dmm_mod_id`.
- *  Local entries carry their DMM id when DMM already has them, else resolve
- *  through the import ledger. */
 export const libraryIdForEntry = (
   entry: InterchangeMod,
   ledger: Record<string, string> = {},
@@ -190,8 +186,6 @@ export const fileIdFromDownloadUrl = (url: string): number | null => {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 };
 
-/** Turn what a user pastes (a GameBanana link or a bare id) into a DMM mod
- *  id: `123` for mods, `snd-123` for sounds. */
 export const parseGameBananaReference = (input: string): string | null => {
   const text = input.trim();
   const bare = /^(snd-)?([1-9]\d*)$/i.exec(text);
@@ -204,7 +198,6 @@ export const parseGameBananaReference = (input: string): string | null => {
 const isHttpUrl = (value: string | null | undefined): value is string =>
   !!value && /^https?:\/\//i.test(value);
 
-/** What the export command needs from a library entry. */
 export const exportInputFromLocalMod = (
   mod: LocalMod,
   enabled: boolean,
@@ -255,8 +248,6 @@ const gameBananaPage = (origin: InterchangeOrigin): string | null => {
   return `https://gamebanana.com/${section}/${origin.submissionId}`;
 };
 
-/** A library entry built only from the interchange data, used for local mods
- *  and whenever the GameBanana catalog cannot describe a submission. */
 export const placeholderModDto = (
   entry: InterchangeMod,
   modId: string,
@@ -305,9 +296,6 @@ export const placeholderModDto = (
   };
 };
 
-/** What DMM already knows about a mod from another profile, without that
- *  profile's install state, so a new profile gets the same name and images
- *  instead of a placeholder. */
 export const libraryRecordAsModDto = ({
   metadataPending: _metadataPending,
   status: _status,
@@ -322,8 +310,6 @@ export const libraryRecordAsModDto = ({
   ...mod
 }: LocalMod): ModDto => mod;
 
-/** Records which GameBanana file the VPKs came from, so update checks compare
- *  against the right version instead of treating the mod as unknown. */
 const selectedDownloadsForEntry = (
   entry: InterchangeMod,
   modId: string,
@@ -334,7 +320,6 @@ const selectedDownloadsForEntry = (
   return [
     {
       url: `gamebanana-file://${encodeURIComponent(modId)}/${entry.origin.fileId}`,
-      // The archive's size is unknown; the extracted VPK total would pass for it.
       size: 0,
       name: entry.origin.fileName ?? entry.name,
       description: null,
@@ -345,8 +330,6 @@ const selectedDownloadsForEntry = (
   ];
 };
 
-/** The library record for an imported mod. Catalog data (when available)
- *  wins for descriptive fields; install state always comes from the import. */
 export const buildImportedLocalMod = (
   entry: InterchangeMod,
   result: ImportedMod & { modId: string },
@@ -370,8 +353,6 @@ export const buildImportedLocalMod = (
   };
 };
 
-/** The document restricted to one profile: its mods, in its order, with its
- *  enabled state. Feeds a per-profile import. */
 export const documentForProfile = (
   document: InterchangeDocument,
   profile: InterchangeProfile,
@@ -384,7 +365,6 @@ export const documentForProfile = (
   return { ...document, mods, profiles: [], crosshairs: [] };
 };
 
-/** `name`, or `name (2)`, `name (3)` ... when a profile already uses it. */
 export const uniqueName = (name: string, taken: readonly string[]): string => {
   const used = new Set(taken.map((n) => n.trim().toLowerCase()));
   const base = name.trim() || "Imported profile";
@@ -395,13 +375,10 @@ export const uniqueName = (name: string, taken: readonly string[]): string => {
   }
 };
 
-/** Where a source profile is imported: a DMM profile that exists, or a new
- *  one under the source's name. */
 export type ProfileTarget =
   | { kind: "existing"; profileId: ProfileId }
   | { kind: "new"; name: string };
 
-/** Profile keys are only unique within one source. */
 export const profileLedgerKey = (
   document: InterchangeDocument,
   profile: InterchangeProfile,
@@ -410,9 +387,6 @@ export const profileLedgerKey = (
 const sameName = (a: string, b: string) =>
   a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** Per source profile: the DMM profile an earlier import of it went into,
- *  else the DMM profile with the same name, else a new profile. A DMM profile
- *  is the target of at most one source profile. */
 export const profileTargetsFor = (
   document: InterchangeDocument,
   profiles: readonly InterchangeProfile[],
@@ -421,7 +395,6 @@ export const profileTargetsFor = (
 ): Map<string, ProfileTarget> => {
   const claimed = new Set<string>();
   const matches = new Map<string, ProfileId>();
-  // Earlier imports claim their profiles before any name does.
   for (const profile of profiles) {
     const previous = profileLedger[profileLedgerKey(document, profile)];
     const match = existing.find((p) => p.id === previous);
@@ -462,8 +435,6 @@ const numberConvar = (value: string | undefined): number | null => {
 const boolConvar = (value: string | undefined): boolean | null =>
   value === undefined ? null : value === "true" || value === "1";
 
-/** DMM's crosshair model from game convars. Convars DMM does not model
- *  (outline colors, dot size, ...) are ignored; missing ones use defaults. */
 export const crosshairFromConvars = (
   convars: Record<string, string>,
 ): CrosshairConfig | null => {

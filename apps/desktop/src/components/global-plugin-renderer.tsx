@@ -36,10 +36,8 @@ const GlobalPluginRenderer = () => {
   const enabledPlugins = usePersistedStore((s) => s.enabledPlugins);
   const { data: featureFlags } = useFeatureFlags();
 
-  // Memoize plugins to prevent infinite re-renders
   const plugins = useMemo(() => getPlugins(), []);
 
-  // Create a map of feature flags for quick lookup
   const featureFlagMap = useMemo(() => {
     const flagMap = new Map<string, boolean>();
     if (featureFlags && Array.isArray(featureFlags)) {
@@ -50,17 +48,14 @@ const GlobalPluginRenderer = () => {
     return flagMap;
   }, [featureFlags]);
 
-  // Check if a plugin is enabled considering both local and feature flag configuration
   const isPluginEnabled = useMemo(() => {
     return (pluginId: string) => {
-      // Check feature flag first (defaults to true if no flag exists)
       const flagName = `plugin-${pluginId}`;
       const flagEnabled = featureFlagMap.get(flagName) ?? true;
       if (!flagEnabled) {
         return false;
       }
 
-      // Then check local configuration
       return resolvePluginEnabled(enabledPlugins, pluginId);
     };
   }, [enabledPlugins, featureFlagMap]);

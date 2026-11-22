@@ -38,7 +38,6 @@ const SOURCE_LINKS = {
   gamebanana: <ExternalLink url='https://gamebanana.com/games/20948' />,
 };
 
-/** What the feature does, where its facts come from and what each status means. */
 export const HowItWorksTab = () => {
   const { t } = useTranslation();
   return (

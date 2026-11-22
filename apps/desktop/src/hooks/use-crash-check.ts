@@ -56,11 +56,6 @@ const attachClientFingerprint = (sessionId: string | null) => {
   });
 };
 
-/**
- * Watches finished game sessions. A normal one becomes the baseline; an early
- * abnormal exit with changes since that baseline becomes a prompt with undo
- * actions. Mounted once, by the launch health renderer.
- */
 export const useCrashCheck = () => {
   const { t } = useTranslation();
   const active = usePersistedStore((state) => state.crashCheckEnabled);
@@ -74,8 +69,6 @@ export const useCrashCheck = () => {
     isPending: turningOffConfig,
   } = useRemovePerfConfig();
 
-  // useHeroDetection already polls this key every 5s; a second interval here
-  // would double the process scans.
   const { data: gameRunning = false } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
@@ -109,8 +102,6 @@ export const useCrashCheck = () => {
     setDialogOpen(false);
   }, []);
 
-  // A prompt that arrives while Deadlock runs again (restarted before the
-  // crash was noticed) waits until the game closes.
   useEffect(() => {
     if (!prompt || presented || gameRunning) return;
     setPresented(true);
@@ -126,8 +117,6 @@ export const useCrashCheck = () => {
   const handleReports = useCallback(
     (reports: SessionReport[]) => {
       const state = usePersistedStore.getState();
-      // Bisect launches run with mods deliberately off: a crash answers the
-      // round, and none of them may become the baseline.
       if (state.bisectSession) {
         const acknowledged = new Set(state.acknowledgedSessionIds);
         for (const report of reports) {
@@ -152,7 +141,6 @@ export const useCrashCheck = () => {
       for (const { sessionId, outcome } of plan.acknowledgements) {
         acknowledge(sessionId, outcome);
       }
-      // A newer crash, or a normal session since, makes the open one stale.
       if (shown && (plan.prompt || plan.newBaseline)) {
         acknowledge(shown.report.sessionId, "superseded");
         clear();
@@ -177,10 +165,7 @@ export const useCrashCheck = () => {
       if (disposed) stop();
       else stops.push(stop);
     };
-    // A session that was already running when the app started.
     attachClientFingerprint(null);
-    // Pending reports are read only once the listeners are live, so a session
-    // that ends in between isn't missed until the next start.
     void Promise.all([
       listen(ADDONS_CHANGED_EVENT, () => setRecentCrashReport(null)).then(keep),
       listen<SessionReport>(SESSION_ENDED_EVENT, (event) =>
@@ -204,7 +189,6 @@ export const useCrashCheck = () => {
     };
   }, [active, handleReports]);
 
-  /** Ends the prompt; every way out goes through here. */
   const resolve = useCallback(
     (outcome: SessionAckOutcome) => {
       const current = promptRef.current;
@@ -229,7 +213,6 @@ export const useCrashCheck = () => {
     analytics.track("crash_check_action", { action: "turn_off_config" });
   }, []);
 
-  // The remove mutation reports its own failures.
   const turnOffConfig = useCallback(() => {
     removePerfConfig(
       { entryPoint: "crash_check" },
@@ -274,7 +257,6 @@ export const useCrashCheck = () => {
     },
   });
 
-  /** Returns the report to relaunch for, or `null` once the prompt is gone. */
   const prepareRelaunch = useCallback(
     async (turnOffConfigFirst: boolean): Promise<SessionReport | null> => {
       const current = promptRef.current;

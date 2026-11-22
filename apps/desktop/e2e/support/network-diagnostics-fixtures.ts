@@ -12,7 +12,6 @@ export const networkDiagnosticsRoutes = async (id: string) => {
       path: "/cdn-cgi/trace",
       status: 200,
       body: "ip=127.0.0.1\n",
-      // Closes the connection before any response, as a blocked host would.
       disconnectAfterBytes:
         id === "network-diagnostics-internet-down" ? 0 : undefined,
     },
@@ -32,7 +31,6 @@ export const networkDiagnosticsRoutes = async (id: string) => {
   ];
 };
 
-// The E2E backend reads this instead of the host's real CIM setting.
 export const prepareNetworkDiagnosticsWorld = async (world: CreatedWorld) => {
   const fixtures = path.join(world.directory, "fixtures");
   await mkdir(fixtures, { recursive: true });

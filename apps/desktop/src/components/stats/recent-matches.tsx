@@ -22,7 +22,6 @@ import {
 import { formatClock, formatCompact, formatDecimal } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
-/** Enough to fill the panel; the full history lives in the player card. */
 const RECENT_COUNT = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -111,7 +110,6 @@ interface RecentMatchesProps {
   heroesById: Map<number, DeadlockHero>;
 }
 
-/** The latest games, grouped into the sessions they were played in. */
 export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
   const { t, i18n } = useTranslation();
 

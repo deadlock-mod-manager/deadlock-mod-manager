@@ -1,12 +1,7 @@
-//! Files Rust received or downloaded for the renderer to add as local mods.
-//! The renderer only reports paths back, so only a path listed here is ever
-//! moved into the mods folder or deleted.
-
 use crate::errors::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-/// Who staged a file, so one feature's cleanup never claims another's files.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stager {
   Forge,
@@ -31,7 +26,6 @@ pub fn forget(path: &Path) {
   }
 }
 
-/// Forgets everything `stager` staged, returning it so it can be deleted.
 pub fn drain(stager: Stager) -> Vec<PathBuf> {
   let Ok(mut staged) = STAGED.lock() else {
     return Vec::new();
@@ -43,7 +37,6 @@ pub fn drain(stager: Stager) -> Vec<PathBuf> {
   drained.into_iter().map(|(_, path)| path).collect()
 }
 
-/// Resolves a reported path to a staged file, whoever staged it.
 pub fn peek(candidate: &str) -> Result<PathBuf, Error> {
   let candidate = PathBuf::from(candidate);
   let staged = STAGED.lock().map_err(|_| poisoned())?;
@@ -55,7 +48,6 @@ pub fn peek(candidate: &str) -> Result<PathBuf, Error> {
   }
 }
 
-/// Resolves a reported path to a file `stager` staged, and forgets it.
 pub fn take(stager: Stager, candidate: &str) -> Result<PathBuf, Error> {
   let candidate = PathBuf::from(candidate);
   let mut staged = STAGED.lock().map_err(|_| poisoned())?;

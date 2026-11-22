@@ -22,11 +22,6 @@ export const OTHER_MOD = "local-fix-other-skin";
 export const NEW_MOD_FILE = "local-fix-new-skin.vpk";
 const FIX_MODS = [FIXED_MOD, SECOND_FIXED_MOD, UNRELATED_MOD, OTHER_MOD];
 
-// Fixing a mod that changes localization tokens always produces a repair
-// package, so this mod stands in for any mod whose fix writes the overlay.
-// The second one edits its own text file, so both can be fixed together.
-// The other two share no files with it, only a material with each other, so
-// the Conflicts tab can reorder them.
 const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
   [
     FIXED_MOD,
@@ -76,7 +71,6 @@ export const prepareCompatibilityFixWorld = async (
     [{ profile: FIXES, modIds: FIX_MODS, payload: fixPayload }],
     FIXES.id,
   );
-  // Imported from disk during the run, as a newly installed mod.
   const fixtures = path.join(world.directory, "fixtures");
   await mkdir(fixtures, { recursive: true });
   await writeFile(
@@ -94,8 +88,6 @@ const DISABLED_FIX_MODS = [ENABLED_FIX_MOD, DISABLED_FIX_MOD];
 const textFile = (modId: string) =>
   `resource/localization/${modId}/${modId}_english.txt`;
 
-// A mod's copy of a game text file that lacks a game token gets the token
-// restored, so the health check reports each of these mods as fixable.
 export const prepareDisabledFixWorld = async (
   world: CreatedWorld,
 ): Promise<void> => {
@@ -127,7 +119,6 @@ export const prepareDisabledFixWorld = async (
   );
 };
 
-// The spec opens the disabled mod's page, which asks for its report counts.
 export const disabledFixRoutes = (): FixtureRoute[] => [
   { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
   {

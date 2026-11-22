@@ -11,11 +11,6 @@ import {
 } from "@/lib/stats/party";
 import { statsScopeQuery, type StatsScope } from "@/lib/stats/scope";
 
-/**
- * Every lineup the party can get, how it does, and the one change to each
- * player's picks that helps most. One request covers any party: every pair
- * for a duo, every trio from three players up.
- */
 export const usePartyPlanner = (
   members: number[][],
   rankRange: RankRange,
@@ -55,8 +50,6 @@ export const usePartyPlanner = (
     () => partyOdds(members, pairs, trios),
     [members, pairs, trios],
   );
-  // The swap search re-rates every lineup per candidate hero, around 300 ms
-  // for a full six-stack, so it trails the picks instead of blocking them.
   const deferredMembers = useDeferredValue(members);
   const advice = useMemo(
     () =>
@@ -69,7 +62,6 @@ export const usePartyPlanner = (
   const query = players >= 3 ? triosQuery : pairsQuery;
   return {
     odds,
-    // Advice for an older party would point at picks that already changed.
     advice: deferredMembers === members ? advice : members.map(() => null),
     isAdviceStale: deferredMembers !== members,
     isPending: query.isPending && query.fetchStatus !== "idle",

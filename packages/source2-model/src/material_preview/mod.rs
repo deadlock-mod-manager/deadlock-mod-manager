@@ -158,7 +158,6 @@ fn decode_material_previews(
                         } else {
                             properties.metalness_factor
                         };
-                    // Drop decoded ORM inputs before allocating the emissive mask and output.
                     drop((roughness_tex, occlusion_tex, metalness_tex));
                     texture.emissive_png = report_texture_result(
                         archive,
@@ -272,7 +271,6 @@ pub(crate) fn decode_preview_textures(
         material_paths.to_vec()
     };
     let textures = decode_material_preview_textures(archive, &candidates);
-    // Guessed images must never disguise a failed explicit material/texture override.
     if textures.is_empty() && material_paths.is_empty() {
         archive.record_preview_issue(
             model_entry_path,

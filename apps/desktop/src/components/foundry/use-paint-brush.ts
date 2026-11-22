@@ -13,10 +13,6 @@ import {
   tintLayer,
 } from "./foundry-paint-utils";
 
-/**
- * Everything the paint tab's three columns share: what is selected, the draft
- * paint for it, and whether the preview may show it.
- */
 export const usePaintBrush = () => {
   const { t } = useTranslation();
   const {
@@ -30,14 +26,11 @@ export const usePaintBrush = () => {
     paintSelectedParts,
     setPreviewTint,
   } = useFoundry();
-  // Unapplied paint per selection. Each keeps its selection so the model can
-  // show every pending color, not only the one being edited.
   const [drafts, setDrafts] = useState<
     Record<string, { selection: FoundryPaintSelection; paint: FoundryPaint }>
   >({});
   const [previewEnabled, setPreviewEnabled] = useState(true);
   const [applying, setApplying] = useState(false);
-  // Held down with Space to look at the hero without the pending tint.
   const [comparing, setComparing] = useState(false);
 
   const infoById = useMemo(
@@ -67,19 +60,12 @@ export const usePaintBrush = () => {
     [paintSelection, paintParts],
   );
 
-  // A pattern carries its own palette and replaces the picked color on every
-  // texture it covers. Particles are the one thing it cannot cover, so for
-  // abilities the color still does something and the controls stay live.
   const patterned = paint.pattern !== "none";
   const colorDrivesParticlesOnly = patterned && (info?.particleCount ?? 0) > 0;
   const colorIgnored = patterned && !colorDrivesParticlesOnly;
 
   const isDirty = isPendingColor(paint, applied);
 
-  // The hero is tinted only when the user asked for it, no pattern is chosen
-  // (the shader cannot generate one), the selection has textures to tint, and
-  // the paint is still pending (an applied paint is already in the textures,
-  // tinting would double it).
   const previewBlocker = patterned
     ? ("pattern" as const)
     : tintTextures.length === 0
@@ -90,7 +76,6 @@ export const usePaintBrush = () => {
   const canPreview = previewBlocker === undefined;
   const showTint = previewEnabled && canPreview;
 
-  // The other selections' pending colors, under the one being edited.
   const tintLayers = useMemo(() => {
     const layers = Object.entries(drafts).flatMap(([draftKey, draft]) => {
       if (draftKey === key || draft.paint.pattern !== "none") return [];
@@ -111,8 +96,6 @@ export const usePaintBrush = () => {
         saturation: paint.saturation,
         brightness: paint.brightness,
       };
-      // A color picked for this selection goes over the rest. One nobody picked
-      // yet is only the brush's default, so it goes under the colors that were.
       if (key in drafts) {
         layers.push(current);
       } else {
@@ -120,8 +103,6 @@ export const usePaintBrush = () => {
       }
     }
     return layers.filter((layer) => layer.textures.length > 0);
-    // The paint's fields, not the object: with no draft it is rebuilt every
-    // render, and a new layer list each time would loop through the context.
   }, [
     drafts,
     key,
@@ -134,9 +115,6 @@ export const usePaintBrush = () => {
     paint.brightness,
   ]);
   const tinting = previewEnabled && tintLayers.length > 0;
-  // Each section's unapplied color, so the list can flag what Paint would
-  // change. Only colors the user picked: a fresh selection previews the
-  // default brush, which nobody chose yet.
   const pendingColors = useMemo(() => {
     const picked =
       canPreview && !(key in drafts) ? tintLayers.slice(1) : tintLayers;
@@ -148,9 +126,6 @@ export const usePaintBrush = () => {
   }, [tintLayers, canPreview, key, drafts]);
 
   useEffect(() => {
-    // Comparing keeps a tint that covers nothing rather than none at all: with
-    // no tint the viewer brings back the selection glow, which would cast the
-    // "original" in the highlight color.
     setPreviewTint(tinting ? (comparing ? [] : tintLayers) : null);
     return () => setPreviewTint(null);
   }, [tinting, comparing, tintLayers, setPreviewTint]);
@@ -209,8 +184,6 @@ export const usePaintBrush = () => {
           );
         }
       }
-      // The painted textures now wear this color, so drafts covering any of
-      // them are stale; the rest stay pending and keep showing on the model.
       const painted = new Set(tintTextures);
       setDrafts((current) =>
         Object.fromEntries(

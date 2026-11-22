@@ -70,8 +70,6 @@ impl ModManager {
       localization_overlay_plan_cache: Mutex::new(None),
     };
 
-    // Harness worlds are configured explicitly during Tauri setup. Never scan
-    // the host for Steam or Deadlock when an isolated runtime is active.
     if !crate::runtime_environment::is_e2e_active()
       && let Err(e) = manager.find_game()
     {
@@ -105,7 +103,6 @@ impl ModManager {
     Ok(path)
   }
 
-  /// Skips the running-game check, so tests don't depend on whether Deadlock is open.
   #[cfg(test)]
   pub(crate) fn for_test_game(game_path: &Path) -> Self {
     let mut manager = tests::test_manager(game_path);
@@ -144,7 +141,6 @@ impl ModManager {
     ProfileBase::new(Self::profile_addons_dir(game_path, profile_folder)?)
   }
 
-  /// The addons folder of `profile_folder`, or the root one for `None`.
   pub(crate) fn profile_addons_dir(
     game_path: &Path,
     profile_folder: Option<&str>,
@@ -159,9 +155,6 @@ impl ModManager {
     }
   }
 
-  /// Profile folders may nest (`profiles/imported`), so this permits separators
-  /// and only rejects components that escape the addons directory. It is not a
-  /// mod-ID check; use [`Self::ensure_safe_mod_id`] for those.
   fn is_safe_profile_folder(folder: &str) -> bool {
     !folder.is_empty()
       && Path::new(folder)
@@ -169,11 +162,7 @@ impl ModManager {
         .all(|component| matches!(component, Component::Normal(_)))
   }
 
-  /// Mod IDs are joined onto the mods store path and the result is deleted
-  /// recursively, so a traversing ID would reach outside the store.
   pub(crate) fn ensure_safe_mod_id(mod_id: &str) -> Result<(), Error> {
-    // A single plain name: no separators, no `..`, and nothing `join` would
-    // treat as a new root, such as an empty id or a Windows drive like `C:`.
     let mut components = std::path::Path::new(mod_id).components();
     let single_name = matches!(components.next(), Some(std::path::Component::Normal(_)))
       && components.next().is_none();
@@ -191,7 +180,6 @@ impl ModManager {
   }
 
   pub fn setup_game_for_mods(&mut self) -> Result<(), Error> {
-    // Ensure game is not running before setup
     self.process_manager.ensure_game_not_running()?;
 
     if self.config_manager.is_game_setup() {
@@ -223,10 +211,8 @@ impl ModManager {
     additional_args: String,
     profile_folder: Option<String>,
   ) -> Result<super::steam_uri_launcher::SteamUriLaunchRequest, Error> {
-    // Ensure game path is found
     self.find_game()?;
 
-    // Toggle mods based on vanilla flag
     if vanilla {
       log::info!("Disabling mods...");
       self.report_launch_step("disablingMods");
@@ -242,10 +228,6 @@ impl ModManager {
       crate::mod_manager::file_permissions::ensure_file_writable(
         &game_path.join("game").join("citadel").join("gameinfo.gi"),
       )?;
-      // A profile that still holds a pre-sharding layout must be spread across
-      // shards before its search paths are written, or the extra `citadel/addonsN`
-      // lines would be missing and the engine would silently drop everything
-      // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
       self.report_launch_step("checkingCompatibility");
       self.prepare_localization_overlay_with_progress(
@@ -263,7 +245,6 @@ impl ModManager {
     self.steam_manager.game_launch_request(&additional_args)
   }
 
-  /// Tells the launch overlay which phase of `prepare_game_launch` is running.
   fn report_launch_step(&self, step: &str) {
     use tauri::Emitter;
     if let Some(app_handle) = &self.app_handle {
@@ -273,8 +254,6 @@ impl ModManager {
 
   fn validate_modded_launch_files(&self, profile_folder: Option<&str>) -> Result<(), Error> {
     let base = self.get_addons_path(profile_folder)?;
-    // Recover staged files before checking, and check before migration can
-    // reconcile missing manifest claims away.
     let manifest = ProfileVpkManifest::open_for_write(&base)?;
     let affected_mods: Vec<_> = manifest
       .mods
@@ -298,9 +277,6 @@ impl ModManager {
     }
   }
 
-  /// Puts the chosen performance config back into gameinfo.gi, which a game
-  /// update or a reset may have replaced. A problem here never stops the
-  /// launch: it is logged and reported to the frontend instead.
   pub(crate) fn reapply_performance_config(&self) {
     use crate::mod_manager::perf_config::{catalog, client_version, ops, video};
     use tauri::Emitter;
@@ -416,22 +392,18 @@ impl ModManager {
     Ok(size)
   }
 
-  /// Get a reference to the steam manager
   pub fn get_steam_manager(&self) -> &SteamManager {
     &self.steam_manager
   }
 
-  /// Get a reference to the config manager
   pub fn get_config_manager(&self) -> &GameConfigManager {
     &self.config_manager
   }
 
-  /// Get a mutable reference to the config manager
   pub fn get_config_manager_mut(&mut self) -> &mut GameConfigManager {
     &mut self.config_manager
   }
 
-  /// Get a reference to the mod repository
   pub fn get_mod_repository(&self) -> &ModRepository {
     &self.mod_repository
   }
@@ -464,7 +436,6 @@ impl ModManager {
     ProfileVpkManifest::load(&addons_path)
   }
 
-  /// Validate and canonicalize a path to ensure it's within the allowed mods directory.
   fn validate_path_within_mods_root(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     let mods_root = self.get_mods_store_path()?;
     self.filesystem.create_directories(&mods_root)?;
@@ -472,13 +443,11 @@ impl ModManager {
       .canonicalize()
       .map_err(|_| Error::UnauthorizedPath("Unable to resolve mods directory".to_string()))?;
 
-    // Canonicalize the requested path
     let canonical_path = if path.is_absolute() {
       path.canonicalize().map_err(|_| {
         Error::UnauthorizedPath(format!("Unable to resolve path: {}", path.display()))
       })?
     } else {
-      // For relative paths, resolve them relative to the mods root
       mods_root.join(path).canonicalize().map_err(|_| {
         Error::UnauthorizedPath(format!(
           "Unable to resolve relative path: {}",
@@ -487,7 +456,6 @@ impl ModManager {
       })?
     };
 
-    // Verify the canonicalized path is within the mods root
     if !canonical_path.starts_with(&canonical_mods_root) {
       return Err(Error::UnauthorizedPath(format!(
         "Path '{}' is outside the allowed mods directory '{}'",
@@ -499,12 +467,10 @@ impl ModManager {
     Ok(canonical_path)
   }
 
-  /// Public method to validate extract target paths for use by commands
   pub fn validate_extract_target_path(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     self.validate_path_within_mods_root(path)
   }
 
-  /// Validate and resolve a mod folder path, rejecting path traversal in mod_id.
   pub fn get_validated_mod_folder_path(&self, mod_id: &str) -> Result<PathBuf, Error> {
     Self::ensure_safe_mod_id(mod_id)?;
     let mods_root = self.get_mods_store_path()?;
@@ -516,11 +482,9 @@ impl ModManager {
     }
   }
 
-  /// Remove a mod folder from the filesystem
   pub fn remove_mod_folder(&self, mod_path: &PathBuf) -> Result<(), Error> {
     log::info!("Removing mod folder: {mod_path:?}");
 
-    // Validate and canonicalize the path to ensure it's within the mods directory
     let validated_path = self.validate_path_within_mods_root(mod_path)?;
 
     if !validated_path.exists() {
@@ -618,8 +582,6 @@ mod tests {
     fs::write(addons_path.join(name), b"test vpk").unwrap();
   }
 
-  /// Builds a manager pointing at a throwaway game install, bypassing the
-  /// Steam lookup and the app handle that `ModManager::new` depends on.
   pub(super) fn test_manager(game_path: &Path) -> ModManager {
     let mut manager = test_manager_without_game_path();
 
@@ -918,8 +880,6 @@ mod tests {
       &HashSet::from(["blue.vpk".into()]),
     );
     let mut manager = test_manager(game.path());
-    // Arrange only the throwaway install; this variant test must not depend on
-    // whether the user is running Deadlock elsewhere on the machine.
     manager
       .config_manager
       .setup_game_for_mods(game.path())
@@ -1030,7 +990,6 @@ mod tests {
 
   #[test]
   fn reenable_without_file_tree_keeps_the_disabled_file_order() {
-    // An empty tree is what a mod folder with no archives left reads as.
     let empty = ModFileTree {
       files: Vec::new(),
       total_files: 0,
@@ -1092,7 +1051,6 @@ mod tests {
       b"red bytes",
       "{case}"
     );
-    // The library stores this tree, so it has to list the files that went in.
     let names: Vec<&str> = installed
       .file_tree
       .as_ref()
@@ -1119,8 +1077,6 @@ mod tests {
     let shard_two = ShardIndex::new(2).unwrap();
     fs::create_dir_all(base.shard_dir(shard_two)).unwrap();
 
-    // 100 ordered mods: mod03 is disabled, leaving a hole in the full base
-    // shard, and mod99 sits alone in shard 2.
     let id = |i: u32| format!("mod{i:02}");
     let mut manifest = ProfileVpkManifest::default();
     for i in 0..100u32 {
@@ -1276,9 +1232,6 @@ mod tests {
     assert_eq!(entry.current_vpks, vec!["pak01_dir.vpk".to_string()]);
   }
 
-  /// The whole point of the upgrade: a profile that predates sharding has every
-  /// mod on shard 1 with no install order, and must come out of the reorder in
-  /// exactly the order the engine was already loading it.
   #[test]
   fn legacy_profile_without_install_order_keeps_its_pak_order() {
     let mut manifest = ProfileVpkManifest::default();
@@ -1308,8 +1261,6 @@ mod tests {
     );
   }
 
-  /// An explicit install order always wins over the on-disk position, and mods
-  /// that never got one are appended behind them rather than interleaved.
   #[test]
   fn explicit_install_order_precedes_unordered_mods() {
     let mut manifest = ProfileVpkManifest::default();
@@ -1342,8 +1293,6 @@ mod tests {
     );
   }
 
-  /// Across shards the load order follows the shard index, so an already
-  /// sharded profile is not reshuffled by a reorder that changes nothing.
   #[test]
   fn unordered_mods_sort_by_shard_then_pak_number() {
     let mut manifest = ProfileVpkManifest::default();
@@ -1405,8 +1354,6 @@ mod tests {
     }
   }
 
-  /// A VPK claimed by two mods is a stale record, not a reason to give up: the
-  /// reorder used to abort, which left the profile permanently unorderable.
   #[test]
   fn reorder_recovers_when_two_mods_claim_the_same_vpk() {
     let game = game_dir();
@@ -1438,9 +1385,6 @@ mod tests {
     assert!(base_path.join("pak01_dir.vpk").exists());
   }
 
-  /// An entry the reorder skipped still names files the reorder renumbers. Its
-  /// record has to follow them, or it ends up claiming a file that now belongs
-  /// to another mod and the next reorder sees a duplicate.
   #[test]
   fn reorder_resyncs_entries_it_did_not_move() {
     let game = game_dir();
@@ -1472,8 +1416,6 @@ mod tests {
       manifest.mods["mapped"].current_vpks,
       vec!["pak01_dir.vpk".to_string()]
     );
-    // pak05 was compacted to pak02 as an unclaimed file; the record follows it
-    // instead of pointing at the file "mapped" now owns.
     assert_eq!(
       manifest.mods["unmapped"].current_vpks,
       vec!["pak02_dir.vpk".to_string()]
@@ -1481,10 +1423,6 @@ mod tests {
     assert!(base_path.join("pak02_dir.vpk").exists());
   }
 
-  /// The full upgrade, as an existing install experiences it: a v1 manifest and
-  /// 150 pak files crammed into one addons folder, read from disk, reordered
-  /// into shards. Load order must survive the move unchanged, and the manifest
-  /// must end up describing where the files actually are.
   #[test]
   fn upgrading_a_legacy_over_capacity_profile_shards_it_without_reordering_mods() {
     let temp = tempfile::tempdir().unwrap();
@@ -1495,7 +1433,6 @@ mod tests {
     for i in 1..=150u32 {
       let vpk = format!("pak{i:02}_dir.vpk");
       write_vpk(&base_path, &vpk);
-      // No `shard` and no `order`: exactly what the pre-sharding build wrote.
       v1_mods.push(format!(
         r#""mod{i}": {{"enabled": true, "currentVpks": ["{vpk}"], "originalVpkNames": ["m{i}.vpk"]}}"#
       ));
@@ -1515,7 +1452,6 @@ mod tests {
       .reorder_vpks_sharded(&assignments, &base)
       .unwrap();
 
-    // Load order is unchanged: mod N still loads Nth overall.
     assert_eq!(
       placements
         .iter()
@@ -1532,8 +1468,6 @@ mod tests {
     );
     assert!(placements[99..].iter().all(|p| p.shard == shard_two));
 
-    // Both shards are within the engine's per-directory limit, and the
-    // out-of-range pak numbers that made this profile broken are gone.
     assert_eq!(count_enabled(&base.shard_dir(ShardIndex::FIRST)), 99);
     assert_eq!(count_enabled(&base.shard_dir(shard_two)), 51);
     assert!(
@@ -1543,7 +1477,6 @@ mod tests {
         .exists()
     );
 
-    // The manifest now points at the real locations, upgraded to the current version.
     for placement in &placements {
       let entry = manifest.mods.get_mut(&placement.mod_id).unwrap();
       entry.shard = placement.shard;
@@ -1563,12 +1496,10 @@ mod tests {
     let addons_path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&addons_path).unwrap();
 
-    // Fill the base shard (citadel/addons) to the engine's 99-file capacity.
     for i in 1..=99u32 {
       write_vpk(&addons_path, &format!("pak{i:02}_dir.vpk"));
     }
 
-    // A newly enabled mod must overflow into shard 2 rather than being rejected.
     let base = crate::mod_manager::shard::ProfileBase::new(addons_path).unwrap();
     let chosen = ModManager::choose_shard_for(&base, None, 1).unwrap();
     assert_eq!(chosen, ShardIndex::new(2).unwrap());
@@ -1634,7 +1565,6 @@ mod tests {
     assert!(!addons_path.join("pak01_dir.vpk").exists());
   }
 
-  /// Delete drops the returned choices; Reinstall hands them to the install.
   #[test]
   fn purge_forgets_the_entry_and_returns_its_choices() {
     let game = game_dir();
@@ -1699,8 +1629,6 @@ mod tests {
     assert!(outside.join("keep.txt").exists());
   }
 
-  /// `remove_mod_vpks` is public, so it checks the mod ID itself. It once used
-  /// the profile-folder predicate, which permits separators.
   #[test]
   fn remove_mod_vpks_rejects_mod_ids_with_separators() {
     let game = game_dir();
@@ -1735,8 +1663,6 @@ mod tests {
     );
   }
 
-  /// A stale frontend `pak01_dir.vpk` used to resolve to shard 1 even when the
-  /// target lived in shard 2, deleting another mod's file.
   #[test]
   fn remove_mod_vpks_ignores_stale_filename_when_manifest_owns_the_mod() {
     let game = game_dir();
@@ -1820,8 +1746,6 @@ mod tests {
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
   }
 
-  /// Without a manifest entry, fallback names are still shard-1-resolved, but
-  /// they must not delete a file another entry already claims.
   #[test]
   fn remove_mod_vpks_skips_fallback_paths_claimed_by_another_mod() {
     let game = game_dir();

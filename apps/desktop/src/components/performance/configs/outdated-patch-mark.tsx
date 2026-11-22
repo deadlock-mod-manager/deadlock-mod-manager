@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import type { CommunityConfigSummary } from "@/types/generated/CommunityConfigSummary";
 import { outdatedBuild } from "./outdated-build";
 
-/** The card's quieter version: an amber clock beside the date. */
 export const OutdatedPatchMark = ({
   community,
   latestBuild,

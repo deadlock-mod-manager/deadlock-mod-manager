@@ -18,7 +18,7 @@ import { zipExtractor } from "@/services/extractors/zip-extractor";
 import { tempCleanupService } from "@/services/temp-cleanup";
 import type { ModFileProcessingJobData } from "@/types/jobs";
 
-export const MAX_FILE_SIZE = 256 * 1024 * 1024; // 256 MiB
+export const MAX_FILE_SIZE = 256 * 1024 * 1024;
 const VPK_EXTENSION = ".vpk";
 
 interface IndexSummary {
@@ -31,7 +31,6 @@ interface IndexSummary {
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
   protected vpkRepository: VpkRepository;
-  // Downloads overlap freely; extraction and hashing are what use memory
   private readonly processingSlots = new Semaphore(
     env.LOCKDEX_PROCESSING_CONCURRENCY,
   );
@@ -161,8 +160,6 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       }
 
       if (error instanceof PermanentIngestionError) {
-        // Recording the marker keeps the backfill from queueing this file again
-        // until GameBanana reports new files for the submission
         if (!Number.isNaN(upstreamUpdatedAt.getTime())) {
           await this.vpkRepository.markIngestionComplete(
             identity,
@@ -263,7 +260,6 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         includeEntries: false,
       });
     } catch (error) {
-      // One broken VPK should not cost the rest of the archive
       this.logger
         .withError(error)
         .withMetadata({ fileId, sourcePath })

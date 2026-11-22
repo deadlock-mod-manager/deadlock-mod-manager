@@ -40,7 +40,6 @@ const defaultActionButtonText: string = "Okay";
 
 export type DialogTone = "default" | "destructive";
 
-/** Adds an opt-out checkbox; `onChecked` runs when the dialog closes checked. */
 type DontShowAgain = {
   label: string;
   onChecked: () => void;
@@ -59,7 +58,6 @@ export type AlertAction =
       type: "confirm";
       title: string;
       body?: string;
-      /** Shown in the header tile; defaults by tone. */
       icon?: Icon;
       tone?: DialogTone;
       cancelButton?: string;
@@ -150,7 +148,6 @@ const defaultIcon = (state: AlertDialogState): Icon => {
   return state.type === "alert" ? InfoIcon : QuestionIcon;
 };
 
-// The header icon names the action (Power, Trash); the tone defaults don't.
 const actionIcon = (state: AlertDialogState): Icon =>
   state.actionButtonIcon ?? state.icon ?? CheckIcon;
 
@@ -172,9 +169,7 @@ export const AlertDialogProvider = ({
   });
 
   const resolveRef = React.useRef<(value: boolean | string | null) => void>(
-    () => {
-      // Default no-op function
-    },
+    () => {},
   );
 
   const [dontShowAgainChecked, setDontShowAgainChecked] = React.useState(false);

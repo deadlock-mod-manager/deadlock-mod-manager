@@ -1,5 +1,3 @@
-//! Telling which format a pasted text or file is.
-
 use super::cfg::{BIND_COMMANDS, EXEC_COMMANDS, cfg_statements, is_convar_name, strip_cfg_comment};
 use super::kv::{TokenKind, lex};
 use super::overrides::{is_override_name, strip_hash_note};

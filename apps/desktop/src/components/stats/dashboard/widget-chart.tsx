@@ -45,7 +45,6 @@ const PIE_SLICES = 8;
 
 const LABEL_CHARS = 18;
 
-/** Series data keys are positional so field names never end up in CSS variables. */
 const seriesKey = (index: number) => `s${index}`;
 
 const clip = (text: string, max = LABEL_CHARS) =>
@@ -240,7 +239,6 @@ export const WidgetChart = ({ dataset, view }: WidgetChartProps) => {
         </ChartContainer>
       );
     case "barHorizontal": {
-      // A signed single series reads best coloured by direction.
       const signed =
         series.length === 1 && series[0].format === "signedPercent";
       return (

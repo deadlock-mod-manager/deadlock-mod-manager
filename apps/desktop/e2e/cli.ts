@@ -81,13 +81,9 @@ const hasWebView2Runtime = async (): Promise<boolean> => {
         try {
           await access(path.join(root, entry.name, "msedgewebview2.exe"));
           return true;
-        } catch {
-          // Continue looking through installed runtime versions.
-        }
+        } catch {}
       }
-    } catch {
-      // Continue through per-machine and per-user installation roots.
-    }
+    } catch {}
   }
   return false;
 };
@@ -254,7 +250,6 @@ const doctor = async (): Promise<void> => {
   } catch {
     binaryExists = false;
   }
-  // Runners that receive a prebuilt binary do not need a Rust toolchain.
   if (!binaryExists)
     checks.push({
       name: "cargo",

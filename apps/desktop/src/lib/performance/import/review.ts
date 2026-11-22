@@ -2,23 +2,14 @@ import { isConvarPath } from "@/lib/performance/editor/values";
 import type { ImportVariant } from "@/types/generated/ImportVariant";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 
-/** Where each resolved entry of an import shows up in the review. */
 type ImportReviewGroups = {
-  /** ConVars the config writes. */
   willApply: ResolvedEntry[];
-  /** ConVars the live file already sets to the config's value. */
   alreadySet: ResolvedEntry[];
-  /** Camera and visibility settings: applied as the author set them unless turned off. */
   cameraVisibility: ResolvedEntry[];
-  /** Written, but flagged `gameinfo_cannot_override`: the game ignores them from gameinfo.gi. */
   blocked: ResolvedEntry[];
-  /** Written, but not a convar in this build (removed, or a console command). */
   removed: ResolvedEntry[];
-  /** Refused, inexpressible as an edit, or turned off. */
   refused: ResolvedEntry[];
-  /** Edits outside ConVars, only written when engine sections are included. */
   engineSections: ResolvedEntry[];
-  /** Sections and root keys that are never written. */
   excluded: ResolvedEntry[];
 };
 
@@ -28,11 +19,6 @@ const writes = (entry: ResolvedEntry) =>
 const isCameraOrVisibility = (entry: ResolvedEntry) =>
   entry.gameplay === "camera" || entry.gameplay === "visibility";
 
-/**
- * Sorts a resolved import into review groups. Toggle-dependent groups keep
- * their entries whichever way the toggle is set, so a group doesn't vanish
- * from the review when the user switches it.
- */
 export const groupReviewEntries = (
   entries: ResolvedEntry[],
 ): ImportReviewGroups => {
@@ -76,11 +62,9 @@ export const groupReviewEntries = (
   return groups;
 };
 
-/** `r_ssao`, `rate.max`, or `SceneSystem › CSMCascadeResolution`. */
 export const entryDisplayName = (path: string[]) =>
   isConvarPath(path) ? path.slice(1).join(".") : path.join(" › ");
 
-/** Engine sections by how many edits target them, most first. */
 export const summarizeSections = (entries: ResolvedEntry[], shown = 3) => {
   const counts = new Map<string, number>();
   for (const entry of entries) {
@@ -96,7 +80,6 @@ export const summarizeSections = (entries: ResolvedEntry[], shown = 3) => {
   };
 };
 
-/** The build most of these entries were blocked or removed in, when known. */
 export const commonSinceBuild = (entries: ResolvedEntry[]): number | null => {
   const counts = new Map<number, number>();
   for (const entry of entries) {
@@ -120,7 +103,6 @@ export const commonSinceBuild = (entries: ResolvedEntry[]): number | null => {
   return best;
 };
 
-/** "Apr 28" for a stock build date; the year only when it isn't this year's. */
 export const formatBuildDate = (
   date: string,
   locale: string,
@@ -139,7 +121,6 @@ export const formatBuildDate = (
   return parsed.toLocaleDateString(locale, options);
 };
 
-/** Variants worth picking between: no translated copies, no video.txt files. */
 export const pickableVariants = (variants: ImportVariant[]) =>
   variants.filter(
     (variant) => variant.duplicateOf === null && variant.format !== "videoTxt",

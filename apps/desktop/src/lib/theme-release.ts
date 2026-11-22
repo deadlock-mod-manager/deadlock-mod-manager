@@ -12,9 +12,6 @@ export function isRemlockReleaseEnabled(flags: readonly FeatureFlag[] = []) {
   );
 }
 
-/**
- * The API returns numeric-looking string flags (mod ids) as JSON numbers.
- */
 export function readStringFlag(
   flags: readonly FeatureFlag[],
   name: string,
@@ -29,11 +26,6 @@ export function readStringFlag(
 
 const DEFAULT_REMLOCK_MOD_ID = "687789";
 
-/**
- * GameBanana id pinned as mod of the week, while the release is on and
- * `remlock-featured-until` is still ahead. The id comes from
- * `remlock-featured-mod-id`, falling back to the Remlock mod.
- */
 export function getRemlockFeaturedModId(
   flags: readonly FeatureFlag[] = [],
   now = new Date(),

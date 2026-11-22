@@ -13,7 +13,6 @@ use std::{
   path::{Path, PathBuf},
 };
 
-// Increment when repair rules or output semantics change, so installed overlays are rebuilt.
 pub(super) const REPAIR_REVISION: u32 = 40;
 const RECEIPT_NAME: &str = "compatibility.json";
 
@@ -124,7 +123,6 @@ fn write_inner(
     .ok_or_else(|| Error::InvalidInput("Overlay has no parent directory".into()))?
     .to_path_buf();
   fs::create_dir_all(&parent)?;
-  // The packer replaces this path; an open handle can block replacement on Windows.
   let staged = tempfile::NamedTempFile::new_in(&parent)?.into_temp_path();
   let mut result = plan.write(&staged, resolutions)?;
   if result.has_overlay {

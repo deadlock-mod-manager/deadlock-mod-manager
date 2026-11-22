@@ -47,10 +47,6 @@ const IconTile = ({
   </span>
 );
 
-/**
- * Where the state of the tab is said, in the slot your hero takes once a match
- * runs, so nothing moves when one starts.
- */
 export const LiveBanner = ({
   icon,
   color,
@@ -205,7 +201,6 @@ export const LiveQueuedBanner = ({ since }: { since: number | null }) => {
   );
 };
 
-/** The finished match's banner: its result, and a way into the full match once the API has it. */
 export const LiveMatchOverBanner = ({
   matchId,
   inHistory,
@@ -213,7 +208,6 @@ export const LiveMatchOverBanner = ({
   result,
 }: {
   matchId: string | null;
-  /** The API has the match, so its detail page can open. */
   inHistory: boolean;
   clock: string | null;
   result: "win" | "loss" | null;

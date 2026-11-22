@@ -8,7 +8,6 @@ import { CardFooter, CardHeader, MetaItem, MetaRow } from "./card-parts";
 
 const hostOf = (url: string | null) => (url ? new URL(url).host : null);
 
-/** A hosted mod pack; its mod page runs the download and the file picker. */
 export const PerformancePackCard = ({
   listing,
 }: {

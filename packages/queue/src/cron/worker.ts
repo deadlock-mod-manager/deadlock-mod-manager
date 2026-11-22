@@ -12,8 +12,6 @@ export class CronWorker extends BaseWorker<CronJobData> {
     resolveProcessor: ProcessorResolver<CronJobData>,
     concurrency = 1,
   ) {
-    // Held until every job is registered, otherwise a due job can be claimed
-    // before its processor is resolvable
     super(queueName, redis, logger, resolveProcessor, concurrency, false);
   }
 }

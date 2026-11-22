@@ -1,31 +1,14 @@
-//! The colors a skin already wears, offered as swatches in the paint tab.
-//!
-//! Read from the color maps' RGB with alpha ignored: Source 2 color maps keep
-//! masks in alpha, not opacity, and most of a coat can sit under alpha 0.
-//!
-//! Color maps hold albedo, which the game's lighting brightens: a white coat is
-//! stored near 50% grey. The swatches are lifted by one shared exposure so they
-//! read like the hero on screen. Painting only takes a swatch's hue, so the
-//! lift changes how a swatch looks, not what it paints.
-
 use std::collections::HashMap;
 
 use source2_model::{Resource, VtexHeader};
 
-/// The most swatches offered.
 const PALETTE_SIZE: usize = 6;
-/// Color maps are decoded at most this large; plenty to rank their colors.
 const SAMPLE_SIDE: u32 = 128;
-/// Texels darker than this (summed RGB) are crevices and empty UV space.
 const DARK_SUM: u16 = 60;
-/// Picks closer than this, as RGB distance, read as the same color.
 const MIN_DISTANCE: f32 = 56.0;
-/// The exposure lift brings the lightest swatch's brightest channel here...
 const LIFT_TARGET: f32 = 230.0;
-/// ...but never brightens by more than this, so a dark skin stays dark.
 const MAX_LIFT: f32 = 2.0;
 
-/// Decode a `.vtex_c` to small RGBA for sampling.
 pub(crate) fn sample_color_map(bytes: Vec<u8>) -> Option<Vec<u8>> {
   let resource = Resource::parse(bytes).ok()?;
   let header = VtexHeader::parse(&resource).ok()?;
@@ -37,8 +20,6 @@ pub(crate) fn sample_color_map(bytes: Vec<u8>) -> Option<Vec<u8>> {
   )
 }
 
-/// The skin's main colors, most common first. Each map weighs the same however
-/// much of it is empty, so a small part's color isn't drowned by the body's.
 pub(crate) fn skin_palette(maps: &[Vec<u8>]) -> Vec<[u8; 3]> {
   let mut buckets: HashMap<u16, (f32, [f32; 3])> = HashMap::new();
   for rgba in maps {
@@ -61,10 +42,6 @@ pub(crate) fn skin_palette(maps: &[Vec<u8>]) -> Vec<[u8; 3]> {
   let mut ranked: Vec<(f32, [f32; 3])> = buckets.into_values().collect();
   ranked.sort_by(|a, b| b.0.total_cmp(&a.0));
 
-  // A shaded fabric spreads over many buckets, so a flat color would outrank
-  // it bucket for bucket. Each bucket joins the nearest color already found,
-  // measured from that color's first bucket so a cluster can't drift along a
-  // gradient and swallow its neighbours, and colors rank on combined weight.
   let mut clusters: Vec<Cluster> = Vec::new();
   for (count, sum) in ranked {
     let color = sum.map(|total| total / count);

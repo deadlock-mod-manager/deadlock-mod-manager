@@ -56,7 +56,6 @@ describe("stats dashboard widgets", () => {
         await openWidgetEditor();
         await choosePreset(BANS, "Hero bans");
         await chooseChart("table");
-        // The preview already draws the real data before anything is added.
         await expectTable(editorDialog(), ["Hero", "Bans"], HERO_BAN_ROWS);
         await setWidgetTitle("Most banned");
         await setWidgetWidth("Half");
@@ -128,7 +127,6 @@ describe("stats dashboard widgets", () => {
         { title: "Bans by hero", w: 6, chart: "table" },
       );
     } else {
-      // Saving the untouched default stores nothing at all.
       assert.equal(saved, null);
     }
   });

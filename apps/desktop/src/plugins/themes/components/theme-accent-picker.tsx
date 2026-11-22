@@ -68,7 +68,6 @@ type ThemeAccentPickerProps = {
   onChange: (patch: Partial<ThemeSettings>) => void;
 };
 
-/** Accent picker bound to a pre-defined theme's persisted settings; renders nothing for themes without an accent. */
 export const ThemeAccentPicker = ({
   themeId,
   settings,

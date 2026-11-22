@@ -1,6 +1,5 @@
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 
-/** What happens to a line, matching the colors in the import legend. */
 export type LineTone =
   | "applies"
   | "ignored"
@@ -12,7 +11,6 @@ export type LineTone =
 type Token = {
   kind: "word" | "comment" | "space";
   text: string;
-  /** Column the token starts at, unique within its line. */
   start: number;
 };
 
@@ -22,7 +20,6 @@ const TOKEN_PATTERN = /\/\/.*|"(?:[^"\\]|\\.)*"?|[{}]|[^\s"{}]+|\s+/g;
 const ROOT_KEY = "gameinfo";
 
 const toneFor = (entry: ResolvedEntry): LineTone => {
-  // Matches the review's camera & visibility group, which has its own toggle.
   if (
     (entry.gameplay === "camera" || entry.gameplay === "visibility") &&
     ["applies", "unchanged", "omitted"].includes(entry.status)
@@ -62,7 +59,6 @@ const unquote = (word: string) => word.replace(/^"|"$/g, "").toLowerCase();
 
 const pathId = (path: string[]) => path.join("\u0000");
 
-/** Tone per entry path, plus a tone for each section whose entries all agree. */
 const indexTones = (entries: ResolvedEntry[]) => {
   const exact = new Map<string, LineTone>();
   const sections = new Map<string, LineTone | null>();
@@ -79,11 +75,6 @@ const indexTones = (entries: ResolvedEntry[]) => {
   return { exact, sections };
 };
 
-/**
- * Splits pasted gameinfo.gi, ConVars or autoexec text into lines and colors
- * each one by what the import review says happens to it. Lines the review
- * doesn't mention take their section's tone when the section is uniform.
- */
 export const highlightConfig = (
   source: string,
   entries: ResolvedEntry[] | null,
@@ -105,7 +96,6 @@ export const highlightConfig = (
     (path.length === 1 ? exact.get(pathId(["convars", path[0]])) : undefined) ??
     sectionTone(path);
 
-  /** Entry paths leave out the GameInfo root. */
   const pathTo = (key: string) => {
     const path = [...stack, key];
     return path[0] === ROOT_KEY ? path.slice(1) : path;

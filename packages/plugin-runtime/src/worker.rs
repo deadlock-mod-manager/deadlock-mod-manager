@@ -1,8 +1,3 @@
-//! The plugin worker process: runs one plugin backend under Wasmtime. It is
-//! the application binary started with [`WORKER_ARG`], so dev and bundled
-//! builds ship it without a sidecar. The guest gets no WASI and no imports
-//! besides `dmm.host_call`, which forwards to the supervisor over stdio.
-
 use super::abi;
 use super::protocol::{self, FromWorker, ToWorker};
 use std::cell::RefCell;
@@ -129,8 +124,6 @@ impl Executor {
     })
   }
 
-  /// Runs one guest call in a fresh instance; nothing survives between calls
-  /// except what the guest stored through the host.
   pub fn call(&self, input: &[u8], transport: Transport) -> Result<String, CallFailure> {
     let limits = StoreLimitsBuilder::new()
       .memory_size(abi::MAX_GUEST_MEMORY_BYTES)
@@ -210,7 +203,6 @@ struct Stdio {
   stdout: io::StdoutLock<'static>,
 }
 
-/// Worker process entry point. Returns the process exit code.
 pub fn run() -> i32 {
   let stdio = Rc::new(RefCell::new(Stdio {
     stdin: io::stdin().lock(),

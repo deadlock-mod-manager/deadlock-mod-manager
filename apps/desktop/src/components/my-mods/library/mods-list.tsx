@@ -32,7 +32,6 @@ export const ModsList = ({
     active: boolean;
     ids: ReadonlySet<string>;
     busy: boolean;
-    /** `extend` selects the range from the last toggled mod. */
     toggle: (id: string, extend: boolean) => void;
   };
   healthById: ReadonlyMap<string, ModHealth>;
@@ -43,7 +42,6 @@ export const ModsList = ({
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
   onShowConflicts: () => void;
-  /** Points the right-click hint at the first card. */
   contextMenuHint: boolean;
 }) => {
   const { t } = useTranslation();
@@ -122,8 +120,6 @@ export const ModsList = ({
                         selection.toggle(mod.remoteId, event.shiftKey)
                       }
                       onContextMenu={(event) => {
-                        // The surface covers the card, so hand the right-click
-                        // to the card's own context menu underneath.
                         event.preventDefault();
                         const surface = event.currentTarget;
                         document

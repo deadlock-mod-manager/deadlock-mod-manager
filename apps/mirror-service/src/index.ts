@@ -47,7 +47,6 @@ app.route("/metrics", metricsRouter);
 const main = async () => {
   logger.info(`Mirror service started on port ${env.PORT}`);
 
-  // Define validation job with configurable interval
   const validationIntervalHours = env.VALIDATION_WORKER_INTERVAL_HOURS;
   const validationPattern =
     validationIntervalHours === 1
@@ -61,7 +60,6 @@ const main = async () => {
     enabled: true,
   });
 
-  // Define cleanup job to run daily at 2 AM
   await cronService.defineJob({
     name: "cleanup-worker",
     pattern: CronPatterns.MAINTENANCE_DAILY,
@@ -92,7 +90,6 @@ if (import.meta.main) {
     process.exit(1);
   });
 
-  // Graceful shutdown handling
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");
 

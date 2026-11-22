@@ -1,8 +1,5 @@
 name: Update AUR PKGBUILDs for new release
 
-# Called from release.yml after the release is published. A `release` trigger
-# would never fire: release.yml publishes with GITHUB_TOKEN, and events created
-# with that token do not start other workflows.
 on:
   workflow_call:
     inputs:
@@ -71,14 +68,10 @@ jobs:
       - name: Prepare PKGBUILD
         if: steps.check_version.outputs.is_newer == 'true' || inputs.allow_backfill == true
         run: |
-          # Only reset pkgrel for a new version; on a backfill the repo's pkgrel
-          # carries packaging fixes and must ship as-is to stay upgradable.
           if [ "${{ steps.check_version.outputs.is_newer }}" = "true" ]; then
             sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
             sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
           fi
-          # The deploy action runs updpkgsums only on its own copy, so refresh the
-          # repo's checksums here or the bot PR ships the previous release's sums.
           pkgbuild=${{ matrix.pkgbuild_dir }}/PKGBUILD
           mapfile -t sources < <(bash -c 'source "$1" && printf "%s\n" "${source[@]}"' _ "$pkgbuild")
           sums=()
@@ -95,7 +88,6 @@ jobs:
           awk -v block="$block" '/^sha256sums=\(/ { print block; skip = 1 } skip { if (/\)/) skip = 0; next } { print }' \
             "$pkgbuild" > PKGBUILD.tmp
           mv PKGBUILD.tmp "$pkgbuild"
-          # Copy for AUR deploy
           cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 
       - name: Open PR for updated PKGBUILD

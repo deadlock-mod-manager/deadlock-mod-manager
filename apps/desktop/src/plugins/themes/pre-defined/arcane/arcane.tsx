@@ -5,7 +5,6 @@ import {
 } from "../../components/theme-backdrop";
 import { hexToRgb, rgbToHslTriplet } from "../../custom/theme-color-utils";
 
-// DEFAULT_ARCANE_ACCENT (#E8416F) as RGB, used when a saved color is unparsable.
 const DEFAULT_ARCANE_RGB = { r: 232, g: 65, b: 111 };
 
 type ArcaneThemeProps = {

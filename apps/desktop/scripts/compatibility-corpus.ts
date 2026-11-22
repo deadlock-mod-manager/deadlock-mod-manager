@@ -1,4 +1,3 @@
-// Prepare a reproducible local corpus. Mod assets are never committed or enabled.
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -33,7 +32,6 @@ for (const entry of cases) {
     .update(await readFile(archive))
     .digest("hex");
   if (digest !== entry.sha256) {
-    // Remove it so the next run downloads it again instead of failing forever.
     await rm(archive, { force: true });
     throw new Error(`Checksum mismatch for ${entry.name}`);
   }

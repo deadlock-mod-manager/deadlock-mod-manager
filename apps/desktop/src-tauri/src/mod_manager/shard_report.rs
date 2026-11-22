@@ -1,10 +1,3 @@
-//! Consistency report for a profile's shard layout.
-//!
-//! Sharding only works when three sources agree: the shard directories on disk,
-//! the profile manifest, and the `Game` search paths in gameinfo.gi. This module
-//! compares them and names the disagreements, so developer mode can show what is
-//! wrong rather than a wall of numbers to eyeball.
-
 use crate::mod_manager::shard::{self, ProfileBase};
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
@@ -16,14 +9,9 @@ pub struct ShardInfo {
   pub index: u32,
   pub directory: String,
   pub exists: bool,
-  /// `pak##_dir.vpk` files the engine will load from this directory.
   pub enabled_vpks: u32,
-  /// Mods the manifest places in this shard.
   pub manifest_mods: u32,
-  /// Pak numbers above the engine's per-directory limit. Always false once a
-  /// profile has been migrated; a leftover from the pre-sharding layout.
   pub out_of_range_vpks: bool,
-  /// Whether this shard's search path is present in gameinfo.gi.
   pub in_gameinfo: bool,
 }
 
@@ -33,26 +21,20 @@ pub struct ShardReport {
   pub profile_folder: Option<String>,
   pub shard_capacity: u32,
   pub max_shards: u32,
-  /// True once a profile spills past its first shard.
   pub sharding_active: bool,
   pub shards_in_use: u32,
   pub total_enabled_vpks: u32,
   pub manifest_version: u32,
   pub manifest_mods: u32,
   pub manifest_enabled_mods: u32,
-  /// Search paths this profile's state implies.
   pub expected_search_paths: Vec<String>,
-  /// Addon search paths actually written between the mod manager markers.
   pub gameinfo_search_paths: Vec<String>,
   pub search_paths_in_sync: bool,
   pub needs_migration: bool,
   pub shards: Vec<ShardInfo>,
-  /// The disagreements, in the words the user needs to act on them.
   pub issues: Vec<String>,
 }
 
-/// Everything the report is derived from, gathered by the caller because each
-/// piece comes from a different owner.
 pub struct ShardReportInput<'a> {
   pub base: &'a ProfileBase,
   pub profile_folder: Option<String>,
@@ -233,8 +215,6 @@ mod tests {
     assert_eq!(report.total_enabled_vpks, 2);
   }
 
-  /// The exact failure a user hits after an upgrade: the files are sharded
-  /// correctly but gameinfo.gi still lists only the base folder.
   #[test]
   fn an_overflow_shard_missing_from_gameinfo_is_reported() {
     let temp = tempfile::tempdir().unwrap();

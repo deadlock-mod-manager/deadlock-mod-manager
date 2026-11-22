@@ -11,18 +11,13 @@ export const profileBackupModGroupSchema = z.object({
   randomize: z.boolean().optional(),
 });
 
-// Wraps the share format so backups restore through the same import path,
-// and adds groups and the description. Disabled mods can't be restored through
-// that path, so only their count is kept.
 export const profileBackupPayloadSchema = z.object({
   version: z.literal("1"),
   profile: v3ProfileSchema,
   disabledModCount: z.number().int().nonnegative().optional(),
-  // Backups saved before disabledModCount existed list the ids instead.
   disabledModIds: z.array(z.string()).max(2000).optional(),
   modGroups: z.array(profileBackupModGroupSchema).max(200),
   description: z.string().max(500).optional(),
-  // Shown when a mod has left GameBanana and can no longer be looked up.
   modNames: z.record(z.string(), z.string().max(200)).optional(),
   skippedLocalModCount: z.number().int().nonnegative(),
 });
@@ -58,8 +53,6 @@ const saveProfileBackupFieldsSchema = z.object({
   payload: profileBackupPayloadSchema,
 });
 
-// An update carries the last seen revision so a stale client can't overwrite
-// a newer save.
 export const saveProfileBackupInputSchema = z.union([
   saveProfileBackupFieldsSchema.extend({
     id: z.string(),

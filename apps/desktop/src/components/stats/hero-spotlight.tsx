@@ -17,7 +17,6 @@ import {
 } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
-/** The bars scale to the largest gap, but never so far that a 3% gap fills one. */
 const MIN_SCALE = 0.2;
 
 const Figure = ({
@@ -44,16 +43,10 @@ const Figure = ({
 interface HeroSpotlightProps {
   hero: HeroPerformance;
   info: DeadlockHero | undefined;
-  /** Per-match gaps to everyone on the hero; empty while they load. */
   metrics: BenchmarkMetric[];
   baseline: number;
 }
 
-/**
- * One hero up close: the headline numbers, then each per-match average set
- * against everyone else on the hero. Better always points right, so fewer
- * deaths reads as a win like everything else.
- */
 export const HeroSpotlight = ({
   hero,
   info,

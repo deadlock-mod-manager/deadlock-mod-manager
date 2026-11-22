@@ -3,11 +3,6 @@ import { ArrowsClockwiseIcon, WarningIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useBisect } from "@/hooks/use-bisect";
 
-/**
- * Shown instead of the normal banner when a session can't continue: it was
- * saved by an older version, or the banner itself failed. Putting the mods
- * back only needs what every session has saved since the first version.
- */
 export const BisectRecoveryBanner = ({
   reason,
 }: {

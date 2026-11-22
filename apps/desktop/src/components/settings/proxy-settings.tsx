@@ -65,13 +65,10 @@ export const ProxySettings = () => {
   const [draft, setDraft] = useState<ProxyConfig>(proxyConfig);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Re-sync draft if the persisted config changes from outside this form
-  // (e.g. store rehydration), but only when the user hasn't started editing.
   useEffect(() => {
     setDraft((current) =>
       isEqual(current, proxyConfig) ? current : proxyConfig,
     );
-    // We intentionally only react to proxyConfig changes here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proxyConfig]);
 

@@ -1,14 +1,7 @@
-/**
- * Deterministic randomness for the randomizer. A roll is fully described by its
- * seed, so a shared link reproduces the exact same hero, build and rules for
- * everyone who opens it - and the reroll button is just a new seed.
- */
-
 export type Rng = () => number;
 
 const UINT32 = 0x1_00_00_00_00;
 
-/** mulberry32 - small, fast, and good enough for picking items out of a list. */
 export const createRng = (seed: number): Rng => {
   let state = seed >>> 0;
   return () => {
@@ -45,11 +38,6 @@ export const shuffle = <T>(rng: Rng, values: readonly T[]): T[] => {
   return result;
 };
 
-/**
- * Picks one entry with the given weights. Used to bias item rolls towards the
- * upgrades Valve actually recommends for the rolled hero, without ever making
- * the rest of the shop unreachable.
- */
 export const weightedPick = <T>(
   rng: Rng,
   values: readonly T[],

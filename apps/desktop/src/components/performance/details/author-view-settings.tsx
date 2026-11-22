@@ -19,7 +19,6 @@ import type { OverrideAction } from "@/types/generated/OverrideAction";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { DetailsSection, EntryKey, entryKey } from "./details-parts";
 
-/** The default in the config's spelling, so a bool reads `0 (default 1)`, not `0 (default true)`. */
 const defaultText = (
   defaultValue: string,
   kind: ConvarKind,
@@ -158,11 +157,6 @@ const EntrySwitchList = ({
   );
 };
 
-/**
- * Camera and visibility settings follow the author and can be switched off;
- * developer and hideout tools stay off unless switched on. Each switch is a
- * saved tweak for this config.
- */
 export const AuthorViewSettings = ({
   configId,
   entries,

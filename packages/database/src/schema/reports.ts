@@ -10,7 +10,6 @@ export const reports = pgTable(
     id: typeId("id", "report")
       .primaryKey()
       .$defaultFn(() => generateId("report").toString()),
-    // Retained while the deployed API still writes internal mod IDs.
     modId: text("mod_id").references(() => mods.id, { onDelete: "cascade" }),
     provider: text("provider", { enum: policyProviders }),
     submissionType: text("submission_type", {

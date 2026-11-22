@@ -8,8 +8,6 @@ import {
   useCatalogSyncState,
 } from "@/hooks/use-gamebanana-catalog-sync";
 
-// Each refresh refetches every loaded store page and the dashboard queries;
-// the sync's own completion triggers a final refresh (see the sync mutation).
 const LIST_REFRESH_INTERVAL_MS = 10_000;
 
 export const CatalogSyncProgress = () => {
@@ -32,8 +30,6 @@ export const CatalogSyncProgress = () => {
     void queryClient.invalidateQueries({ queryKey: ["mods"] });
   }, [syncing, catalog.dataUpdatedAt, queryClient]);
 
-  // Routine background syncs only show in the bottom bar; the banner is for the
-  // first crawl, when the catalog is still filling in.
   const firstSync = syncing && catalog.data?.lastFullSyncAt === null;
   if (!firstSync && status !== "error") return null;
 

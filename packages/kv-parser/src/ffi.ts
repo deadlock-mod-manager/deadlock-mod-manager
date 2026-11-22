@@ -19,11 +19,9 @@ const suffix =
       ? "dylib"
       : "so";
 
-// Get the directory of this module file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Resolve library path relative to this package directory
 const packageRoot = join(__dirname, "..");
 const libPath =
   suffix === "dll"

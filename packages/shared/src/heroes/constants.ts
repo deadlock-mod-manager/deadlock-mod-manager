@@ -54,8 +54,6 @@ export const HERO_DEFINITIONS: HeroDefinitions = {
     ],
     regexSnippets: ["mo[^a-z0-9]*krill"],
   },
-  // Codenames "nurse" (Nurse Harrow) and "artist" (Violet) are common words in
-  // mod titles, so they are not aliases.
   [DeadlockHeroes.NurseHarrow]: {
     aliases: ["nurseharrow"],
     phrases: [["nurse", "harrow"]],

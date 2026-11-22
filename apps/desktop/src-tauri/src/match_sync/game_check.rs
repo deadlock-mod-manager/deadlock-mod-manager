@@ -1,5 +1,3 @@
-// Whether Deadlock is running, from its process and console log.
-
 use std::sync::Mutex;
 
 use deadlock_discord_presence::{console_log_path, is_game_running};

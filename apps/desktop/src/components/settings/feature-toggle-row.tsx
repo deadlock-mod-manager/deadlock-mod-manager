@@ -13,12 +13,10 @@ type FeatureToggleRowProps = {
   checked: boolean;
   disabled: boolean;
   badge?: ReactNode;
-  /** What the feature still leaves applied to the game while it is off. */
   leftover?: string | null;
   onCheckedChange: (checked: boolean) => void;
 };
 
-/** One optional feature, shown with the icon of the sidebar entry it controls. */
 export const FeatureToggleRow = ({
   id,
   icon: RowIcon,

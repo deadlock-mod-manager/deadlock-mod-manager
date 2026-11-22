@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
 import { buildTaxonomyDocument } from "../taxonomy";
 
-// Sources store these IDs, so a duplicate would merge two heroes or categories.
 test("taxonomy IDs are unique kebab-case", () => {
   const { heroes, contentTypes } = buildTaxonomyDocument();
   for (const entries of [heroes, contentTypes]) {

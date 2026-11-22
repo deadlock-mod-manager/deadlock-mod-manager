@@ -23,7 +23,6 @@ import { matchStatus } from "@/lib/stats/derive";
 import { formatClock } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
-/** deadlock-api usually has a match within minutes; past this it is a real miss. */
 const PROCESSING_WINDOW_S = 2 * 60 * 60;
 
 const endedAt = (entry: MatchHistoryEntry) =>
@@ -33,7 +32,6 @@ const isProcessing = (entry: MatchHistoryEntry | undefined) =>
   entry !== undefined &&
   Date.now() / 1000 - endedAt(entry) < PROCESSING_WINDOW_S;
 
-/** What the history already knows, so the user can tell which match this is. */
 const MatchSummary = ({
   entry,
   hero,
@@ -98,10 +96,6 @@ interface MatchUnavailableProps {
   onRetry: () => void;
 }
 
-/**
- * The match is in the player's history but deadlock-api has no details for it
- * yet. A fresh match reads as still processing, not as a failure.
- */
 export const MatchUnavailable = ({
   entry,
   hero,

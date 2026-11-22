@@ -23,7 +23,6 @@ const LEGEND = [
   { tone: "optIn", dot: "bg-sky-400" },
 ] as const;
 
-// Both layers must share these so the colored text sits under the caret.
 const LAYER_CLASS =
   "absolute inset-0 m-0 whitespace-pre rounded-md border px-3 py-2 font-mono text-xs leading-relaxed";
 
@@ -41,10 +40,6 @@ const ToneLegend = () => {
   );
 };
 
-/**
- * Textarea that colors each line by what the import review says happens to
- * it, drawn underneath transparent text.
- */
 export const ConfigTextArea = ({
   value,
   entries,
@@ -55,7 +50,6 @@ export const ConfigTextArea = ({
   className,
 }: {
   value: string;
-  /** The review's resolved entries; `null` before the text is reviewed. */
   entries: ResolvedEntry[] | null;
   onChange: (value: string) => void;
   onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
@@ -68,8 +62,6 @@ export const ConfigTextArea = ({
     () => highlightConfig(value, entries),
     [value, entries],
   );
-  // Config lines must not wrap, but the placeholder should; the highlight
-  // layer is empty then, so there is nothing to keep aligned.
   const isEmpty = value.length === 0;
 
   return (

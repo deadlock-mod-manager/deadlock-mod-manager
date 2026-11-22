@@ -14,7 +14,6 @@ use super::state::MANAGER;
 pub struct ProfileVpkSnapshot {
   manifest: ProfileVpkManifest,
   files: Vec<SnapshotVpkFile>,
-  /// Manifest entries whose VPKs the user deleted outside DMM.
   missing: Vec<MissingModFiles>,
 }
 
@@ -64,8 +63,6 @@ impl ProfileVpkSnapshot {
 pub async fn get_profile_vpk_snapshot(
   profile_folder: Option<String>,
 ) -> Result<ProfileVpkSnapshot, Error> {
-  // Keep the filesystem listing and manifest in the same critical section:
-  // a reorder between separate IPC reads would compare two different layouts.
   let mut manager = MANAGER
     .lock()
     .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
@@ -75,8 +72,6 @@ pub async fn get_profile_vpk_snapshot(
   ProfileVpkSnapshot::read(&base, mods_store.as_deref())
 }
 
-/// Forget mods whose every VPK was deleted outside DMM. Only mods that are
-/// still orphaned under the manager lock are dropped; their ids are returned.
 #[tauri::command]
 pub async fn forget_orphaned_mods(
   profile_folder: Option<String>,
@@ -88,9 +83,6 @@ pub async fn forget_orphaned_mods(
   manager.forget_orphaned_mods(&mod_ids, profile_folder)
 }
 
-/// Start reporting VPK changes under the game's addons roots as
-/// `addons-vpks-changed` events. Safe to call again, e.g. after the game path
-/// changes.
 #[tauri::command]
 pub async fn watch_addons_vpks(app_handle: AppHandle) -> Result<(), Error> {
   let citadel = {

@@ -12,7 +12,6 @@ pub(crate) enum ParseError {
   MissingRoot,
 }
 
-/// A GameInfo view of the parser's lossless source inspection.
 pub(crate) struct Document {
   pub sites: Vec<Site>,
   pub comments: Vec<Comment>,
@@ -20,7 +19,6 @@ pub(crate) struct Document {
 
 impl Document {
   pub fn parse(text: &str) -> Result<Self, ParseError> {
-    // Source 2 reads backslashes literally in gameinfo.gi.
     let document = SourceDocument::parse(
       text,
       ParseOptions {

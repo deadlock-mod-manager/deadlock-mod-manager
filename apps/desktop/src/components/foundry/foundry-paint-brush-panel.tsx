@@ -23,7 +23,6 @@ import { SectionLabel } from "./foundry-paint-section-label";
 import { SwatchRow } from "./foundry-paint-swatch-row";
 import { ScaleSlider } from "./foundry-paint-scale-slider";
 
-/** What the brush is pointed at, for the brush header and the apply button. */
 export const useSelectionTitle = () => {
   const { t } = useTranslation();
   const { paintSelection, paintParts } = useFoundry();
@@ -37,7 +36,6 @@ export const useSelectionTitle = () => {
   return labels.join(", ");
 };
 
-/** The right column: color, adjustments and pattern, then Paint. */
 export const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
   const { manifest, workspace, paintSelection, appliedPaint, paintParts } =

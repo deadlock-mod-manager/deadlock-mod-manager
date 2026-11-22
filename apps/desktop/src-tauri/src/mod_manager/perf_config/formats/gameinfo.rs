@@ -1,5 +1,3 @@
-//! Full gameinfo.gi files and ConVars snippets.
-
 use super::kv::{Comment, parse_kv};
 use super::{ParsedConfig, ParsedLeaf, clean, truncate};
 use crate::mod_manager::perf_config::types::{IgnoredKind, IgnoredPart, ImportFormat};
@@ -65,9 +63,6 @@ pub(super) fn parse_gameinfo(text: &str) -> ParsedConfig {
   }
 }
 
-/// A whole gameinfo.gi has FileSystem or a handful of engine sections; a
-/// `GameInfo { ConVars { … } }` wrapper around a few convars does not, and
-/// matching it against stock files would invent changes.
 fn looks_like_whole_file(leaves: &[ParsedLeaf]) -> bool {
   let mut sections: Vec<String> = Vec::new();
   for leaf in leaves.iter().filter(|leaf| leaf.path.len() > 1) {

@@ -11,12 +11,9 @@ const COLLECTION_ID = "950001";
 export const COLLECTION_NAME = "E2E Collection";
 export const collectionMods = [
   { id: "940001", name: "E2E Collection Skin" },
-  // Its first transfer fails; the retry succeeds.
   { id: "940002", name: "E2E Collection Flaky Skin" },
 ];
-// After the outdated-mod cutoff, so no card is badged as outdated.
 const timestamp = 1_793_000_000;
-// Collections below GameBanana's listing threshold are never shown or crawled.
 const LISTED_ITEM_COUNT = 10;
 
 const json = (path: string, body: string): FixtureRoute => ({
@@ -123,7 +120,6 @@ export const collectionRoutes = async () => {
           `/apiv11/Mod/${id}/DownloadPage`,
           JSON.stringify({ _aFiles: files }),
         ),
-        // Update checks for downloaded mods.
         {
           ...json(
             "/Core/Item/Data",

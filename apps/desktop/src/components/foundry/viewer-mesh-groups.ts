@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { z } from "zod";
 
-/** One choice of a body group, as the backend tags it on the glTF scene. */
 const meshGroupChoice = z.object({
   bodyGroup: z.string(),
   name: z.string(),
@@ -23,17 +22,10 @@ interface BodyGroup {
 }
 
 export interface MeshGroupTable {
-  /** Body groups with more than one choice, in model order. */
   bodyGroups: BodyGroup[];
-  /** The choice the game shows by default, per body group. */
   defaults: Record<string, number>;
 }
 
-/**
- * The model's switchable body groups, or null when it has none. Choices with
- * no meshes are left out: skins often keep the game's group table but drop
- * the alternates, and picking one would hide the whole model.
- */
 export const readMeshGroups = (root: THREE.Object3D): MeshGroupTable | null => {
   const parsed = sceneMeshGroups.safeParse(root.userData);
   if (!parsed.success) return null;
@@ -69,10 +61,6 @@ export const readMeshGroups = (root: THREE.Object3D): MeshGroupTable | null => {
   return { bodyGroups, defaults };
 };
 
-/**
- * Shows the meshes of the chosen body-group choices and hides the other
- * choices'. Meshes outside every switchable group stay as they are.
- */
 export const applyMeshGroups = (
   root: THREE.Object3D,
   table: MeshGroupTable,

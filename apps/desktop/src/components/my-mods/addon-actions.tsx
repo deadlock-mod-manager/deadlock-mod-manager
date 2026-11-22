@@ -8,13 +8,11 @@ import type { LocalAddonInfo } from "@/types/mods";
 interface AddonActionsProps {
   addon: LocalAddonInfo;
   isIdentified: boolean;
-  /** A file the game doesn't load: it can't be adopted as installed. */
   ignoredByGame: boolean;
   isAlreadyInLibrary: boolean;
   isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
   onExternalLinkClick?: () => void;
-  /** Delete / Quarantine (and Add, for a leftover) for a file nothing owns. */
   fileActions?: ReactNode;
 }
 

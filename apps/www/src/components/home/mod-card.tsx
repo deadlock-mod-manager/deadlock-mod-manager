@@ -12,7 +12,6 @@ const categoryKeys = {
   "Quality of Life": "qualityOfLife",
 } as const satisfies Record<PreviewMod["category"], string>;
 
-/** A community mod from the store snapshot, linked to its GameBanana page. */
 export const ModCard = ({
   mod,
   showDownloads = false,

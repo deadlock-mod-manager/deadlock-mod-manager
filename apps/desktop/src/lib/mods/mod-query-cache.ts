@@ -18,10 +18,6 @@ const cachedMods = (data: CachedModList | undefined): ModDto[] => {
   return data.items;
 };
 
-/**
- * Looks a mod up in any cached list under `MODS_LIST_QUERY_KEY` (store pages,
- * dashboard, favorites) so detail views can render before their own fetch.
- */
 export const findModInModsListCache = (
   queryClient: QueryClient,
   remoteId: string,

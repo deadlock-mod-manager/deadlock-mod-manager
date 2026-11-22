@@ -16,17 +16,9 @@ import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 export const dashboardCatalogQueryKey = (hideNsfw: boolean) =>
   [...MODS_LIST_QUERY_KEY, "dashboard", { hideNsfw }] as const;
 
-// Headroom for candidates the dashboard hooks still drop client-side (not
-// downloadable, no preview image or hero).
 const FEATURED_CANDIDATES = FEATURED_POOL_SIZE * 3;
 const TRENDING_CANDIDATES = TRENDING_LIMIT * 2;
 
-/**
- * The slice of the catalog the dashboard ranks: each category's top downloads
- * the featured picks draw from, plus its top recent and all-time mods. Feeding
- * this to `useFeaturedMods` and `useTrendingByCategory` yields the same picks
- * as the whole catalog, without loading all of it.
- */
 export const getDashboardCatalogMods = async ({
   hideNsfw,
   now = new Date(),

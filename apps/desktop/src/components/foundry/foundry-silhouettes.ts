@@ -1,10 +1,5 @@
 import * as THREE from "three";
 
-/**
- * A hero's shape as a cloud of points, so the loading embers can build the
- * actual hero rather than a generic figure. Points are normalized: centred on
- * x and z, feet at y = -1, head at y = 0.9.
- */
 export type Silhouette = Float32Array;
 
 const POINT_COUNT = 2400;
@@ -13,7 +8,6 @@ const memory = new Map<string, Silhouette | null>();
 
 const slug = (hero: string) => hero.toLowerCase().replace(/[^a-z0-9]+/g, "_");
 
-/** Quantize to a signed byte per axis over ±2; plenty for a cloud of embers. */
 const encode = (points: Silhouette): string => {
   const bytes = new Int8Array(points.length);
   for (let i = 0; i < points.length; i++) {
@@ -35,10 +29,6 @@ const decode = (encoded: string): Silhouette => {
   return Float32Array.from(bytes, (byte) => byte / 63.5);
 };
 
-/**
- * The silhouette for `hero`: one captured on this machine, else the one that
- * ships with the app, else null for a hero neither has seen yet.
- */
 export const loadSilhouette = async (
   hero: string,
 ): Promise<Silhouette | null> => {
@@ -64,24 +54,14 @@ export const loadSilhouette = async (
   }
 };
 
-/** Whether `hero` already has a silhouette captured on this machine. */
 export const hasCapturedSilhouette = (hero: string) =>
   localStorage.getItem(STORAGE_PREFIX + slug(hero)) !== null;
 
-/** Mask resolution: enough for a crisp outline, small enough to read fast. */
 const MASK_WIDTH = 240;
 
-/** Source models face +X; the viewer frames them from just off that axis. */
 const FRONT = new THREE.Vector3(1, 0.04, 0.18).normalize();
-/** A portrait frame, so a standing hero fills the mask. */
 const MASK_ASPECT = 0.6;
 
-/**
- * Render the posed model as a flat mask from the front and scatter points
- * inside it, then keep them for the next time this hero opens. A mask rather
- * than the mesh itself: the embers should draw the hero's outline as players
- * see it, and a 3D point cloud shows the back of the coat through the front.
- */
 export const captureSilhouette = (
   hero: string,
   renderer: THREE.WebGLRenderer,
@@ -130,7 +110,6 @@ export const captureSilhouette = (
     target.dispose();
   }
 
-  // Pixel rows run bottom-up in a WebGL read, which is already y-up.
   const filled: number[] = [];
   let minY = height;
   let maxY = 0;
@@ -158,7 +137,6 @@ export const captureSilhouette = (
     const y = filled[pick + 1] + Math.random();
     sampled[i * 3] = (x - centreX) * scale;
     sampled[i * 3 + 1] = (y - minY) * scale - 1;
-    // A little depth so the cloud catches the light like embers, not a stencil.
     sampled[i * 3 + 2] = (Math.random() - 0.5) * 0.12;
   }
 
@@ -166,7 +144,5 @@ export const captureSilhouette = (
   memory.set(key, sampled);
   try {
     localStorage.setItem(STORAGE_PREFIX + key, encode(sampled));
-  } catch {
-    // Storage full: the silhouette still serves this session.
-  }
+  } catch {}
 };

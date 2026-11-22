@@ -33,7 +33,6 @@ export const typeReferenceName = (
 export const isGenericAlias = (alias: ESTree.TSTypeAliasDeclaration): boolean =>
   alias.typeParameters !== null && alias.typeParameters !== undefined;
 
-/** Names the alias a type refers to, or null when type arguments are applied. */
 export const referencedAliasName = (type: ESTree.TSType): string | null => {
   if (type.type === "TSParenthesizedType")
     return referencedAliasName(type.typeAnnotation);

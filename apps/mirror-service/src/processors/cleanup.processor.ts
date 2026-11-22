@@ -29,7 +29,6 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
     try {
       this.logger.info("Starting cleanup worker");
 
-      // Find unused files based on retention policy
       const unusedFilesResult =
         await this.mirroredFileRepository.findUnusedFiles(
           env.CLEANUP_RETENTION_DAYS,
@@ -52,7 +51,6 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
 
       for (const file of unusedFiles) {
         try {
-          // Delete from S3
           const deleteResult = await S3Service.instance.deleteFile(file.s3Key);
           if (deleteResult.isErr()) {
             this.logger
@@ -63,7 +61,6 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
             continue;
           }
 
-          // Remove from database
           const dbDeleteResult = await this.mirroredFileRepository.deleteById(
             file.id,
           );

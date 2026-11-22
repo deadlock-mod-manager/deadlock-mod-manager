@@ -40,7 +40,6 @@ function readPath(path) {
     const separator = path.indexOf("\t");
     return path.slice(2, separator < 0 ? undefined : separator);
   }
-  // Git quotes UTF-8 bytes with C octal escapes rather than JSON escapes.
   const json = path.replace(/\\(?:[0-7]{1,3}|.)/g, (escape) => {
     if (/^\\[0-7]/.test(escape)) {
       return `\\u${Number.parseInt(escape.slice(1), 8).toString(16).padStart(4, "0")}`;

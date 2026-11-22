@@ -23,7 +23,6 @@ type PluginAccessSheetProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** What a plugin may use, with the controls to change or take it back. */
 export const PluginAccessSheet = ({
   plugin,
   open,

@@ -18,7 +18,6 @@
     "oxc.path.oxlint": "./node_modules/.bin/oxlint",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    // TypeScript performance optimizations
     "js/ts.tsserver.automaticTypeAcquisition.enabled": false,
     "js/ts.preferences.includePackageJsonAutoImports": "off",
     "js/ts.suggest.autoImports": true,
@@ -26,7 +25,6 @@
     "js/ts.suggest.completeFunctionCalls": false,
     "js/ts.suggest.jsdoc.generateReturns": false,
     "js/ts.workspaceSymbols.scope": "currentProject",
-    // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,
       "**/dist": false,

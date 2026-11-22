@@ -51,7 +51,6 @@ fn inline_request(entries: Vec<ConfigEntry>) -> PerfApplyRequest {
   }
 }
 
-/// A code for an arbitrary JSON payload, bypassing `encode`'s checks.
 fn code_for_json(json: &[u8]) -> String {
   let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
   encoder.write_all(json).unwrap();

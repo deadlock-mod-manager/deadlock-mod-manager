@@ -25,10 +25,6 @@ const ID_FLAG = "mod-of-the-week-id";
 const UNTIL_FLAG = "mod-of-the-week-until";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * Pins a mod as mod of the week on the desktop dashboard for a number of
- * days. The desktop reads the pin from the `mod-of-the-week-*` feature flags.
- */
 export class ModOfTheWeekCommand extends Command {
   constructor(context: Command.LoaderContext, options: Command.Options) {
     super(context, { ...options });

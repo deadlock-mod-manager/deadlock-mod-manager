@@ -15,7 +15,6 @@ import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSumm
 
 export const MANAGE_PLUGINS_PATH = "/plugins/manage";
 
-/** Turn on/off (turning on also restarts a plugin stopped after errors) and remove. */
 export const usePluginActions = (plugin: ExternalPluginSummary) => {
   const { t } = useTranslation();
   const navigate = useNavigate();

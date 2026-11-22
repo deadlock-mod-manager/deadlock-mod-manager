@@ -15,11 +15,6 @@ import { overlaySurface } from "./viewer-tools";
 import { EASE_OUT_QUART, isPlainKey, loopTime } from "./viewer-transport-utils";
 import { useAnimationFrame } from "./use-viewer-animation-frame";
 
-/**
- * The hero's four abilities along the bottom of the viewport, like the in-game
- * HUD. The number keys cast them, as they would in a match; the playing one
- * drains a cooldown sweep as its animation runs. H tucks the bar away.
- */
 export const AbilityBar = ({
   slots,
   activeId,

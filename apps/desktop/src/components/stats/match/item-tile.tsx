@@ -15,7 +15,6 @@ export const slotColor = (slot: string | undefined) =>
 
 export const teamColor = (team: number) => `var(--team-${team === 0 ? 0 : 1})`;
 
-/** A team's swatch, name and result, as every team block on the match page opens. */
 export const TeamLabel = ({ team, won }: { team: number; won: boolean }) => {
   const { t } = useTranslation();
   const tone = won ? WIN_COLOR : LOSS_COLOR;
@@ -37,7 +36,6 @@ export const TeamLabel = ({ team, won }: { team: number; won: boolean }) => {
   );
 };
 
-/** An item the way the shop shows it: the art on its slot colour. */
 export const ItemTile = ({
   item,
   className,
@@ -47,7 +45,6 @@ export const ItemTile = ({
   item: DeadlockItem;
   className?: string;
   faded?: boolean;
-  /** Extra tooltip line under the name, e.g. when it was bought. */
   hint?: string;
 }) => {
   const image = item.shop_image_webp ?? item.shop_image;

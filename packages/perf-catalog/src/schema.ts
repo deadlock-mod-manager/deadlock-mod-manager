@@ -1,17 +1,9 @@
 import { z } from "zod";
 
-/**
- * Shape of `data/catalog.json`. The desktop app deserializes the same file in
- * Rust (`apps/desktop/src-tauri/src/mod_manager/perf_config/catalog.rs`), so a
- * change here needs the matching change there and a bump of SCHEMA_VERSION in
- * both places.
- */
 export const SCHEMA_VERSION = 1;
 
 const configEntrySchema = z.object({
-  /** Path below the `GameInfo` root, e.g. `["ConVars", "r_ssao"]`. */
   path: z.array(z.string()).min(1),
-  /** Raw value without quotes; `null` comments the key out. */
   value: z.string().nullable(),
 });
 
@@ -66,7 +58,6 @@ const convarMetaSchema = z.object({
 const categorySchema = z.object({
   id: z.string(),
   label: z.string(),
-  /** How much turning things off in this category moves the Looks ⟷ Frames scale. */
   weight: z.number().min(0),
 });
 
@@ -108,11 +99,8 @@ const catalogPresetSchema = z.object({
   updatedAt: z.string().nullable().optional(),
   baseBuild: z.number().int().nullable().optional(),
   source: presetSourceSchema,
-  /** The author's changes relative to `baseBuild`, not a whole file. */
   entries: z.array(configEntrySchema),
-  /** The first variant's settings, which is all that older apps read. */
   videoSettings: z.array(videoSettingSchema).optional(),
-  /** Every video.txt the author ships, when there is more than one. */
   videoVariants: z
     .array(
       z.object({ label: z.string(), settings: z.array(videoSettingSchema) }),
@@ -136,7 +124,6 @@ const catalogCommunityConfigSchema = z.object({
   settingsCount: z.number().int().optional(),
   engineEditCount: z.number().int().optional(),
   categoryCounts: z.record(z.string(), z.number().int()).optional(),
-  /** The pinned archive also ships VPKs, so the upload is a mod with a config, not only a config. */
   bundlesVpks: z.boolean().optional(),
 });
 
@@ -154,16 +141,13 @@ const catalogRulesSchema = z.object({
 
 export const catalogSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
-  /** Sortable revision: `YYYY.MM.DD-N`. */
   version: z.string().regex(/^\d{4}\.\d{2}\.\d{2}-\d+$/),
   generatedAt: z.string(),
   latestBuild: z.number().int().nullable().optional(),
-  /** Newest game build in the convar dump history: what convar statuses describe. */
   convarBuild: z.number().int().nullable().optional(),
   categories: z.array(categorySchema),
   sectionCategories: z.record(z.string(), z.string()).optional(),
   convars: z.array(convarMetaSchema),
-  /** Valve's stock files, newest first. */
   stock: z.array(stockBuildSchema).optional(),
   presets: z.array(catalogPresetSchema).optional(),
   community: z.array(catalogCommunityConfigSchema).optional(),

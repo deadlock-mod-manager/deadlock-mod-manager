@@ -3,7 +3,6 @@ import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { PresetSummary } from "@/types/generated/PresetSummary";
 import type { UserPerfConfig } from "@/lib/store/slices/performance";
 
-/** Config ids are namespaced so presets and the user's own configs never collide. */
 export const presetConfigId = (presetId: string) => `preset:${presetId}`;
 
 export const isPresetConfigId = (configId: string) =>
@@ -42,7 +41,6 @@ export const userConfigApplyRequest = (
   ...applyOptions(options),
 });
 
-/** Picks the tweaks out of a draft, or out of a whole request. */
 const applyOptions = ({
   overrides,
   includeEngineSections,
@@ -55,7 +53,6 @@ const applyOptions = ({
   videoVariant,
 });
 
-/** Tweaks for a config the user hasn't changed: video.txt settings are written. */
 export const DEFAULT_APPLY_OPTIONS: EditorDraft = {
   overrides: [],
   includeEngineSections: true,
@@ -63,6 +60,5 @@ export const DEFAULT_APPLY_OPTIONS: EditorDraft = {
   videoVariant: null,
 };
 
-/** Stable key for an entry path, matching the backend's case-insensitive comparison. */
 export const pathKey = (path: string[]) =>
   path.map((part) => part.toLowerCase()).join("/");

@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useRestoreVideoBackup } from "@/hooks/performance/use-perf-mutations";
 import { usePerfStatus } from "@/hooks/performance/use-perf-queries";
 
-/** Offers the player's own video.txt back once the mod manager has written it. */
 export const VideoBackupNotice = ({ action }: { action?: ReactNode }) => {
   const { t, i18n } = useTranslation();
   const { data: status } = usePerfStatus();

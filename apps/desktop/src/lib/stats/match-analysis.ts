@@ -6,19 +6,10 @@ import type {
 } from "@/lib/stats/api";
 import { statAt } from "@/lib/stats/match-detail";
 
-/**
- * Everything the match page derives from one metadata payload. Stats are sampled
- * every few minutes, so anything "at minute N" is interpolated between samples.
- */
-
 export const lastStat = (
   player: MatchMetadataPlayer,
 ): MatchMetadataStat | undefined => player.stats[player.stats.length - 1];
 
-/**
- * A sampled series read at `time`: linear between the samples around it, from
- * zero before the first, and held after the last. Samples must be sorted.
- */
 export const interpolate = (
   samples: Array<[time: number, value: number]>,
   time: number,
@@ -35,7 +26,6 @@ export const interpolate = (
   return before[1];
 };
 
-/** Net worth at `time`, between the stat samples around it. */
 export const soulsAt = (stats: MatchMetadataStat[], time: number): number =>
   interpolate(
     stats.map((stat) => [stat.time_stamp_s, stat.net_worth]),
@@ -44,11 +34,9 @@ export const soulsAt = (stats: MatchMetadataStat[], time: number): number =>
 
 export interface LeadPoint {
   time: number;
-  /** Team 0's souls minus team 1's. */
   lead: number;
 }
 
-/** Team souls difference at every sampled moment, starting from an even 0:00. */
 export const soulLead = (players: MatchMetadataPlayer[]): LeadPoint[] => {
   const times = [
     ...new Set(
@@ -65,19 +53,14 @@ export const soulLead = (players: MatchMetadataPlayer[]): LeadPoint[] => {
   return points[0]?.time === 0 ? points : [{ time: 0, lead: 0 }, ...points];
 };
 
-/** A lead smaller than this is noise, not a peak worth naming. */
 const MIN_PEAK_LEAD = 1500;
-/** A peak on (or right before) the last sample is the final lead, labelled anyway. */
 const MIN_PEAK_GAP_S = 240;
 
 export interface LeadStory {
-  /** Each team's biggest lead, when it was real and came before the end. */
   peaks: Array<{ team: number; time: number; lead: number }>;
-  /** The last moment the lead changed hands, and who took it. */
   swing: { time: number; team: number } | null;
 }
 
-/** The moments worth labelling on a soul-lead line. */
 export const leadStory = (lead: LeadPoint[]): LeadStory => {
   const end = lead[lead.length - 1];
   if (!end) return { peaks: [], swing: null };
@@ -98,7 +81,6 @@ export const leadStory = (lead: LeadPoint[]): LeadStory => {
   for (const point of lead) {
     if (point.lead === 0) continue;
     if (previous && Math.sign(previous.lead) !== Math.sign(point.lead)) {
-      // Where the line crosses zero between the two samples.
       const t = previous.lead / (previous.lead - point.lead);
       swing = {
         time: previous.time + t * (point.time - previous.time),
@@ -111,17 +93,11 @@ export const leadStory = (lead: LeadPoint[]): LeadStory => {
 };
 
 export interface KillEvent {
-  /** Slot of the player who died; with `time`, unique per kill. */
   victim: number;
   time: number;
-  /** The team that got the kill. */
   team: number;
 }
 
-/**
- * Every player kill, read off the victims' deaths so each one counts once.
- * Deaths without an enemy killer (neutrals, falls) are not kills.
- */
 export const killTimeline = (players: MatchMetadataPlayer[]): KillEvent[] => {
   const teamOf = new Map(
     players.map((player) => [player.player_slot, player.team]),
@@ -180,13 +156,10 @@ const placementValue = (
 export interface Placement {
   metric: PlacementMetric;
   value: number;
-  /** 1 is the best in the lobby. */
   rank: number;
-  /** Team of each lobby slot, best to worst, for the strip. */
   order: Array<{ slot: number; team: number; isMe: boolean }>;
 }
 
-/** Where `me` finished in the lobby on each metric; fewer deaths ranks higher. */
 export const lobbyPlacements = (
   players: MatchMetadataPlayer[],
   me: MatchMetadataPlayer,
@@ -217,9 +190,7 @@ export const lobbyPlacements = (
 
 export interface Duel {
   enemy: MatchMetadataPlayer;
-  /** Times `me` killed this enemy. */
   kills: number;
-  /** Times this enemy killed `me`. */
   deaths: number;
 }
 
@@ -240,7 +211,6 @@ export const duels = (
     }))
     .sort((a, b) => b.kills + b.deaths - (a.kills + a.deaths));
 
-/** Laning is over by the first mid-game objectives; 9:00 is the last sample before. */
 export const LANE_END_S = 540;
 
 export interface LaneSide {
@@ -249,7 +219,6 @@ export interface LaneSide {
   souls: number;
 }
 
-/** The player's lane, both sides, with souls when laning ended. */
 export const laneMatchup = (
   players: MatchMetadataPlayer[],
   me: MatchMetadataPlayer,
@@ -274,7 +243,6 @@ export const laneMatchup = (
   return sides.every((side) => side.players.length > 0) ? sides : null;
 };
 
-/** The laner with the most kills on the other pair before laning ended, if 2+. */
 export const laneTopKiller = (
   sides: LaneSide[],
 ): { player: MatchMetadataPlayer; kills: number } | null => {
@@ -308,11 +276,9 @@ export const laneTopKiller = (
 export interface Purchase {
   item: DeadlockItem;
   time: number;
-  /** `null` while the item was still held at the end. */
   soldAt: number | null;
 }
 
-/** Shop purchases only; metadata lists ability upgrades in the same array. */
 export const purchases = (
   entries: MatchMetadataItem[],
   itemsById: Map<number, DeadlockItem>,
@@ -338,7 +304,6 @@ export type SlotType = (typeof SLOT_TYPES)[number];
 export const isSlotType = (value: string | undefined): value is SlotType =>
   SLOT_TYPES.some((slot) => slot === value);
 
-/** Souls spent per slot type, counting sold items too: the souls were spent. */
 export const spendBySlot = (bought: Purchase[]) => {
   const spend = { weapon: 0, vitality: 0, spirit: 0 };
   for (const { item } of bought) {
@@ -349,6 +314,5 @@ export const spendBySlot = (bought: Purchase[]) => {
   return spend;
 };
 
-/** The first purchase of a tier or higher, the usual "power spike" marker. */
 export const firstOfTier = (bought: Purchase[], tier: number) =>
   bought.find((purchase) => (purchase.item.item_tier ?? 0) >= tier) ?? null;

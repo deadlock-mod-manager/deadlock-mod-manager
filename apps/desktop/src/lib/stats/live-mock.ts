@@ -6,12 +6,6 @@ import type { GamePhase } from "@/types/generated/GamePhase";
 import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
 import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
 
-/**
- * Dev-only fixtures for the Live tab, so every state can be checked against the
- * designs without a running match. Picked from the dev toolbar on the tab and
- * remembered in localStorage.
- */
-
 export const LIVE_MOCK_SCENARIOS = [
   "notInstalled",
   "closed",
@@ -36,7 +30,6 @@ export interface LiveMock {
   yourAccountId: number;
   yourBadge: number;
   result: "win" | "loss" | null;
-  /** Overall grades the live board ended matches on, by match id. */
   finalGrades: Record<string, Grade>;
 }
 
@@ -70,7 +63,6 @@ const ENEMY: Row[] = [
   ["Sol", "Apollo", 14, 3, 3, 5, 11_800, 4400],
 ];
 
-/** Lobby records, keyed by player name: overall and on the hero they play. */
 const RECORDS = {
   Stormix: {
     overall: [1400, 742, 6],
@@ -155,7 +147,6 @@ const accountOf = (name: string) =>
 
 const NOW_MINUTES = 18;
 
-/** Souls by minute for the bracket, and for a player pulling ahead of it. */
 const bracketSouls = (minutes: number) => 620 * minutes + 15 * minutes ** 2;
 const yourSouls = (minutes: number) =>
   bracketSouls(minutes) * (0.9 + 0.0138 * minutes);
@@ -204,7 +195,6 @@ const toPlayer = (
 
 const MATCH_ID = "38201445";
 
-/** Where each scenario's match is; the rest have no lobby. */
 const LOBBY_PHASES = {
   notInstalled: null,
   closed: null,
@@ -212,7 +202,6 @@ const LOBBY_PHASES = {
   pregame: "pregame",
   inMatch: "inProgress",
   matchOver: "ended",
-  // Back in the hideout, the lobby closed; the backend kept the board.
   afterMatch: null,
 } satisfies Record<LiveMockScenario, GamePhase | null>;
 
@@ -250,10 +239,6 @@ const match = (
   ranked_calibration_match: null,
 });
 
-/**
- * Builds one scenario. Hero ids come from the live catalog, since the fixtures
- * only know heroes by the names the top bar prints.
- */
 export const buildLiveMock = (
   scenario: LiveMockScenario,
   heroIdOf: (name: string) => number | undefined,

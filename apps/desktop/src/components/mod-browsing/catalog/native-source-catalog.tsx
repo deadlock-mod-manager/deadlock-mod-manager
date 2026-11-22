@@ -67,7 +67,6 @@ export const NativeSourceCatalog = ({
         nativeListingMatchesContentType(listing, contentType) &&
         nativeListingVisible(listing, hideAdult),
     ) ?? [];
-  // The bridge only feeds the Stats Live tab.
   const showLiveBridge =
     isStatsEnabled &&
     !!source &&

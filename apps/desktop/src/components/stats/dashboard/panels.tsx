@@ -56,11 +56,6 @@ import {
   TrendsSkeleton,
 } from "./panel-skeletons";
 
-/**
- * The hand-built sections of the original Stats tabs, placeable like any other
- * widget. They keep their own layout and interactions (hero selection, player
- * cards), so the editor offers them as a whole rather than as chart options.
- */
 export const PANEL_IDS = [
   "profile",
   "trends",
@@ -82,19 +77,14 @@ export type PanelId = (typeof PANEL_IDS)[number];
 
 type AccountData = DashboardData & { accountId: number };
 
-/** The frame gates account and history, so `render` only runs once both are there. */
 type PanelDef = {
   icon: ComponentType<{ className?: string }>;
   needsHistory: boolean;
-  /** How a tab that holds nothing but this panel stands apart in the tab row. */
   tab?: {
-    /** Drawn in place of the tab's own icon. */
     icon: ComponentType<{ className?: string }>;
     activeClassName: string;
-    /** Takes the place of the page's filters, which mean nothing to the panel. */
     toolbar: ComponentType;
   };
-  /** Shaped like the panel's cards, so the page keeps its layout while loading. */
   skeleton: () => ReactNode;
 } & (
   | { needsAccount: true; render: (data: AccountData) => ReactNode }
@@ -116,7 +106,6 @@ const ItemsPanel = ({ accountId }: { accountId: number }) => {
   );
 };
 
-/** The rank bracket both bracket panels compare with; one shared request. */
 const useBracket = () => {
   const { stats, scope, rankAssets } = useDashboardData();
   const benchmark = useBracketBenchmark(stats, scope);
@@ -314,7 +303,6 @@ const PANELS = {
   partyPlanner: {
     icon: UsersRound,
     skeleton: () => <ListSkeleton rows={6} />,
-    // Global hero stats, so it works without an account or match history.
     needsAccount: false,
     needsHistory: false,
     render: ({ heroesById, rankAssets, scope }) => (
@@ -328,7 +316,6 @@ const PANELS = {
   liveScoreboard: {
     icon: Radio,
     skeleton: () => <ListSkeleton rows={6} />,
-    // Read from the running game's console log, so no account is involved.
     needsAccount: false,
     needsHistory: false,
     tab: {
@@ -347,7 +334,6 @@ const isPanelId = (id: string): id is PanelId =>
 export const panelDef = (id: string): PanelDef | undefined =>
   isPanelId(id) ? PANELS[id] : undefined;
 
-/** The panel `tab` is devoted to: every widget on it is that one panel. */
 export const tabPanel = (tab: DashboardTab): PanelDef | undefined => {
   const [first, ...rest] = tab.widgets;
   if (first?.source.kind !== "panel") return undefined;

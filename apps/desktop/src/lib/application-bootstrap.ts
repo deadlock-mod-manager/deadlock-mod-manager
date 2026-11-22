@@ -57,14 +57,11 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
 
   await initializeApiUrl(getRuntimeServiceOrigin(runtime, "dmmApi"));
   await syncProxyConfigToBackend();
-  // The backend starts enforced, so a failed sync leaves the guard on.
   await applyGameGuardSetting(
     usePersistedStore.getState().blockActionsWhileGameRunning,
   ).catch((error) => {
     logger.withError(error).warn("Failed to sync the game guard setting");
   });
-  // The backend starts with segmented downloads off, so a failed sync leaves
-  // them off.
   await applySegmentedDownloadsSetting(
     usePersistedStore.getState().segmentedDownloads,
   ).catch((error) => {
@@ -82,7 +79,6 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
       .warn("Policy refresh failed; keeping the last cached policy");
   });
   await downloadManager.init();
-  // Tauri saves the store on exit with whatever writes have reached it.
   void getCurrentWindow().onCloseRequested(async (event) => {
     await flushPendingWrites();
     if (await hideToTrayOnClose().catch(() => false)) {

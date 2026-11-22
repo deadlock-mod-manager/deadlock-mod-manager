@@ -31,7 +31,6 @@ const singleFile: ModFileTree = {
   has_multiple_files: false,
 };
 
-// Two files from the same archive: the user has to pick which ones to install.
 const needsPick: ModFileTree = {
   files: [
     {

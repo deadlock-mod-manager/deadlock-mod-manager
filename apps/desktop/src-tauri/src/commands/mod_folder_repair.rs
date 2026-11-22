@@ -93,7 +93,6 @@ fn rebuild_manifest(
           "Cannot determine which shard owns {name}"
         )));
       }
-      // A file missing from disk takes only its own name with it.
       if names_aligned && !matches.is_empty() {
         kept_names.push(entry.original_vpk_names[index].clone());
       }
@@ -122,7 +121,6 @@ fn rebuild_manifest(
       continue;
     }
     if !seed.enabled {
-      // Parked files keep their original names after the mod id.
       seed.original_vpk_names = seed
         .disabled_vpks
         .iter()

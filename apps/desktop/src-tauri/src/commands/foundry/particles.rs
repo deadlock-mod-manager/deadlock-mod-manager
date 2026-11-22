@@ -21,7 +21,6 @@ pub(super) fn effect_slot() -> &'static Arc<tokio::sync::Semaphore> {
   SLOT.get_or_init(|| Arc::new(tokio::sync::Semaphore::new(1)))
 }
 
-/// Opens the archive and parses the compiled model at `entry_path`.
 pub(super) fn effect_model(
   file_path: &str,
   entry_path: &str,
@@ -130,7 +129,6 @@ impl From<particles::ParticleSystemFile> for PreviewParticleSystem {
   }
 }
 
-/// The particle effects the model shows in previews, ready to simulate.
 #[tauri::command]
 pub async fn foundry_decode_particles(
   file_path: String,
@@ -172,8 +170,6 @@ pub struct PreviewAbilityParticles {
   pub release: PreviewParticles,
 }
 
-/// The particle effects `ability_class` plays on its caster, for previewing
-/// that ability's animation on the model at `entry_path`.
 #[tauri::command]
 pub async fn foundry_decode_ability_particles(
   file_path: String,
@@ -202,7 +198,6 @@ pub async fn foundry_decode_ability_particles(
   .map_err(invalid)?
 }
 
-/// Loads `paths` with their textures and the model's attachment points.
 pub(super) fn preview_particles(
   archive: &VpkArchive,
   resource: &Resource,

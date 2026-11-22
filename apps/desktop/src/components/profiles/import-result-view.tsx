@@ -14,7 +14,6 @@ interface ImportResultViewProps {
   onDone: () => void;
 }
 
-/** Takes over an import or restore dialog when some mods weren't imported. */
 export const ImportResultView = ({
   outcome,
   onDone,

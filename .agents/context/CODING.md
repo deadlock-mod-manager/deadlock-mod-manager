@@ -33,7 +33,7 @@ When adding or reviewing a `useEffect`, read React's [You Might Not Need an Effe
 
 ## Comments and validation
 
-Prefer clear names and small functions over comments that narrate assignments, loops, or calls. Explain non-obvious business rules, algorithm choices, constraints, and meaningful TODOs. Document public APIs and complex interfaces.
+Follow the comment policy in [AGENTS.md](../../AGENTS.md).
 
 Validate data at external boundaries and before critical operations such as deleting user data. Avoid repeating checks already guaranteed by internal types or validated callers. Let invalid internal API use surface as a programming error instead of hiding it behind fallback values.
 

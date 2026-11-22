@@ -21,7 +21,6 @@ internal static class NativeInput
 
     public static void Run(Process process, string json)
     {
-        // PER_MONITOR_AWARE_V2 keeps Win32 coordinates in the physical pixels FlaUI uses.
         SetThreadDpiAwarenessContext(new nint(-4));
         var request = JsonSerializer.Deserialize<Request>(json) ?? throw new ArgumentException("Missing input request");
         if (request.Action is not ("click" or "drag" or "keyboard-reorder" or "pointer-down" or "pointer-move" or "pointer-up")) throw new ArgumentException("Unsupported input action");
@@ -71,7 +70,6 @@ internal static class NativeInput
         else if (request.Action == "pointer-up") Mouse.Up(MouseButton.Left);
         else if (request.Action == "keyboard-reorder")
         {
-            // Scan codes preserve KeyboardEvent.code, which dnd-kit's keyboard sensor requires.
             foreach (var scanCode in new ushort[] { 0x39, 0x50, 0x50, 0x39 })
             {
                 if (GetForegroundWindow() != window) throw new InvalidOperationException("Owned window lost focus during keyboard input");

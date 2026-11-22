@@ -1,12 +1,3 @@
-//! The performance-config catalog: curated presets, GameBanana references,
-//! convar metadata, the history of Valve's stock gameinfo.gi and the rules for
-//! what we never write.
-//!
-//! `packages/perf-catalog` generates `data/catalog.json`; the app bundles that
-//! file and the API serves newer revisions of it. A downloaded copy is used
-//! only when it parses, has a schema version we understand, and is newer than
-//! the bundled one, so a bad response can never replace a good catalog.
-
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, PoisonError, RwLock};
@@ -30,22 +21,16 @@ const CACHE_FILE: &str = "catalog.json";
 #[serde(rename_all = "camelCase")]
 pub struct CatalogFile {
   pub schema_version: u32,
-  /// Sortable revision, e.g. `2026.10.08-1`.
   pub version: String,
   pub generated_at: String,
   #[serde(default)]
   pub latest_build: Option<u32>,
-  /// Newest game build in the convar dump history, which convar statuses
-  /// describe. Newer than `latest_build` when gameinfo.gi didn't change.
   #[serde(default)]
   pub convar_build: Option<u32>,
   pub categories: Vec<CategoryInfo>,
-  /// Lower-case section name (`scenesystem`) to category id, for edits outside
-  /// ConVars.
   #[serde(default)]
   pub section_categories: BTreeMap<String, String>,
   pub convars: Vec<ConvarMeta>,
-  /// Valve's stock files, newest first.
   #[serde(default)]
   pub stock: Vec<StockBuild>,
   #[serde(default)]
@@ -55,8 +40,6 @@ pub struct CatalogFile {
   pub rules: CatalogRules,
 }
 
-/// Every scalar value in one stock gameinfo.gi, except SearchPaths and list
-/// sections.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StockBuild {
@@ -86,12 +69,9 @@ pub struct CatalogPreset {
   #[serde(default)]
   pub base_build: Option<u32>,
   pub source: PresetSourceInfo,
-  /// The author's changes relative to `base_build`, not a whole file.
   pub entries: Vec<ConfigEntry>,
-  /// The first variant's settings when the author ships several video.txt files.
   #[serde(default)]
   pub video_settings: Vec<VideoSetting>,
-  /// Added without a schema bump: older apps ignore it.
   #[serde(default)]
   pub video_variants: Vec<VideoVariant>,
   #[serde(default)]
@@ -120,11 +100,8 @@ pub struct CatalogCommunityConfig {
   pub settings_count: u32,
   #[serde(default)]
   pub engine_edit_count: u32,
-  /// Settings per category, so the scale can place a config we don't ship.
   #[serde(default)]
   pub category_counts: BTreeMap<String, u32>,
-  /// The pinned archive also ships VPKs. Added without a schema bump: older
-  /// apps ignore it and newer ones default it to false.
   #[serde(default)]
   pub bundles_vpks: bool,
 }
@@ -132,10 +109,8 @@ pub struct CatalogCommunityConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeniedRule {
-  /// Exact path (case-insensitive). Either this or `pattern` is set.
   #[serde(default)]
   pub path: Option<Vec<String>>,
-  /// Regex matched against the convar name (ConVars entries only).
   #[serde(default)]
   pub pattern: Option<String>,
   pub reason: String,
@@ -144,23 +119,17 @@ pub struct DeniedRule {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogRules {
-  /// Sections we never write, as `/`-joined paths: `FileSystem` and
-  /// `MaterialSystem2/RenderModes`.
   pub excluded_sections: Vec<String>,
-  /// Sections Valve's matchmaking message lists.
   pub guarded_sections: Vec<String>,
   #[serde(default)]
   pub denied: Vec<DeniedRule>,
 }
 
-/// A parsed catalog with lookup indexes.
 #[derive(Debug)]
 pub struct Catalog {
   pub file: CatalogFile,
   pub origin: CatalogOrigin,
   convar_index: HashMap<String, usize>,
-  /// Section holding each key outside ConVars in the latest stock file, by
-  /// lower-case key name.
   stock_sections: HashMap<String, String>,
   denied_patterns: Vec<(regex::Regex, String)>,
 }
@@ -250,7 +219,6 @@ impl Catalog {
     &self.file.community
   }
 
-  /// Valve's stock files, newest first.
   pub fn stock_builds(&self) -> &[StockBuild] {
     &self.file.stock
   }
@@ -259,8 +227,6 @@ impl Catalog {
     self.file.stock.first()
   }
 
-  /// The section outside ConVars where Valve's latest gameinfo.gi sets a key
-  /// with this name (`SceneSystem` for `CubemapFog`), dot-joined.
   pub fn stock_section_of(&self, key: &str) -> Option<&str> {
     self
       .stock_sections
@@ -281,7 +247,6 @@ impl Catalog {
       .map_or(0.0, |category| category.weight)
   }
 
-  /// Category for an edit outside ConVars, by its top-level section.
   pub fn section_category(&self, section: &str) -> &str {
     self
       .file
@@ -294,7 +259,6 @@ impl Catalog {
     &self.file.rules
   }
 
-  /// The excluded section this path falls in, if any.
   pub fn excluded_section(&self, path: &[String]) -> Option<&str> {
     self
       .file
@@ -314,7 +278,6 @@ impl Catalog {
       .any(|guarded| guarded.eq_ignore_ascii_case(section))
   }
 
-  /// Why we refuse to write this path, if we do.
   pub fn denied_reason(&self, path: &[String]) -> Option<&str> {
     for rule in &self.file.rules.denied {
       if let Some(rule_path) = &rule.path
@@ -338,7 +301,6 @@ impl Catalog {
     None
   }
 
-  /// Case-insensitive substring search over names, labels and help text.
   pub fn search_convars(&self, query: &str, limit: usize) -> Vec<&ConvarMeta> {
     let needle = query.trim().to_ascii_lowercase();
     if needle.is_empty() {
@@ -384,7 +346,6 @@ impl Catalog {
   }
 }
 
-/// Whether `path` starts with the `/`-joined `prefix` (case-insensitive).
 pub fn path_has_prefix(path: &[String], prefix: &str) -> bool {
   let parts: Vec<&str> = prefix.split('/').filter(|part| !part.is_empty()).collect();
   parts.len() <= path.len()
@@ -396,7 +357,6 @@ pub fn path_has_prefix(path: &[String], prefix: &str) -> bool {
 
 static CURRENT: LazyLock<RwLock<Arc<Catalog>>> = LazyLock::new(|| RwLock::new(Catalog::bundled()));
 
-/// The newest valid catalog: a downloaded copy when it beats the bundled one.
 pub fn current() -> Arc<Catalog> {
   CURRENT
     .read()
@@ -412,9 +372,6 @@ pub fn cache_dir(app_data_dir: &Path) -> PathBuf {
   app_data_dir.join("performance")
 }
 
-/// Loads a previously downloaded catalog if it is newer than the bundled one.
-/// Called once at startup; a broken cache file is ignored and left for the next
-/// refresh to overwrite.
 pub fn load_cached(app_data_dir: &Path) {
   if let Some(catalog) = read_cache(app_data_dir, today()) {
     log::info!("Using downloaded performance catalog {}", catalog.version());
@@ -435,7 +392,6 @@ fn read_cache(app_data_dir: &Path, today: NaiveDate) -> Option<Catalog> {
   }
 }
 
-/// Fetches the API's catalog and adopts it when it is newer than what we have.
 pub async fn refresh_from_api(api_url: &str, app_data_dir: &Path) -> Result<Arc<Catalog>, Error> {
   let url = format!("{api_url}/api/v2/perf-catalog");
   let client = crate::proxy::build_default_http_client()?;
@@ -480,7 +436,6 @@ pub async fn refresh_from_api(api_url: &str, app_data_dir: &Path) -> Result<Arc<
   Ok(catalog)
 }
 
-/// Versions are `YYYY.MM.DD-N`; compare the date, then the counter.
 fn is_newer(candidate: &str, existing: &str) -> bool {
   fn key(version: &str) -> (String, u64) {
     let (date, counter) = version.split_once('-').unwrap_or((version, "0"));
@@ -489,12 +444,8 @@ fn is_newer(candidate: &str, existing: &str) -> bool {
   key(candidate) > key(existing)
 }
 
-/// Days a catalog version may run ahead of the local date (time zones, a
-/// clock that's a little behind).
 const MAX_DAYS_AHEAD: i64 = 2;
 
-/// Refuses a version dated further ahead than [`MAX_DAYS_AHEAD`]: it would
-/// stay "newer" than every real release until that date and pin itself.
 fn check_version_date(version: &str, today: NaiveDate) -> Result<(), Error> {
   let date = version_date(version).ok_or_else(|| {
     Error::PerformanceConfig(format!(

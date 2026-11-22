@@ -23,7 +23,6 @@ import {
   isDownloadFailed,
 } from "@/lib/download/status";
 
-// Helper function to safely get a timestamp from downloadedAt which could be a Date, string, or undefined
 const getDownloadTimestamp = (
   downloadedAt: Date | string | undefined,
 ): number => {

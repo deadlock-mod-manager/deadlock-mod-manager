@@ -28,7 +28,6 @@ export const ModSourcesSettings = () => {
           {t("modSources.add")}
         </Button>
       }>
-      {/* Shared columns keep every row's switch, refresh and menu aligned. */}
       <div className='grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] gap-x-3 divide-y divide-border/40'>
         <div className='col-span-full grid grid-cols-subgrid items-center py-3'>
           <SourceIconTile>

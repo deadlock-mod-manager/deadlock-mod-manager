@@ -15,11 +15,9 @@ describe("isTrustedExternalUrl", () => {
 
   it("rejects untrusted hosts", () => {
     expect(isTrustedExternalUrl("https://example.com/mods/1")).toBe(false);
-    // Suffix without a dot boundary, e.g. someone registering evilgamebanana.com
     expect(isTrustedExternalUrl("https://evilgamebanana.com/mods/1")).toBe(
       false,
     );
-    // Trusted host in the path or query only
     expect(
       isTrustedExternalUrl("https://example.com/?ref=gamebanana.com/mods/1"),
     ).toBe(false);

@@ -80,7 +80,6 @@ export const readGameinfoSearchPaths = async (world: string) => {
   );
 };
 
-/** The search paths the engine needs: one per shard that holds enabled VPKs. */
 export const searchPathsFor = (shards: number) =>
   Array.from(
     { length: shards },
@@ -88,25 +87,13 @@ export const searchPathsFor = (shards: number) =>
   );
 
 export type ShardExpectation = {
-  /** Enabled mods in the order the game loads them. */
   loadOrder: readonly string[];
   disabled?: readonly string[];
-  /** Shards specific mods must occupy. */
   shards?: Readonly<Record<string, number>>;
-  /** Profile files no mod owns, keyed by path below `citadel`. */
   unowned?: Readonly<Record<string, string>>;
   searchPaths?: readonly string[];
 };
 
-/**
- * Checks the disk, manifest and persisted store against each other:
- * - enabled mods load in `loadOrder`, sorted by (shard, pak number) like the
- *   engine does, with each mod's own bytes in its slot;
- * - no shard exceeds the engine's per-folder limit and no shard is skipped;
- * - disabled mods keep their prefixed copies in the base folder only;
- * - overflow shard folders exist exactly while they hold files;
- * - the library shows enabled mods as installed with the VPKs the manifest records.
- */
 export const assertShardLayout = async (
   world: string,
   step: string,
@@ -151,7 +138,6 @@ export const assertShardLayout = async (
     assert(count <= SHARD_CAPACITY, `Shard ${shard} holds ${count} VPKs`);
   }
 
-  // Empty bytes mark files checked for presence only.
   const files = new Map([
     [`addons/${SHARDS.folder}/.dmm.json`, ""],
     [`addons/${SHARDS.folder}/protected.txt`, ""],
@@ -200,7 +186,6 @@ export const assertShardLayout = async (
     assert.equal(exists, holdsFiles, `addons${shard} folder presence`);
   }
 
-  // The UI can show the new order before its queued VPK mapping snapshot reaches disk.
   const store = await observeUntil(
     "Persisted VPK mappings match the manifest",
     () => readShardStore(world),

@@ -21,15 +21,12 @@ const quatA = new THREE.Quaternion();
 
 const order: number[] = [];
 
-/** How far `value` has moved from `from` to `to`, clamped to 0..1. */
 const ramp = (value: number, from: number, to: number) =>
   to <= from ? 1 : THREE.MathUtils.clamp((value - from) / (to - from), 0, 1);
 
 export const compileOperator = (operator: JsonObject): FrameOperator | null => {
   switch (classOf(operator)) {
     case "C_OP_MaintainSequentialPath": {
-      // Keeps particles spaced along the path as its control points move,
-      // oldest at the start.
       const stops = numberOf(operator.m_flNumToAssign, 100);
       const useCount = booleanOf(operator.m_bUseParticleCount);
       const path = parsePathParams(operator.m_PathParams);
@@ -51,7 +48,6 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
       };
     }
     case "C_OP_LockToSavedSequentialPathV2": {
-      // Holds each particle at the stop its sequential-path initializer gave it.
       const path = parsePathParams(operator.m_PathParams);
       return (system) => {
         const progress = system.scalar(PATH_PROGRESS);
@@ -68,7 +64,6 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
       };
     }
     case "C_OP_SetChildControlPoints": {
-      // Child writes must not move the emitting parent's own attachment frame.
       const first = numberOf(operator.m_nFirstControlPoint, 0);
       const count = numberOf(operator.m_nNumControlPoints, 1);
       const source = parseFloatInput(operator.m_nFirstSourcePoint, 0);
@@ -207,8 +202,6 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
       };
     }
     case "C_OP_PinParticleToCP": {
-      // Holds one particle (the oldest, newest or the `m_nParticleNumber`th)
-      // on a control point: the ends of a rope stay on its anchors.
       const controlPoint = numberOf(operator.m_nControlPointNumber, 0);
       const selection = stringOf(
         operator.m_nParticleSelection,
@@ -238,7 +231,6 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
       };
     }
     case "C_OP_FadeAndKill": {
-      // Fades alpha in from `m_flStartAlpha`, out to `m_flEndAlpha`, then kills.
       const startFadeIn = numberOf(operator.m_flStartFadeInTime, 0);
       const endFadeIn = numberOf(operator.m_flEndFadeInTime, 0.5);
       const startFadeOut = numberOf(operator.m_flStartFadeOutTime, 0.5);
@@ -446,7 +438,6 @@ export const compileForce = (
         const y = position[index * 3 + 1];
         const z = position[index * 3 + 2];
         const time = system.age;
-        // A divergence-free swirl from crossed sine fields, standing in for curl noise.
         out
           .set(
             Math.sin(y * scratchB[1] + time) - Math.cos(z * scratchB[2] + time),

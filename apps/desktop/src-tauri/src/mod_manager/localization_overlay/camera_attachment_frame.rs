@@ -8,10 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 const PIVOTS: [&str; 2] = ["standing_pivot", "crouching_pivot"];
 const OLD_FRAME: [f64; 4] = [-0.5, -0.5, -0.5, 0.5];
 const IDENTITY: [f64; 4] = [0.0, 0.0, 0.0, 1.0];
-// Exported root binds can differ slightly without changing the attachment basis.
 const ROOT_ANGLE_TOLERANCE: f64 = 0.001;
-// The update turned root attachments by 120 degrees; authored tweaks stay well
-// inside this distance from the frame they were made in.
 const FRAME_TOLERANCE: f64 = std::f64::consts::FRAC_PI_6;
 
 pub(super) fn prepare(
@@ -52,8 +49,6 @@ pub(super) fn prepare(
   Ok(())
 }
 
-/// The old root attachment basis maps (x,y,z) to (y,z,x). Apply its inverse
-/// to the authored transforms, rather than replacing intentional camera offsets.
 pub(super) fn repair(source: &[u8], base: &[u8]) -> Result<Option<Vec<u8>>, &'static str> {
   let Ok(resource) = Resource::parse(source) else {
     return Ok(None);
@@ -153,7 +148,6 @@ enum Frame {
   Other,
 }
 
-/// `None` when the pivot is absent; the camera interface repair adds it later.
 fn pivot_frame(mesh: &Kv3Value, name: &str) -> Option<Frame> {
   let present = mesh
     .get("m_attachments")
@@ -189,10 +183,6 @@ fn authored_camera_names(source: &[u8]) -> BTreeSet<String> {
     .unwrap_or_default()
 }
 
-/// Root attachments still in the old frame after the pivots were updated, as
-/// a partial migration leaves them. A same-name game attachment must match
-/// only after conversion. Extra camera poses without one pitch around the
-/// pivot's right axis, so that axis must line up only after conversion.
 fn stale_attachments(
   mesh: &Kv3Value,
   current: &Kv3Value,
@@ -292,8 +282,6 @@ fn compatible_root_axes(source: &Kv3Value, current: &Kv3Value) -> Option<bool> {
   }
   let authored = vector::<8>(&source.pose("root_motion")?)?;
   let canonical = vector::<8>(&current.pose("root_motion")?)?;
-  // The conversion acts in root-local coordinates. Translation does not change
-  // those axes, and DATA/mesh bind frames retain the authored root position.
   if authored[3] <= 0.0 || canonical[3] <= 0.0 || (authored[3] - canonical[3]).abs() > 0.001 {
     return Some(false);
   }
@@ -312,8 +300,6 @@ fn compatible_root_axes(source: &Kv3Value, current: &Kv3Value) -> Option<bool> {
   Some(2.0 * dot.abs().min(1.0).acos() <= ROOT_ANGLE_TOLERANCE)
 }
 
-// Quaternion multiplication can produce a value between two f32 numbers. Keep
-// the authored wire width and verify against the value that width can represent.
 fn round_float_values(value: &mut Kv3Value, encoding: &kv3::Encoding) {
   match value {
     Kv3Value::Double(number) if encoding.is_float() => {
@@ -401,7 +387,6 @@ fn pivots(mesh: &Kv3Value, frame: [f64; 4]) -> bool {
   })
 }
 
-/// Converts every root attachment, or only the `only` names.
 fn migrate_mesh(mesh: &mut Kv3Value, only: Option<&BTreeSet<String>>) -> Result<(), &'static str> {
   let Some(Kv3Value::Array(attachments)) = mesh.get_mut("m_attachments") else {
     return Err("Missing camera attachments");

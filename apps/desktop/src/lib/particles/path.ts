@@ -3,17 +3,8 @@ import { numberOf, numbersOf, object } from "./definition";
 import { type JsonValue } from "./json";
 import { type ControlPoint } from "./types";
 
-/**
- * Where a particle sits along its sequential path, 0 at the start and 1 at
- * the end. Not a Source attribute: a private slot past their range, which
- * ropes sort by so a beam draws from end to end.
- */
 export const PATH_PROGRESS = 1000;
 
-/**
- * `CPathParameters`: a curve between two control points through a mid point.
- * The random bulge is left out; it would bend every beam the same way.
- */
 export interface PathParams {
   start: number;
   end: number;
@@ -44,7 +35,6 @@ const from = new THREE.Vector3();
 const to = new THREE.Vector3();
 const middle = new THREE.Vector3();
 
-/** The point `progress` of the way along `path`. */
 export const pathPoint = (
   path: PathParams,
   controlPoint: (index: number) => ControlPoint,

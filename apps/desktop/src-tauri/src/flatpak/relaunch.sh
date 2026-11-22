@@ -6,11 +6,8 @@ scope=$2
 ref=$3
 cd /
 command -v flatpak >/dev/null
-# Open the log before detaching so setup errors reach the running app.
 exec 3>>"$4"
 
-# The host helper must outlive flatpak-spawn and the old sandbox. Waiting for
-# that sandbox to disappear also lets the app release its single-instance lock.
 (
   exec 1>&3 2>&1 3>&-
   attempts=0

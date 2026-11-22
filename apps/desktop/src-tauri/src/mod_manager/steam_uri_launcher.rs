@@ -15,7 +15,6 @@ const CAPTURED_STDERR_LINES: usize = 20;
 
 enum CompletionPolicy {
   Observe,
-  // Only constructed by the Linux portal path and tests.
   #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
   Timeout(Duration),
 }
@@ -43,8 +42,6 @@ impl SteamUriLaunchRequest {
     }
   }
 
-  /// Hand the URI to a launcher that needs its own arguments first, such as
-  /// `flatpak run com.valvesoftware.Steam`.
   #[cfg(target_os = "linux")]
   pub(crate) fn wrapped(program: PathBuf, launcher_args: Vec<&'static str>, uri: String) -> Self {
     Self {
@@ -301,8 +298,6 @@ mod process_tests {
     path.to_path_buf()
   }
 
-  // A test thread forking while fake_launcher still holds the script open for writing leaks that
-  // fd into the child until it execs, so exec'ing the script can briefly fail with ETXTBSY.
   fn spawn_fake(request: impl Fn() -> SteamUriLaunchRequest) -> SteamUriLaunchMonitor {
     for _ in 0..50 {
       match request().spawn() {

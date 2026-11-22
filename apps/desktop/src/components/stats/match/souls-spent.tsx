@@ -9,7 +9,6 @@ import {
   spendBySlot,
 } from "@/lib/stats/match-analysis";
 
-/** Souls spent per slot as a donut, the biggest share in the middle. */
 export const SoulsSpent = ({ bought }: { bought: Purchase[] }) => {
   const { t, i18n } = useTranslation();
   const spend = spendBySlot(bought);

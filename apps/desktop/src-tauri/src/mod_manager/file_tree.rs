@@ -10,7 +10,6 @@ use tempfile;
 
 const QUALIFIER_MAX_CHARS: usize = 48;
 
-/// Represents a single file in a mod archive
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ModFile {
   pub name: String,
@@ -20,7 +19,6 @@ pub struct ModFile {
   pub archive_name: String,
 }
 
-/// Simple file tree structure for mod archives
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ModFileTree {
   pub files: Vec<ModFile>,
@@ -51,9 +49,6 @@ impl ModFileTree {
     }
   }
 
-  /// The tree's file order is the mod's load order: an earlier file gets the
-  /// lower pak number, so it wins over later files of the same mod. The sort
-  /// is stable, and items the tree doesn't list keep their order after it.
   pub fn sort_in_load_order<T>(&self, items: &mut [T], name_of: impl Fn(&T) -> &str) {
     let positions: HashMap<&str, usize> = self
       .files
@@ -64,10 +59,6 @@ impl ModFileTree {
     items.sort_by_key(|item| positions.get(name_of(item)).copied().unwrap_or(usize::MAX));
   }
 
-  /// A file's `name` is what it installs as (`{mod_id}_{name}`), so it must be
-  /// unique within the mod: variant archives usually all ship `pak01_dir.vpk`.
-  /// Names come from the archives and paths alone, claimed in a fixed order,
-  /// so any tree of the same files gives the same names.
   pub fn from_extracted(mut files: Vec<ModFile>) -> Self {
     let mut counts: HashMap<String, usize> = HashMap::new();
     for file in &files {
@@ -90,7 +81,6 @@ impl ModFileTree {
       } else {
         file_name.to_string()
       };
-      // Archives whose names reduce to the same qualifier still need distinct files.
       file.name = claim_unique_vpk_name(&mut taken, &candidate);
     }
 
@@ -103,7 +93,6 @@ impl ModFileTree {
   }
 }
 
-/// `taken` holds lowercase names: Windows treats names differing in case as one file.
 pub(crate) fn claim_unique_vpk_name(taken: &mut HashSet<String>, candidate: &str) -> String {
   vpk_name_candidates(candidate)
     .find(|name| taken.insert(name.to_lowercase()))
@@ -115,9 +104,6 @@ pub(crate) fn vpk_name_candidates(name: &str) -> impl Iterator<Item = String> + 
     .chain((2..).map(move |number| qualify_vpk_name(name, &number.to_string())))
 }
 
-/// A value is safe to use as a file name only if it is exactly one plain
-/// component ending in `.vpk`, with no characters Windows forbids (a `:` would
-/// write an alternate data stream instead of a file).
 pub fn is_plain_vpk_name(name: &str) -> bool {
   !name.is_empty()
     && !name.contains('/')
@@ -138,9 +124,6 @@ fn path_file_name(path: &str) -> &str {
   path.rsplit(['/', '\\']).next().unwrap_or(path)
 }
 
-/// Works the source archive and folders into the name, e.g. `pak01_dir.vpk`
-/// from `Red Skin.zip` becomes `pak01-red-skin_dir.vpk`. The `_dir.vpk` ending
-/// stays because other managers only scan for that.
 pub(crate) fn variant_vpk_name(file: &ModFile) -> String {
   let archive_name = file.archive_name.as_str();
   let relative = relative_path(file);
@@ -155,8 +138,6 @@ pub(crate) fn variant_vpk_name(file: &ModFile) -> String {
   )
 }
 
-/// The file's path inside its archive, whether or not `path` starts with the
-/// archive's folder.
 pub(crate) fn relative_path(file: &ModFile) -> String {
   let path = file.path.replace('\\', "/");
   path
@@ -164,8 +145,6 @@ pub(crate) fn relative_path(file: &ModFile) -> String {
     .map_or_else(|| path.clone(), str::to_string)
 }
 
-/// Whether `name` is `file`'s own file name or one qualified from it, e.g.
-/// `pak01-red_dir.vpk` for any `pak01_dir.vpk`.
 pub(crate) fn is_name_from_source_of(name: &str, file: &ModFile) -> bool {
   let name = name.to_ascii_lowercase();
   let file_name = source_file_name(file).to_ascii_lowercase();
@@ -196,8 +175,6 @@ fn qualify_vpk_name(file_name: &str, qualifier: &str) -> String {
   format!("{file_name}-{qualifier}")
 }
 
-// Not `slugify`: that one is ASCII-only for portable exports, and here
-// non-Latin archive names still need distinct, reproducible qualifiers.
 fn slug(text: &str) -> String {
   let mut slug = String::new();
   for c in text.chars() {
@@ -211,7 +188,6 @@ fn slug(text: &str) -> String {
   slug.trim_end_matches('-').to_string()
 }
 
-/// Simple file tree analyzer that just lists files without grouping
 pub struct FileTreeAnalyzer {
   archive_extractor: ArchiveExtractor,
   filesystem: FileSystemHelper,
@@ -225,7 +201,6 @@ impl FileTreeAnalyzer {
     }
   }
 
-  /// Gets the simple file structure from an already-extracted directory
   pub fn get_file_tree_from_extracted(
     &self,
     extracted_path: &Path,
@@ -235,7 +210,6 @@ impl FileTreeAnalyzer {
       "Getting file tree from extracted path: {extracted_path:?} (archive: {archive_name})"
     );
 
-    // Find all VPK files recursively
     let vpk_files = self
       .filesystem
       .find_files_recursive(extracted_path, "vpk")?;
@@ -247,7 +221,6 @@ impl FileTreeAnalyzer {
 
     let mut all_files = Vec::new();
 
-    // Convert to ModFile objects
     for (path, size) in vpk_files {
       let file_name = path
         .file_name()
@@ -265,7 +238,7 @@ impl FileTreeAnalyzer {
         name: file_name,
         path: relative_path,
         size,
-        is_selected: true, // Default to selected
+        is_selected: true,
         archive_name: archive_name.to_string(),
       });
     }
@@ -279,13 +252,11 @@ impl FileTreeAnalyzer {
     Ok(tree)
   }
 
-  /// Gets the simple file structure from archive(s) in a directory
   pub fn get_mod_file_tree(&self, mod_path: &PathBuf) -> Result<ModFileTree, Error> {
     log::info!("Getting file tree for mod path: {mod_path:?}");
 
     let mut all_files = Vec::new();
 
-    // Process all archives found in the mod directory
     for entry in std::fs::read_dir(mod_path)? {
       let entry = entry?;
       let archive_path = entry.path();
@@ -307,7 +278,6 @@ impl FileTreeAnalyzer {
           .collect(),
         None => self.extract_vpk_files(&archive_path)?,
       };
-      // Path order within an archive is the mod's load order.
       vpk_files.sort();
 
       log::info!(
@@ -315,7 +285,6 @@ impl FileTreeAnalyzer {
         vpk_files.len()
       );
 
-      // Convert to ModFile objects
       for (path, size) in vpk_files {
         let file_name = path
           .file_name()
@@ -327,7 +296,7 @@ impl FileTreeAnalyzer {
           name: file_name,
           path: path.to_string_lossy().to_string(),
           size,
-          is_selected: true, // Default to selected
+          is_selected: true,
           archive_name: archive_name.clone(),
         });
       }
@@ -342,7 +311,6 @@ impl FileTreeAnalyzer {
     Ok(tree)
   }
 
-  /// The archive's VPKs, relative to its root, as an extraction lays them out.
   fn extract_vpk_files(&self, archive_path: &Path) -> Result<Vec<(PathBuf, u64)>, Error> {
     let temp_dir = tempfile::tempdir()?;
     log::info!("Extracting archive for analysis: {archive_path:?}");
@@ -476,7 +444,6 @@ mod tests {
     );
   }
 
-  /// An archive entry: a file with its contents, or a directory.
   type Entry<'a> = (&'a str, Option<&'a [u8]>);
 
   const MOD_ENTRIES: &[Entry] = &[
@@ -530,7 +497,6 @@ mod tests {
     archive_listing::list_files(archive_path).unwrap().is_some()
   }
 
-  /// The tree must be the one read off a real extraction of `archive_name`.
   fn assert_tree_matches_extraction(mod_dir: &Path, archive_name: &str) {
     let tree = mod_file_tree(mod_dir).unwrap();
     let extracted = tempfile::tempdir().unwrap();
@@ -546,8 +512,6 @@ mod tests {
     );
   }
 
-  // Swapping parts matches tree names against the `{mod_id}_{name}` files
-  // `copy_vpks_with_prefix` installs, so loose files must keep their own names.
   #[test]
   fn loose_vpks_keep_their_names_in_install_order() {
     let files_dir = tempfile::tempdir().unwrap();
@@ -581,9 +545,6 @@ mod tests {
     assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
   }
 
-  /// Names a filesystem may merge or rewrite on disk, a repeated entry whose
-  /// last copy wins, and a path near the OS length limits are left to an
-  /// extraction.
   #[test]
   fn names_the_filesystem_decides_match_extraction() {
     let long_path = format!("{}pak01_dir.vpk", "deep/".repeat(110));
@@ -611,9 +572,6 @@ mod tests {
       assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
     }
 
-    // On Windows a device name opens the device and a trailing space fails to
-    // extract, so whether extraction succeeds depends on the OS; the listing
-    // only has to leave them to extraction.
     for name in [
       "con.vpk",
       "CONIN$/pak01_dir.vpk",
@@ -625,8 +583,6 @@ mod tests {
     }
   }
 
-  /// A path that is both a file and a folder, and a name too long for any
-  /// filesystem, fail extraction, so they are still refused.
   #[test]
   fn entries_extraction_cannot_write_are_refused() {
     let long_name = format!("{}.vpk", "a".repeat(256));
@@ -646,9 +602,6 @@ mod tests {
     }
   }
 
-  /// A hand-built 7z: one solid block holding two files with an empty file
-  /// between them. The reader counts entries, not streams, as it walks the
-  /// block, so only an extraction knows what it writes.
   #[test]
   fn seven_zip_empty_entry_inside_a_block_matches_extraction() {
     let mod_dir = tempfile::tempdir().unwrap();
@@ -663,8 +616,6 @@ mod tests {
     assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
   }
 
-  /// The index is readable but the data needs a password, which extraction
-  /// doesn't have.
   #[test]
   fn seven_zip_with_encrypted_data_fails_as_extraction_does() {
     let mod_dir = tempfile::tempdir().unwrap();
@@ -691,9 +642,6 @@ mod tests {
     );
   }
 
-  /// A hand-built RAR 4 archive with stored entries: a `Variant B` directory,
-  /// `pak01_dir.vpk`, `Variant B\pak01_dir.vpk`, `readme.txt` and
-  /// `extras\pak02_dir.vpk`.
   #[test]
   fn rar_tree_lists_its_vpks() {
     let mod_dir = tempfile::tempdir().unwrap();
@@ -758,7 +706,6 @@ mod tests {
     );
   }
 
-  /// A few hundred KB of zeros that expand past what the archive may unpack.
   #[test]
   fn archive_past_its_budget_is_refused() {
     let mod_dir = tempfile::tempdir().unwrap();

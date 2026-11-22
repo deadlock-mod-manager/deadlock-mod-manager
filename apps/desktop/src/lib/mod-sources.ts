@@ -23,7 +23,6 @@ export const isNativeSourceMod = (remoteId: string) =>
 export const isNativeSourceImage = (url: string) =>
   /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(url);
 
-// Icons render only through <img>, so the backend may also send ICO and SVG.
 export const isNativeSourceIcon = (url: string) =>
   /^data:image\/(?:png|jpeg|webp|gif|x-icon|svg\+xml);base64,/.test(url);
 
@@ -32,7 +31,6 @@ export const nativeListingVisible = (
   hideAdult: boolean,
 ) => !hideAdult || listing.isNsfw === false;
 
-// Published categories share the desktop's broader browsing tabs.
 const CONTENT_TYPE_TABS = {
   skins: "mod",
   gameplay: "mod",
@@ -71,8 +69,6 @@ const invokeNative = async <T>(
 
 export const listNativeSources = () =>
   invokeNative<NativeSourceSummary[]>("list_native_sources");
-// Dev builds can enroll sources served over local HTTP; release builds keep
-// the HTTPS and public-host requirement.
 const allowLocalNetwork = import.meta.env.DEV;
 
 export const previewNativeSource = (descriptorUrl: string) =>
@@ -102,7 +98,6 @@ export const removeNativeSource = (sourceKey: string) =>
 export const refreshNativeSource = (sourceKey: string) =>
   invokeNative<NativeSourceSummary>("refresh_native_source", { sourceKey });
 let hostedSync: Promise<void> | null = null;
-/** Once per app session; concurrent runs would race each other's enrollment. */
 export const syncHostedSources = () => {
   hostedSync ??= invokeNative<void>("sync_hosted_native_sources", {
     allowLocalNetwork,
@@ -231,8 +226,6 @@ export const nativeModDownloads = (
     listing.availability !== "available"
   )
     return [];
-  // Artifacts carry no dates of their own, so they take their release's. Not
-  // the listing's `updatedAt`: metadata edits must leave download items equal.
   const releasedAt = release.publishedAt;
   return release.artifacts.map((artifact) => ({
     url: `dmm-source-file://${source.key}/${[listing.id, release.id, release.contentRevision, artifact.id].map(encodeURIComponent).join("/")}`,

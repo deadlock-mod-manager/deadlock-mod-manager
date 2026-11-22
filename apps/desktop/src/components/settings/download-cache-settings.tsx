@@ -42,7 +42,6 @@ export const DownloadCacheSettings = () => {
     },
   });
 
-  // Null moves the cache back to the app data folder.
   const moveTo = async (path: string | null) => {
     const confirmed = await confirm({
       title: t("settings.confirmMoveDownloadCache"),

@@ -1,10 +1,5 @@
 type LabelRow = 0 | 1;
 
-/**
- * Spreads pin labels over two rows under the scale so neighbours don't
- * overlap. Pins too close to a label in both rows get no label (their tooltip
- * still names them). Positions and `minGap` are fractions of the track width.
- */
 export const assignLabelRows = (
   pins: readonly { id: string; position: number }[],
   minGap: number,

@@ -19,7 +19,6 @@ import {
 
 type Row = (typeof UNKNOWN_ADDONS)[number];
 
-// Both files are named pak01_dir.vpk; Analyze lists the base shard first.
 const rowAt = async (index: number) => {
   const rows = await $$(
     '//div[@role="dialog"]//p[normalize-space()="pak01_dir.vpk"]/ancestor::div[contains(@class,"rounded-lg")][1]',
@@ -59,7 +58,6 @@ const closeResults = () =>
 const startAnalysis = async () => {
   await navigate("my-mods");
   await waitForOverlaysClosed();
-  // An empty library shows Analyze as a button; otherwise it is in the menu.
   if (await $("button=Analyze").isExisting()) {
     await $("button=Analyze").click();
   } else {
@@ -77,8 +75,6 @@ const analyze = () =>
     });
   });
 
-// Once .dmm.json records both files, Analyze identifies them from it and has
-// nothing to review, so it reports success instead of opening the results.
 const analyzeFindsBothKnown = (title: string) =>
   step(title, async () => {
     await startAnalysis();
@@ -107,7 +103,6 @@ const addRow = (world: string, index: number, row: Row) =>
   step(`add ${row.locator} to the library`, async () => {
     const before = (await libraryState(world)).length;
     const button = await (await rowAt(index)).$("button=Add to Library");
-    // The button stays disabled until the library ownership snapshot loads.
     await button.waitForEnabled();
     await button.click();
     const name = await $('input[placeholder="Awesome Mod"]');

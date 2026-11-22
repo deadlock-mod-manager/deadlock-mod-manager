@@ -108,7 +108,6 @@ export const groupPickerLocations = (
     .sort((a, b) => a.region.localeCompare(b.region));
 };
 
-/** Lowest measured ping among locations the selection leaves open. */
 export const fastestAllowedLocation = (
   locations: readonly ServerPickerLocation[],
   blocked: ReadonlySet<string>,
@@ -126,7 +125,6 @@ export const fastestAllowedLocation = (
   return fastest;
 };
 
-/** Ids between two locations in display order, inclusive, for shift-click. */
 export const pickerLocationRange = (
   order: readonly string[],
   anchor: string,
@@ -138,18 +136,11 @@ export const pickerLocationRange = (
   return order.slice(Math.min(from, to), Math.max(from, to) + 1);
 };
 
-// deadlock-api names partner-hosted datacenters "<site>-<host>"; Valve's SDR
-// config lists the same POPs as "d<site>" (dpkt) or the bare site (Hetzner).
 const DATACENTER_HOST_PREFIXES = new Map([
   ["dpkt", "d"],
   ["hetz", ""],
 ]);
 
-/**
- * The picker location a deadlock-api datacenter code ("fra2", "hel-hetz",
- * "fra-dpkt") belongs to. Numbered codes name a building inside a POP, so the
- * digits are dropped unless the catalog lists the numbered POP itself (sto2).
- */
 export const datacenterLocation = (
   code: string,
   locationIds: ReadonlySet<string>,
@@ -167,10 +158,8 @@ export const datacenterLocation = (
   return null;
 };
 
-/** Months of match history the picker counts, including the current one. */
 export const RECENT_MATCH_MONTHS = 3;
 
-/** Matches per picker location over the last few calendar months (UTC). */
 export const recentMatchesByLocation = (
   history: readonly RegionHistoryEntry[],
   locations: readonly ServerPickerLocation[],

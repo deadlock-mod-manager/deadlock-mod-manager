@@ -13,7 +13,6 @@ import type { State } from "..";
 
 const MAX_HISTORY_SIZE = 30;
 
-/** Where one of the user's own configs came from. */
 export type UserPerfConfigOrigin =
   | { kind: "paste"; format: ImportFormat }
   | { kind: "file"; fileName: string | null; format: ImportFormat }
@@ -35,13 +34,10 @@ export type UserPerfConfigOrigin =
 
 export type PerfVideoChoice = {
   write: boolean;
-  /** Label of the preset's video.txt variant; `null` is the first. */
   variant: string | null;
 };
 
-/** An imported, pasted or forked config. Presets live in the catalog instead. */
 export type UserPerfConfig = {
-  /** `user:<uuid>` */
   id: string;
   name: string;
   createdAt: string;
@@ -51,41 +47,33 @@ export type UserPerfConfig = {
   baseBuild: number | null;
 };
 
-/** A config applied or removed. */
 export type PerfConfigHistoryEntry = {
   id: string;
   at: string;
   action: "applied" | "removed";
   configId: string | null;
   name: string | null;
-  /** Lets the History tab re-apply what was applied. */
   request: PerfHistoryRequest | null;
   appliedCount: number | null;
-  /** video.txt settings written with it. */
   videoCount: number | null;
 };
 
-/** A video.txt setting changed outside the app, under its menu name when known. */
 type PerfVideoHistoryChange = Omit<VideoChange, "kept"> & {
   label: string | null;
 };
 
-/** Something that happened to video.txt alone. */
 type PerfVideoHistoryEntry =
   | { id: string; at: string; action: "videoRestored" | "videoAdopted" }
   | {
       id: string;
       at: string;
-      /** Noticed when the app next read the file, not when it happened. */
       action: "videoChanged";
       changes: PerfVideoHistoryChange[];
     }
   | {
       id: string;
       at: string;
-      /** What the player did about settings changed in game. */
       action: "videoReverted" | "videoKept";
-      /** `setting.*` keys without the prefix. */
       keys: string[];
     };
 
@@ -107,13 +95,10 @@ export const isConfigHistoryEntry = (
 
 export type PerformanceState = {
   perfUserConfigs: Record<string, UserPerfConfig>;
-  /** The user's tweaks per config id, kept when switching configs. */
   perfOverrides: Record<string, EntryOverride[]>;
   perfIncludeEngineSections: Record<string, boolean>;
-  /** Whether to write each config's video.txt settings, and which variant. */
   perfVideoChoices: Record<string, PerfVideoChoice>;
   perfHistory: PerfHistoryEntry[];
-  /** Mods whose bundled config the user chose not to import. */
   perfDismissedModConfigs: Record<string, true>;
   addUserPerfConfig: (config: UserPerfConfig) => void;
   renameUserPerfConfig: (id: string, name: string) => void;

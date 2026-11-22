@@ -69,8 +69,6 @@ pub async fn copy_selected_vpks_from_archive(
     mod_id
   );
 
-  // Resolve under the lock, then copy without it: only the manifest write
-  // needs the mod manager, and a large copy would stall every other command.
   let (mods_path, destination) = manager_lock()?.archive_copy_paths(profile_folder.as_deref())?;
   ModManager::copy_selected_vpks_from(
     &mods_path,
@@ -99,10 +97,6 @@ pub async fn copy_local_mod_vpks(
   ModManager::copy_local_mod_vpks_from(&mods_path, &destination, &mod_id, &persist_prefixed_import)
 }
 
-/// The parts of a mod imported as loose VPKs: every VPK in its `files` folder,
-/// named and ordered as `copy_local_mod_vpks` installs them. Separate from
-/// `get_mod_file_tree`, which reads archives, so mods that keep loose VPKs for
-/// other reasons don't start asking for a file selection.
 #[tauri::command]
 pub async fn get_local_mod_parts(mod_id: String) -> Result<ModFileTree, Error> {
   let files_dir = MANAGER
@@ -122,8 +116,6 @@ pub(crate) fn persist_prefixed_import(
   mod_id: &str,
   prefixed_vpks: Vec<String>,
 ) -> Result<(), Error> {
-  // Manifest recovery runs under this lock and removes any `.dmm.json.tmp` as
-  // a crashed save, so saving without it can lose the temp file mid-save.
   manager_lock()?.record_prefixed_import(destination_path, mod_id, prefixed_vpks)
 }
 
@@ -173,9 +165,6 @@ pub async fn replace_mod_vpks(
   Ok(())
 }
 
-/// Copied natively rather than read into the renderer: bytes cross the IPC
-/// boundary as a JSON number array, which crashes the webview for a mod of a
-/// hundred megabytes or more.
 #[tauri::command]
 pub async fn copy_dropped_mod_file(file_path: String, target_dir: String) -> Result<String, Error> {
   let source = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;

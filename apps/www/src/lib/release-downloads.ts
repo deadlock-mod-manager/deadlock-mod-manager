@@ -37,8 +37,6 @@ export const getDownloadRuntime = (download: PlatformDownload): "wry" | "cef" =>
   download.runtime ??
   (/(?:^|[._-])cef(?:[._-]|$)/i.test(download.filename) ? "cef" : "wry");
 
-// The system webview (WebKitGTK) renders poorly on many Linux setups, so Linux
-// defaults to the bundled Chromium (CEF) build. Other platforms keep Wry.
 const getPreferredRuntime = (
   platform: PlatformDownload["platform"],
 ): "wry" | "cef" => (platform === "linux" ? "cef" : "wry");
@@ -53,8 +51,6 @@ export const getRuntimeStatus = (
     ? "Recommended"
     : "Alternative";
 
-// Preferred runtime first. A Linux release without CEF builds falls back to
-// Wry; CEF is never picked where Wry is preferred.
 const getRuntimeRank = (download: PlatformDownload): number => {
   const preferred = getPreferredRuntime(download.platform);
   const runtime = getDownloadRuntime(download);
@@ -125,8 +121,6 @@ interface PlatformInstallers {
   alternative: PlatformDownload[];
 }
 
-// Installers in the platform's preferred runtime come first; the first primary
-// installer is the recommended default. Signatures are excluded.
 export const getPlatformInstallers = (
   downloads: PlatformDownload[],
   platform: PlatformDownload["platform"],
@@ -137,7 +131,6 @@ export const getPlatformInstallers = (
         download.platform === platform && !isSignatureFile(download),
     )
     .sort(compareDownloads);
-  // Fall back to Wry (rank 1) when there is no preferred-runtime installer.
   const bestRank = installers.some((download) => getRuntimeRank(download) === 0)
     ? 0
     : 1;

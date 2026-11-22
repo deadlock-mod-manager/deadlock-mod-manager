@@ -13,12 +13,6 @@ import type {
   MatchQuery,
 } from "./layout";
 
-/**
- * The "build your own stat" engine: filters, groups and aggregates the match
- * history the page already holds. Costs no request, so it can never break when
- * an endpoint changes - only the history itself has to load.
- */
-
 const DAY_S = 24 * 60 * 60;
 const DURATION_BUCKET_MIN = 5;
 
@@ -59,7 +53,6 @@ export const GROUP_FIELD = "group";
 
 const minutesOf = (match: MatchHistoryEntry) => match.match_duration_s / 60;
 
-/** One match's value for a metric; `null` when the match does not carry it. */
 const perMatch = (match: MatchHistoryEntry, metric: MatchMetric) => {
   switch (metric) {
     case "matches":
@@ -95,7 +88,6 @@ const perMatch = (match: MatchHistoryEntry, metric: MatchMetric) => {
     case "heroLevel":
       return match.hero_level;
     case "rankBadge":
-      // Placements report badge 0, which is no rank rather than the lowest one.
       return (match.ranked_display_badge ?? 0) > 0
         ? match.ranked_display_badge
         : null;
@@ -130,12 +122,6 @@ const reduceValues = (values: number[], aggregate: MatchAggregate) => {
   }
 };
 
-/**
- * A metric over a group of matches. Counts ignore the aggregate, and the ratios
- * are pooled for "average": the KDA of ten matches is total kills and assists
- * over total deaths, not the mean of ten per-match ratios a deathless stomp
- * would skew.
- */
 const aggregateMetric = (
   matches: MatchHistoryEntry[],
   metric: MatchMetric,
@@ -183,7 +169,6 @@ const aggregateMetric = (
   );
 };
 
-/** Local midnight, so a late-evening session stays on the day it was played. */
 const startOfDay = (unix: number) => {
   const date = new Date(unix * 1000);
   date.setHours(0, 0, 0, 0);
@@ -192,7 +177,6 @@ const startOfDay = (unix: number) => {
 
 const startOfWeek = (unix: number) => {
   const day = startOfDay(unix);
-  // Monday first; `getDay` counts from Sunday.
   const offset = (new Date(day * 1000).getDay() + 6) % 7;
   return startOfDay(day - offset * DAY_S + DAY_S / 2);
 };
@@ -228,7 +212,6 @@ const groupKey = (
   }
 };
 
-/** Monday through Sunday rather than `getDay`'s Sunday-first order. */
 const groupOrder = (group: MatchGroup, key: number) =>
   group === "weekday" ? (key + 6) % 7 : key;
 
@@ -271,10 +254,6 @@ const metricRow = (
     ]),
   );
 
-/**
- * Per-match rows, optionally smoothed. A rolling value is only emitted once its
- * window is full, otherwise the first few points swing between the extremes.
- */
 const perMatchRows = (
   matches: MatchHistoryEntry[],
   query: MatchQuery,
@@ -340,8 +319,6 @@ export const runMatchQuery = (
   };
 
   if (query.groupBy === "session") {
-    // Positions come from the unfiltered history: filtering to one hero must
-    // not turn a session's third match into its first.
     const kept = new Set(filtered.map((match) => match.match_id));
     for (const { match, position } of sessionPositions(matches)) {
       if (kept.has(match.match_id)) {

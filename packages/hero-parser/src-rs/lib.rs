@@ -40,8 +40,6 @@ fn sound_codename(path: &str) -> Option<&str> {
     })
 }
 
-/// Panorama textures are UI art (hero cards, icons), which sound packs ship
-/// too, so they never make a mod visual on their own.
 fn is_visual(path: &str, ext: &str) -> bool {
     VISUAL_EXTENSIONS.contains(&ext) && !path.starts_with("panorama/")
 }
@@ -52,7 +50,6 @@ fn is_sound(path: &str, ext: &str) -> bool {
         || path.starts_with("soundevents/")
 }
 
-/// The key with the most matches, or None when two keys tie for the lead.
 fn sole_leader(counts: &HashMap<String, usize>) -> Option<&str> {
     let max = counts.values().max()?;
     let mut leaders = counts.iter().filter(|(_, count)| *count == max);
@@ -68,9 +65,6 @@ pub fn detect_hero_from_paths(paths: &[String]) -> HeroDetectionResult {
     detect(paths.iter().map(String::as_str))
 }
 
-/// Model and material folders name the hero a skin is for. A sound-only mod has
-/// neither, so its `sounds/abilities/<codename>/` folders name the hero instead,
-/// but only when no model folder was found at all.
 fn detect<'a>(paths: impl Iterator<Item = &'a str>) -> HeroDetectionResult {
     let mut hero_counts: HashMap<String, usize> = HashMap::new();
     let mut sound_hero_counts: HashMap<String, usize> = HashMap::new();

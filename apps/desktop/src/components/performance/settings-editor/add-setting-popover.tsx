@@ -28,7 +28,6 @@ type AddSettingPopoverProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialQuery: string;
-  /** Path keys of entries already in the config. */
   configKeys: ReadonlySet<string>;
   onPick: (meta: ConvarMeta) => void;
 };
@@ -161,7 +160,6 @@ const ConvarSearch = ({
   );
 };
 
-/** Search every convar the catalog knows and add one to the config. */
 export const AddSettingPopover = ({
   open,
   onOpenChange,

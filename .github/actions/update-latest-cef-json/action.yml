@@ -50,7 +50,6 @@ runs:
 
           const platforms = {};
 
-          // Windows: find *-cef-setup.exe and its .sig
           const windowsExe = assets.find(a => a.name.endsWith('-cef-setup.exe') || a.name.endsWith('-cef-setup.exe'.replace(/-/g, '.')));
           const windowsSig = assets.find(a => a.name.endsWith('-cef-setup.exe.sig') || a.name.endsWith('-cef-setup.exe.sig'.replace(/-/g, '.')));
 
@@ -71,7 +70,6 @@ runs:
             console.log('No Windows CEF artifacts found in release assets');
           }
 
-          // Linux: find *-cef.deb and its .sig
           const linuxDeb = assets.find(a => a.name.endsWith('-cef.deb'));
           const linuxSig = assets.find(a => a.name.endsWith('-cef.deb.sig'));
 
@@ -109,7 +107,6 @@ runs:
             return;
           }
 
-          // Sanity check URLs
           for (const [platform, entry] of Object.entries(platforms)) {
             if (entry.url.includes('/releases/latest/download/') || entry.url.includes('/releases/download/untagged-')) {
               throw new Error(`Platform ${platform} has a bad URL that will 404: ${entry.url}`);
@@ -123,7 +120,6 @@ runs:
             platforms
           };
 
-          // Delete existing latest-cef.json if present
           const existing = assets.find(a => a.name === 'latest-cef.json');
           if (existing) {
             await github.rest.repos.deleteReleaseAsset({

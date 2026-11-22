@@ -69,7 +69,6 @@ impl KvDocument {
 
         let mut current = &mut self.data;
 
-        // Navigate/create path
         for part in &parts[..parts.len() - 1] {
             if !current.contains_key(*part) {
                 current.insert(
@@ -91,7 +90,7 @@ impl KvDocument {
         }
 
         current.insert(last_part.to_string(), value);
-        self.ast = None; // Clear AST since data was modified
+        self.ast = None;
         Ok(())
     }
 
@@ -104,7 +103,6 @@ impl KvDocument {
 
         let mut current = &mut self.data;
 
-        // Navigate to parent
         for part in &parts[..parts.len() - 1] {
             match current.get_mut(*part) {
                 Some(KeyValuesValue::Object(obj)) => {
@@ -116,7 +114,7 @@ impl KvDocument {
 
         let removed = current.remove(*last_part).is_some();
         if removed {
-            self.ast = None; // Clear AST since data was modified
+            self.ast = None;
         }
         Ok(removed)
     }
@@ -183,13 +181,11 @@ impl KvDocument {
     pub fn merge(&mut self, path: Option<&str>, obj: KeyValuesObject) -> Result<()> {
         match path {
             None => {
-                // Merge at root
                 for (key, value) in obj {
                     self.data.insert(key, value);
                 }
             }
             Some(p) => {
-                // Get the target object
                 let parts: Vec<&str> = p.split('.').collect();
                 let mut current = &mut self.data;
 
@@ -213,14 +209,13 @@ impl KvDocument {
                     }
                 }
 
-                // Merge into the target
                 for (key, value) in obj {
                     current.insert(key, value);
                 }
             }
         }
 
-        self.ast = None; // Clear AST since data was modified
+        self.ast = None;
         Ok(())
     }
 
@@ -239,7 +234,7 @@ impl KvDocument {
         };
 
         self.data = updated_data;
-        self.ast = updated_ast; // AST is updated by apply_to_ast, or None if no AST existed
+        self.ast = updated_ast;
         Ok(())
     }
 

@@ -6,7 +6,6 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
-/** The four facts most people need, before any detail. */
 const BASICS = [
   { id: "inPlace", icon: FileTextIcon },
   { id: "turnOff", icon: ArrowCounterClockwiseIcon },

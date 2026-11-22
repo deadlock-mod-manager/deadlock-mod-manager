@@ -25,11 +25,6 @@ export type EditorConfigOption = {
 
 type PresetRef = Pick<PresetSummary, "id" | "name">;
 
-/**
- * Every config the editor can open: catalog presets, then the user's own
- * newest first. The applied config is listed even when the catalog or the
- * store no longer has it, so it stays editable.
- */
 export const editorConfigOptions = (
   presets: PresetRef[],
   userConfigs: Record<string, UserPerfConfig>,
@@ -66,7 +61,6 @@ export const editorConfigOptions = (
   return options;
 };
 
-/** The request for a config without any tweaks, or `null` when it can't be found. */
 export const editorBaseRequest = (
   configId: string,
   presets: PresetRef[],
@@ -98,14 +92,6 @@ export const withDraft = (
   videoVariant: draft.videoVariant,
 });
 
-/**
- * The tweaks saved for a config. Overrides fall back to what was applied, for a
- * config applied before the store had an entry for it (e.g. from History).
- * Engine sections are included unless the user turned them off, except that a
- * config applied with nothing left out keeps its applied choice: the toggle
- * changes nothing there, so it shouldn't show as a pending change. Video.txt
- * settings are written unless the user turned them off.
- */
 export const savedDraftFor = (
   configId: string,
   saved: {
@@ -130,7 +116,6 @@ export const savedDraftFor = (
   };
 };
 
-/** The file holds this config with exactly these tweaks. */
 export const isAppliedAs = (
   configId: string,
   saved: EditorDraft,

@@ -4,23 +4,16 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 
-// Renders the NSIS installer bitmaps from the app icon:
-//   sidebar.bmp (164x314) - welcome and finish pages
-//   sidebar-nightly.bmp   - the same, tagged for nightly builds
-//   header.bmp  (150x57)  - all other installer and uninstaller pages
-// Re-run after changing the app icon. Text uses the app's Forevs Demo font.
-
 const SRC_TAURI = resolve(import.meta.dirname, "../src-tauri");
 const FONT = "Forevs Demo";
 const FONT_FILES = ["forevsdemo-bold.otf", "forevsdemo-medium.otf"].map(
   (file) => resolve(import.meta.dirname, "../src/assets/fonts/primary", file),
 );
 
-// Theme colors from src/index.css
-const DARK = "#110f0e"; // --background
-const CREAM = "#fdf8f0"; // --foreground
-const ACCENT = "#efe2c0"; // --primary
-const INK = "#2c2624"; // .light --foreground
+const DARK = "#110f0e";
+const CREAM = "#fdf8f0";
+const ACCENT = "#efe2c0";
+const INK = "#2c2624";
 
 type Pixels = { width: number; height: number; rgba: Buffer };
 
@@ -44,9 +37,6 @@ const loadIcon = (): Pixels => {
   );
 };
 
-// resvg samples large downscales without prefiltering, which leaves the icon
-// jagged at 41px. Average every covered source pixel instead, weighted by
-// coverage and in premultiplied alpha.
 const downscale = (src: Pixels, size: number): Pixels => {
   const rgba = Buffer.alloc(size * size * 4);
   const scale = src.width / size;
@@ -104,7 +94,6 @@ const drawOver = (dest: Pixels, src: Pixels, left: number, top: number) => {
   }
 };
 
-// NSIS needs uncompressed 24-bit BMPs: bottom-up BGR rows padded to 4 bytes.
 const encodeBmp = ({ width, height, rgba }: Pixels) => {
   const rowSize = Math.ceil((width * 3) / 4) * 4;
   const pixelBytes = rowSize * height;
@@ -119,7 +108,6 @@ const encodeBmp = ({ width, height, rgba }: Pixels) => {
   bmp.writeUInt16LE(1, 26);
   bmp.writeUInt16LE(24, 28);
   bmp.writeUInt32LE(pixelBytes, 34);
-  // 96 DPI
   bmp.writeInt32LE(3780, 38);
   bmp.writeInt32LE(3780, 42);
 
@@ -152,9 +140,6 @@ const renderBitmap = (
   writeFileSync(resolve(SRC_TAURI, "installer", name), encodeBmp(bitmap));
 };
 
-// Welcome and finish pages: the app's dark sidebar, with the icon's crosshair
-// lines echoed faintly behind it. Nightly builds swap in a variant with a
-// tag under the name (see scripts/update-nightly-version.ts).
 const sidebarIcon = { x: 50, y: 88, size: 64 };
 const cx = sidebarIcon.x + sidebarIcon.size / 2;
 const cy = sidebarIcon.y + sidebarIcon.size / 2;
@@ -186,8 +171,6 @@ renderSidebar(
   <text x="${cx}" y="240.5" font-size="10" fill="${ACCENT}" text-anchor="middle" letter-spacing="0.4">Nightly</text>`,
 );
 
-// The header sits on the white title strip, so it stays light and leaves a
-// gap before the page title NSIS draws to its right.
 renderBitmap(
   "header.bmp",
   svg(

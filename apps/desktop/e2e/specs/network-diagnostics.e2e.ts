@@ -18,7 +18,6 @@ describe("network diagnostics", () => {
       .parse(process.env.DMM_E2E_PHASE);
     const runtime = await startApplication();
     const world = runtime.roots.world;
-    // A synced catalog keeps the catalog row from failing the run.
     await navigate("mods");
     await waitForDisplayed(`[title="${CATALOG_MOD_NAME}"]`);
     await openSettings("tools");
@@ -40,8 +39,6 @@ describe("network diagnostics", () => {
       await check.getAttribute("data-check-id"),
       await check.getAttribute("data-check-status"),
     ]);
-    // Both Cloudflare probes go to the connectivity origin, which this phase
-    // cuts off.
     const expectedFailures = new Set<string | null>(
       phase === "internet-down"
         ? ["internet", "dns", "tcpAutoTuning"]
@@ -66,7 +63,6 @@ describe("network diagnostics", () => {
         /127\.0\.0\.1:\d+ is not reachable/,
       );
     } else if (process.platform === "win32") {
-      // Only Windows has the setting; the world injects Disabled.
       const autoTuning = await row("tcpAutoTuning");
       await reveal(autoTuning);
       await browser.saveScreenshot(

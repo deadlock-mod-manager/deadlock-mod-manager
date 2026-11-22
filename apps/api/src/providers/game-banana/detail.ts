@@ -6,8 +6,6 @@ export function indexRevisionToAcknowledge(
   indexModifiedAt: Date | undefined,
   fetchStartedAt: number,
 ): Date | undefined {
-  // Keep recent revisions pending: DownloadPage can lag behind a fresh profile.
-  // markSynced preserves the stored revision when this returns undefined.
   if (
     !indexModifiedAt ||
     fetchStartedAt - indexModifiedAt.getTime() < DETAIL_CACHE_TTL_MS

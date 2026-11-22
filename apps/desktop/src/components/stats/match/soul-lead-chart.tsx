@@ -29,10 +29,6 @@ import { TeamKey } from "./match-team-key";
 const signedSouls = (value: number) =>
   `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatCompact(Math.abs(value))}`;
 
-/**
- * The match in one line: how far ahead each team was at every sample, shaded in
- * the colour of whoever led, with every kill ticked underneath.
- */
 export const SoulLeadChart = ({
   players,
   duration,
@@ -51,12 +47,9 @@ export const SoulLeadChart = ({
     return {
       points: lead,
       kills: killTimeline(players),
-      // Symmetric, so the two teams' leads read on the same scale.
       limit: Math.ceil((Math.max(top, -bottom, 1000) * 1.15) / 4000) * 4000,
       story: leadStory(lead),
       last: lead[lead.length - 1] ?? { time: 0, lead: 0 },
-      // The fill gradient spans the area's own box (highest lead to deepest
-      // deficit), so zero sits wherever it falls inside that range.
       zeroStop: top - bottom > 0 ? top / (top - bottom) : 0.5,
     };
   }, [players]);

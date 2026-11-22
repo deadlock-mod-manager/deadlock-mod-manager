@@ -39,11 +39,9 @@ const randomizedGroups = (state: State) =>
     (group) => group.randomize,
   );
 
-// Turning Hero Skins off hides the randomizer switch, so it stops rolling too.
 const skinRandomizerActive = (state: State) =>
   state.skinRandomizerEnabled && isFeatureEnabled(state, "skins");
 
-/** The checklist step for what the next launch rolls, or null when nothing. */
 export const launchRandomizerStep = (state: State): LaunchStep | null => {
   if (randomizedGroups(state).length > 0) {
     return "randomizingMods";
@@ -51,18 +49,12 @@ export const launchRandomizerStep = (state: State): LaunchStep | null => {
   return skinRandomizerActive(state) ? "randomizingSkins" : null;
 };
 
-/** The profile a launch started on; a roll never touches another one. */
 type RollProfile = {
   id: ProfileId;
   folder: string | null;
   manifest?: VpkManifest;
 };
 
-/**
- * The file tree to install a mod with, or null when installing it would need
- * the user to pick files. It reuses the earlier choices a normal install does.
- * Old downloads have no stored tree, so theirs is read from disk.
- */
 const silentFileTree = async (
   mod: LocalMod,
   manifest?: VpkManifest,
@@ -80,7 +72,6 @@ const silentFileTree = async (
   return tree.has_multiple_files ? applyDownloadTimeSelection(mod, tree) : tree;
 };
 
-/** Installed mods outside `active` that need one of its members to work. */
 const dependentsOf = (
   active: readonly LocalMod[],
   mods: readonly LocalMod[],
@@ -100,12 +91,6 @@ const dependentsOf = (
   );
 };
 
-/**
- * Rolls one mod for every randomized library group, then a skin for every hero
- * with a randomizer pool, and puts them on before the game starts. It is silent
- * on purpose: the pick is meant to be found in game, so nothing here names a
- * mod, and a failed swap only says that one happened.
- */
 export const useLaunchRandomizer = () => {
   const { t } = useTranslation();
   const { install } = useInstallWithCollection();
@@ -141,8 +126,6 @@ export const useLaunchRandomizer = () => {
       profile: RollProfile,
     ) => {
       const state = usePersistedStore.getState();
-      // A retry can put back a mod the roll just took off, so its pool entry
-      // still reads as installed; install the store's current copy.
       const current =
         state.localMods.find((local) => local.remoteId === mod.remoteId) ?? mod;
       const result = await install(
@@ -177,15 +160,6 @@ export const useLaunchRandomizer = () => {
     [install],
   );
 
-  /**
-   * Swaps `active` for one roll from `pool`. Every candidate is checked before
-   * anything is taken off, so a mod that turns out to need a file pick is never
-   * rolled. A pick that would need a prompt to install (a model conflict with a
-   * mod outside the pool, or a missing requirement) is cancelled, and the roll
-   * moves on to the rest, what was on before included. Nothing is taken off
-   * while another installed mod needs it. Returns false when nothing could be
-   * put on, or when the user switched profiles mid-roll.
-   */
   const roll = useCallback(
     async (
       pool: RandomizerOutcome<LocalMod>[],
@@ -251,7 +225,6 @@ export const useLaunchRandomizer = () => {
             .map((mod) => mod.remoteId),
         );
         current = current.filter((mod) => installed.has(mod.remoteId));
-        // A failed uninstall leaves things as they are rather than stacking.
         if (current.length > 0 || !onProfile()) {
           return false;
         }
@@ -270,7 +243,6 @@ export const useLaunchRandomizer = () => {
     const profile: RollProfile = {
       id: start.activeProfileId,
       folder,
-      // It only lets more variant mods roll, so a failed read leaves them out.
       manifest: await getProfileVpkSnapshot(folder)
         .then((snapshot) => snapshot.manifest)
         .catch((error) => {
@@ -300,9 +272,6 @@ export const useLaunchRandomizer = () => {
 
     const state = usePersistedStore.getState();
     if (skinRandomizerActive(state)) {
-      // A hero with a skin in a randomized group already got its roll there,
-      // and a second roll would take that skin straight back off. Hidden skins
-      // count too: the hero list leaves them out but they still get installed.
       const rolled = randomizedGroupModIds(pools.map(({ group }) => group));
       const rolledHeroes = groupModsByHero(
         state.localMods.filter((mod) => rolled.has(mod.remoteId)),

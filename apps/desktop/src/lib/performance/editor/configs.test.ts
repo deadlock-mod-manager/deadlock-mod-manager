@@ -119,7 +119,6 @@ describe("editorBaseRequest", () => {
   });
 });
 
-/** What was applied, and how many engine-section edits it left out. */
 const applied = (
   request: PerfApplyRequest,
   engineSection: number,

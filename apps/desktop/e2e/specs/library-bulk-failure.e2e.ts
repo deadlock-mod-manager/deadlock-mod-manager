@@ -28,7 +28,6 @@ import { navigate } from "../support/ui";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 
 const [first, second, third] = ALPHA_MODS;
-// Exists only to make the second mod's delete fail before any of its files move.
 const STAGING_BLOCKER = `.dmm-update-${second}`;
 const STAGING_BYTES = Buffer.from("Owned staging blocker\n");
 
@@ -68,7 +67,6 @@ const writeManifest = async (
     JSON.stringify(manifest, null, 2),
   );
 
-/** Makes the second mod's disable fail before it renames anything. */
 const breakSecondDisable = async (directory: string) => {
   const manifest = await readManifest(directory);
   const entry = manifest.mods[second];
@@ -209,7 +207,6 @@ const expectRecap = async (
   await expect(recapSection(`${headings.completed} (1)`)).toHaveText(
     expect.stringContaining(first),
   );
-  // The recap replaces the generic error toast rather than adding to it.
   await expect(
     $$('[data-sonner-toast][data-type="error"]'),
   ).toBeElementsArrayOfSize(0);
@@ -223,7 +220,6 @@ const confirmWhileOpen = async (
 ) => {
   const dialog = $('[role="alertdialog"]');
   await dialog.waitForDisplayed();
-  // Fault injection waits for the confirmation so startup can't repair it.
   await inject();
   await dialog.$(`button=${action}`).click();
   await expect(dialog).not.toBeDisplayed();
@@ -235,7 +231,6 @@ const texts = async (selector: string) => {
   return found;
 };
 
-/** Saves what the user sees right after the run, for base and fixed runs alike. */
 const recordOutcome = async (world: string) => {
   await browser.pause(1_000);
   const toasts = await texts("[data-sonner-toast]");
@@ -279,7 +274,6 @@ describe("bulk library actions stopped by a failure", () => {
           writeFile(path.join(alpha, STAGING_BLOCKER), STAGING_BYTES),
         );
       }
-      // The partial outcome is real before anything is said about it.
       if (disabling) await verifyDisableOutcome(world);
       else await verifyDeleteOutcome(world);
       await recordOutcome(world);
@@ -304,7 +298,6 @@ describe("bulk library actions stopped by a failure", () => {
         await breakSecondDisable(alpha);
         await holdCommandReply("uninstall_mod", second);
       });
-      // The run is waiting on the second mod when the library page goes away.
       await observeUntil("second disable held", commandReplyHeld, Boolean);
       await navigate("settings");
       await releaseCommandReply();
@@ -315,7 +308,6 @@ describe("bulk library actions stopped by a failure", () => {
         { failed: "Failed to disable", completed: "Disabled" },
         "original VPK name count (2) does not match installed VPK count (1)",
       );
-      // A closed recap stays closed when the library opens again.
       await navigate("my-mods");
     }
 

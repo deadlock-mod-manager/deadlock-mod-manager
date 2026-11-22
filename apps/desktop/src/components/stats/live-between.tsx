@@ -57,11 +57,6 @@ const GhostCard = ({
   </div>
 );
 
-/**
- * A still outline of the match view under the banner: what fills in once a
- * match runs. Still, not shimmering, because nothing is loading. Cards with
- * something real to say take the place of the outline's middle row.
- */
 export const LivePreview = ({
   left,
   right,
@@ -111,7 +106,6 @@ export const LivePreview = ({
   );
 };
 
-/** Today's matches, for the time between them. */
 export const LiveSessionCard = ({
   matches,
   badge,
@@ -245,7 +239,6 @@ export const LiveLastMatchCard = ({
 }: {
   lastMatch: MatchHistoryEntry;
   hero: DeadlockHero | undefined;
-  /** The overall grade the live board ended the match on, when it was watched. */
   grade: Grade | undefined;
 }) => {
   const { t } = useTranslation();

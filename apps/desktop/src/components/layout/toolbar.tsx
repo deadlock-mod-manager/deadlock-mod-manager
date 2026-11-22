@@ -38,8 +38,6 @@ export const Toolbar = () => {
   const [launching, setLaunching] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
 
-  // useHeroDetection already polls this key every 5s; a second interval here
-  // would drift out of phase and double the process scans.
   const { data: isRunning, refetch } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: () => isGameRunning(),

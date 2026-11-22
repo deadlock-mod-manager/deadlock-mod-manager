@@ -1,6 +1,3 @@
-//! Validate the effective NM dependency closure, including models whose bindings
-//! already exist. Passing these structural checks does not verify playback or
-//! the author's track order, retargeting, or deformation intent.
 use super::asset_compatibility::{AssetRepair, AssetWarning, WarningKind, valid_skeleton};
 use super::resources::{ResourceSnapshot, resource_path};
 use super::{CompiledDataSource, Kv3Value, decode_compiled_data};
@@ -209,8 +206,6 @@ impl Checker<'_> {
             );
           }
           for child in children {
-            // Shipped graphs retain optional clips that the installed game does
-            // not provide. Their absence alone is not evidence of a broken mod.
             if child.ends_with(".vnmclip_c")
               && !self.repaired.contains_key(child.as_str())
               && self.resources.provider(&child).is_none()

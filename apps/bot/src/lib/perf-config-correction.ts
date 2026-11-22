@@ -3,7 +3,6 @@ import {
   type PolicyMetadataCorrection,
 } from "@deadlock-mods/shared";
 
-/** Keeps the rest of an existing correction, such as fixed download links. */
 export const withPerformanceConfigCategory = (
   correction: PolicyMetadataCorrection | null,
 ): PolicyMetadataCorrection => ({
@@ -11,7 +10,6 @@ export const withPerformanceConfigCategory = (
   category: PERFORMANCE_CONFIG_CATEGORY,
 });
 
-/** The correction without the flag, or null when nothing else is left. */
 export const withoutPerformanceConfigCategory = (
   correction: PolicyMetadataCorrection | null,
 ): PolicyMetadataCorrection | null => {

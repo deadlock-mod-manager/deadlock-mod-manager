@@ -34,8 +34,6 @@ type NavigationState = {
   settingsSection: SettingsSectionId;
 };
 
-// Navigation lives outside React so other landing sections (the theme cards)
-// can drive the preview without sharing a provider with it.
 let state: NavigationState = {
   screen: "dashboard",
   theme: "default",
@@ -48,8 +46,6 @@ const commit = (next: Partial<NavigationState>) => {
   for (const listener of listeners) listener();
 };
 
-// Only worth it when the preview is on screen; a view transition briefly
-// freezes the whole page.
 const canCrossFade = () => {
   if (typeof document === "undefined") return false;
   if (typeof document.startViewTransition !== "function") return false;
@@ -62,7 +58,6 @@ const canCrossFade = () => {
   return bottom > 0 && top < window.innerHeight;
 };
 
-/** Theme changes cross-fade the recolor when the browser supports it. */
 const setState = (next: Partial<NavigationState>) => {
   if (
     next.theme === undefined ||
@@ -100,9 +95,7 @@ const scrollToTour = () =>
     .getElementById("tour")
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-/** Opens the preview on the Themes screen with a theme applied. */
 export const showThemeInPreview = (theme: PreviewThemeId) => {
-  // A view transition freezes the page while it runs, so scroll afterwards.
   const transition = setState({
     theme,
     screen: "settings",

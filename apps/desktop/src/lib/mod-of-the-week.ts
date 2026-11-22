@@ -1,11 +1,6 @@
 import type { FeatureFlag } from "@deadlock-mods/shared";
 import { getRemlockFeaturedModId, readStringFlag } from "@/lib/theme-release";
 
-/**
- * GameBanana id pinned as mod of the week. A pin set with the bot's
- * `/modoftheweek` command (`mod-of-the-week-id` until `mod-of-the-week-until`)
- * wins over the Remlock release pin.
- */
 export function getPinnedFeaturedModId(
   flags: readonly FeatureFlag[] = [],
   now = new Date(),

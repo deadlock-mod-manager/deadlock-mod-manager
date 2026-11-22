@@ -20,7 +20,6 @@ type AccentColorPickerProps = {
   customColors: string[];
   dialogTitle: string;
   dialogDescription: string;
-  /** Receives the new accent plus the custom swatch list to persist with it. */
   onChange: (color: string, customColors: string[]) => void;
 };
 
@@ -56,7 +55,6 @@ export const AccentColorPicker = ({
 
   const selectColor = (hex: string) => onChange(hex, customColors);
 
-  // Picker results become a custom swatch unless a preset or saved swatch already matches.
   const commitAccent = (hex: string) => {
     const known = allColors.some((c) => sameHex(c, hex));
     onChange(hex, known ? customColors : [...customColors, hex]);

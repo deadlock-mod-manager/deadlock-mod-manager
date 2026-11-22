@@ -65,7 +65,6 @@ it("cleans up an interrupted process", async () => {
 it("bounds the deadline when an exited launcher leaves inherited output pipes", async () => {
   const options = await setup();
   const started = Date.now();
-  // Bun closes inherited pipes differently. Exercise the actual supervisor runtime.
   const script = `import { runProcess } from ${JSON.stringify(new URL("./process-control.ts", import.meta.url).href)};
     import { writeFile } from "node:fs/promises";
     const result = await runProcess({ ...${JSON.stringify(options)}, executable: process.execPath,
@@ -93,8 +92,6 @@ it("bounds the deadline when an exited launcher leaves inherited output pipes", 
   try {
     expect(Date.now() - started).toBeLessThan(4000);
     if (process.platform === "win32") {
-      // Windows closes this launcher's pipe handles immediately; Unix keeps
-      // them open until the inheriting descendant exits.
       expect(result.termination).toBeNull();
       expect(result.exitCode).toBe(0);
     } else {
@@ -103,8 +100,6 @@ it("bounds the deadline when an exited launcher leaves inherited output pipes", 
       expect(result.output).toContain("Launcher already exited");
     }
   } finally {
-    // This test owns the descendant directly; the runner must not guess an
-    // orphan's identity from a potentially reused launcher PID.
     if (processExists(pid)) process.kill(pid, "SIGKILL");
   }
 });

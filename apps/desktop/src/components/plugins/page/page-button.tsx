@@ -17,7 +17,6 @@ type PageButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant: PageButtonVariant;
 };
 
-/** The buttons the plugin page designs draw: 8px radius, 16px icons, `normal` leading. */
 export const PageButton = ({
   variant,
   className,

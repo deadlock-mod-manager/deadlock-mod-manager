@@ -10,8 +10,6 @@ interface VideoEmbedProps {
   disabled?: boolean;
 }
 
-// Both players need scripts and their own origin; popups let "Watch on
-// YouTube/Vimeo" open outside the sandbox.
 const PLAYER_SANDBOX =
   "allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox";
 const PLAYER_ALLOW =
@@ -21,7 +19,6 @@ function playerUrl({ provider, id, hash }: EmbeddedVideo): string {
   if (provider === "youtube") {
     return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0`;
   }
-  // Vimeo expects the unlisted-video hash before any other player parameter
   const params = new URLSearchParams();
   if (hash) params.set("h", hash);
   params.set("autoplay", "1");
@@ -29,10 +26,6 @@ function playerUrl({ provider, id, hash }: EmbeddedVideo): string {
   return `https://player.vimeo.com/video/${encodeURIComponent(id)}?${params}`;
 }
 
-/**
- * Click-to-play video player. The provider iframe loads only after the user
- * clicks, so viewing a page contacts YouTube for a thumbnail at most.
- */
 export const VideoEmbed = ({
   video,
   title,

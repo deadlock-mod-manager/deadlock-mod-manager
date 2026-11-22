@@ -41,7 +41,6 @@ runs:
           const version = process.env.VERSION;
           const artifactPath = process.env.ARTIFACT_PATH;
 
-          // Get the release and find the existing latest.json
           const { data: release } = await github.rest.repos.getRelease({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -53,7 +52,6 @@ runs:
             throw new Error('latest.json not found in release assets. Linux build may not have completed.');
           }
 
-          // Download the existing latest.json
           const response = await github.rest.repos.getReleaseAsset({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -67,7 +65,6 @@ runs:
           console.log('Downloaded existing latest.json');
           console.log('Existing platforms:', Object.keys(latestJson.platforms));
 
-          // Read the new Windows NSIS signature and find the exe file
           const files = fs.readdirSync(artifactPath);
           const installers = files.filter(f => f.endsWith('-setup.exe') && !f.endsWith('-cef-setup.exe'));
           if (installers.length !== 1) {
@@ -109,7 +106,6 @@ runs:
             console.log('No Flatpak asset found, skipping linux-x86_64-flatpak entry');
           }
 
-          // Draft releases can use asset API URLs, whose last segment is an ID.
           for (const [platform, entry] of Object.entries(latestJson.platforms)) {
             const filename = decodeURIComponent(entry.url.split('/').pop());
             const asset = release.assets.find(a =>
@@ -127,14 +123,12 @@ runs:
 
           console.log('Final platforms:', Object.keys(latestJson.platforms));
 
-          // Sanity check: no URL should contain draft-release or latest-redirect paths
           for (const [platform, entry] of Object.entries(latestJson.platforms)) {
             if (entry.url.includes('/releases/latest/download/') || entry.url.includes('/releases/download/untagged-')) {
               throw new Error(`Platform ${platform} has a bad URL that will 404: ${entry.url}`);
             }
           }
 
-          // Delete existing latest.json and upload new one
           await github.rest.repos.deleteReleaseAsset({
             owner: context.repo.owner,
             repo: context.repo.repo,

@@ -45,7 +45,6 @@ fn foreign_language_fences_are_kept_whole_or_rejected() {
     "GameInfo\n{{\n FileSystem\n {{\n  SearchPaths\n  {{\n{foreign}   Game core\n  }}\n }}\n}}"
   );
   assert!(rewrite(&original, Some(&paths()), false).is_err());
-  // With the stock mount outside the fence, a gap after the fence is safe.
   let original = original.replace(
     "   Game citadel\n   // Other tool END",
     "   // Other tool END\n   Game citadel",
@@ -98,9 +97,7 @@ fn deadworks_detects_versioned_markers_without_claiming_the_legacy_wrapper() {
     "GameInfo { FileSystem { SearchPaths { Game citadel } } }".into(),
   ] {
     let mounted = rewrite(&original, Some(&paths()), false).unwrap();
-    // This is Deadworks' contains-based detector, including its v0.6.4 release.
     assert!(mounted.contains("// Deadlock Mod Manager - Start"));
-    // Older DMM must stop at its missing end marker before replacing a whole block.
     assert!(!mounted.contains(LEGACY_END));
     assert!(!mounted.lines().any(|line| line.trim() == LEGACY_START));
     assert!(!mounted.lines().any(|line| line.trim() == LEGACY_END));
@@ -182,7 +179,6 @@ fn foreign_fences_cannot_move_profile_mounts_below_stock_paths() {
   assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
 }
 
-// Captured from the actual renderer in Deadworks-net/deadworks at 4656f48056b0.
 const DEADWORKS_FIRST: &str = include_str!("fixtures/deadworks-first.gi");
 const DEADWORKS_AFTER_DMM: &str = include_str!("fixtures/deadworks-after-dmm.gi");
 
@@ -552,8 +548,6 @@ fn managed() -> Vec<String> {
   ]
 }
 
-/// A hand-added mount of a folder DMM manages loaded that profile's mods under
-/// every other profile and in vanilla launches (#1401).
 #[test]
 fn stray_mounts_of_managed_folders_are_dropped() {
   let fenced = FOREIGN.replace("citadel/hyperline/startup", "citadel/addons/profile_old");

@@ -204,8 +204,6 @@ describe("catalog installation lifecycle", () => {
           ).toHaveAttribute("aria-checked", String(archive.selected));
         await dialog.$("button=Update Mod").click();
         await expect(dialog).not.toBeDisplayed();
-        // The mod already reads as installed, so wait for the update itself
-        // to finish before opening its files.
         await $(
           '//*[@data-sonner-toast][contains(., "Update complete")]',
         ).waitForDisplayed();

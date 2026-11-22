@@ -313,8 +313,6 @@ jobs:
           RELEASE_ID: ${{ inputs.release_id }}
         with:
           script: |
-            // Swap the draft onto the rolling tag only now, so the previous
-            // nightly stays downloadable for the whole build.
             try {
               const { data: previous } = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
@@ -344,7 +342,6 @@ jobs:
               console.log('No previous nightly tag found');
             }
 
-            // target_commitish from the draft is kept, so the new tag lands on the built commit
             const { data: updatedRelease } = await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,

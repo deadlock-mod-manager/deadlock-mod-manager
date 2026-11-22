@@ -1,11 +1,3 @@
-//! Which interchange key became which DMM mod, and which source profile was
-//! imported into which DMM profile.
-//!
-//! Local mods get an id derived from their key, but the user can later link
-//! one to its GameBanana page, which changes the id. Without this ledger a
-//! second import would bring the old local copy back next to the linked one,
-//! and would create every source profile a second time.
-
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -18,10 +10,8 @@ const LEDGER_FILE: &str = "interchange-ledger.json";
 pub struct Ledger {
   #[serde(default)]
   pub version: u32,
-  /// Interchange key -> DMM mod id.
   #[serde(default)]
   pub entries: BTreeMap<String, String>,
-  /// `<source manager>:<profile key>` -> DMM profile id.
   #[serde(default)]
   pub profiles: BTreeMap<String, String>,
 }
@@ -30,8 +20,6 @@ pub fn ledger_path(app_data: &Path) -> PathBuf {
   app_data.join(LEDGER_FILE)
 }
 
-/// A missing or unreadable ledger is an empty one: the worst case is a
-/// duplicate prompt, never a failed import. An unreadable one is logged.
 pub fn load(app_data: &Path) -> Ledger {
   let path = ledger_path(app_data);
   let text = match fs::read_to_string(&path) {
@@ -72,7 +60,6 @@ pub fn save(app_data: &Path, ledger: &Ledger) -> Result<(), Error> {
   Ok(())
 }
 
-/// Point every key that resolved to `from` at `to`.
 pub fn relabel(ledger: &mut Ledger, from: &str, to: &str) {
   for value in ledger.entries.values_mut() {
     if value == from {

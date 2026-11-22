@@ -33,7 +33,6 @@ impl Default for TransportConfig {
       connect_timeout: Duration::from_secs(10),
       total_timeout: Duration::from_secs(30),
       max_concurrency: 4,
-      // GameBanana documents no limit; other Deadlock mod managers run at 10 req/s without trouble.
       max_requests_per_window: 10,
       request_window: Duration::from_secs(1),
       max_retries: 3,
@@ -102,7 +101,6 @@ impl GameBananaTransport {
     T: DeserializeOwned,
   {
     let response = self.fetch(operation, url, cancel, true).await?;
-    // GameBanana reports some rejections, like Remote Install's NOT_ENROLLED, with HTTP 200.
     let rejection = parse_json_body::<ApiErrorBody>(&response.body)
       .ok()
       .and_then(|body| body.code)
@@ -138,8 +136,6 @@ impl GameBananaTransport {
 
       let response = tokio::select! {
         _ = cancel.cancelled() => return Err(Error::ProviderCancelled),
-        // reqwest is built without its compression features, which would also apply to
-        // archive downloads, so this client asks for gzip and decodes it itself.
         response = self.client.get(url.clone()).header(ACCEPT_ENCODING, "gzip").send() => {
           response.map_err(|error| Error::ProviderUnavailable(error_without_url(&error)))?
         }
@@ -216,7 +212,6 @@ impl GameBananaTransport {
         self.config.max_response_bytes,
       )?;
 
-      // GameBanana occasionally answers 200 with an empty body; a retry gets the payload.
       if status.is_success() && body.trim_ascii().is_empty() {
         if attempt == self.config.max_retries {
           return Err(Error::ProviderUnavailable(format!(
@@ -258,7 +253,6 @@ fn decode_body(
   body: Vec<u8>,
   max_bytes: usize,
 ) -> Result<Vec<u8>, Error> {
-  // An empty body is not valid gzip; passing it through lets the empty-200 retry handle it.
   if body.is_empty()
     || !content_encoding
       .is_some_and(|value| value.as_bytes().trim_ascii().eq_ignore_ascii_case(b"gzip"))
@@ -266,7 +260,6 @@ fn decode_body(
     return Ok(body);
   }
   let mut decoded = Vec::new();
-  // Reading one byte past the limit tells a body at the limit from one over it.
   MultiGzDecoder::new(body.as_slice())
     .take(max_bytes as u64 + 1)
     .read_to_end(&mut decoded)
@@ -279,8 +272,6 @@ fn decode_body(
 
 fn parse_json_body<T: DeserializeOwned>(body: &[u8]) -> Result<T, Error> {
   serde_json::from_slice(body).or_else(|error| {
-    // GameBanana occasionally prints PHP warnings ahead of the JSON payload.
-    // The payload itself still starts on its own line, so retry from there.
     body
       .iter()
       .enumerate()
@@ -524,7 +515,6 @@ mod tests {
       "{result:?}"
     );
 
-    // The limit also applies to the decoded body.
     let decoded_limit = GameBananaTransport::new(TransportConfig {
       max_retries: 0,
       max_response_bytes: 64,
@@ -574,7 +564,6 @@ mod tests {
       json!({ "_sName": "Example mod", "_sProfileUrl": "https://gamebanana.com/mods/1" });
     let plain = serde_json::to_vec(&json!({ "_aRecords": vec![record; 50] })).unwrap();
     let plain_len = plain.len();
-    // Like GameBanana: gzip only for a client that asks for it, plain JSON otherwise.
     let (url, sent) = serve_once_with(move |request| {
       let accepts_gzip = request.lines().any(|line| {
         line.split_once(':').is_some_and(|(name, value)| {
@@ -651,8 +640,6 @@ mod tests {
       .0
   }
 
-  /// Answers one request with whatever `respond` builds from the request head, and reports
-  /// how many bytes went over the wire.
   async fn serve_once_with(
     respond: impl FnOnce(&str) -> Vec<u8> + Send + 'static,
   ) -> (reqwest::Url, JoinHandle<usize>) {

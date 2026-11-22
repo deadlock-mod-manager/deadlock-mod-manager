@@ -15,7 +15,6 @@ export type EnableAllRecap = {
   criticalPaths: LocalMod[];
   keptCurrent: LocalMod[];
   replaced: LocalMod[];
-  /** Left untouched after the user kept the game-running guard in place. */
   notAttempted: LocalMod[];
 };
 
@@ -36,8 +35,6 @@ export const useEnableAllMods = () => {
     mutationFn: async (selectedIds?: ReadonlySet<string>) => {
       const state = usePersistedStore.getState();
       const profileId = state.activeProfileId;
-      // A randomized group keeps one member on, picked at launch, so enabling
-      // everything leaves its members alone unless they were picked by hand.
       const rolled = randomizedGroupModIds(
         state.getActiveProfile()?.modGroups ?? [],
       );
@@ -99,7 +96,6 @@ export const useEnableAllMods = () => {
           result.notAttempted = disabledMods.slice(index);
           break;
         }
-        // These ask for confirmation one by one, so a batch leaves them alone.
         if (mod.usesCriticalPaths) {
           result.criticalPaths.push(mod);
           continue;
@@ -139,7 +135,6 @@ export const useEnableAllMods = () => {
           },
         });
 
-        // Every remaining mod would raise the same game-running prompt.
         if (gameRunning) {
           result.notAttempted = disabledMods.slice(index);
           break;

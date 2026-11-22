@@ -15,23 +15,16 @@ import { formatDecimal, formatPercent } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
 const SHOWN = 6;
-/** A hidden gem needs enough games that its winrate isn't a coin flip. */
 const GEM_MIN_MATCHES = 10;
 const GEM_SKIP_TOP = 3;
 
 interface HeroPoolProps {
   heroes: HeroPerformance[];
   heroesById: Map<number, DeadlockHero>;
-  /** The link to the Heroes tab; off where there is no such tab, like a player card. */
   showAllLink?: boolean;
-  /** Makes each row open that hero's breakdown. */
   onSelectHero?: (heroId: number) => void;
 }
 
-/**
- * Where the games go: the most played heroes, sized by games and marked with
- * their winrate, plus the one hero that deserves more of them.
- */
 export const HeroPool = ({
   heroes,
   heroesById,
@@ -45,8 +38,6 @@ export const HeroPool = ({
     return null;
   }
 
-  // The best winrate outside the heroes the player already lives on, so the
-  // note says something new.
   const gem = heroes
     .slice(GEM_SKIP_TOP)
     .filter((hero) => hero.matches >= GEM_MIN_MATCHES && hero.winrate > 0.5)

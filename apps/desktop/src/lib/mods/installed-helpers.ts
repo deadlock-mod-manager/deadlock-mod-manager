@@ -12,13 +12,10 @@ export function isInstalledModWithVpks(
   );
 }
 
-/** Local mods only exist on disk, so they can never be downloaded again. */
 export function isLocalMod(mod: Pick<LocalMod, "remoteId">): boolean {
   return parseSubmissionSlug(mod.remoteId)?.provider === "local";
 }
 
-/** Unlike isLocalMod, also false for Foundry exports and files found on disk,
- *  whose ids aren't submission slugs. */
 export function canDownloadAgain(mod: Pick<LocalMod, "remoteId">): boolean {
   return (
     parseSubmissionSlug(mod.remoteId)?.provider === "gamebanana" ||

@@ -23,8 +23,6 @@ import {
 } from "@/lib/desktop-changelog";
 import { seo } from "@/utils/seo";
 
-// English-only like the release notes it is built from: the entries come
-// straight from the desktop app's changesets.
 export const Route = createFileRoute("/changelog")({
   component: ChangelogPage,
   head: () =>
@@ -52,7 +50,6 @@ const TOTAL_CHANGES = DESKTOP_RELEASES.reduce(
   0,
 );
 
-/** The oldest entry in the changelog, typo and all. */
 const ORIGIN = DESKTOP_RELEASES.at(-1);
 
 const matches = (change: Change, query: string) =>

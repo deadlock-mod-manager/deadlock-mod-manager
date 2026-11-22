@@ -15,9 +15,6 @@ import { observeUntil } from "../support/observations";
 
 const IMAGE = 'img[alt="E2E Local Adult Skin"]';
 const image = () => $(IMAGE);
-// Linux hides the image and draws a blurred canvas copy beside it; other
-// platforms blur the image with a CSS filter. The card is found in the page
-// because WebKitGTK's driver can't hand its element to a script.
 const assertBlur = async (blurred: boolean) => {
   await image().waitForExist();
   await browser.waitUntil(

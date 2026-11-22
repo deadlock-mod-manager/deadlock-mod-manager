@@ -8,8 +8,6 @@ use serde::Serialize;
 use super::mods::InstalledModInfo;
 use super::state::MANAGER;
 
-/// What a restore changed, for the frontend to apply. Only update backups
-/// report mods; full restores are picked up by reading the manifests.
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RestoredBackup {

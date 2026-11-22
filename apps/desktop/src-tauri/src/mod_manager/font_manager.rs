@@ -42,7 +42,6 @@ impl FontManager {
     Self
   }
 
-  /// Scan extracted directory for .ttf files located under any `panorama/fonts/` path
   pub fn scan_for_fonts(&self, extracted_dir: &Path) -> Vec<PathBuf> {
     let mut result = Vec::new();
     self.walk_for_fonts(extracted_dir, extracted_dir, &mut result);
@@ -69,7 +68,6 @@ impl FontManager {
     }
   }
 
-  /// Parse the actual font name from the TTF name table (family name, then full name, then filename)
   pub fn get_font_name(&self, ttf_path: &Path) -> String {
     let fallback = ttf_path
       .file_stem()
@@ -85,7 +83,6 @@ impl FontManager {
       return fallback;
     };
 
-    // Try name ID 1 (Family Name) first, then 4 (Full Name) as fallback
     for target_id in [1u16, 4u16] {
       for name in face.names() {
         if name.name_id == target_id
@@ -102,9 +99,6 @@ impl FontManager {
     fallback
   }
 
-  /// Copy fonts to a stash dir within the mod's cache folder, returning FontInfo for each.
-  /// Duplicate filenames are skipped so the on-disk stash and the returned `FontInfo`
-  /// list stay consistent (otherwise the second copy silently overwrites the first).
   pub fn stash_fonts(&self, fonts: &[PathBuf], stash_dir: &Path) -> Result<Vec<FontInfo>, Error> {
     fs::create_dir_all(stash_dir)?;
 
@@ -136,7 +130,6 @@ impl FontManager {
     Ok(infos)
   }
 
-  /// Copy stashed fonts from the mod's cache to the game's panorama/fonts directory
   pub fn install_fonts(
     &self,
     stash_dir: &Path,
@@ -181,7 +174,6 @@ impl FontManager {
     Ok(installed)
   }
 
-  /// Add fontpattern entries to fonts.conf, tagged with the mod_id so they can be removed later
   pub fn patch_fonts_conf(
     &self,
     conf_path: &Path,
@@ -191,7 +183,6 @@ impl FontManager {
     let mut content = fs::read_to_string(conf_path)
       .map_err(|e| Error::InvalidInput(format!("Failed to read fonts.conf: {e}")))?;
 
-    // Remove any existing section for this mod first (idempotent)
     content = self.remove_section(&content, mod_id);
 
     let patterns: String = font_infos
@@ -214,9 +205,6 @@ impl FontManager {
       end = FONTS_CONF_SECTION_END,
     );
 
-    // Insert after the last existing <fontpattern> line so the entries stay within
-    // the fontpattern block and before the <cachedir> / <match> rules below it.
-    // Fall back to inserting before </fontconfig> if no fontpattern exists yet.
     let insert_pos = content
       .rfind("</fontpattern>")
       .map(|pos| pos + "</fontpattern>".len())
@@ -235,7 +223,6 @@ impl FontManager {
     Ok(())
   }
 
-  /// Remove fontpattern entries previously added for a mod
   pub fn remove_font_patterns(&self, conf_path: &Path, mod_id: &str) -> Result<(), Error> {
     if !conf_path.exists() {
       return Ok(());
@@ -264,7 +251,6 @@ impl FontManager {
       return content.to_string();
     };
 
-    // Walk back to find the newline before the start marker
     let section_start = content[..start_pos]
       .rfind('\n')
       .map(|i| i + 1)
@@ -276,7 +262,6 @@ impl FontManager {
 
     let section_end = end_pos + end_marker.len();
 
-    // Consume the trailing newline if present
     let section_end = if content.as_bytes().get(section_end) == Some(&b'\n') {
       section_end + 1
     } else {
@@ -286,7 +271,6 @@ impl FontManager {
     format!("{}{}", &content[..section_start], &content[section_end..])
   }
 
-  /// Remove the stash directory for a mod
   pub fn discard_stash(&self, stash_dir: &Path) -> Result<(), Error> {
     if stash_dir.exists() {
       fs::remove_dir_all(stash_dir)?;
@@ -343,11 +327,6 @@ impl FontManager {
     Ok(())
   }
 
-  /// Parse a single VPK dir file and extract any TTF fonts packed under `panorama/fonts/`.
-  /// Returns `(filename, bytes)` pairs for each font found.
-  ///
-  /// Reads only the directory tree and each font's bytes: a mod VPK can be close to a
-  /// gigabyte, and this runs on every import.
   pub fn extract_fonts_from_vpk(&self, vpk_path: &Path) -> Vec<(String, Vec<u8>)> {
     let mut header = [0u8; 12];
     if let Err(e) = fs::File::open(vpk_path).and_then(|mut file| file.read_exact(&mut header)) {
@@ -378,12 +357,9 @@ impl FontManager {
     let mut result = Vec::new();
 
     for entry in &entries {
-      // Only care about TTF files inside panorama/fonts/
       if !entry.ext.eq_ignore_ascii_case("ttf") {
         continue;
       }
-      // Match an actual `panorama/fonts` segment so unrelated paths like
-      // `panorama_fonts_backup/foo` aren't treated as bundled fonts.
       let path_components: Vec<&str> = entry
         .path
         .split(['/', '\\'])
@@ -410,7 +386,6 @@ impl FontManager {
           data_section_start + u64::from(entry.entry_offset),
         )
       } else {
-        // In a companion archive file
         let stem = vpk_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
         let base = stem.strip_suffix("_dir").unwrap_or(stem);
         let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
@@ -441,8 +416,6 @@ impl FontManager {
     result
   }
 
-  /// Scan all VPK files under `dir` recursively for packed TTF fonts.
-  /// Returns `(filename, bytes)` pairs ready to be stashed.
   pub fn scan_vpks_for_fonts(&self, dir: &Path) -> Vec<(String, Vec<u8>)> {
     let mut result = Vec::new();
     self.walk_for_vpk_fonts(dir, &mut result);
@@ -467,8 +440,6 @@ impl FontManager {
     }
   }
 
-  /// Stash in-memory font bytes into `stash_dir`, returning `FontInfo` for each.
-  /// Duplicate filenames within the same call are skipped to avoid overwriting.
   pub fn stash_font_bytes(
     &self,
     fonts: &[(String, Vec<u8>)],
@@ -512,14 +483,11 @@ fn is_under_panorama_fonts(path: &Path, base: &Path) -> bool {
     .map(|c| c.as_os_str().to_string_lossy().to_lowercase())
     .collect();
 
-  // Match consecutive "panorama" -> "fonts" components anywhere in the path
   components
     .windows(2)
     .any(|w| w[0] == "panorama" && w[1] == "fonts")
 }
 
-/// A VPK entry name is attacker-controlled. Only accept a single plain `*.ttf` file name, so it
-/// can never resolve outside the stash directory (`..`, `C:`, `\\\\server\\share`, `a/b`).
 fn is_plain_font_file_name(name: &str) -> bool {
   !name.is_empty()
     && !name.contains(['/', '\\'])
@@ -601,7 +569,6 @@ mod tests {
     assert!(game_fonts_dir.join("keep.ttf").exists());
   }
 
-  /// A VPK v2 whose entries are stored inline, after the directory tree.
   fn inline_vpk(entries: &[(&str, &str, &str, &[u8])]) -> Vec<u8> {
     let mut tree = Vec::new();
     let mut data = Vec::new();

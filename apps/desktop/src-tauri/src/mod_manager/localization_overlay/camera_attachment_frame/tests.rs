@@ -828,8 +828,6 @@ fn partially_migrated_meshes_convert_only_their_stale_root_attachments() {
   assert!(repair(&repaired, &base).unwrap().is_none());
 }
 
-/// Packs a game model with a complete camera interface and an old skin, then
-/// plans the skin's repairs.
 fn camera_interface_plan(
   temp: &std::path::Path,
   skin_text: &str,
@@ -863,12 +861,10 @@ fn camera_interface_plan(
 fn restored_camera_points_stay_in_the_current_frame_on_every_mesh() {
   let temp = tempfile::tempdir().unwrap();
   let cases = [
-    // Old pivots and no camera list: the frame migration runs before points are added.
     (
       "{ CitadelCameraSettings_t = { m_flCameraHeightStanding = 70.0 } }",
       mesh(OLD_FRAME),
     ),
-    // A camera list naming a point the meshes lack.
     (
       r#"{ CitadelCameraSettings_t = { m_flCameraHeightStanding = 70.0 } AttachmentCameraData = [ { attachment_name = "near_00" } ] }"#,
       mesh(IDENTITY),

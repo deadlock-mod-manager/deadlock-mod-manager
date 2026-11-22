@@ -2,23 +2,13 @@ import type { GamePhase } from "@/types/generated/GamePhase";
 import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
 import type { LiveScoreboard } from "@/types/generated/LiveScoreboard";
 
-/** The bridge repeats an unchanged board every 20 seconds, so this is overdue. */
 export const BRIDGE_STALE_MS = 45_000;
 
-/**
- * Whether the bridge reported recently. Bot and practice matches log no lobby
- * line, so this is what tells them apart from a finished match.
- */
 const isRecentReport = (reportedAt: number | null, now: number): boolean =>
   reportedAt !== null && now - reportedAt < BRIDGE_STALE_MS;
 
 export interface LiveBoard {
-  /**
-   * The lobby's phase, `ended` for the last match after its lobby closed, or
-   * `null` with the game closed or no match logged.
-   */
   phase: GamePhase | null;
-  /** The bridge's board, when it describes the match on screen. */
   board: LiveScoreboard | null;
   matchId: string | null;
 }
@@ -28,7 +18,6 @@ export const liveBoard = (
   gameRunning: boolean,
   now: number,
 ): LiveBoard => {
-  // Back from a match, it stays on screen as ended until the next queue.
   if (gameRunning && !status?.current && status?.lastMatch) {
     return {
       phase: "ended",
@@ -36,13 +25,8 @@ export const liveBoard = (
       matchId: status.lastMatch.matchId,
     };
   }
-  // console.log outlives the game, so with Deadlock closed nothing in it is
-  // current. Only a lobby line marks a real match; the hideout runs the same
-  // top bar without one.
   const phase = gameRunning ? (status?.current?.phase ?? null) : null;
   const scoreboard = status?.scoreboard ?? null;
-  // In the match the bridge reports throughout, so a quiet board is from a
-  // session that never wrote the log. Before it, the top bar may not exist yet.
   const shown =
     phase === "pregame" ||
     phase === "ended" ||
@@ -68,8 +52,6 @@ export type LiveViewState =
   | { kind: "needsSetup" }
   | { kind: "closed" }
   | { kind: "queued"; since: number }
-  // A match without a board: the game was started before the bridge was
-  // installed, or the top bar has not appeared yet.
   | { kind: "pregameLoading" }
   | { kind: "matchOverNoBoard" }
   | { kind: "noBridge" }
@@ -87,7 +69,6 @@ export const liveViewState = ({
   now: number;
 }): LiveViewState => {
   if (!status) return { kind: "checking" };
-  // console.log only exists with -condebug, and everything here is read from it.
   if (!status.consoleLogAvailable) return { kind: "condebug" };
 
   const { phase, board, matchId } = liveBoard(status, gameRunning, now);

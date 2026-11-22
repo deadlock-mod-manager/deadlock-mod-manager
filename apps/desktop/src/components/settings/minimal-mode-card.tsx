@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 type MinimalModeCardProps = {
   checked: boolean;
   disabled: boolean;
-  /** Features the user has on, so paused while Minimal DMM is on. */
   enabledCount: number;
   total: number;
   onCheckedChange: (checked: boolean) => void;

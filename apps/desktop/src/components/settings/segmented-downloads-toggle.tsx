@@ -15,8 +15,6 @@ export const SegmentedDownloadsToggle = () => {
     (state) => state.setSegmentedDownloads,
   );
 
-  // Saved only once the backend has it, so the switch never shows a mode the
-  // downloader isn't using.
   const toggleMutation = useMutation({
     mutationFn: applySegmentedDownloadsSetting,
     onSuccess: (_, enabled) => {

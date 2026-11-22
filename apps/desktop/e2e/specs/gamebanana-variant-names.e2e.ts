@@ -91,7 +91,6 @@ describe("variants sharing a VPK filename", () => {
             (await hasInstalledVersion(world, green, "v2")),
           Boolean,
         );
-        // Blue's parked copy is v1, so the update drops it.
         await assertVariantDisk(world, "updated-v2", {
           [red]: { state: "enabled", version: "v2" },
           [green]: { state: "enabled", version: "v2" },

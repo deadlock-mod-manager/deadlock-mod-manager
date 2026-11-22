@@ -54,7 +54,6 @@ const Heroes = ({
   </div>
 );
 
-/** Both teams the way the in-game top bar shows them, with the souls race between. */
 export const LiveTopBar = ({ board }: { board: ResolvedBoard }) => {
   const { t } = useTranslation();
   const { friendly, enemy } = board;

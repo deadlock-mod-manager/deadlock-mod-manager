@@ -47,7 +47,6 @@ describe("storage write gate", () => {
   beforeEach(() => {
     memory.clear();
     storageModule.__resetForTests();
-    // Reset the getStore mock to the in-memory backend.
     getStoreImpl = async () => ({
       get: async (k) => memory.get(k),
       set: async (k, v) => {
@@ -315,10 +314,8 @@ describe("storage write gate", () => {
 
     const result = await storage.getItem("local-config");
     expect(result).toBe(null);
-    // 1 initial + 3 retries = 4 attempts.
     expect(callCount).toBe(4);
 
-    // Subsequent setItem must be dropped to avoid clobbering the on-disk state.
     memory.set("local-config", "preexisting");
     await storage.setItem("local-config", "should-be-dropped");
     expect(memory.get("local-config")).toBe("preexisting");

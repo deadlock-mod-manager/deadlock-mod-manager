@@ -727,7 +727,6 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Spacer to avoid overlap with bottom status bar */}
       <div className='h-12' />
     </div>
   );
@@ -740,7 +739,6 @@ const Render = () => {
 
   if (!selectedTheme) return null;
 
-  // Render exported user-defined themes via CustomTheme override
   const userTheme = getUserThemes(current).find((t) => t.id === selectedTheme);
   if (userTheme) {
     return <CustomTheme theme={userTheme} />;

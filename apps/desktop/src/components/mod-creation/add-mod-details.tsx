@@ -70,8 +70,6 @@ const fileStem = (file: File) =>
 
 const NAME_SEPARATOR = /[\s._-]/;
 
-// Parts usually share a prefix ("skin_base", "skin_hair"), which names the mod.
-// The prefix ends on a word boundary: "hero_alpha" and "hero_alt" give "hero".
 const sharedName = (source: DetectedSource): string | null => {
   const stems = sourceFiles(source).map(fileStem).sort();
   let prefix = stems[0];
@@ -93,7 +91,6 @@ interface AddModDetailsProps {
   onClose: () => void;
 }
 
-/** The dialog's second step: the details of the mod or mods being added. */
 export const AddModDetails = ({
   source,
   onSourceChange,
@@ -103,7 +100,6 @@ export const AddModDetails = ({
   const navigate = useNavigate();
   const { setProcessing } = useProgress();
   const { processMod } = useModProcessor();
-  // Files with nothing in common are likely unrelated mods.
   const [mode, setMode] = useState<ImportMode>(() =>
     source.kind === "vpks" && !sharedName(source) ? "separate" : "one",
   );
@@ -113,7 +109,6 @@ export const AddModDetails = ({
     name: sharedName(source) ?? fileStem(sourceFiles(source)[0]),
   }));
   const metaRef = useRef<ModMetadataFormHandle>(null);
-  // A second click lands before isPending re-renders the button disabled.
   const submitting = useRef(false);
 
   const form = useForm<AddModFormValues>({
@@ -123,7 +118,6 @@ export const AddModDetails = ({
   const category = form.watch("category");
   const mapName = form.watch("mapName");
 
-  // Archives are only read once extracted, so only loose VPKs are inspected.
   const partPaths =
     source.kind === "archive"
       ? []
@@ -132,8 +126,6 @@ export const AddModDetails = ({
   const { data: contents, isFetching: inspecting } = useQuery(
     localModContentsOptions(partPaths),
   );
-  // Only a part that reskins a hero has a model to render; reading the others
-  // would copy each one, however large, for nothing.
   const coverPaths = separate
     ? []
     : (contents ?? [])
@@ -141,8 +133,6 @@ export const AddModDetails = ({
         .map((part) => part.filePath);
   const cover = useQuery(filesCoverOptions(coverPaths));
 
-  // Separate mods each take the category their own files point to, so the
-  // select only covers files with none.
   const suggestedCategory =
     contents && !separate ? suggestCategory(contents) : null;
   const categoryDetected =
@@ -152,9 +142,6 @@ export const AddModDetails = ({
   const categoryIsFallback =
     separate && contents?.some((part) => suggestCategory([part]) !== null);
 
-  // Until the user picks one, the category follows the files. While a changed
-  // set of parts is read again, there are no contents yet; that is not a
-  // detection that found nothing.
   useEffect(() => {
     if (!categoryTouched && !inspecting) {
       form.setValue("category", suggestedCategory ?? ModCategory.SKINS);
@@ -164,7 +151,6 @@ export const AddModDetails = ({
   const detectedMap = contents && !separate ? detectedMapName(contents) : null;
   const mapNameDetected =
     !mapNameTouched && detectedMap !== null && mapName === detectedMap;
-  // Separate mods each keep the map name their own files carry.
   const askMapName = category === ModCategory.MAPS && !separate;
 
   useEffect(() => {
@@ -223,7 +209,6 @@ export const AddModDetails = ({
       return modId ? [modId] : [];
     },
     onSuccess: (modIds, metadata) => {
-      // processMod already reported a failure that returned no mod.
       if (modIds.length === 0) return;
       onClose();
       toast.success(
@@ -234,7 +219,6 @@ export const AddModDetails = ({
       navigate("/my-mods");
     },
     onError: (error) => {
-      // Some processMod steps throw without clearing its progress indicator.
       setProcessing(false);
       logger.withError(error).error("Failed to process mod");
       toast.error(t("addMods.processingError"));
@@ -307,7 +291,6 @@ export const AddModDetails = ({
                   </div>
                   <Select
                     onValueChange={(value) => {
-                      // Radix reports "" as the dialog mounts; nobody chose it.
                       if (!value) return;
                       setCategoryTouched(true);
                       field.onChange(value);
@@ -347,7 +330,6 @@ export const AddModDetails = ({
                         onChange={(event) => {
                           setMapNameTouched(true);
                           field.onChange(event);
-                          // Checked again on Add, not on every keystroke.
                           form.clearErrors("mapName");
                         }}
                         placeholder={t("addMods.mapNamePlaceholder")}
@@ -403,7 +385,6 @@ export const AddModDetails = ({
           {t("addMods.cancel")}
         </Button>
         <Button
-          // The import reads each part's category and map name from the contents.
           disabled={importMods.isPending || inspecting}
           icon={<PlusIcon className='h-4 w-4' />}
           isLoading={importMods.isPending}

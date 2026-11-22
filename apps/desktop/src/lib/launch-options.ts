@@ -7,9 +7,6 @@ import type { LocalSetting } from "@/types/settings";
 
 const LOCAL_SETTING_PREFIX = "local_setting_";
 
-// Server launch options are stored under their database id. Once the server
-// deletes or re-creates one, the stored copy keeps applying at launch while the
-// settings page no longer lists it, so nothing can turn it off.
 const findOrphanedLaunchOptionIds = (
   settings: LocalSetting[],
   serverSettingIds: ReadonlySet<string>,
@@ -32,7 +29,6 @@ const pruneOrphanedLaunchOptions = async () => {
       meta: { skipGlobalErrorHandler: true },
     })
     .catch(() => null);
-  // Offline: an orphan can't be told apart from a live option, so keep both.
   if (!serverSettings) return;
 
   const { settings, removeSetting } = usePersistedStore.getState();
@@ -50,7 +46,6 @@ export const getAdditionalArgs = async () => {
   const { settings, gamePresenceEnabled, localMods } =
     usePersistedStore.getState();
   const additionalArgs: string[] = [];
-  // The live bridge reports through the console log, which only -condebug writes.
   const liveBridgeInstalled = localMods.some(isLiveBridge);
 
   if (gamePresenceEnabled || liveBridgeInstalled) {

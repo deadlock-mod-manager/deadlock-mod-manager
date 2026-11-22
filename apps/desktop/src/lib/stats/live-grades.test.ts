@@ -6,7 +6,6 @@ import {
   liveGradeRows,
 } from "@/lib/stats/live-grades";
 
-// Rounded from deadlock-api's curve for Wraith in the Seeker bracket.
 const point = (
   game_time: number,
   values: Partial<PerformanceCurvePoint>,
@@ -71,8 +70,6 @@ describe("curveAt", () => {
 
 describe("liveGradeRows", () => {
   it("grades souls against the bracket at the same game time", () => {
-    // The screenshot case: 5,400 souls at 5:33, well ahead of the curve, even
-    // though 973 a minute is below a whole-match average.
     const rows = liveGradeRows({
       player: player({ souls: 5400 }),
       minutes: 5.55,
@@ -92,7 +89,6 @@ describe("liveGradeRows", () => {
     });
 
     expect(deaths?.metric).toBe("deaths");
-    // 0 against an average of 0.46 (std 0.72): ahead of about three quarters.
     expect(deaths?.beats).toBeCloseTo(0.74, 2);
     expect(deaths?.grade).toBe("B");
   });

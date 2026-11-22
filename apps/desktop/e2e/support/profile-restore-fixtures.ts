@@ -88,7 +88,6 @@ export const profileRestoreRoutes = async () => {
   };
 };
 
-/** Charlie has two old enabled files and a parked variant ahead of the other mods. */
 export const prepareProfileRestoreWorld = async (world: CreatedWorld) => {
   await prepareInstalledProfiles(
     world,
@@ -167,8 +166,6 @@ export const prepareProfileRestoreWorld = async (world: CreatedWorld) => {
         ? ["pak01_dir.vpk", "pak02_dir.vpk"]
         : [`pak${String(index + 2).padStart(2, "0")}_dir.vpk`],
   }));
-  // Authentication is a prerequisite, not the operation under test. All tokens
-  // and responses belong to this disposable world's loopback server.
   await writeFile(
     path.join(world.configuration.roots.appData, "state.json"),
     JSON.stringify({
@@ -201,15 +198,9 @@ export const prepareProfileRestoreWorld = async (world: CreatedWorld) => {
   );
 };
 
-/** The mod startup looks up before it syncs the active profile. */
 export const LATE_METADATA_MOD_ID = "920002";
 const LATE_METADATA_MS = 8_000;
 
-/**
- * Startup reconciles the active profile before it syncs it, and looks up a mod
- * the library lost. That lookup answers late once, so a test can act between
- * the reconciliation's read of the profile and the sync's.
- */
 export const profileRestoreDuringSyncRoutes = async () => {
   const base = await profileRestoreRoutes();
   return (origin: string): FixtureRoute[] => {
@@ -220,7 +211,6 @@ export const profileRestoreDuringSyncRoutes = async () => {
     );
     if (!lookup) throw new Error("The restore world never looks up Bravo");
     const answer = { status: lookup.status, body: lookup.body };
-    // The server answers with the first route that matches.
     return [
       {
         ...lookup,
@@ -234,7 +224,6 @@ export const profileRestoreDuringSyncRoutes = async () => {
   };
 };
 
-/** The restore world, with Bravo in the manifest but not in the library. */
 export const prepareProfileRestoreDuringSyncWorld = async (
   world: CreatedWorld,
 ) => {

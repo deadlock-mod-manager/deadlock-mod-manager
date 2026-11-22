@@ -58,11 +58,6 @@ pub(crate) fn align(pos: &mut usize, alignment: usize) {
     }
 }
 
-/// Split a KV3 data buffer into its 1/2/4/8-byte value segments. `start` is the
-/// absolute byte offset the segments begin at: the 2/4/8-byte alignment padding
-/// is computed against this absolute position (in v5 the object-length table
-/// precedes the segments, and its size is not 8-aligned), so callers must pass
-/// the real offset rather than pre-slicing.
 pub(crate) fn split_segment(
     raw: &[u8],
     start: usize,
@@ -466,7 +461,7 @@ pub fn parse(data: &[u8]) -> Result<KvValue> {
         if version >= 4 {
             count_bytes2 = read_i32(data, pos)? as usize;
             size_block_compressed_sizes_bytes = read_i32(data, pos + 4)? as usize;
-            pos += 8; // count bytes2 + block compressed sizes bytes
+            pos += 8;
         }
 
         if version >= 5 {

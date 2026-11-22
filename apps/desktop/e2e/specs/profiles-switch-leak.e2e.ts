@@ -1,6 +1,3 @@
-// Switching away from the Default profile must stop the game loading its VPKs,
-// even when gameinfo.gi already mounts the root addons folder outside DMM's
-// block (#1401).
 import { $, browser, expect } from "@wdio/globals";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
@@ -20,7 +17,6 @@ const BETA_VPKS = BETA_MODS.map(
   (_, index) => `citadel/addons/${BETA.folder}/${shardSlot(index).filename}`,
 );
 
-/** Every enabled VPK the engine would load through gameinfo.gi's addon mounts. */
 const loadedVpks = async (world: string): Promise<string[]> => {
   const { citadel } = await shardPaths(world);
   const loaded: string[] = [];

@@ -54,7 +54,6 @@ interface SheetContentProps
     React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   overlayClassName?: string;
-  /** For sheets that place their own close button in a custom header. */
   hideClose?: boolean;
 }
 

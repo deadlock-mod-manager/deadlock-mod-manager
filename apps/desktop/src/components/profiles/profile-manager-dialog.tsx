@@ -162,7 +162,6 @@ export const ProfileManagerDialog = ({
     if (profileId === activeProfile?.id) {
       return;
     }
-    // The session restores mods into the profile it started in.
     if (usePersistedStore.getState().bisectSession) {
       toast.error(t("bisect.toasts.switchBlocked"));
       return;
@@ -264,7 +263,6 @@ export const ProfileManagerDialog = ({
           onRestore={(backup) =>
             setRestoreTarget({
               backup,
-              // Nothing is installed yet, so replacing loses nothing.
               destination: "replace",
             })
           }

@@ -14,7 +14,6 @@ function sendJson(response, status, document) {
   response.end(JSON.stringify(document));
 }
 
-/** A fixture-backed public API example, not an upload or publishing service. */
 export async function createExampleServer(fixtureDirectory, publicOrigin) {
   const origin = new URL(publicOrigin);
   assert.ok(["http:", "https:"].includes(origin.protocol));
@@ -46,7 +45,6 @@ export async function createExampleServer(fixtureDirectory, publicOrigin) {
       return listing;
     }),
   );
-  // Resolve this artifact on demand; the components example uses direct URLs.
   const resolvedArtifact = listings[0].release.artifacts[0];
   const resolverPath = `/dmm/v1/files/${encodeURIComponent(resolvedArtifact.id)}/resolve`;
   resolvedArtifact.download = {

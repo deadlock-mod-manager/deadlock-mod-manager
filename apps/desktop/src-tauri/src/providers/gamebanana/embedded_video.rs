@@ -1,8 +1,3 @@
-//! Resolves the video links GameBanana lists in `_aEmbeddedMedia`.
-//!
-//! Mirrors `parseEmbeddedVideo` in `@deadlock-mods/shared`, which the API uses
-//! for the same field. Only ids that pass these checks reach a player URL.
-
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +21,6 @@ pub enum VideoProvider {
 pub struct EmbeddedVideo {
   pub provider: VideoProvider,
   pub id: String,
-  /// Access hash that unlisted Vimeo videos need in the player URL
   pub hash: Option<String>,
 }
 
@@ -74,7 +68,6 @@ fn youtube(url: &Url, host: &str, segments: &[&str]) -> Option<EmbeddedVideo> {
 fn vimeo(url: &Url, host: &str, segments: &[&str]) -> Option<EmbeddedVideo> {
   let (id, hash) = match (host, segments) {
     ("player.vimeo.com", ["video", id, ..]) => (*id, query_value(url, "h")),
-    // Unlisted videos carry their access hash as a second path segment
     ("vimeo.com", [id, rest @ ..]) => (*id, rest.first().map(|hash| (*hash).to_string())),
     _ => return None,
   };
@@ -105,8 +98,6 @@ fn embedded_video(raw: &str) -> Option<EmbeddedVideo> {
   })
 }
 
-/// Parses, de-duplicates, and caps the videos a submission embeds. A duplicate
-/// that carries a Vimeo access hash upgrades an earlier entry without one.
 pub fn embedded_videos(urls: &[String]) -> Vec<EmbeddedVideo> {
   let mut videos: Vec<EmbeddedVideo> = Vec::new();
   for video in urls.iter().filter_map(|url| embedded_video(url)) {

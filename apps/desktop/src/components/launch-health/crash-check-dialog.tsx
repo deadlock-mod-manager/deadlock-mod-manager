@@ -32,11 +32,6 @@ import { formatUptime } from "./format";
 
 const OPT_OUT_ID = "crash-check-opt-out";
 
-/**
- * Lives here rather than in useCrashCheck because useLaunch subscribes to the
- * whole store, and this only mounts while a prompt is shown. useLaunch reports
- * launch failures itself.
- */
 const useRelaunch = ({ prepareRelaunch }: CrashCheck) => {
   const { launch } = useLaunch();
   return useMutation({

@@ -14,16 +14,10 @@ const EXCLUDE_PATTERNS = env.ASSET_PRELOAD_EXCLUDE_PATTERNS.map((pattern) =>
 
 let isReady = false;
 
-// Links pasted into prose ("see https://deadlockmods.app/download).") get
-// crawled with the trailing punctuation and indexed as separate URLs.
 const TRAILING_PUNCTUATION = /[).,\]]+$/;
 
-// /login redirects to the auth provider before the page's noindex meta can
-// render, so crawlers only ever see the redirect. Send the header instead.
 const NOINDEX_PATHS = new Set(["/login"]);
 
-// Agent discovery: the homepage advertises the public API through Link
-// headers (RFC 8288) and /.well-known/api-catalog describes it (RFC 9727).
 const API_URL = "https://api.deadlockmods.app/api";
 const API_CATALOG_PATH = "/.well-known/api-catalog";
 const HOMEPAGE_LINK_HEADER = [
@@ -59,7 +53,6 @@ interface NodeResponseLike {
 async function toWebResponse(
   response: Response | NodeResponseLike,
 ): Promise<Response> {
-  // Check if it's a native Response (not a wrapper)
   const isNativeResponse =
     response instanceof Response && response.constructor.name === "Response";
 
@@ -67,13 +60,10 @@ async function toWebResponse(
     return response as Response;
   }
 
-  // It's a NodeResponse wrapper - we need to convert it to a native Response
-  // Clone the body to avoid "body already used" errors
   const res = response as NodeResponseLike;
   const body = res.body;
   const headers = new Headers();
 
-  // Copy headers
   if (res.headers) {
     res.headers.forEach((value: string, key: string) => {
       headers.set(key, value);
@@ -124,10 +114,6 @@ async function initializeServer() {
           },
         }),
       ...routes,
-      // Every real build asset has its own route above. Anything else under
-      // /assets/ is a chunk from an older deploy: answer 404 instead of letting
-      // the app render an HTML page with a 200, which the CDN would cache as
-      // that .js file and break every visitor's (and crawler's) next load.
       "/assets/*": () =>
         new Response("Not Found", {
           status: 404,
@@ -144,7 +130,6 @@ async function initializeServer() {
           const noindex = NOINDEX_PATHS.has(url.pathname);
           const isHomepage = url.pathname === "/";
           if (!noindex && !isHomepage) return response;
-          // Redirect responses have immutable headers, so copy before setting.
           const copy = new Response(response.body, response);
           if (noindex) copy.headers.set("X-Robots-Tag", "noindex");
           if (isHomepage) copy.headers.append("Link", HOMEPAGE_LINK_HEADER);
@@ -155,7 +140,6 @@ async function initializeServer() {
           const response = await handler.fetch(req);
           return withPageHeaders(await toWebResponse(response));
         } catch (error) {
-          // Handle TanStack Router redirect throws
           if (
             error &&
             typeof error === "object" &&

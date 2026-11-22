@@ -10,7 +10,6 @@ export const Section = ({
   title: string;
   description?: string;
   action?: React.ReactNode;
-  /** Drops the panel chrome when the content is already made of cards. */
   flat?: boolean;
   children: React.ReactNode;
 }) => (

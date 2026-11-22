@@ -85,7 +85,6 @@ describe("Foundry revert failure", () => {
     }
     await step("restore the source and retry the revert", async () => {
       await $("button=Revert to original").click();
-      // The button is disabled while the revert runs; the toast marks its end.
       await expect($('[data-sonner-toast][data-type="success"]')).toHaveText(
         expect.stringContaining("Reverted"),
       );

@@ -4,7 +4,6 @@ import type {
   WidgetSource,
 } from "@/lib/stats/dashboard/layout";
 
-/** A name for the source, used whenever the user left the title empty. */
 export const useSourceName = () => {
   const { t } = useTranslation();
 

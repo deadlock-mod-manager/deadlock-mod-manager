@@ -1,19 +1,12 @@
-//! Game- and app-directory lookups the Foundry needs, resolved through the mod
-//! manager's existing Steam detection rather than a Foundry-specific search.
-
 use std::path::{Path, PathBuf};
 
 use crate::commands::state::MANAGER;
 use crate::errors::Error;
 
-/// The base game's `pak01_dir.vpk`, or `None` when Deadlock isn't installed.
-/// Every default-hero and fallback asset lookup goes through this archive.
 pub(crate) fn base_game_vpk_path() -> Result<Option<PathBuf>, Error> {
   game_pak("citadel")
 }
 
-/// The engine's own `core/pak01_dir.vpk`, which holds the generic particle
-/// materials (`materials/particle/...`) Deadlock's effects draw with.
 pub(crate) fn core_vpk_path() -> Result<Option<PathBuf>, Error> {
   game_pak("core")
 }
@@ -34,8 +27,6 @@ fn game_pak(content: &str) -> Result<Option<PathBuf>, Error> {
   Ok(pak_path.exists().then_some(pak_path))
 }
 
-/// `<app_local_data>/foundry`: the root every editable skin workspace lives
-/// under. Created lazily by the workspace module on first use.
 pub(crate) fn foundry_workspace_root() -> Result<PathBuf, Error> {
   let manager = MANAGER
     .lock()
@@ -43,8 +34,6 @@ pub(crate) fn foundry_workspace_root() -> Result<PathBuf, Error> {
   Ok(manager.get_app_local_data_path()?.join("foundry"))
 }
 
-/// Compare two paths by their canonical form, falling back to a literal compare
-/// when a path can't be canonicalized (it may not exist yet).
 pub(crate) fn paths_equal(left: &Path, right: &Path) -> bool {
   let left = std::fs::canonicalize(left).unwrap_or_else(|_| left.to_path_buf());
   let right = std::fs::canonicalize(right).unwrap_or_else(|_| right.to_path_buf());

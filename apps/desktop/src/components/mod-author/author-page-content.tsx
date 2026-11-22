@@ -19,8 +19,6 @@ export const AuthorPageContent = ({ authorId }: { authorId: string }) => {
   const { collection, backLabel, goBack } = useModDetailNavigation();
   const { data: profile } = useSuspenseQuery(modAuthorQueryOptions(authorId));
   const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
-  // The mods store's sort, so an author's mods come in the order the user
-  // already browses by.
   const { sortType, setSortType } = useSearchQueryState();
 
   if (!profile) {

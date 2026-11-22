@@ -1,4 +1,3 @@
-// A friend's profile share code, served by a fake share API and GameBanana.
 import { z } from "zod";
 import { createArchive } from "./archive-fixtures";
 import type { FixtureRoute } from "./fixture-server";
@@ -9,9 +8,7 @@ import {
 } from "./gamebanana-fixtures";
 
 export const SHARE_CODE = "e2esharecode0001";
-/** The code a re-shared profile gets: the API serves back what was posted. */
 export const RESHARE_CODE = "e2ereshare000001";
-/** `shared` marks the archives the friend picked. */
 type ShareArchive = { id: number; name: string; vpk: string; shared: boolean };
 export type ShareMod = { id: string; name: string; archives: ShareArchive[] };
 export const SHARE_MODS: ShareMod[] = [
@@ -30,7 +27,6 @@ export const SHARE_MODS: ShareMod[] = [
     ],
   },
   {
-    // The friend picked only Charlie's effects archive.
     id: "920003",
     name: "E2E Share Charlie",
     archives: [
@@ -55,7 +51,6 @@ export const SHARE_MODS: ShareMod[] = [
     ],
   },
 ];
-/** The friend's load order: Charlie, then Alpha, then Bravo. */
 export const SHARED_LOAD_ORDER = ["920003", "920001", "920002"];
 
 const timestamp = 1_793_000_000;
@@ -191,7 +186,6 @@ export const shareRoutes = async () => {
         echoBodyOf: {
           method: "POST",
           path: "/api/v2/profiles",
-          // The share request wraps the profile document the code serves.
           select: (body) =>
             JSON.stringify(
               z.object({ profile: z.json() }).parse(JSON.parse(body)).profile,

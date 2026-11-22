@@ -5,7 +5,6 @@ type BisectDialog = "explainer" | "setup" | null;
 
 type BisectDialogState = {
   dialog: BisectDialog;
-  /** Where the explainer's last step leads. */
   explainerNext: "setup" | null;
   showExplainer: (next: "setup" | null) => void;
   showSetup: () => void;
@@ -20,7 +19,6 @@ export const useBisectDialog = create<BisectDialogState>()((set) => ({
   close: () => set({ dialog: null, explainerNext: null }),
 }));
 
-/** The first run explains how it works before asking for mods. */
 export const openFindBrokenMod = () => {
   const dialogs = useBisectDialog.getState();
   if (usePersistedStore.getState().bisectExplainerSeen) dialogs.showSetup();

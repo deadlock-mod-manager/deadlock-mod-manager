@@ -28,16 +28,12 @@ import type { LocalMod } from "@/types/mods";
 
 interface ModContextMenuProps {
   mod: LocalMod;
-  /** Points the right-click feature hint at this card. */
   hint?: boolean;
-  /** Toggles this mod in library multi-select, starting it if needed. */
   onSelect?: () => void;
-  /** Whether this mod is already selected, so the item offers to deselect. */
   selected?: boolean;
   children: ReactElement;
 }
 
-// Opens the menu where a right-click near the top of the card would.
 const openContextMenuOn = (target: HTMLElement) => {
   const rect = target.getBoundingClientRect();
   target.dispatchEvent(

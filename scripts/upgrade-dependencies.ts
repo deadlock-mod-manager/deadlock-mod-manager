@@ -8,9 +8,7 @@ const ROOT = join(import.meta.dir, "..");
 const PKG_PATH = join(ROOT, "package.json");
 
 const isConditionalOverride = (key: string): boolean => {
-  // Scoped packages start with @, so strip that first
   const name = key.startsWith("@") ? key.slice(1) : key;
-  // If there's still an @ after stripping scope, it has a version selector
   return name.includes("@");
 };
 
@@ -21,7 +19,6 @@ const writePkg = (pkg: Record<string, unknown>) =>
 const pkg = readPkg();
 const overrides: Record<string, string> = pkg.pnpm?.overrides ?? {};
 
-// Separate conditional overrides from simple ones
 const conditionalOverrides: Record<string, string> = {};
 const simpleOverrides: Record<string, string> = {};
 
@@ -40,7 +37,6 @@ if (conditionalCount > 0) {
   );
 }
 
-// Strip conditional overrides
 pkg.pnpm.overrides = simpleOverrides;
 writePkg(pkg);
 

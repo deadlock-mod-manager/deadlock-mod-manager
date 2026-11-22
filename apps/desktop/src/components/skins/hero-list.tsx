@@ -7,7 +7,6 @@ import {
 } from "@/components/skins/hero-list-row";
 
 interface HeroListProps {
-  /** Heroes with mods first, then the rest. */
   entries: HeroListEntry[];
   selectedHero: string | null;
   onSelect: (hero: string) => void;

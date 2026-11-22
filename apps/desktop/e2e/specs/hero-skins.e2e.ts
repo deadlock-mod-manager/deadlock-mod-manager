@@ -34,7 +34,6 @@ const openHero = (hero: string) =>
 const card = (name: string) =>
   $(`//*[@role="button" and .//div[normalize-space()="${name}"]]`);
 
-/** The grid marks exactly one card - the default or a skin - as worn. */
 const expectOnlyActive = (name: string) =>
   step(`only ${name} is active`, async () => {
     await expect(card(name)).toHaveAttribute("aria-pressed", "true");
@@ -60,12 +59,10 @@ describe("hero skin active state", () => {
     const { talon, hazeOne, hazeTwo } = heroSkinMods;
     await navigate("skins");
 
-    // One skin installed from two archives is still one skin (#686).
     await expectSubtitle("Grey Talon", talon.name);
     await openHero("Grey Talon");
     await expectOnlyActive(talon.name);
 
-    // Two separate skins on one hero is the conflict the warning is for.
     await expectSubtitle("Haze", CONFLICT);
     await openHero("Haze");
     await (await card(hazeOne.name)).click();

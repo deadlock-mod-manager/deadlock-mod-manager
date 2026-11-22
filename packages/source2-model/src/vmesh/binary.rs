@@ -33,7 +33,6 @@ pub(crate) fn read_semantic(data: &[u8], pos: usize) -> Result<String> {
     Ok(String::from_utf8_lossy(&bytes[..end]).to_ascii_uppercase())
 }
 
-/// Far above any Deadlock mesh buffer; anything larger is a corrupt header.
 const MAX_DECODED_BUFFER_SIZE: usize = 256 * 1024 * 1024;
 
 pub(crate) fn read_buffer(data: &[u8], pos: usize, is_vertex: bool) -> Result<(BufferData, usize)> {
@@ -74,8 +73,6 @@ pub(crate) fn read_buffer(data: &[u8], pos: usize, is_vertex: bool) -> Result<(B
         .get(raw_start..raw_end)
         .ok_or_else(|| Source2Error::Resource("mesh buffer data out of bounds".into()))?;
     let buffer_data = if expected_size > encoded.len() {
-        // The decoders allocate the full decoded size before meshopt validates
-        // the stream, so a corrupt header must not be able to request more.
         if expected_size > MAX_DECODED_BUFFER_SIZE {
             return Err(Source2Error::Resource(format!(
                 "compressed mesh buffer would decode to {expected_size} bytes"
@@ -343,8 +340,6 @@ fn srgb_to_linear(value: f32) -> f32 {
     }
 }
 
-/// Read a COLOR stream as linear RGBA. Source 2 stores vertex colours
-/// gamma-encoded like its colour textures; glTF's COLOR_0 is linear.
 pub(crate) fn read_colors(buffer: &BufferData, field: &LayoutField) -> Result<Vec<f32>> {
     let mut colors = Vec::with_capacity(buffer.element_count * 4);
     for i in 0..buffer.element_count {
@@ -439,11 +434,6 @@ pub(crate) fn default_skin_weights(vertex_count: usize, bone_weight_count: usize
     weights
 }
 
-/// Decode Source 2's paired skin streams, retaining the requested influences.
-///
-/// Valve uses the nominal 16-bit x4 DXGI formats as packed eight-byte streams
-/// for eight joint influences. Treating those bytes as four u16 values creates
-/// joint indices in the tens of thousands and collapses vertices to the origin.
 pub(crate) fn read_skinning(
     joint_buffer: &BufferData,
     joint_field: &LayoutField,

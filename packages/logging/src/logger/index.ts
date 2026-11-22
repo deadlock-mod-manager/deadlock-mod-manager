@@ -54,7 +54,6 @@ const createLogger = <C extends Record<string, unknown>>(
     enabled: process.env?.NODE_ENV !== "test",
     consoleDebug: false,
 
-    // Transport configuration
     transport: [
       transport,
       ...(options?.sentryClient
@@ -62,33 +61,16 @@ const createLogger = <C extends Record<string, unknown>>(
         : []),
     ],
 
-    // Error handling
-    errorFieldName: "error", // Field name for errors
-    copyMsgOnOnlyError: false, // Copy error.message to log message when using errorOnly()
-    errorFieldInMetadata: false, // Include error in metadata instead of root level
-    errorSerializer: serializeError, // Function to transform Error objects
-
-    // Data structure
-    // contextFieldName: 'context', // Put context data in a specific field -- Keep as flattened for now
-    // metadataFieldName: 'metadata', // Put metadata in a specific field -- Keep as flattened for now
-    // muteContext: false,
-    // muteMetadata: false,
+    errorFieldName: "error",
+    copyMsgOnOnlyError: false,
+    errorFieldInMetadata: false,
+    errorSerializer: serializeError,
 
     plugins: [...openTelemetryPlugins, storeContextPlugin()],
     ...options,
   });
 };
 
-/**
- * Create a logger context using AsyncLocalStorage, useful for request-scoped logging
- *
- * @param context - The context to be added to the logger
- * @example
- * const logger = createLoggerContext({ requestId: "123" });
- * logger.run(async () => {
- *   logger.info("Hello, world!");
- * });
- */
 export const createLoggerContext = <
   T extends Record<string, unknown> = {
     requestId: string;
@@ -104,14 +86,6 @@ export type LoggerContext<T extends Record<string, unknown>> = ReturnType<
   typeof createLoggerContext<T>
 >;
 
-/**
- * Create a logger for an app
- *
- * @param app - The app name
- * @param version - The app version
- * @param options - Logger options (to customize transports, plugins, etc)
- * @param context - Logger context (to store request-scoped context)
- */
 export const createAppLogger = <C extends Record<string, unknown>>({
   app,
   version,

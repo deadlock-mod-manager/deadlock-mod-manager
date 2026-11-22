@@ -23,7 +23,6 @@ export async function removeRetiredCronJobs(
     if (retired.has(repeatable.name))
       await queue.removeRepeatableByKey(repeatable.key);
   }
-  // Active jobs may belong to a draining worker from the previous deployment.
   for (const job of await queue.getJobs([
     "wait",
     "delayed",

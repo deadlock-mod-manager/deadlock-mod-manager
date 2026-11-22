@@ -1,11 +1,7 @@
 export interface ModeTone {
-  /** Background tint for badges/pills. */
   bg: string;
-  /** Foreground text color for badges/pills. */
   text: string;
-  /** Inset ring color for badges/pills. */
   ring: string;
-  /** Solid swatch color for compact dot indicators (e.g. select items). */
   dot: string;
 }
 
@@ -57,10 +53,6 @@ const hashString = (value: string): number => {
   return Math.abs(h);
 };
 
-/**
- * Deterministically picks a mode tone based on the mode string so the same
- * game mode always renders with the same accent across the UI.
- */
 export const modeTone = (mode: string): ModeTone | null => {
   if (!mode) return null;
   return MODE_TONES[hashString(mode) % MODE_TONES.length];

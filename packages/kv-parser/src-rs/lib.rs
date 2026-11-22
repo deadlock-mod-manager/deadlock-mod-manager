@@ -23,7 +23,6 @@ pub use source::{LineComment, SourceDocument, SourceKind, SourceSite, line_end, 
 pub use tokenizer::Tokenizer;
 pub use types::*;
 
-// Helper function to convert Rust string to C string
 fn to_c_string(s: String) -> *mut c_char {
     match CString::new(s) {
         Ok(c_str) => c_str.into_raw(),
@@ -41,7 +40,6 @@ pub unsafe extern "C" fn kv_free_string(ptr: *mut c_char) {
     }
 }
 
-// Get library version
 #[unsafe(no_mangle)]
 pub extern "C" fn kv_version() -> *mut c_char {
     to_c_string(env!("CARGO_PKG_VERSION").to_string())
@@ -66,7 +64,6 @@ pub unsafe extern "C" fn kv_parse(
         Err(e) => return to_c_string(format!(r#"{{"error": "Invalid UTF-8: {e}"}}"#)),
     };
 
-    // Parse options from JSON
     let options = if options_json.is_null() {
         ParseOptions::default()
     } else {
@@ -83,7 +80,6 @@ pub unsafe extern "C" fn kv_parse(
         }
     };
 
-    // Parse the KV
     match Parser::parse(&input, options) {
         Ok(result) => match serde_json::to_string(&result) {
             Ok(json) => to_c_string(json),

@@ -46,7 +46,6 @@ const deterministicShuffle = <T>(
   return arr;
 };
 
-/** A category's eligible mods in this week's order; the first is its pick. */
 const featuredCandidates = (mods: ModDto[], now: Date, salt = 0): ModDto[] => {
   const eligible = mods
     .filter(
@@ -71,10 +70,6 @@ export const pickFeaturedMod = (
   salt = 0,
 ): ModDto | undefined => featuredCandidates(mods, now, salt)[0];
 
-/**
- * Each category's candidates in `MOD_CATEGORY_ORDER`, leading with its weekly
- * pick. Categories without an eligible mod are skipped.
- */
 export const featuredCandidatesByCategory = (
   mods: ModDto[],
   now: Date,
@@ -87,16 +82,8 @@ export const featuredCandidatesByCategory = (
     ),
   ).filter((candidates) => candidates.length > 0);
 
-// GameBanana drops withheld, private and deleted mods from its index, but the
-// local catalog can still hold them, and only the submission profile reports a
-// withhold. Each pick is confirmed against its profile before it is featured.
 const MAX_FEATURED_CHECKS = 3;
 
-/**
- * The first candidate GameBanana still serves publicly. Other failures keep the
- * candidate: the detail fetch already falls back to the cached record offline,
- * so they don't say anything about the mod itself.
- */
 export const confirmFeaturedMod = async (
   candidates: ModDto[],
   fetchMod: (
@@ -118,7 +105,6 @@ export const confirmFeaturedMod = async (
   return undefined;
 };
 
-/** Leads with `pinned`, replacing the weekly pick for its category. */
 export const pinFeaturedMod = (
   featured: ModDto[],
   pinned: ModDto,
@@ -129,16 +115,6 @@ export const pinFeaturedMod = (
   ),
 ];
 
-/**
- * Picks the "featured mods of the week" deterministically, one per category,
- * from each category's top downloads. Stable across reloads, identical for
- * every user, rotates weekly. A pick GameBanana no longer serves publicly gives
- * way to the category's next candidate. A `pinned` mod leads the week instead
- * of its category's pick.
- *
- * NOTE: client-side heuristic. A backend `/featured` endpoint would be a
- * better long-term solution.
- */
 export const useFeaturedMods = (
   mods: ModDto[] | undefined,
   options?: { now?: Date; pinned?: ModDto },

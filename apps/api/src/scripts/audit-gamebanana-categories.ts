@@ -1,29 +1,5 @@
 #!/usr/bin/env bun
 
-/**
- * Audits how DMM files every Deadlock submission on GameBanana. Walks the live
- * category tree, pages through the Mod and Sound indexes, and runs each
- * submission through the category and hero resolution the way three callers
- * see it:
- *
- * - api-sync: the API sync, which has the profile and the index root category
- * - detail-page: the desktop detail page, which has the profile and keeps the
- *   category the sync stored (a page opened before its first sync falls back
- *   to the profile's category)
- * - bulk-sync: the desktop bulk sync, which has the index root, the leaf
- *   category name from the legacy hydration API, and the hero above a skin
- *   subcategory from its walk of the Skins tree
- *
- * The desktop paths are Rust; the TS helpers stand in for them, kept in step
- * by the normalizer parity fixtures. Expected values come from the tree: the
- * category is the root category, and a skin's hero is the Skins child above
- * it. Skins filed directly under Skins have no category hero and are skipped.
- *
- * Usage:
- * pnpm --filter api audit-gamebanana-categories
- * pnpm --filter api audit-gamebanana-categories -- --verify-profiles=40 --json=audit.json
- */
-
 import { writeFile } from "node:fs/promises";
 import {
   type DeadlockHeroes,
@@ -98,7 +74,6 @@ const fetchJson = async <T>(url: string): Promise<T> => {
     const response = await fetch(url, {
       headers: { "User-Agent": "DeadlockModManager-CategoryAudit" },
     });
-    // GameBanana occasionally answers 200 with an empty body under load.
     const body = response.ok ? await response.text() : "";
     if (body) return JSON.parse(body) as T;
     if (attempt === 4) {
@@ -201,14 +176,12 @@ const resolveForCallers = (
 ) => {
   const leaf = path[path.length - 1];
   const parent = path.length > 1 ? path[path.length - 2] : undefined;
-  // A profile's category is the leaf and its super category is the leaf's parent.
   const profile = {
     _sName: record._sName,
     _aCategory: profileCategory(leaf, model),
     _aSuperCategory: parent && profileCategory(parent, model),
   };
   const root = record._aRootCategory._sName;
-  // The desktop sync maps every category below a Skins hero to that hero.
   const treeHero =
     model === "Mod" && path.length > 2 && path[0].name === SKINS_SUPER_CATEGORY
       ? (heroRegistry.normalize(path[1].name) ?? undefined)
@@ -331,8 +304,6 @@ const verifyProfiles = async (
   records: IndexRecord[],
   issues: Issue[],
 ) => {
-  // Spot-check the assumption the audit rests on: a profile's category is the
-  // index leaf and its super category is the leaf's parent.
   const skins = records.filter(
     (record) => record._aRootCategory._sName === SKINS_SUPER_CATEGORY,
   );

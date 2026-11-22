@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { type JsonValue, jsonValue } from "./json";
 
-/**
- * Source 2 particle parameters are "inputs": a value source (a literal, a
- * random range, the particle's age, another particle field, ...) optionally
- * mapped through a remap or curve. This file parses them from the decoded
- * definition and evaluates them.
- */
-
 const number = z.number().catch(0);
 
 const curveSchema = z
@@ -47,16 +40,12 @@ const floatInputSchema = z.object({
 
 type FloatInputData = z.infer<typeof floatInputSchema>;
 
-/** What an input may read while being evaluated for one particle. */
 export interface InputContext {
-  /** Seconds since the particle spawned. */
   age: number;
   lifetime: number;
-  /** Seconds since the system started. */
   collectionAge: number;
   index: number;
   count: number;
-  /** A per-particle constant in [0, 1) so "random" stays put for its life. */
   seed: number;
   scalar: (field: number) => number;
   controlPoint: (index: number) => [number, number, number];
@@ -81,19 +70,16 @@ const SUPPORTED_FLOAT_TYPES = new Set([
   "PF_TYPE_PARTICLE_NOISE",
 ]);
 
-/** Cheap deterministic hash so each input draws its own random per particle. */
 export const hash01 = (seed: number, salt: number) => {
   const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
   return value - Math.floor(value);
 };
 
-/** Schlick's bias curve; `bias` in (-1, 1) leans the result low or high. */
 const biased = (t: number, bias: number) => {
   const amount = Math.min(Math.max((bias + 1) / 2, 0.001), 0.999);
   return t / ((1 / amount - 2) * (1 - t) + 1);
 };
 
-/** Cubic Hermite through the curve's points using their stored slopes. */
 const evaluateCurve = (
   points: FloatInputData["m_Curve"]["m_spline"],
   x: number,
@@ -392,7 +378,6 @@ export const parseVectorInput = (
   };
 };
 
-/** Input type identifiers the evaluator cannot reproduce, including nested inputs. */
 export const unsupportedInputTypes = (value: JsonValue): string[] => {
   const issues = new Set<string>();
   let remaining = 512;

@@ -28,7 +28,6 @@ const VISUAL_EXTENSIONS = new Set([
 ]);
 const SOUND_EXTENSIONS = new Set(["vsnd_c", "vsndevts_c", "vsndstck_c"]);
 
-/** Panorama textures are UI art that sound packs ship too, so they never count as visual. */
 function detectContent(paths: string[]): HeroContent {
   let hasSound = false;
   for (const path of paths) {

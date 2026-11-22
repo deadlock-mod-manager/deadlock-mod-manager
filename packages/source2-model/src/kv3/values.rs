@@ -14,8 +14,6 @@ pub enum KvValue {
 }
 
 impl KvValue {
-    /// The value as JSON. Binary blobs, which particle and model data never
-    /// need to read, become their byte count.
     pub fn to_json(&self) -> serde_json::Value {
         use serde_json::Value;
         match self {
@@ -62,8 +60,6 @@ impl KvValue {
         self.as_i64().and_then(|value| u32::try_from(value).ok())
     }
 
-    /// The value as a 64-bit bit set. Signed values keep their bit pattern, so
-    /// a mask stored as `-1` reads as all bits set.
     pub fn as_u64(&self) -> Option<u64> {
         match self {
             KvValue::Int(value) => Some(*value as u64),
@@ -81,7 +77,6 @@ impl KvValue {
         }
     }
 
-    /// The first `N` items of a numeric array.
     pub fn as_f32_array<const N: usize>(&self) -> Option<[f32; N]> {
         let items = self.as_array()?;
         let mut out = [0.0; N];

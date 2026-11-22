@@ -97,7 +97,7 @@ function TransparencyComponent() {
     0,
   );
 
-  const projectStartDate = new Date(2024, 11, 1); // December 2024
+  const projectStartDate = new Date(2024, 11, 1);
   const now = new Date();
   const monthsRunning =
     (now.getFullYear() - projectStartDate.getFullYear()) * 12 +

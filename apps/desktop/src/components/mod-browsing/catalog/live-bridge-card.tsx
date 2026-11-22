@@ -11,7 +11,6 @@ import {
 import { isLiveBridge } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 
-/** Built from the installed game, so it has no remote catalog listing. */
 export const LiveBridgeCard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

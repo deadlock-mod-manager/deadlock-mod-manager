@@ -32,8 +32,6 @@ const listedFiles = () =>
     .$(`[role="group"][aria-label="Files of ${MULTI.id}"]`)
     .$$("li p.font-mono")
     .map((element) => element.getText());
-// dnd-kit's keyboard sensor: Space picks the item up, an arrow moves it one
-// place, Space drops it.
 const moveWithKeyboard = async (name: string, key: "ArrowUp" | "ArrowDown") => {
   const handle = await dialog().$(`button[aria-label="Reorder ${name}"]`);
   await handle.click();

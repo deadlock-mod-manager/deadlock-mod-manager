@@ -1,11 +1,3 @@
-//! Blocks until the game process exits.
-//!
-//! On Windows we hold a handle on the process, which is the only way to read
-//! its exit code: it has to be opened while the process is alive. Elsewhere
-//! the game isn't our child (Steam and Proton start it), so we poll for the
-//! PID and get no exit code; sysinfo's own `wait` reports a made-up status
-//! for non-children on Linux.
-
 use std::time::Duration;
 
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
@@ -14,17 +6,13 @@ use super::same_process_start;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
-/// Waits for `pid` (started at `start_time`) to exit and returns its exit
-/// code when the platform can tell.
 pub fn wait_for_exit(pid: u32, start_time: Option<u64>) -> Option<u32> {
   #[cfg(windows)]
   if let Ok(handle) = windows_process::ProcessHandle::open(pid)
     .inspect_err(|error| log::warn!("Could not open Deadlock process {pid}: {error}"))
   {
     match (start_time, handle.start_time()) {
-      // The PID belongs to a newer process, so ours is gone.
       (Some(expected), Some(actual)) if !same_process_start(expected, actual) => return None,
-      // Which process this is can't be told; polling checks the start time.
       (Some(_), None) => {}
       _ => return handle.wait(),
     }
@@ -59,7 +47,6 @@ pub(crate) mod windows_process {
     PROCESS_SYNCHRONIZE, WaitForSingleObject,
   };
 
-  /// FILETIME counts 100 ns ticks since 1601-01-01.
   const FILETIME_TICKS_PER_SEC: u64 = 10_000_000;
   const SECS_FROM_1601_TO_UNIX_EPOCH: u64 = 11_644_473_600;
 
@@ -78,8 +65,6 @@ pub(crate) mod windows_process {
       handle.map(Self)
     }
 
-    /// Windows records the exit code as soon as termination starts, so this
-    /// also holds for a process stuck in teardown that is still listed.
     pub fn is_exiting(&self) -> bool {
       let mut exit_code = 0u32;
       // SAFETY: the handle is valid until Drop and was opened with
@@ -88,8 +73,6 @@ pub(crate) mod windows_process {
         .is_ok_and(|()| exit_code != STILL_ACTIVE.0 as u32)
     }
 
-    /// When the process was created, in seconds since the Unix epoch: the
-    /// same clock sysinfo reads for `GameProcess::start_time`.
     pub fn start_time(&self) -> Option<u64> {
       let mut creation = FILETIME::default();
       let mut exit = FILETIME::default();
@@ -154,7 +137,6 @@ mod tests {
       .spawn()
       .unwrap();
     let pid = child.id();
-    // `child` keeps the process object alive after it exits.
     let start_time = windows_process::ProcessHandle::open(pid)
       .ok()
       .and_then(|handle| handle.start_time());

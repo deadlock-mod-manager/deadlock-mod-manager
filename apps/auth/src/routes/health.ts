@@ -16,7 +16,7 @@ export const createHealthRouter = ({
     c.json(
       {
         status: "ok",
-        db: { alive: true }, // For backward compatibility
+        db: { alive: true },
         version,
       },
       200,

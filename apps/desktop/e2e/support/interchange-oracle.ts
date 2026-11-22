@@ -74,8 +74,6 @@ export const readInterchangeState = async (world: string) =>
 const fingerprint = (bytes: Buffer) =>
   `${bytes.length}:${createHash("sha256").update(bytes).digest("hex")}`;
 
-/** Mirrors `import.rs::dmm_mod_id`: GameBanana ids map directly, local keys
- *  get a UUID derived from the key so re-imports resolve to the same mod. */
 export const derivedModId = (mod: GrimoireFixtureMod): string => {
   const [provider, type, id] = mod.key.split(":");
   if (provider === "gamebanana") return type === "sound" ? `snd-${id}` : id;
@@ -83,8 +81,6 @@ export const derivedModId = (mod: GrimoireFixtureMod): string => {
   return `local-${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
 };
 
-/** The id each fixture mod ends up with after the user linked the overflow
- *  mod to its GameBanana page. */
 export const finalModId = (mod: GrimoireFixtureMod, index: number): string =>
   index === 2 ? LINKED_OVERFLOW_ID : derivedModId(mod);
 
@@ -146,7 +142,6 @@ export const assertGrimoireImported = async (
   const fixtures = grimoireFixtureMods(roots.game);
   const ids = fixtures.map(finalModId);
 
-  // --- Library in the active profile -------------------------------------
   assert.deepEqual(
     active.mods.map((mod) => mod.remoteId).sort(),
     [...ids].sort(),
@@ -189,7 +184,6 @@ export const assertGrimoireImported = async (
     skin?.selectedDownloads?.map((download) => download.url),
     [`gamebanana-file://${ids[0]}/${GRIMOIRE_SKIN_FILE_ID}`],
   );
-  // Other profiles keep their files in their own addons subfolders.
   const profileFolders = Object.values(state.profiles).flatMap((profile) =>
     profile.folderName ? [`${profile.folderName}/`] : [],
   );
@@ -210,7 +204,6 @@ export const assertGrimoireImported = async (
     "No stray files in the default profile",
   );
 
-  // --- Linking replaced the local identity everywhere ----------------------
   const oldOverflowId = derivedModId(fixtures[2]);
   for (const profile of Object.values(state.profiles)) {
     assert.ok(
@@ -225,7 +218,6 @@ export const assertGrimoireImported = async (
   const ledger = await readLedger(roots.appData);
   assert.equal(ledger.entries[fixtures[2].key], LINKED_OVERFLOW_ID);
 
-  // --- Profiles ------------------------------------------------------------
   const byName = (name: string) => {
     const found = Object.values(state.profiles).find((p) => p.name === name);
     assert.ok(found, `Profile ${name} must exist`);
@@ -241,7 +233,6 @@ export const assertGrimoireImported = async (
     Object.keys(loadoutManifest.mods).sort(),
     [ids[0], ids[3]].sort(),
   );
-  // The sound is disabled in the library but enabled in this profile.
   assert.equal(loadoutManifest.mods[ids[3]].enabled, true);
   assert.equal(loadoutManifest.mods[ids[0]].enabled, true);
   assert.equal(loadout.enabledMods[ids[3]]?.enabled, true);
@@ -251,8 +242,6 @@ export const assertGrimoireImported = async (
     fingerprint(fixtures[3].bytes),
   );
 
-  // Grimoire's "Default Profile" went into DMM's default profile, which
-  // already held its only mod, and the ledger points a re-import there too.
   const casual = state.profiles.default;
   assert.equal(casual?.name, CASUAL_PROFILE);
   assert.ok(
@@ -261,7 +250,6 @@ export const assertGrimoireImported = async (
   );
   assert.equal(ledger.profiles[CASUAL_PROFILE_KEY], "default");
 
-  // --- Crosshairs ----------------------------------------------------------
   const history = state.activeCrosshairHistory ?? [];
   const matches = (
     crosshair: z.infer<typeof crosshairSchema>,
@@ -283,7 +271,6 @@ export const assertGrimoireImported = async (
   );
   assert.equal(state.activeCrosshair?.pipGapStatic, true);
 
-  // --- Grimoire keeps working ----------------------------------------------
   const overflow = fixtures[2];
   assert.equal(
     (await collectFileInventory(path.dirname(overflow.sourcePath)))[
@@ -353,7 +340,6 @@ export const assertGrimoireReimported = async (
   const manifest = await readManifest(addons);
   assert.deepEqual(Object.keys(manifest.mods).sort(), expected);
   const inventory = await collectFileInventory(addons);
-  // The fixture swapped two slots: each mod must still own its own bytes.
   for (const [index, fixture] of fixtures.entries()) {
     const entry = manifest.mods[ids[index]];
     const files = entry.enabled ? entry.currentVpks : entry.disabledVpks;

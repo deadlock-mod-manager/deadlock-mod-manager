@@ -12,8 +12,6 @@ export const useCrosshairConfigReconciliation = () => {
     (state) => state.crosshairsEnabled,
   );
 
-  // useHeroDetection already polls this key every 5s; a second interval here
-  // would drift out of phase and double the process scans.
   const { data: gameRunning } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,

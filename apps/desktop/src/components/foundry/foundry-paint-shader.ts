@@ -1,19 +1,5 @@
 import * as THREE from "three";
 
-/**
- * The live paint preview, run on the GPU.
- *
- * Baking a paint costs seconds: every affected texture has to be decoded,
- * transformed and re-encoded as BC7 with a full mip chain. That is the right
- * price for the files an export ships, and the wrong price for dragging a color
- * picker. So the preview runs the same recolor in the fragment shader:
- * `vpkmanager::texture_edit::set_color` — set the hue, scale saturation and
- * value — evaluated on the sRGB texel, as Rust does on the 8-bit pixel.
- *
- * The duplication is deliberate but real: this GLSL and the Rust function must
- * stay in step. Change one, change the other.
- */
-
 const PAINT_UNIFORMS = `
 uniform float uPaintActive;
 uniform float uPaintHue;
@@ -72,11 +58,6 @@ vec3 foundryPaint(vec3 srgb) {
 }
 `;
 
-/**
- * The paint goes on the map sample itself, before three.js multiplies in the
- * material's color factor: the bake rewrites the texture, not the factor.
- * Only materials with a color map get it, since the paint rewrites that map.
- */
 const MAP_HOOK = "#include <map_fragment>";
 const MAP_MULTIPLY = "diffuseColor *= sampledDiffuseColor;";
 const PAINTED_MAP_FRAGMENT = THREE.ShaderChunk.map_fragment.replace(
@@ -88,13 +69,8 @@ const PAINTED_MAP_FRAGMENT = THREE.ShaderChunk.map_fragment.replace(
   ${MAP_MULTIPLY}`,
 );
 
-/**
- * Hover and selection glow is added as emission, after the material's own, so
- * it brightens a part without changing the colour the paint preview shows.
- */
 const EMISSIVE_HOOK = "#include <emissivemap_fragment>";
 
-/** The glow a hovered or selected section takes, in the app's gold accent. */
 const HIGHLIGHT_COLOR = new THREE.Color("#e7c36a");
 
 export interface PaintUniforms {
@@ -102,12 +78,10 @@ export interface PaintUniforms {
   uPaintHue: { value: number };
   uPaintSaturation: { value: number };
   uPaintBrightness: { value: number };
-  /** 0 for none; the hovered part glows brighter than the selected ones. */
   uPaintHighlight: { value: number };
   uPaintHighlightColor: { value: THREE.Color };
 }
 
-/** Material types whose shader the paint preview can hook into. */
 export type PaintableMaterial =
   | THREE.MeshBasicMaterial
   | THREE.MeshStandardMaterial
@@ -115,12 +89,6 @@ export type PaintableMaterial =
   | THREE.MeshPhongMaterial
   | THREE.MeshLambertMaterial;
 
-/**
- * Install the paint shader on a material and return its uniforms.
- *
- * The uniforms start inert, so a material that is never painted renders
- * bit-identically to before.
- */
 export const installPaintShader = (
   material: PaintableMaterial,
 ): PaintUniforms => {
@@ -145,15 +113,11 @@ export const installPaintShader = (
       );
   };
 
-  // Changing onBeforeCompile after a material has been compiled needs a
-  // recompile, and the cache key must differ or three.js reuses the old program.
   material.customProgramCacheKey = () => "foundry-paint";
   material.needsUpdate = true;
   return uniforms;
 };
 
-/** The hue of a `#rrggbb` color, in degrees, read off the sRGB bytes as the
- *  backend's `hue_of` does (a `THREE.Color` would hand back linear values). */
 export const hueOf = (colorHex: string): number => {
   const value = Number.parseInt(colorHex.replace("#", ""), 16) || 0;
   const color = {

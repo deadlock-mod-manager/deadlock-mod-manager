@@ -240,7 +240,6 @@ fn prepare_file(
     .map(|_| serde_json::to_string_pretty(&backup))
     .transpose()
     .map_err(|error| Error::InvalidInput(error.to_string()))?;
-  // Persist the restore information before changing the game settings.
   let mut edits = vec![
     ConfigEdit {
       path: backup_path,

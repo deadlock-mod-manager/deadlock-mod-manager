@@ -11,21 +11,6 @@ export type MigrationStep = {
   apply: (state: MutableState) => void;
 };
 
-// Each step represents one version bump. Steps must be idempotent: re-running a
-// step against state that already satisfies its post-condition must be a no-op
-// (use ??= or shape guards rather than unconditional assignment) so that
-// bumping the store version to re-run prior steps for already-migrated users
-// is safe.
-//
-// A brand-new top-level key does NOT need a step: buildPersistMerge seeds from
-// the slice defaults and only overlays keys present in the persisted blob, so a
-// key the blob has never seen keeps its default. Several steps below predate
-// that merge and are redundant; they are kept because removing one would strand
-// users mid-chain. Add a step when the merge cannot cover the change:
-//   - renaming, removing, or transforming an existing key
-//   - a new field inside an already-persisted object that is not listed in a
-//     slice's deepMergeKeys, since the persisted object wins wholesale
-//   - a one-shot data reset
 export const MIGRATION_STEPS: readonly MigrationStep[] = [
   {
     to: 2,
@@ -289,11 +274,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 18,
     label: "reset-detected-hero",
     apply: (state) => {
-      // One-shot reset, keeping the original v17->v18 semantics: clear
-      // detectedHero across mods and profile mods so the parser re-runs.
-      // This is not idempotent across re-runs of the same step, but the
-      // step only fires when fromVersion < 18, and bumping to 19 will not
-      // re-trigger it (steps run only once per persisted version).
       const stripDetected = (mod: unknown) => {
         if (!isPlainObject(mod)) return;
         delete mod.detectedHero;
@@ -314,10 +294,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 19,
     label: "add-hero-parser-interval",
     apply: (state) => {
-      // Fixes the duplicate `if (version <= 15)` block at the bottom of the
-      // pre-refactor migrate(): it was assigning unconditionally and re-firing
-      // on every hydrate from <v15, silently overwriting any user-set value.
-      // Bumped to v19 so it runs exactly once for users currently at v18.
       state.heroParserIntervalSeconds ??= 30;
     },
   },
@@ -390,7 +366,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 25,
     label: "remove-themes-plugin-switch",
     apply: (state) => {
-      // Themes is alwaysEnabled now, so nothing reads this persisted switch.
       if (!isPlainObject(state.enabledPlugins)) return;
       delete state.enabledPlugins.themes;
     },
@@ -465,8 +440,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 27,
     label: "mods-store-content-type",
     apply: (state) => {
-      // The store's audio/map quick filters became the Mods/Sounds/Maps/WiPs
-      // switcher. Keep an "only" choice; "exclude" is what the Mods tab does.
       const modsFilters = state.modsFilters;
       if (!isPlainObject(modsFilters)) return;
       if (!("contentType" in modsFilters)) {
@@ -485,9 +458,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 28,
     label: "active-profile-library-snapshot",
     apply: (state) => {
-      // V1 updated localMods without updating the active profile's snapshot.
-      // V2 mutations read that snapshot, so importing it unchanged loses the
-      // installed files and statuses on the first enable/disable operation.
       const profileId = z.string().safeParse(state.activeProfileId);
       if (
         !Array.isArray(state.localMods) ||
@@ -506,7 +476,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 29,
     label: "albums-to-collections",
     apply: (state) => {
-      // The Albums tab became Collections.
       const modsFilters = state.modsFilters;
       if (isPlainObject(modsFilters) && modsFilters.contentType === "album") {
         modsFilters.contentType = "collection";
@@ -541,8 +510,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 33,
     label: "enable-performance-configs",
     apply: (state) => {
-      // Performance configs left the opt-in experiments; persisted toggles
-      // still hold the old `false` default.
       if (isPlainObject(state.experimentalFeatures)) {
         state.experimentalFeatures["performance-configs"] = true;
       }
@@ -552,8 +519,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 34,
     label: "drop-pinned-fileservers",
     apply: (state) => {
-      // Pinned file caches failed downloads for files they did not mirror, and
-      // the picker that set them is gone.
       if (
         "fileserverPreference" in state &&
         state.fileserverPreference !== "auto"
@@ -567,8 +532,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 35,
     label: "drop-autoexec-launch-option",
     apply: (state) => {
-      // Deadlock runs autoexec.cfg at every launch, so `-exec autoexec` ran it
-      // a second time.
       if (isPlainObject(state.settings)) {
         delete state.settings["autoexec-launch-option"];
       }
@@ -578,9 +541,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 36,
     label: "rolling-date-filters",
     apply: (state) => {
-      // The "Updated" and "Added" presets became 24 hours, 7, 14 and 28 days,
-      // and a year, and Updated gained the custom range Added already had.
-      // Past 3 months widens to a year so no results disappear.
       const modsFilters = state.modsFilters;
       if (!isPlainObject(modsFilters)) return;
       const timePeriods: Record<string, string> = {
@@ -619,8 +579,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 37,
     label: "check-legacy-sound-favorites",
     apply: (state) => {
-      // v26 only renamed sounds that were installed, so a favorited sound that
-      // wasn't kept its bare id. Only the catalog can tell those from mods.
       if (!Array.isArray(state.favorites)) return;
       state.pendingSoundFavoriteChecks = state.favorites.filter(
         (value): value is string =>
@@ -632,8 +590,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 38,
     label: "backup-mode",
     apply: (state) => {
-      // Update backups now hold only the mods being updated, so the on/off
-      // switch became a mode. On keeps backing up every update.
       if (!("backupEnabled" in state)) return;
       if (!BACKUP_MODES.includes(state.backupMode as BackupMode)) {
         state.backupMode = state.backupEnabled === false ? "off" : "always";
@@ -645,8 +601,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 39,
     label: "background-plugin-to-setting",
     apply: (state) => {
-      // The Background plugin became a theme setting and Flashbang was
-      // removed. Only an enabled Background plugin carries its image over.
       const enabledPlugins = isPlainObject(state.enabledPlugins)
         ? state.enabledPlugins
         : {};
@@ -679,8 +633,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 40,
     label: "player-stats-to-setting",
     apply: (state) => {
-      // Stats and its Live tab left the experiments. Stats kept an off switch
-      // under Privacy, so a user who had turned it off stays opted out.
       const features = state.experimentalFeatures;
       if (!isPlainObject(features)) return;
       if (features["player-stats"] === false) {
@@ -713,8 +665,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 43,
     label: "optional-native-source-provenance",
     apply: (state) => {
-      // Legacy identities and installed filenames remain unchanged. Missing
-      // provenance means the existing GameBanana/local path, never a new source.
       const normalize = (mods: MutableState[string]) => {
         if (!Array.isArray(mods)) return;
         for (const mod of mods) {
@@ -733,7 +683,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 44,
     label: "perf-history-video-count",
     apply: (state) => {
-      // History entries record how many video.txt settings an apply wrote.
       if (!Array.isArray(state.perfHistory)) return;
       for (const entry of state.perfHistory) {
         if (isPlainObject(entry)) entry.videoCount ??= null;
@@ -744,8 +693,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 45,
     label: "rescan-detected-content",
     apply: (state) => {
-      // The hero scan now also records whether a mod is sound-only, so clear
-      // detectedHero once and let the background scan fill both in again.
       const reset = (mods: MutableState[string]) => {
         if (!Array.isArray(mods)) return;
         for (const mod of mods) {
@@ -782,8 +729,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 48,
     label: "player-stats-to-optional-feature",
     apply: (state) => {
-      // The Player Stats switch became the Stats entry in the optional
-      // features; a user who turned it off stays opted out.
       if (state.playerStatsEnabled === false) {
         const features = isPlainObject(state.features) ? state.features : {};
         features.stats = false;
@@ -796,8 +741,6 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     to: 49,
     label: "graduate-flags-drop-tour",
     apply: (state) => {
-      // Profiles, profile sharing and conflict detection are always on, and
-      // the experimental tour is gone.
       delete state.experimentalTourDismissed;
       const features = state.experimentalFeatures;
       if (!isPlainObject(features)) return;
@@ -902,11 +845,6 @@ const restoreSnapshot = (target: MutableState, snapshot: MutableState) => {
   Object.assign(target, snapshot);
 };
 
-// Wrapping migrate keeps a single bug from nuking the entire persisted store.
-// Each step runs against a structuredClone snapshot so partial mutations from a
-// throwing step are reverted, then the chain continues with the next step.
-// If the top-level state isn't a plain object, return it unchanged so zustand's
-// own merge step takes the slow path instead of triggering a full reset.
 export const safeMigrate = (
   persistedState: unknown,
   fromVersion: number,

@@ -133,8 +133,6 @@ runs:
           exit 1
         fi
 
-        # Like a desktop Wayland session, also provide X11: the CEF runtime only
-        # supports X11 and wry falls back to it when Wayland window creation fails.
         Xvfb -displayfd 3 -screen 0 1280x800x24 -nolisten tcp \
           3> "${LOG_DIR}/xvfb-display" > "${LOG_DIR}/xvfb.log" 2>&1 &
         XVFB_PID=$!
@@ -148,15 +146,10 @@ runs:
         fi
         export DISPLAY=":$(head -n1 "${LOG_DIR}/xvfb-display")"
 
-        # Both launches must share a session bus so the deep-link launch can
-        # reach the running instance through the single-instance D-Bus name.
         DBUS_PID="$(dbus-daemon --session --fork --print-pid=1 \
           --address="unix:path=${RUNTIME_DIR}/bus")"
         export DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus"
 
-        # Bundle installs ignore --reinstall and fail when the bundle's commit
-        # is already installed, so the updater gets the candidate's files
-        # under a new commit, like a real update.
         APP_REF="$(flatpak info --user --show-ref "${APP_ID}")"
         INSTALLED_COMMIT="$(flatpak info --user --show-commit "${APP_ID}")"
         UPDATE_REPO="${LOG_DIR}/update-repo"
@@ -202,9 +195,6 @@ runs:
         timeout 15s flatpak run "${APP_ID}" \
           "deadlock-mod-manager://forge/launch" > "${LOG_DIR}/deep-link.log" 2>&1 \
           || DEEP_LINK_STATUS=$?
-        # CEF forwards the URL through Chromium's process singleton, after which
-        # cef::initialize fails in the launcher and tauri-runtime-cef reports it
-        # as WebviewRuntimeNotInstalled. Any other failure is a real error.
         if [ "${DEEP_LINK_STATUS}" -ne 0 ] && { [ "${RUNTIME_KIND}" != "cef" ] \
           || ! grep -Fq 'WebviewRuntimeNotInstalled' "${LOG_DIR}/deep-link.log"; }; then
           echo "ERROR: ${RUNTIME_KIND} deep-link launch exited with status ${DEEP_LINK_STATUS}"

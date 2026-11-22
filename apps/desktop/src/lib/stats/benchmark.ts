@@ -1,11 +1,6 @@
 import type { MatchHistoryEntry, MetricSpread } from "@/lib/stats/api";
 import type { HeroPerformance } from "@/lib/stats/derive";
 
-/**
- * The player's per-match numbers placed inside a rank bracket, from the spread
- * `/analytics/player-stats/metrics` reports for everyone in that bracket.
- */
-
 const BRACKET_METRICS = [
   "damagePerMin",
   "soulsPerMin",
@@ -27,7 +22,6 @@ const API_KEYS = {
 
 const LOWER_IS_BETTER = new Set<BracketMetric>(["deaths"]);
 
-/** The player's own per-match values; a metric is missing when there is no data for it. */
 export interface BracketValues {
   damagePerMin?: number;
   soulsPerMin?: number;
@@ -41,13 +35,10 @@ export interface BracketRow {
   metric: BracketMetric;
   mine: number;
   median: number;
-  /** Ruler ends: the 5th and 95th percentile, so outliers don't flatten it. */
   low: number;
   high: number;
-  /** The middle half of the bracket. */
   q1: number;
   q3: number;
-  /** Share of the bracket the player does better than, 0-1, already flipped for deaths. */
   beats: number;
   higherIsBetter: boolean;
 }
@@ -64,7 +55,6 @@ const spreadPoints = (spread: MetricSpread): Array<[number, number]> => [
   [spread.percentile99, 0.99],
 ];
 
-/** Share of the bracket below `value`, read off the reported percentiles. */
 export const shareBelow = (value: number, spread: MetricSpread): number => {
   const points = spreadPoints(spread);
   const first = points[0];
@@ -75,8 +65,6 @@ export const shareBelow = (value: number, spread: MetricSpread): number => {
   for (let index = 1; index < points.length; index++) {
     const [upperValue, upperShare] = points[index] ?? last;
     const [lowerValue, lowerShare] = points[index - 1] ?? first;
-    // An earlier point catches any value at or below `lowerValue`, so the
-    // span here is never zero.
     if (value <= upperValue) {
       const t = (value - lowerValue) / (upperValue - lowerValue);
       return lowerShare + t * (upperShare - lowerShare);
@@ -85,7 +73,6 @@ export const shareBelow = (value: number, spread: MetricSpread): number => {
   return last[1];
 };
 
-/** Rows for every metric both sides have a number for, in display order. */
 export const bracketRows = (
   spreads: Record<string, MetricSpread>,
   mine: BracketValues,
@@ -111,7 +98,6 @@ export const bracketRows = (
     ];
   });
 
-/** The metrics a single match row carries, read off one match. */
 export const PER_MATCH = {
   kda: (match: MatchHistoryEntry) =>
     (match.player_kills + match.player_assists) /
@@ -135,13 +121,6 @@ export const median = (values: number[]): number => {
     : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 };
 
-/**
- * The player's side. The bracket's spread is over single matches, and KDA in
- * particular is badly skewed there (a median near 3 under a mean near 5), so
- * the match-row metrics use the player's typical match - the median - to
- * compare like with like. Damage and accuracy only exist in the per-hero
- * aggregates; those are rates with little skew, weighted by time on each hero.
- */
 export const playerBracketValues = (
   matches: MatchHistoryEntry[],
   heroes: HeroPerformance[],

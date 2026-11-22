@@ -14,7 +14,6 @@ interface Props {
   )[];
 }
 
-/** Keep the usable model on screen; technical evidence is available only on demand. */
 export const PreviewDiagnostics = ({
   model,
   animationFailed,

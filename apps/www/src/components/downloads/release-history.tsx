@@ -25,7 +25,6 @@ import { useReleaseDates } from "./use-release-dates";
 
 const MAX_PRERELEASES = 5;
 
-/** date-fns wording for "3 days ago" in each site language. */
 const DATE_FNS_LOCALES = {
   en: enUS,
   ru,
@@ -42,8 +41,6 @@ interface ReleaseListProps {
 }
 
 const ReleaseList = ({ releases, emptyMessage }: ReleaseListProps) => {
-  // Relative times depend on the clock, so the server (and the hydration pass)
-  // render the absolute date and the browser switches to "3 days ago" after.
   const hydrated = useHydrated();
   const locale = useLocale();
   const { t } = useTranslation("download");

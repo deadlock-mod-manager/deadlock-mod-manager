@@ -12,7 +12,6 @@ type Call = { command: string; args?: Record<string, unknown> };
 
 const PERMIT = "permit-1";
 
-/** Fails the guarded command unless it carries the token the override issued. */
 const backend = (options: { blocked: boolean }) => {
   const calls: Call[] = [];
   let issued: string | null = null;

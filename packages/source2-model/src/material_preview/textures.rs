@@ -22,7 +22,6 @@ pub(super) fn report_texture_failure(archive: &VpkArchive, path: &str, resource:
     match VtexHeader::parse(resource) {
         Err(error) => archive.record_preview_error(path, &error),
         Ok(header) if preview_dimensions(&header).is_some() => {
-            // A supported layout that failed decoding has invalid pixel or mip data.
             let detail = crate::Source2Error::Decode(
                 "Texture pixel payload or mip metadata could not be decoded".into(),
             );
@@ -76,8 +75,6 @@ pub(super) fn decode_texture_preview_resource(
 ) -> Option<PreviewTexture> {
     let mut decoded = decode_rgba(resource)?;
     if opaque {
-        // Source alpha can hold shader masks. Preserve RGB through browser image
-        // decoding instead of exporting those masks as transparency.
         for pixel in decoded.rgba.as_chunks_mut::<4>().0 {
             pixel[3] = 255;
         }
@@ -108,7 +105,6 @@ pub(super) fn decode_normal_pixel(pixel: [u8; 4], hemi_oct: bool) -> [u8; 4] {
     let red = f32::from(pixel[0]) / 255.0;
     let green = f32::from(pixel[1]) / 255.0;
     let (x, y, z) = if hemi_oct {
-        // Source 2's hemi-octahedral packing; the Y flip matches its tangent basis.
         let x = red + green - (256.0 / 255.0);
         let y = red - green;
         let z = 1.0 - x.abs() - y.abs();
@@ -132,7 +128,6 @@ pub(super) fn decode_normal_png(resource: &Resource, hemi_oct: bool) -> Option<V
 }
 
 pub(super) fn preview_resource(bytes: Vec<u8>) -> Option<Resource> {
-    // Resource::parse reserves the declared block count before checking the table.
     let count = u32::from_le_bytes(bytes.get(12..16)?.try_into().ok()?);
     if count as usize > bytes.len() / 12 {
         return None;
@@ -141,7 +136,6 @@ pub(super) fn preview_resource(bytes: Vec<u8>) -> Option<Resource> {
 }
 
 pub(super) fn preview_dimensions(header: &VtexHeader) -> Option<(u32, u32)> {
-    // Embedded images and non-2D layouts need their own preview decoding path.
     if header.format.mip_byte_size(1, 1).is_err()
         || matches!(
             header.format,
@@ -161,7 +155,6 @@ pub(super) fn preview_dimensions(header: &VtexHeader) -> Option<(u32, u32)> {
     }
     let mut width = u32::from(header.width);
     let mut height = u32::from(header.height);
-    // mip_bytes computes sizes for the entire chain with u32 arithmetic for raw RGBA.
     width.checked_mul(height)?.checked_mul(4)?;
     for _ in 1..header.num_mip_levels {
         if width.max(height) <= PREVIEW_TEXTURE_SIDE {
@@ -182,7 +175,6 @@ pub(super) fn decode_rgba(resource: &Resource) -> Option<DecodedTexture> {
     let header = VtexHeader::parse(resource).ok()?;
     preview_dimensions(&header)?;
     for extra in header.extra.iter().filter(|extra| extra.kind == 4) {
-        // The mip decoder reserves this externally supplied count before reading the array.
         let count_at = extra.offset.checked_add(8)?;
         let count = u32::from_le_bytes(resource.data.get(count_at..count_at + 4)?.try_into().ok()?);
         if count > u32::from(header.num_mip_levels) {
@@ -194,11 +186,6 @@ pub(super) fn decode_rgba(resource: &Resource) -> Option<DecodedTexture> {
         .ok()
 }
 
-/// Bake the glTF emissive map for a self-illuminated material.
-///
-/// Source 2 reads the self-illum mask from its red channel and glows in the
-/// albedo blended towards white by `albedo_factor`. Handing the mask over as an
-/// RGB texture instead made every masked texel glow red.
 pub(super) fn bake_self_illum_png(
     mask: &DecodedTexture,
     albedo: Option<&DecodedTexture>,
@@ -234,8 +221,6 @@ pub(super) fn bake_self_illum_png(
     .ok()
 }
 
-/// Nearest-neighbour sample of one channel, coords clamped and scaled from the
-/// output (w,h) grid to the texture's own resolution.
 fn sample_channel(tex: &DecodedTexture, x: u32, y: u32, w: u32, h: u32, ch: usize) -> u8 {
     let tx = if tex.width == w {
         x
@@ -252,7 +237,6 @@ fn sample_channel(tex: &DecodedTexture, x: u32, y: u32, w: u32, h: u32, ch: usiz
     tex.rgba[((ty * tex.width + tx) * 4) as usize + ch]
 }
 
-/// Build a glTF ORM texture from each shader-selected channel.
 pub(super) fn pack_orm_png(
     roughness: Option<&DecodedTexture>,
     roughness_channel: usize,
@@ -272,11 +256,9 @@ pub(super) fn pack_orm_png(
         for x in 0..w {
             let i = ((y * w + x) * 4) as usize;
             let occ = occlusion.map_or(255, |t| sample_channel(t, x, y, w, h, 0));
-            // Matte fallback (~0.86 roughness) when a material ships no roughness map.
             let rough = roughness.map_or(220, |t| sample_channel(t, x, y, w, h, roughness_channel));
             rgba[i] = occ;
             rgba[i + 1] = rough;
-            // White preserves a uniform metallicFactor when there is no metalness map.
             rgba[i + 2] =
                 metalness.map_or(255, |t| sample_channel(t, x, y, w, h, metalness_channel));
             rgba[i + 3] = 255;

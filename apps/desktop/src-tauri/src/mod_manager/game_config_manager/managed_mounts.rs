@@ -1,7 +1,3 @@
-//! Addon search paths DMM manages. Neither a legacy outer marker nor a folder
-//! name proves a mount is ours; only a readable DMM manifest establishes that
-//! DMM manages a base or named folder.
-
 use super::*;
 use crate::mod_manager::shard::{ProfileBase, ShardIndex};
 use crate::mod_manager::vpk_manager::VpkManager;
@@ -15,7 +11,6 @@ pub(super) fn claims(game_path: &Path) -> Result<Vec<String>, Error> {
     Err(error) => return Err(error.into()),
   };
   let mut paths = profile_claims(&addons, None)?;
-  // Entries that vanish or cannot be stat'ed mid-scan are not DMM folders.
   for entry in entries.flatten() {
     if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
       continue;
@@ -38,8 +33,6 @@ fn profile_claims(path: &Path, folder: Option<&str>) -> Result<Vec<String>, Erro
   let Ok(manifest) = ProfileVpkManifest::load(path) else {
     return Ok(Vec::new());
   };
-  // Disabled entries retain their previous shard. Legacy writers also mounted
-  // every shard through the highest with enabled VPKs on disk, including gaps.
   let mut highest = manifest
     .mods
     .values()
@@ -94,7 +87,6 @@ mod tests {
         let mut manifest = ProfileVpkManifest::default();
         if on_disk {
           manifest.version = 1;
-          // Pre-sharding metadata cannot identify where these files live.
           let overflow = ProfileBase::new(&path)
             .unwrap()
             .shard_dir(ShardIndex::new(3).unwrap());

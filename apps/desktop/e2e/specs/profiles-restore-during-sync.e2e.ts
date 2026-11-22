@@ -1,5 +1,3 @@
-// A cloud restore that finishes while startup is still syncing the active
-// profile keeps the backup's file picks once that sync finishes.
 import { $, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import {
@@ -43,15 +41,11 @@ const lateLookupStarted = async (world: string) => {
 
 describe("restoring a backup while startup syncs the profile", () => {
   it("keeps the backup's file picks after the sync finishes", async () => {
-    // Startup reconciles the profile first and waits on the late lookup; the
-    // next read of the profile's files is the sync's. Hold it before the
-    // app finishes starting, since startup syncs right after the lookup.
     const { roots } = await browser.execute(() =>
       // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
       window.__TAURI_INTERNALS__.invoke<ApplicationStatus>("e2e_status"),
     );
     const world = roots.world;
-    // Not a recorded step, so "application ready" stays the first one.
     await browser.waitUntil(() => lateLookupStarted(world), {
       timeout: 8_000,
       timeoutMsg: "Startup never looked up the lost mod",
@@ -65,10 +59,6 @@ describe("restoring a backup while startup syncs the profile", () => {
       }),
     );
 
-    // The addon watcher reports the restore's new files about half a second
-    // later, and the reconciliation that follows also invalidates a pending
-    // sync. Hold those reports until the sync has finished, as a quick sync
-    // would have.
     await step("hold the addon watcher's reports", async () => {
       expect(await holdEvents("addons-vpks-changed")).toBeGreaterThan(0);
     });
@@ -102,10 +92,7 @@ describe("restoring a backup while startup syncs the profile", () => {
       await browser.waitUntil(ipcReplyDelivered, {
         timeoutMsg: "The held sync reply was never delivered",
       });
-      // A dropped sync result changes nothing to wait for, so give the sync
-      // time to finish and the store time to save whatever it wrote.
       await browser.pause(5_000);
-      // Then the watcher's reconciliation, which checks the profile again.
       await releaseHeldEvents();
       await browser.pause(5_000);
     });

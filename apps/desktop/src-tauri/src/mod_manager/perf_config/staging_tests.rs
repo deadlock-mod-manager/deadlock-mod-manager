@@ -9,7 +9,6 @@ fn write(root: &Path, relative: &str, contents: &str) {
   fs::write(target, contents).unwrap();
 }
 
-/// What skin mods ship: stock gameinfo.gi with `citadel/addons` mounted.
 fn loader_only_gameinfo() -> String {
   let text = fixture(STOCK_6711).replacen(
     "Game\t\t\t\tcitadel\n",
@@ -77,7 +76,6 @@ fn mod_downloads_stage_only_real_configs() {
   write(config.path(), "Sqooky/addons/pak99_dir.vpk", "vpk");
   write(config.path(), "Sqooky/gameinfo.gi", &fixture(SQOOKY));
   write(config.path(), "Sqooky/video.txt", &fixture(OPTILOCK_VIDEO));
-  // A pack's notes on which pak is which read like console commands.
   write(
     config.path(),
     "Sqooky/addons/mods.txt",

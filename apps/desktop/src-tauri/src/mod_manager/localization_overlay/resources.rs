@@ -20,8 +20,6 @@ pub(super) struct Provider {
 type ResolvedResource = (Provider, Arc<Vec<u8>>);
 type ModArchives = (BTreeMap<PathBuf, VpkArchive>, BTreeMap<String, Provider>);
 
-/// Installed citadel/core archives, indexed once and shared by every snapshot
-/// that analyses mods against the same game files.
 pub(crate) struct GameIndex {
   directories: Vec<PathBuf>,
   archives: BTreeMap<PathBuf, VpkArchive>,
@@ -90,8 +88,6 @@ impl GameIndex {
   }
 }
 
-// This cache lives only for one game index/check batch. A new check reopens the
-// game files; mod bytes stay in their own snapshot and cannot contaminate it.
 const MAX_GAME_BYTES: usize = 64 * 1024 * 1024;
 const MAX_GAME_ENTRIES: usize = 128;
 
@@ -127,8 +123,6 @@ impl GameBytes {
   }
 }
 
-/// One ordered view of enabled addons and the installed citadel/core resources.
-/// It deliberately excludes inactive profiles and unrelated workshop/map packages.
 pub(super) struct ResourceSnapshot {
   game: Arc<GameIndex>,
   archives: BTreeMap<PathBuf, VpkArchive>,
@@ -232,7 +226,6 @@ impl ResourceSnapshot {
       .transpose()
   }
 
-  /// The dependency this mod would load on its own, using its own VPK order.
   pub(super) fn standalone_bytes(
     &self,
     input: &LocalizationModInput,

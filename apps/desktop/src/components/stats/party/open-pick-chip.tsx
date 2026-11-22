@@ -3,10 +3,6 @@ import { useTranslation } from "react-i18next";
 import { PICK_CHIP_CLASS } from "@/components/stats/party/pick-chip";
 import { cn } from "@/lib/utils";
 
-/**
- * A free pick slot. Clicking it picks for this player; the active player's
- * first one shows where the next hero goes.
- */
 export const OpenPickChip = ({
   isNext,
   onSelect,

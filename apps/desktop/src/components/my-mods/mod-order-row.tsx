@@ -105,7 +105,6 @@ const IconAction = ({
   </Tooltip>
 );
 
-// Positive when the mod moved up since the dialog opened.
 const ShiftIndicator = ({ shift }: { shift: number }) => {
   const { t } = useTranslation();
   if (shift === 0) return null;
@@ -162,7 +161,6 @@ export const SortableModRow = ({
     isDragging,
   } = useSortable({ id: mod.remoteId, disabled: dragDisabled });
   const canExpand = !!files && files.length > 1;
-  // Space and Enter on these buttons must not pick up the row.
   const keepKeys = {
     onKeyDown: (event: KeyboardEvent) => event.stopPropagation(),
   };

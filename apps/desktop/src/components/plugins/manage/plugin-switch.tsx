@@ -2,7 +2,6 @@ import { Switch } from "@deadlock-mods/ui/components/switch";
 import { type ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 
-/** 36x20 switch: cream when on, a grey knob on the border colour when off. */
 export const PluginSwitch = ({
   className,
   ...props

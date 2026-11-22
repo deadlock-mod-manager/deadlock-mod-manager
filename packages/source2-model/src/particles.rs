@@ -1,10 +1,3 @@
-//! Gathers what a preview needs to play a model's particle effects: which
-//! particle systems the model shows in previews, the attachment points they
-//! bind to, each system's definition (with its children), and its textures.
-//!
-//! Definitions stay as decoded KV3 converted to JSON; the renderer interprets
-//! the operators it supports and skips the rest.
-
 use std::collections::BTreeSet;
 
 use crate::kv3::{self, KvValue};
@@ -13,7 +6,6 @@ use crate::vpk_extract::VpkArchive;
 use crate::vtex::{SpriteSheetSequence, VtexHeader};
 use crate::{Resource, Result, Source2Error};
 
-// Root depth is zero; six child edges are allowed.
 const MAX_DEPTH: usize = 6;
 const MAX_SYSTEMS: usize = 48;
 const MAX_DIAGNOSTICS: usize = 96;
@@ -24,7 +16,6 @@ const MAX_SYSTEM_ENTRY_BYTES: usize = 2 * 1024 * 1024;
 const MAX_SYSTEM_BYTES: usize = 16 * 1024 * 1024;
 const MAX_TEXTURE_ENTRY_BYTES: usize = 64 * 1024 * 1024;
 
-// Charge extracted bytes before parsing, so invalid resources consume budget too.
 fn extract_budgeted(
     archive: &VpkArchive,
     path: &str,
@@ -41,12 +32,10 @@ fn extract_budgeted(
     Ok(bytes)
 }
 
-/// A named point on the model that particles bind their control points to.
 #[derive(Debug, Clone)]
 pub struct ModelAttachment {
     pub name: String,
     pub bone: String,
-    /// Offset and rotation in the bone's local frame, in glTF axes.
     pub offset: [f32; 3],
     pub rotation: [f32; 4],
 }
@@ -74,7 +63,6 @@ fn compiled(path: &str) -> String {
     }
 }
 
-/// The preview and ambient `.vpcf` systems explicitly declared by a model.
 pub fn model_preview_particles(resource: &Resource) -> Result<Vec<String>> {
     let Some(data) = resource.block_bytes("DATA") else {
         return Ok(Vec::new());
@@ -95,8 +83,6 @@ enum KeyToken {
     Symbol(char),
 }
 
-// Only tokenize the metadata fields we need; brackets inside quotes/comments
-// must not terminate the particle list, which can itself contain nested arrays.
 fn key_tokens(text: &str) -> Vec<KeyToken> {
     let mut chars = text.chars().peekable();
     let mut tokens = Vec::new();
@@ -190,12 +176,6 @@ fn preview_paths_in_key_values(text: &str) -> Vec<String> {
     paths
 }
 
-/// Some mods ship a rebuilt game model with its preview metadata stripped,
-/// alongside the original model. Reuse that metadata only when both compile
-/// from exactly the same mesh source (filename AND CRC), within the same folder.
-/// Checks at most 32 siblings, extracting at most 64 MiB per entry and 128 MiB
-/// in total. Oversized, unreadable, and invalid siblings are skipped.
-/// Returns the model paths that supplied the discovered effects for diagnostics.
 pub fn discover_model_preview_particles(
     archive: &VpkArchive,
     resource: &Resource,
@@ -295,7 +275,6 @@ fn mesh_inputs(resource: &Resource) -> BTreeSet<(String, u32)> {
         .collect()
 }
 
-/// Attachment points from the model's first render mesh that declares any.
 pub fn model_attachments(resource: &Resource) -> Result<Vec<ModelAttachment>> {
     for block in resource.blocks.iter().filter(|block| block.name == "MDAT") {
         let Some(bytes) = resource.data.get(block.offset..block.offset + block.size) else {
@@ -356,11 +335,6 @@ pub struct LoadedParticleSystems {
     pub diagnostics: Vec<ParticleLoadDiagnostic>,
 }
 
-/// Loads all roots against shared budgets of 48 reads and 16 MiB extracted,
-/// with at most 2 MiB per entry and six child edges below each root. Failed
-/// reads consume the read budget; extracted bytes count even if parsing fails.
-/// Reports at most 96 diagnostics. Use this instead of loading roots separately.
-/// These byte limits cover archive payloads, not KV3 decompression or JSON.
 pub fn load_particle_systems(archive: &VpkArchive, paths: &[String]) -> LoadedParticleSystems {
     let mut remaining_bytes = MAX_SYSTEM_BYTES;
     load_systems_with(paths, |path| {
@@ -378,7 +352,6 @@ pub fn load_particle_systems(archive: &VpkArchive, paths: &[String]) -> LoadedPa
     })
 }
 
-/// Loads a single root. Multiple roots should use `load_particle_systems`.
 pub fn load_particle_system(archive: &VpkArchive, path: &str) -> Result<ParticleSystemFile> {
     let mut loaded = load_particle_systems(archive, &[path.to_string()]);
     loaded.systems.pop().ok_or_else(|| {
@@ -421,7 +394,6 @@ fn load_systems_with(
         if let Some(issue) = issue {
             return Err(ParticleLoadDiagnostic { path, issue });
         }
-        // Failed reads consume budget too, bounding work on corrupt archives.
         *remaining -= 1;
         let data = read(&path).map_err(|error| ParticleLoadDiagnostic {
             path: path.clone(),
@@ -485,7 +457,6 @@ fn load_systems_with(
     result
 }
 
-/// Every texture a system tree's renderers draw with, by `.vtex` path.
 pub fn particle_texture_paths(system: &ParticleSystemFile) -> BTreeSet<String> {
     fn collect(value: &serde_json::Value, out: &mut BTreeSet<String>) {
         match value {
@@ -519,9 +490,6 @@ pub fn particle_texture_paths(system: &ParticleSystemFile) -> BTreeSet<String> {
     out
 }
 
-/// Decodes a particle texture to a PNG no larger than `max_side`, with its sprite sheet.
-/// Rejects archive entries larger than 64 MiB before reading their payload.
-/// Callers loading many textures must bound their count or total bytes separately.
 pub fn particle_texture(
     archive: &VpkArchive,
     path: &str,
@@ -530,7 +498,6 @@ pub fn particle_texture(
     decode_particle_texture(archive, path, max_side, None)
 }
 
-/// Reserve enough atlas resolution for a 128px frame, within the caller's pixel budget.
 pub fn particle_texture_adaptive(
     archive: &VpkArchive,
     path: &str,
@@ -605,7 +572,6 @@ fn decode_particle_texture(
     }
     let decoded = header.decode_preview(&resource.data, max_side)?;
     let png = crate::encode_png_bytes(&decoded, max_side)?;
-    // Matches the downscale `encode_png_bytes` applies.
     let scale = (max_side as f32 / decoded.width.max(decoded.height) as f32).min(1.0);
     let texture = ParticleTexture {
         width: ((decoded.width as f32 * scale).round() as u32).max(1),
@@ -613,7 +579,6 @@ fn decode_particle_texture(
         png,
         sequences,
     };
-    // Cache compressed PNGs, never expanded RGBA or GPU resources.
     if particle_texture_cache_bytes(&texture) <= 8 * 1024 * 1024
         && let Ok(mut entries) = cache.lock()
     {
@@ -632,8 +597,6 @@ fn decode_particle_texture(
     Ok(texture)
 }
 
-/// Bound decompression before allocating RGBA; missing mip levels must not turn
-/// a small preview request into a full-resolution texture decode.
 fn particle_decode_dimensions(header: &VtexHeader, max_side: u32) -> Result<(u32, u32)> {
     if matches!(
         header.format,

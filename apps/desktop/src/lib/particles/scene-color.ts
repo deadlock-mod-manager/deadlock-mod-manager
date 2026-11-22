@@ -7,7 +7,6 @@ export interface SceneColorUniforms {
   screenSize: { value: THREE.Vector2 };
 }
 
-/** One capture per viewer frame, shared by every refractive emitter. */
 export interface SceneColorCapture {
   register(object: THREE.Object3D, uniforms: SceneColorUniforms): () => void;
   setSize(width: number, height: number, pixelRatio: number): void;
@@ -70,7 +69,6 @@ export const createSceneColorCapture = (
         Math.max(width * pixelRatio, 1),
         Math.max(height * pixelRatio, 1),
       );
-      // HDR color + depth stays below 27 MiB even on large/high-DPI displays.
       const scale = Math.min(1, 1536 / Math.max(screenSize.x, screenSize.y));
       target.setSize(
         Math.max(Math.round(screenSize.x * scale), 1),

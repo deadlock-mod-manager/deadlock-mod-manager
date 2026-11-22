@@ -5,7 +5,6 @@ import { rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-/** Validate first, then atomically replace the last good taxonomy copy. */
 export async function syncTaxonomy(url, destination) {
   const response = await fetch(url);
   assert.ok(response.ok, `Taxonomy request failed: HTTP ${response.status}`);

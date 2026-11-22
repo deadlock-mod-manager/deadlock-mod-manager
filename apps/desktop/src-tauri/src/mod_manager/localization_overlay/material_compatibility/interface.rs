@@ -1,8 +1,6 @@
 use super::*;
 use vpkmanager::source2::kv3::Value;
 
-/// A current material is evidence of an interface, not a complete shader schema.
-/// Feature differences may be intentional; never replace authored parameters here.
 pub(super) fn differences(source: &Value, current: &Value) -> Result<Vec<String>, String> {
   let shader = |value: &Value| {
     value

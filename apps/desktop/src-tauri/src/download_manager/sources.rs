@@ -7,9 +7,6 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-/// Download URLs looked up only once every known one has failed, such as the
-/// GameBanana caches Default routing falls back to. Each call looks them up
-/// again, so a download resumed after a pause doesn't reuse a stale list.
 #[derive(Clone)]
 pub struct LateSources(Arc<dyn Fn() -> BoxFuture<'static, Vec<String>> + Send + Sync>);
 
@@ -29,7 +26,6 @@ impl std::fmt::Debug for LateSources {
   }
 }
 
-/// The lookup stops as soon as the download is cancelled or paused.
 pub(super) async fn late_urls(
   late: Option<&LateSources>,
   cancel: &CancellationToken,
@@ -44,7 +40,6 @@ pub(super) async fn late_urls(
     () = pause.paused() => Err(Error::DownloadPaused),
     urls = (late.0)() => Ok(urls),
   }?;
-  // A cancel or pause that lands as the lookup finishes still wins over its list.
   if cancel.is_cancelled() {
     return Err(Error::DownloadCancelled);
   }
@@ -54,10 +49,6 @@ pub(super) async fn late_urls(
   Ok(urls)
 }
 
-/// Tries each URL in turn. `late` is awaited only when the last known URL has
-/// failed in a way another server could fix; its URLs join the end of the
-/// list. A source with a URL after it has its partial removed before the next
-/// is tried; the last one's error is returned with its partial kept.
 pub(super) async fn download_from_sources<F, Attempt, Late>(
   urls: &[String],
   late: Late,
@@ -270,7 +261,6 @@ mod tests {
     assert!(first.requests().is_empty() && last.requests().is_empty());
   }
 
-  /// Each server as `DownloadManager::download_file` tries it with segments on.
   #[tokio::test]
   async fn a_refused_range_request_retries_the_server_in_one_stream_before_the_next() {
     use crate::download_manager::budget::TransferBudget;
@@ -345,8 +335,6 @@ mod tests {
     assert!(!staging_dir(&target).exists());
   }
 
-  /// A server that cuts its first transfer after 3 bytes, leaving a partial,
-  /// and refuses every request after it.
   async fn dying_server() -> TestServer {
     TestServer::start(|_, index| {
       if index > 0 {
@@ -442,8 +430,6 @@ mod tests {
       let late_server = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
       let (cancel, pause) = (CancellationToken::new(), PauseHandle::new());
       let late_url = late_server.url("/mod.zip");
-      // The user acts while the lookup is under way. It then either never
-      // finishes, or finishes with nothing at the same moment.
       let late = LateSources::new({
         let (cancel, pause) = (cancel.clone(), pause.clone());
         move || {

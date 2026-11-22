@@ -6,9 +6,6 @@ use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 use super::NativeSourceRelease;
 use super::network::invalid;
 
-/// Carries an explicit component decision into the existing archive selection
-/// mechanism. Defaults are a UI suggestion for first install, never an update
-/// fallback when a component disappears or a required group changes.
 pub fn build_component_selection(
   release: &NativeSourceRelease,
   component_ids: &[String],
@@ -76,8 +73,6 @@ pub fn build_component_selection(
       "Selected artifacts must exactly match the selected components",
     ));
   }
-  // Components are declared in load order: an earlier file gets the lower
-  // pak number and wins. A file several components share keeps its first slot.
   let mut files: Vec<ModFile> = Vec::new();
   let mut positions: HashMap<(&str, &str), usize> = HashMap::new();
   for component in &installation.components {

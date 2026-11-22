@@ -26,10 +26,6 @@ const heroIdOf = (insight: Insight): number | null =>
     ? insight.heroId
     : null;
 
-/**
- * The kind alone is not unique - two hero insights of the same kind can make the
- * cut - so the key carries whatever the insight is actually about.
- */
 const insightKey = (insight: Insight): string => {
   switch (insight.kind) {
     case "comfortHero":
@@ -96,7 +92,6 @@ const useInsightText = () => {
   };
 };
 
-/** The number an insight is about and what it is measured against, if any. */
 const comparisonOf = (
   insight: Insight,
 ): { value: number; baseline: number } | null => {
@@ -121,7 +116,6 @@ const toneColor = (tone: Insight["tone"]) =>
 
 const MAX_STREAK_BEADS = 10;
 
-/** The left column of an insight: its number drawn, not just written. */
 const InsightVisual = ({
   insight,
   hero,
@@ -210,17 +204,10 @@ const InsightVisual = ({
   return null;
 };
 
-/**
- * The dashboard's one opinionated section: a few patterns worth acting on, each
- * led by its number drawn against your usual, then a sentence on what it means.
- * Tone is carried by wording and position as well as colour.
- */
 export const InsightList = ({ insights, heroesById }: InsightListProps) => {
   const { t } = useTranslation();
   const describe = useInsightText();
   const capped = insights.slice(0, MAX_INSIGHTS);
-  // Safety net for the two-column grid: drop a lone trailing entry rather than
-  // leave a gap next to it. The fallback insights make this rare.
   const visible =
     capped.length > 1 && capped.length % 2 === 1 ? capped.slice(0, -1) : capped;
 

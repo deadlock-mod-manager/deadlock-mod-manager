@@ -9,23 +9,19 @@ export type EditorFilter = "differs" | "changed" | "attention" | "all";
 export type EntryQuery = {
   search: string;
   filter: EditorFilter;
-  /** Path keys the draft overrides. */
   changedKeys: ReadonlySet<string>;
 };
 
 export type CategoryGroup = {
   id: string;
   label: string;
-  /** Entries passing the query, active ones first. */
   entries: ResolvedEntry[];
-  /** Counts over every entry in the category, ignoring the query. */
   total: number;
   differs: number;
   changed: number;
   attention: number;
 };
 
-/** The config asks for something the game won't do at all. */
 const ATTENTION_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "blocked",
   "removed",
@@ -34,7 +30,6 @@ const ATTENTION_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "unsupported",
 ]);
 
-/** Never written whatever the user does, so the row is read-only. */
 const INERT_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "excluded",
   "denied",
@@ -44,10 +39,6 @@ const INERT_STATUSES: ReadonlySet<EntryStatus> = new Set([
 export const needsAttention = (entry: Pick<ResolvedEntry, "status">) =>
   ATTENTION_STATUSES.has(entry.status);
 
-/**
- * The entry does something beyond the game's own value. Leaves out lines that
- * match the game and developer tools nobody enabled.
- */
 export const differsFromGame = (
   entry: Pick<ResolvedEntry, "status" | "overridden">,
 ) =>
@@ -57,7 +48,6 @@ export const differsFromGame = (
 export const isInert = (entry: Pick<ResolvedEntry, "status">) =>
   INERT_STATUSES.has(entry.status);
 
-/** Edits outside ConVars that the include-engine-sections toggle controls. */
 export const isEngineSectionEntry = (
   entry: Pick<ResolvedEntry, "path" | "status">,
 ) =>
@@ -101,10 +91,6 @@ const emptyGroup = (id: string, label: string): CategoryGroup => ({
   attention: 0,
 });
 
-/**
- * Groups entries by the catalog's categories, in the catalog's order. Unknown
- * category ids get their own group at the end so nothing is hidden.
- */
 export const groupEntries = (
   entries: ResolvedEntry[],
   categories: CategoryInfo[],

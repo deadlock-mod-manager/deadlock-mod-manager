@@ -1,5 +1,3 @@
-//! Public native source transport and complete-snapshot catalog. Installation
-//! remains owned by the existing download manager and mod manager.
 mod hosted;
 #[cfg(test)]
 mod integration_fixture_tests;
@@ -22,8 +20,6 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use tokio::io::AsyncReadExt;
 
-/// Portable source identity is the accepted origin and declared source ID,
-/// never the descriptor locator alone or a provider-global numeric ID.
 pub fn source_key(accepted_origin: &str, source_id: &str) -> String {
   hex::encode(Sha256::digest(format!("{accepted_origin}\0{source_id}")))
 }
@@ -87,8 +83,6 @@ pub fn parse_artifact_reference(value: &str) -> Result<NativeArtifactReference, 
   })
 }
 
-/// Verify all supplied supported hashes before any extraction or replacement.
-/// A source without hashes can still install, without publisher verification.
 pub async fn verify_artifact(path: &Path, hashes: &NativeSourceHashes) -> Result<(), Error> {
   let mut file = tokio::fs::File::open(path).await?;
   let mut sha256 = Sha256::new();

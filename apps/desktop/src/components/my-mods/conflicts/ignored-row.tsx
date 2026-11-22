@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import type { LocalMod } from "@/types/mods";
 import { ModCover } from "./mod-cover";
 
-/** Covers overlap on purpose: these mods do share files, and that's fine. */
 const CoverStack = ({ mods }: { mods: (LocalMod | undefined)[] }) => (
   <div aria-hidden className='flex shrink-0 -space-x-2'>
     {mods.map((mod, index) => (

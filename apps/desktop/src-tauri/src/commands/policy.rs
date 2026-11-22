@@ -146,8 +146,6 @@ impl PolicyState {
       .collect::<Result<Vec<_>, _>>()
   }
 
-  /// Applies policy to a catalog query before it runs, so counts and pages already exclude
-  /// unavailable submissions and list `isMap` corrections on the right tab.
   pub fn scope_query(&self, query: &mut CatalogQuery) -> Result<(), Error> {
     query.excluded_slugs = self.unavailable_slugs()?;
     let manifest = self
@@ -190,8 +188,6 @@ impl PolicyState {
     Ok(apply_rules(mod_data, rules))
   }
 
-  /// `apply_to_mod` for a whole result page: one lock and one pass over the
-  /// rules, instead of re-deriving every rule's slug for each mod.
   pub fn apply_to_mods(&self, mods: &mut [CatalogModDto]) -> Result<(), Error> {
     let manifest = self
       .manifest
@@ -324,8 +320,6 @@ pub async fn refresh_policy_manifest(state: State<'_, PolicyState>) -> Result<bo
   state.refresh().await
 }
 
-/// Applies one mod's rules in manifest order. Returns false when a rule hides
-/// the submission entirely.
 fn apply_rules<'a>(
   mod_data: &mut CatalogModDto,
   rules: impl IntoIterator<Item = &'a PolicyRule>,

@@ -12,7 +12,6 @@ export const TONE_COLOR = {
 
 type PluginState = { tone: PluginTone; labelKey: string };
 
-/** Status shown in plugin lists, where a waiting update outranks "Running". */
 export const listState = (plugin: ExternalPluginSummary): PluginState => {
   if (plugin.pendingUpdate && plugin.status === "enabled") {
     return { tone: "info", labelKey: "plugins.state.updateReady" };
@@ -24,7 +23,6 @@ export const listState = (plugin: ExternalPluginSummary): PluginState => {
   );
 };
 
-/** Status shown on the plugin's own page. */
 export const pageState = (
   plugin: ExternalPluginSummary,
   needsConsentKey = "plugins.state.needsSetup",

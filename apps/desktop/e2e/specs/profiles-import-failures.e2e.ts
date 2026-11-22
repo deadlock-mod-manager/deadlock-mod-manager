@@ -33,8 +33,6 @@ describe("profile import with failed mods", () => {
 
     await step(`import share code ${FAILING_SHARE_CODE}`, async () => {
       const create = await previewShareCode(FAILING_SHARE_CODE);
-      // Wait, like a user, for the preview to finish its lookups; the missing
-      // mod's failed lookup has its own error toast.
       await $(
         '//*[@role="dialog"]//*[normalize-space()="Mod not found or unavailable"]',
       ).waitForDisplayed({ timeout: 30_000 });

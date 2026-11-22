@@ -19,30 +19,17 @@ export abstract class ArchiveExtractor {
     });
   }
 
-  /**
-   * Get the list of supported file extensions for this extractor
-   */
   abstract getSupportedExtensions(): string[];
 
-  /**
-   * Check if this extractor can handle the given file
-   */
   canHandle(filePath: string): boolean {
     return this.getSupportedExtensions().includes(fileExtension(filePath));
   }
 
-  /**
-   * Extract the entries matching `options.fileExtensions` into `options.targetDir`,
-   * keeping their paths inside the archive
-   */
   abstract extractAll(
     archivePath: string,
     options: ExtractionOptions,
   ): Promise<ExtractionResult>;
 
-  /**
-   * Helper method to create write stream with directory creation
-   */
   protected async createSafeWriteStream(
     filePath: string,
   ): Promise<NodeJS.WritableStream> {
@@ -101,9 +88,6 @@ export abstract class ArchiveExtractor {
   }
 }
 
-/**
- * Factory class to get the appropriate extractor for a file
- */
 export class ArchiveExtractorFactory {
   private static instance: ArchiveExtractorFactory | null = null;
   private extractors: ArchiveExtractor[] = [];
@@ -117,25 +101,16 @@ export class ArchiveExtractorFactory {
     return ArchiveExtractorFactory.instance;
   }
 
-  /**
-   * Register an extractor
-   */
   registerExtractor(extractor: ArchiveExtractor): void {
     this.extractors.push(extractor);
   }
 
-  /**
-   * Get the appropriate extractor for a file
-   */
   getExtractor(filePath: string): ArchiveExtractor | null {
     return (
       this.extractors.find((extractor) => extractor.canHandle(filePath)) || null
     );
   }
 
-  /**
-   * Get all supported extensions
-   */
   getSupportedExtensions(): string[] {
     return Array.from(
       new Set(

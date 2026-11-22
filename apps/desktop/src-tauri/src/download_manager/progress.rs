@@ -51,9 +51,6 @@ impl ProgressAggregator {
       slot.size = total;
     }
 
-    // Publishing inside the critical section is what orders the emitted sequence: released
-    // first, two concurrent files can compute ascending figures and then emit them in the
-    // opposite order. `publish` must therefore stay non-blocking.
     publish(Self::aggregate(&slots, file_index));
   }
 

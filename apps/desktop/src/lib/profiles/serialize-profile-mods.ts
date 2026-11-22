@@ -9,10 +9,6 @@ export interface SerializedProfileMod {
   selectedDownloads?: ProfileModDownload[];
 }
 
-/**
- * For a mod without recorded picks: the downloads its selected files came
- * from, or undefined unless each file's archive matches exactly one download.
- */
 const downloadsFromFileTree = (
   localMod: LocalMod,
 ): ModDownloadItem[] | undefined => {
@@ -57,7 +53,6 @@ const serializeProfileMod = (
   };
 
   if (localMod?.installedFileTree) {
-    // Older installs can lack selection info; treat that as "every file".
     const hasAnySelected = localMod.installedFileTree.files.some(
       (f) => f.is_selected,
     );
@@ -85,7 +80,6 @@ const serializeProfileMod = (
   return serialized;
 };
 
-/** The enabled mods of a profile in the share format, with their load order. */
 export const serializeEnabledProfileMods = (
   profile: Pick<ModProfile, "enabledMods">,
   mods: LocalMod[],

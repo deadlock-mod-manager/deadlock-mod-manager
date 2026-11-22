@@ -35,7 +35,6 @@ interface ModOptionsDialogProps {
   onOpenChange: (open: boolean) => void;
   isSaving?: boolean;
   progress?: ModOptionsProgress | null;
-  /** Set while the apply is at a step that can be stopped. */
   onCancelApply?: () => void;
   onApply: (
     selectedArchives: ModDownloadItem[],
@@ -147,8 +146,6 @@ export const ModOptionsDialog = ({
             {t("modOptions.noOptions")}
           </div>
         ) : (
-          // Bleed into the dialog padding so the scrollbar hugs the edge and
-          // row text lines up with the title.
           <div className='-mx-6 max-h-[60vh] space-y-4 overflow-y-auto px-3'>
             {hasVariants && (
               <OptionSection

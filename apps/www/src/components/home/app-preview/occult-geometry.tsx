@@ -2,7 +2,6 @@ import { useMemo } from "react";
 
 const GOLDEN_RATIO = 1.618033988749;
 
-// Server and client must print identical SVG numbers, or hydration fails.
 const round = (value: number) => Math.round(value * 100) / 100;
 
 function seededRandom(seed: number): () => number {
@@ -14,59 +13,35 @@ function seededRandom(seed: number): () => number {
 }
 
 const OCCULT_PATHS = [
-  // Pentagram
   "M0,-10 L5.88,8.09 L-9.51,-3.09 L9.51,-3.09 L-5.88,8.09 Z",
-  // Inverted pentagram
   "M0,10 L-5.88,-8.09 L9.51,3.09 L-9.51,3.09 L5.88,-8.09 Z",
-  // Septagram
   "M0,-10 L4.34,9.01 L-7.82,-6.23 L9.75,2.23 L-9.75,2.23 L7.82,-6.23 L-4.34,9.01 Z",
-  // Pentagram inscribed in circle
   "M0,-10 L5.88,8.09 L-9.51,-3.09 L9.51,-3.09 L-5.88,8.09 Z M-10,0 A10,10 0 1,1 10,0 A10,10 0 1,1 -10,0",
-  // Alchemical fire triangle
   "M0,-10 L8.66,5 L-8.66,5 Z M-5,0 L5,0",
-  // Alchemical water triangle
   "M0,10 L-8.66,-5 L8.66,-5 Z M-5,0 L5,0",
-  // Chaos star (8 arrows)
   "M0,-10 L0,10 M-10,0 L10,0 M-7.07,-7.07 L7.07,7.07 M7.07,-7.07 L-7.07,7.07 M0,-10 L-1.5,-7 M0,-10 L1.5,-7 M0,10 L-1.5,7 M0,10 L1.5,7 M-10,0 L-7,-1.5 M-10,0 L-7,1.5 M10,0 L7,-1.5 M10,0 L7,1.5",
-  // Nested diamonds with cross
   "M0,-9 L9,0 L0,9 L-9,0 Z M0,-5 L5,0 L0,5 L-5,0 Z M0,-12 L0,12 M-12,0 L12,0",
 ];
 
 const ASTROLOGY_PATHS = [
-  // Sun ☉ — circle with dot and 4 rays
   "M-7,0 A7,7 0 1,1 7,0 A7,7 0 1,1 -7,0 M-1,0 A1,1 0 1,1 1,0 A1,1 0 1,1 -1,0 M0,-9 L0,-7 M0,7 L0,9 M-9,0 L-7,0 M7,0 L9,0",
-  // Moon crescent ☽
   "M3,-7 A7,7 0 1,0 3,7 A5,5 0 1,1 3,-7",
-  // Venus ♀ — circle + cross
   "M-5,-2 A5,5 0 1,1 5,-2 A5,5 0 1,1 -5,-2 M0,3 L0,10 M-3,7 L3,7",
-  // Mars ♂ — circle + arrow
   "M-4,2 A5.5,5.5 0 1,1 3,-5 M3,-5 L7,-9 M7,-9 L3,-9 M7,-9 L7,-5",
-  // Saturn ♄
   "M-2,-10 L-2,1 Q-2,5 3,5 M-5,-6 L1,-6",
-  // Eye of Providence
   "M-10,0 Q0,-8 10,0 Q0,6 -10,0 M-2,0 A2,2 0 1,1 2,0 A2,2 0 1,1 -2,0",
-  // Triple Moon (waxing + full + waning)
   "M0,-6 A6,6 0 1,1 0,6 A6,6 0 1,1 0,-6 M-8,-5 A6,6 0 0,0 -8,5 A4,4 0 0,1 -8,-5 M8,-5 A6,6 0 0,1 8,5 A4,4 0 0,0 8,-5",
-  // Mercury ☿ — circle + horns + cross
   "M-4,0 A4,4 0 1,1 4,0 A4,4 0 1,1 -4,0 M0,4 L0,10 M-3,7 L3,7 M-3,-4 A3,3 0 0,1 0,-7 A3,3 0 0,1 3,-4",
 ];
 
 const MODDING_PATHS = [
-  // Gear/cog
   "M-3.5,0 A3.5,3.5 0 1,1 3.5,0 A3.5,3.5 0 1,1 -3.5,0 M-1,-8 L1,-8 L1.5,-5 L-1.5,-5 Z M-1,8 L1,8 L1.5,5 L-1.5,5 Z M-8,-1 L-8,1 L-5,1.5 L-5,-1.5 Z M8,-1 L8,1 L5,1.5 L5,-1.5 Z M-5.5,-5.5 L-6.5,-6.5 L-4,-7 L-7,-4 Z M5.5,5.5 L6.5,6.5 L4,7 L7,4 Z M5.5,-5.5 L6.5,-6.5 L7,-4 L4,-7 Z M-5.5,5.5 L-6.5,6.5 L-7,4 L-4,7 Z",
-  // Code brackets </>
   "M-5,-8 L-10,0 L-5,8 M5,-8 L10,0 L5,8 M-2,5 L2,-5",
-  // Wrench
   "M-7,-8 Q-10,-5 -7,-2 L4,7 Q5,10 8,10 Q10,10 10,7 Q10,5 7,4 L-2,-5 Q-5,-10 -7,-8 Z M-6,-4 L-4,-6",
-  // Shield
   "M0,-10 L8,-6 L8,1 Q8,7 0,10 Q-8,7 -8,1 L-8,-6 Z M0,-6 L0,6 M-4,-2 L4,-2",
-  // Lightning bolt
   "M-1,-10 L-5,0 L-1,-1 L-3,10 L5,0 L1,1 L3,-10 Z",
-  // Puzzle piece
   "M-7,-7 L-1,-7 Q-1,-10 2,-10 Q2,-7 2,-7 L7,-7 L7,7 L-7,7 Z",
-  // Anvil
   "M-8,4 L8,4 L6,8 L-6,8 Z M-4,-4 L4,-4 L5,0 L5,4 L-5,4 L-5,0 Z M-2,-4 L-2,-8 L2,-8 L2,-4",
-  // Crosshair/target reticle
   "M0,-10 L0,-4 M0,4 L0,10 M-10,0 L-4,0 M4,0 L10,0 M-3,0 A3,3 0 1,1 3,0 A3,3 0 1,1 -3,0 M-7,0 A7,7 0 1,1 7,0 A7,7 0 1,1 -7,0",
 ];
 
@@ -161,9 +136,6 @@ function ConcentricRings({
   );
 }
 
-// Cog and wrench paths extracted from the Deadlock logo (logo.tsx).
-// Original logo viewBox is 1024x1024, centered around (~507, 509).
-// Rendered as faint primary-color strokes (no fills) so it blends as line art.
 const LOGO_COG =
   "M874.08,468.44v81.66l-67.86,8.49c-8.07,1-14.62,6.96-16.43,14.88-7.33,32.35-20.08,62.66-37.27,89.91-4.33,6.88-3.89,15.71,1.09,22.13l42.04,54-57.77,57.77-54-42.02c-6.42-5-15.27-5.44-22.13-1.09-27.26,17.17-57.55,29.92-89.91,37.25-7.92,1.81-13.88,8.36-14.88,16.43l-8.49,67.86h-81.66l-8.49-67.86c-1.02-8.07-6.96-14.62-14.88-16.43-32.35-7.33-62.66-20.08-89.91-37.25-6.88-4.35-15.71-3.92-22.13,1.09l-54,42.02-57.77-57.77,42.02-54c4.98-6.42,5.42-15.25,1.09-22.13-17.19-27.24-29.94-57.55-37.27-89.91-1.78-7.92-8.36-13.88-16.41-14.88l-67.89-8.49v-81.66l67.89-8.49c8.05-1.02,14.62-6.96,16.41-14.88,7.33-32.35,20.08-62.66,37.27-89.91,4.33-6.88,3.89-15.71-1.09-22.13l-42.02-54,57.77-57.77,54,42.02c6.42,4.98,15.25,5.42,22.13,1.09,27.24-17.17,57.55-29.94,89.91-37.25,7.92-1.81,13.86-8.38,14.88-16.43l8.49-67.86h81.66l8.49,67.86c1,8.05,6.96,14.62,14.88,16.43,32.35,7.31,62.64,20.08,89.91,37.25,6.85,4.33,15.71,3.89,22.13-1.09l54-42.02,57.77,57.77-42.04,54c-4.98,6.42-5.42,15.25-1.09,22.13,17.19,27.24,29.94,57.55,37.27,89.91,1.81,7.92,8.36,13.86,16.43,14.88l67.86,8.49Z";
 
@@ -187,7 +159,6 @@ function LogoSigil({
   rotation?: number;
   opacity?: number;
 }) {
-  // Logo is 1024x1024; map down to ~20 sigil units, then multiply by caller's scale.
   const baseScale = round(0.08 * scale);
   const stroke = "hsl(var(--primary))";
   return (
@@ -350,7 +321,6 @@ function CornerSigil({
   );
 }
 
-/** Ported from the desktop app's layout background; contained, not fixed. */
 export const OccultGeometry = ({ className }: { className?: string }) => {
   const elements = useMemo(() => {
     const rng = seededRandom(777);
@@ -417,7 +387,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           </radialGradient>
         </defs>
 
-        {/* Primary mandala - bottom right area, partially off-screen */}
         <g
           className='occult-rotate-slow'
           style={{ transformOrigin: "780px 620px" }}>
@@ -445,7 +414,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           />
         </g>
 
-        {/* Secondary mandala - top left, smaller */}
         <g
           className='occult-rotate-reverse'
           style={{ transformOrigin: "150px 140px" }}>
@@ -474,7 +442,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           />
         </g>
 
-        {/* Tertiary mandala - center-left, very faint */}
         <g
           className='occult-rotate-slow'
           style={{ transformOrigin: "80px 450px" }}>
@@ -496,7 +463,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           />
         </g>
 
-        {/* Small mandala - top right */}
         <g
           className='occult-rotate-reverse'
           style={{ transformOrigin: "920px 80px" }}>
@@ -510,7 +476,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           />
         </g>
 
-        {/* Scattered alchemical sigils */}
         {elements.map((el, i) => (
           <g
             className={i % 2 === 0 ? "occult-pulse-a" : "occult-pulse-b"}
@@ -526,7 +491,6 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           </g>
         ))}
 
-        {/* Horizon line - subtle divider */}
         <line
           opacity={0.06}
           stroke='hsl(var(--primary))'
@@ -538,13 +502,11 @@ export const OccultGeometry = ({ className }: { className?: string }) => {
           y2={400 - GOLDEN_RATIO}
         />
 
-        {/* Corner accents */}
         <CornerSigil rotation={0} x={10} y={10} />
         <CornerSigil mirror rotation={90} x={990} y={10} />
         <CornerSigil rotation={-90} x={10} y={790} />
         <CornerSigil mirror rotation={180} x={990} y={790} />
 
-        {/* Arc segments - partial circles floating */}
         <path
           d='M400,50 A120,120 0 0,1 520,170'
           fill='none'

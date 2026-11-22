@@ -97,7 +97,6 @@ describe("addon shards in the library", () => {
       });
 
       await openShardStatus();
-      // An extra empty shard mount is harmless; diagnostics report missing paths.
       await expectShardStatus({
         shardsInUse: "1 / 10",
         gameinfo: "In sync",
@@ -120,15 +119,12 @@ describe("addon shards in the library", () => {
         shards: { [OVERFLOW]: 2 },
       });
       await setModEnabled(world, MOVED, false);
-      // Enabling repacks the profile in load order, so the hole 003 left in
-      // shard 1 pulls 099 back across the boundary.
       await setModEnabled(world, LAST, true);
       await assertShardLayout(world, "hole-closed", {
         loadOrder: without(MOVED),
         disabled: [MOVED],
         shards: { [OVERFLOW]: 1, [LAST]: 2 },
       });
-      // 003 returns to its place and pushes 099 into shard 2 again.
       await setModEnabled(world, MOVED, true);
       await assertShardLayout(world, "reenabled-in-place", {
         loadOrder: LIBRARY_MODS,
@@ -139,7 +135,6 @@ describe("addon shards in the library", () => {
       await setModEnabled(world, LAST, false);
 
       await step("report a stray file in the overflow shard", async () => {
-        // Shard 1 holds a managed pak09_dir.vpk; only the shard tells them apart.
         await writeFile(
           path.join((await shardPaths(world)).citadel, ROGUE),
           rogueBytes,

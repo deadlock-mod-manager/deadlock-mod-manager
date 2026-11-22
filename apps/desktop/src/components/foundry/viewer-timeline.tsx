@@ -10,11 +10,6 @@ import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 import { useAnimationFrame } from "./use-viewer-animation-frame";
 import { loopTime, formatTime } from "./viewer-transport-utils";
 
-/**
- * A scrubber over the looping animation. It follows the render clock through a
- * ref every frame, and its ticks mark where one clip of a combined move ends and
- * the next begins.
- */
 export const Timeline = ({
   animation,
   timeRef,

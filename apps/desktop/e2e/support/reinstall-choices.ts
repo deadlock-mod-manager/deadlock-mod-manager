@@ -16,9 +16,6 @@ import {
 import { navigate } from "./ui";
 import { assertOwnedWorld } from "./world";
 
-// Probes for the cases where Reinstall or Nuke & Reinstall must give a mod
-// back the choices the player made for it.
-
 const profileDirectory = async (world: string) => {
   const {
     configuration: { roots },
@@ -49,11 +46,9 @@ const readManifest = async (world: string) =>
     ),
   ).mods;
 
-/** The mod's saved choices, its health and repair, and the engine's order. */
 const observe = async (world: string) => {
   const manifest = await readManifest(world);
   const entry = manifest[REINSTALLED_MOD];
-  // One shard and one VPK per mod: the pak number is the load order.
   const loadOrder = Object.entries(manifest)
     .filter(([, mod]) => mod.enabled && mod.currentVpks.length > 0)
     .sort(([, a], [, b]) => a.currentVpks[0].localeCompare(b.currentVpks[0]))
@@ -95,10 +90,6 @@ export const ORIGINAL_FILES: Observation = {
   repaired: false,
 };
 
-/**
- * Health and the repair package catch up after an install. On a miss, returns
- * the last state for the case to record and assert.
- */
 export const settle = async (world: string, expected: Observation) => {
   const deadline = Date.now() + 10_000;
   for (;;) {
@@ -143,11 +134,6 @@ const storeSchema = z.object({
   }),
 });
 
-/**
- * Waits until the mod was downloaded again and is back to installed and
- * enabled, or downloaded and disabled, so a check after it can't pass on the
- * state from before the reinstall.
- */
 export const reinstalled = (world: string, enabled = true) =>
   observeUntil(
     "reinstall settled",

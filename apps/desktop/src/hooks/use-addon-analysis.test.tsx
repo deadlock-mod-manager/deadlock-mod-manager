@@ -16,7 +16,6 @@ const captured: Options[] = [];
 const catalogLookups: string[] = [];
 const calls: string[] = [];
 const catalog = new Map<string, ModDto>();
-/** Each catalog request's start and settle, and each registration, in order. */
 const requests: string[] = [];
 const nextTask = () => new Promise((done) => setTimeout(done, 0));
 type Registration = {
@@ -138,7 +137,6 @@ const recordedAddon = (): LocalAddonInfo => ({
   },
 });
 
-/** A reset profile; `restored` puts the recorded mod back in its library. */
 const resetProfile = (restored: boolean) => {
   let passes = 0;
   const mods = restored ? [restoredMod] : [];
@@ -306,7 +304,6 @@ describe("restoring recorded mods before the scan", () => {
   });
 });
 
-/** `900001_green.vpk`: a parked file only its name identifies. */
 const parkedAddon = (): LocalAddonInfo => {
   const addon = recordedAddon();
   const filePath = "/game/citadel/addons/reset/900001_green.vpk";
@@ -382,7 +379,6 @@ describe("parked files whose mod left the library", () => {
   });
 });
 
-/** A hash match that names the archive it came from, so registration reads the mod's files. */
 const archiveMatch = (remoteId: string, fileName: string): LocalAddonInfo => {
   const addon = hashMatchedAddon();
   return {

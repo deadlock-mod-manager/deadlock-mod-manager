@@ -23,8 +23,6 @@ export const VARIANT_MOD = {
   id: "930101",
   name: "E2E Variant Names",
 } as const;
-// Every variant ships the same VPK filename, so only the install names the
-// archive gives them keep them apart.
 export const VARIANTS = [
   { archive: "Red Skin.zip", name: "pak01-red-skin_dir.vpk" },
   { archive: "blue.zip", name: "pak01-blue_dir.vpk" },
@@ -112,8 +110,6 @@ export const variantNamesRoutes = async () => {
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
       json(`/apiv11/Mod/${VARIANT_MOD.id}/ProfilePage`, profile),
       Object.assign(json(`/apiv11/Mod/${VARIANT_MOD.id}/DownloadPage`, {}), {
-        // At install the chooser fetches metadata once, then the Rust URL
-        // resolver once per archive.
         sequence: (["v1", "v1", "v1", "v1", "v2"] as const).map((version) => ({
           status: 200,
           body: JSON.stringify({ _aFiles: files(version) }),
@@ -156,7 +152,6 @@ export const assertVariantNamesNetwork = (
         status: 200,
       })),
     )
-      // Re-enabling blue after the update fetches its v2 archive again.
       .concat({ path: variantPath(1, "v2"), status: 200 })
       .sort((a, b) => a.path.localeCompare(b.path)),
   );

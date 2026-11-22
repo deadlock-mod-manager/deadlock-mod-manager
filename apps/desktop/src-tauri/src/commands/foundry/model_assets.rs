@@ -1,5 +1,3 @@
-//! Private GLB artifacts. IPC carries descriptors; the asset protocol carries bytes.
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -121,8 +119,6 @@ impl ModelAssets {
   }
 }
 
-// Each session holds its lock until shutdown. A crashed process leaves an unlocked
-// directory; other running app instances keep their files, regardless of age.
 fn clean_abandoned_sessions(root: &Path) -> Result<(), Error> {
   for entry in std::fs::read_dir(root)? {
     let entry = entry?;

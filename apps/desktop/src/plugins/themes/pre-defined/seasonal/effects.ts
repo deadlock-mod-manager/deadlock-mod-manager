@@ -5,7 +5,6 @@ export const FIREWORK_EVENT = "dmm:seasonal-firework";
 const clear = (ctx: CanvasRenderingContext2D, width: number, height: number) =>
   ctx.clearRect(0, 0, width, height);
 
-/** Christmas: three depths of snow drifting in a slowly turning wind. */
 export const createSnow = (): Effect => {
   type Flake = { x: number; y: number; depth: number; phase: number };
   const sprite = glowSprite("255, 248, 236", 32);
@@ -96,7 +95,6 @@ const drawBat = (ctx: CanvasRenderingContext2D, bat: Bat) => {
   ctx.restore();
 };
 
-/** Halloween: embers rising from the bottom and the odd colony of bats crossing the screen. */
 export const createBatsAndEmbers = (): Effect => {
   type Ember = {
     x: number;
@@ -187,7 +185,6 @@ export const createBatsAndEmbers = (): Effect => {
   };
 };
 
-/** New Year's Eve: rockets with trails bursting into peonies, rings and golden willows. */
 export const createFireworks = (): Effect => {
   type Rocket = { x: number; y: number; vx: number; vy: number; hue: number };
   type Spark = {
@@ -312,7 +309,6 @@ export const createFireworks = (): Effect => {
   };
 };
 
-/** Lunar New Year: glowing paper lanterns drifting upwards among gold motes. */
 export const createLanterns = (): Effect => {
   type Lantern = {
     x: number;
@@ -425,7 +421,6 @@ export const createLanterns = (): Effect => {
   };
 };
 
-/** Easter: blossom petals tumbling down in soft pastels. */
 export const createPetals = (): Effect => {
   type Petal = {
     x: number;

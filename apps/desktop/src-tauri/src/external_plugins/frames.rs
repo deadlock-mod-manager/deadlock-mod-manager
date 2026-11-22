@@ -1,17 +1,3 @@
-//! Serves plugin interfaces to embedded frames over the `dmm-plugin`
-//! protocol, at `frame/<view token>/<path>`. The token comes from
-//! [`PluginHost::view`], so a frame cannot name another plugin's assets and
-//! its asset requests go stale when the plugin updates.
-//!
-//! The app embeds them as `<iframe sandbox="allow-scripts">`, so a frame's
-//! origin is opaque: Tauri rejects IPC from it (`Origin: null`), it cannot
-//! reach the app document, and the CSP below keeps it off the network. It
-//! talks to the app only through `postMessage`, which the embedding page
-//! relays with `external_plugins_frame_call`. Sandboxing still lets a frame
-//! navigate itself, so [`guard_navigation`] keeps plugin frames on this
-//! protocol: a page loaded elsewhere would escape the CSP and inherit the
-//! frame's relay.
-
 use crate::app_runtime::AppRuntime;
 use dmm_plugin_runtime::PluginHost;
 use std::path::Path;
@@ -21,8 +7,6 @@ use tauri::http::{Request, Response, StatusCode, header};
 
 pub const PROTOCOL: &str = "dmm-plugin";
 
-/// Module scripts from an opaque origin are CORS requests, hence the
-/// allow-origin header on every response.
 const CONTENT_SECURITY_POLICY: &str = "default-src 'none'; \
   script-src http://dmm-plugin.localhost dmm-plugin://localhost; \
   style-src http://dmm-plugin.localhost dmm-plugin://localhost 'unsafe-inline'; \
@@ -76,8 +60,6 @@ fn denied(status: StatusCode) -> Response<Vec<u8>> {
   respond(status, "text/plain; charset=utf-8", Vec::new())
 }
 
-/// Serves `frame/<view token>/<path>` from an enabled plugin's interface
-/// folder; an empty path is the manifest's entry page.
 pub fn serve(host: &PluginHost, request: &Request<Vec<u8>>) -> Response<Vec<u8>> {
   if request.method() != tauri::http::Method::GET && request.method() != tauri::http::Method::HEAD {
     return denied(StatusCode::METHOD_NOT_ALLOWED);
@@ -123,9 +105,6 @@ pub fn register(builder: tauri::Builder<AppRuntime>) -> tauri::Builder<AppRuntim
   })
 }
 
-/// Cancels navigations that would take a frame off the plugin protocol after
-/// it has loaded a plugin page. The app sets each plugin frame's first URL,
-/// so only plugin frames are locked; other embeds navigate freely.
 #[cfg(windows)]
 pub fn guard_navigation(window: &tauri::WebviewWindow<AppRuntime>) {
   use webview2_com::Microsoft::Web::WebView2::Win32::{ICoreWebView2_4, ICoreWebView2Frame2};

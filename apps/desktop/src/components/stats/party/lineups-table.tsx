@@ -37,7 +37,6 @@ export const LineupsTable = ({
   const { t } = useTranslation();
   const [order, setOrder] = useState<LineupOrder>("best");
   const [showAll, setShowAll] = useState(false);
-  // `odds.lineups` arrive best first, with the lineups that have no data last.
   const ordered =
     order === "best"
       ? odds.lineups

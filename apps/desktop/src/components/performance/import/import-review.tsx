@@ -31,7 +31,6 @@ const WILL_APPLY_PREVIEW = 6;
 
 type ImportReviewProps = {
   report: ImportReport;
-  /** The report's entries resolved with the user's choices in this dialog. */
   resolved: ResolvedConfig;
   cameraIncluded: boolean;
   onCameraIncludedChange: (included: boolean) => void;

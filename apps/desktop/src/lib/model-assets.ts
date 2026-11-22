@@ -6,7 +6,6 @@ import logger from "./logger";
 const references = new Map<string, number>();
 const queryAssets = new WeakMap<QueryCache, Map<string, FoundryModel>>();
 
-/** Owns one artifact lease. Abort also discards an artifact returned by a stale decode. */
 export async function decodeFoundryModel(
   filePath: string,
   entryPath: string,
@@ -40,7 +39,6 @@ export async function decodeFoundryModel(
   }
 }
 
-/** Keeps the file alive while a viewer's fetch/parse is still in flight. */
 export function retainFoundryModel(model: FoundryModel): () => void {
   references.set(model.assetId, (references.get(model.assetId) ?? 0) + 1);
   let released = false;
@@ -72,7 +70,6 @@ export function modelAssetUrl(model: FoundryModel): string {
   return convertFileSrc(model.filePath);
 }
 
-/** Query eviction and refetch replacement release the cache's lease, not a viewer's. */
 export function cacheFoundryModel(
   client: QueryClient,
   queryKey: QueryKey,

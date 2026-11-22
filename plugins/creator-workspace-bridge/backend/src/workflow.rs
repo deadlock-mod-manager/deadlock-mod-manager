@@ -19,9 +19,6 @@ fn parse_payload<T: for<'de> Deserialize<'de>>(payload: Value) -> Result<T, Plug
     .map_err(|error| PluginError::new(codes::INVALID_REQUEST, error.to_string()))
 }
 
-/// Runs on the host supervisor's schedule. Asks the host to snapshot the
-/// granted file; the host owns stability checks, validation, hashing, and
-/// staging.
 pub fn tick(host: &mut impl Host) -> Result<Value, PluginError> {
   let mut session = Session::load(host)?;
   let outcome = match api::grants(host) {
@@ -80,8 +77,6 @@ fn observe(
   outcome
 }
 
-/// What the host reports for this plugin: its staged snapshots and the
-/// snapshot installed in the granted profile.
 struct Listing {
   snapshots: Vec<Snapshot>,
   installed: Option<String>,
@@ -102,9 +97,6 @@ impl Listing {
   }
 }
 
-/// Aligns stored history with what the host reports for the granted profile.
-/// The host's installed hash is authoritative, and a deployed build missing
-/// from history is restored from the host's snapshot metadata.
 fn reconcile(state: &mut WorkflowState, listing: &Listing) {
   let deployed = listing.installed.clone().filter(|hash| is_sha256(hash));
   if let Some(hash) = &deployed
@@ -136,8 +128,6 @@ struct BuildView<'a> {
   #[serde(flatten)]
   snapshot: &'a Snapshot,
   deployed: bool,
-  /// Whether the host still holds the staged copy. `None` when the host
-  /// listing could not be read.
   available: Option<bool>,
 }
 
@@ -203,8 +193,6 @@ struct DeployPayload {
   hash: String,
 }
 
-/// Deploys a build from history to the host-granted profile. The target is
-/// never taken from the payload; the host resolves it from the user's grant.
 pub fn deploy(host: &mut impl Host, payload: Value) -> Result<Value, PluginError> {
   let DeployPayload { hash } = parse_payload(payload)?;
   if !is_sha256(&hash) {
@@ -250,8 +238,6 @@ pub fn deploy(host: &mut impl Host, payload: Value) -> Result<Value, PluginError
     }
     Err(error) => {
       session.state.deploy_error = Some(error.clone());
-      // The deploy failure matters more than a failed bookkeeping write, which
-      // the next call recovers from through the pending hash.
       let _ = session.save(host);
       Err(error)
     }
@@ -266,8 +252,6 @@ pub fn set_ui_state(host: &mut impl Host, payload: Value) -> Result<Value, Plugi
   to_value(&session.state.ui)
 }
 
-/// Changing settings resets the watch status so the UI does not show an
-/// observation made under the previous settings.
 pub fn configure(host: &mut impl Host, payload: Value) -> Result<Value, PluginError> {
   let settings: Settings = parse_payload(payload)?;
   let mut session = Session::load(host)?;

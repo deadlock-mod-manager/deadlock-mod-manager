@@ -66,7 +66,6 @@ export const RestoreBackupDialog = ({
   const full = backupQuery.data;
   const profile = full?.payload.profile;
 
-  // Backups are written in the current format, so each mod has one identity.
   const resolvedIds = profile
     ? profile.payload.mods.map(
         (mod, index) =>

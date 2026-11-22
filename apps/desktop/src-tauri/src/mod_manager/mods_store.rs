@@ -1,7 +1,3 @@
-//! Where downloaded and imported mods are kept. The default is `<app data>/mods`.
-//! A location the user picks is saved in the state store, not the frontend's
-//! persisted state, so Rust can resolve it before the frontend has hydrated.
-
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -14,8 +10,6 @@ use crate::mod_manager::filesystem_helper::FileSystemHelper;
 
 const LOCATION_KEY: &str = "mods_store_location";
 
-/// Created inside the folder the user picks, so clearing the store never
-/// deletes files of their own.
 pub const CUSTOM_STORE_FOLDER: &str = "DeadlockModManager";
 
 pub fn default_dir(app_handle: &AppHandle) -> Result<PathBuf, Error> {
@@ -51,15 +45,12 @@ pub fn save_custom_dir(app_handle: &AppHandle, path: Option<&Path>) -> Result<()
     .map_err(|error| Error::InvalidInput(format!("Failed to save store: {error}")))
 }
 
-/// Local imports are written by the frontend, whose file system scope only
-/// covers app data unless a custom store is added to it.
 pub fn allow_frontend_access(app_handle: &AppHandle, store_dir: &Path) {
   if let Err(error) = app_handle.fs_scope().allow_directory(store_dir, true) {
     log::warn!("Could not allow frontend access to {store_dir:?}: {error}");
   }
 }
 
-/// The store directory to use for a folder the user picked.
 pub fn target_for(chosen: &Path) -> Result<PathBuf, Error> {
   if !chosen.is_absolute() || !chosen.is_dir() {
     return Err(Error::InvalidInput(format!(
@@ -76,10 +67,6 @@ pub fn target_for(chosen: &Path) -> Result<PathBuf, Error> {
   Ok(chosen.join(CUSTOM_STORE_FOLDER))
 }
 
-/// Moves every stored mod from `from` into `to`. Local imports exist only in
-/// the store, so leaving them behind would lose them. A failed move is undone
-/// as far as possible. `to` may not be inside `from` or contain it, nor be
-/// inside a `forbidden` directory such as the game's addons.
 pub fn relocate(from: &Path, to: &Path, forbidden: &[PathBuf]) -> Result<(), Error> {
   let created = !to.exists();
   fs::create_dir_all(to).map_err(|error| Error::io_context("create", to, error))?;
@@ -106,7 +93,6 @@ pub fn relocate(from: &Path, to: &Path, forbidden: &[PathBuf]) -> Result<(), Err
   Ok(())
 }
 
-/// Whether anything has to move: false when `to` already is `from`.
 fn check_destination(from: &Path, to: &Path, forbidden: &[PathBuf]) -> Result<bool, Error> {
   let to = to
     .canonicalize()

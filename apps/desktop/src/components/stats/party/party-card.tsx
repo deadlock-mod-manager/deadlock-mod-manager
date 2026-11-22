@@ -16,7 +16,6 @@ interface PartyCardProps {
   members: number[][];
   activeMember: number;
   advice: Array<PickAdvice | null>;
-  /** The pick a suggested swap just placed, so its chip can glow once. */
   landed: { member: number; heroId: number } | null;
   heroesById: Map<number, DeadlockHero>;
   rankRange: RankRange;
@@ -31,7 +30,6 @@ interface PartyCardProps {
   onClear: () => void;
 }
 
-/** The party being planned: every player's offered heroes and the rank filter. */
 export const PartyCard = ({
   members,
   activeMember,

@@ -45,7 +45,6 @@ export class LanguageModerationService {
       `Please use English in this channel so everyone, including our moderators, can understand you. ` +
         `After ${maxWarnings} warnings within ${windowMinutes} minutes, further non-English messages will be deleted until the warning window expires.`,
     );
-    // Only delivered warnings count toward deletion.
     await this.warnings.recordWarning(
       message.guildId,
       message.authorId,

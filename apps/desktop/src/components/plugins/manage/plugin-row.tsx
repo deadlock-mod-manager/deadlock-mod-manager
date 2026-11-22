@@ -13,7 +13,6 @@ type PluginRowProps = {
   onSelect?: () => void;
 };
 
-/** A plugin in the Installed or Updates list. The whole row selects; its actions sit above. */
 export const PluginRow = ({
   tile,
   name,

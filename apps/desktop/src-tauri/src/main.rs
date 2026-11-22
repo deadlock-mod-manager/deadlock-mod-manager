@@ -1,4 +1,3 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[cfg(all(test, target_os = "linux"))]
@@ -30,7 +29,6 @@ fn is_nvidia_gpu_present() -> bool {
   false
 }
 
-/// Kernel drivers of the GPUs that have a connected display, e.g. `["amdgpu"]`.
 #[cfg(target_os = "linux")]
 fn display_drivers(drm_dir: &std::path::Path) -> Vec<String> {
   let mut drivers = Vec::new();
@@ -40,7 +38,6 @@ fn display_drivers(drm_dir: &std::path::Path) -> Vec<String> {
 
   for entry in entries.flatten() {
     let name = entry.file_name().to_string_lossy().into_owned();
-    // Connectors are named like `card1-eDP-1`; the card itself is `card1`.
     let Some((card, _)) = name.split_once('-') else {
       continue;
     };
@@ -71,7 +68,6 @@ fn nvidia_prime_offload_requested(get_env: impl Fn(&str) -> Option<std::ffi::OsS
     || get_env("__NV_PRIME_RENDER_OFFLOAD_PROVIDER").is_some_and(|value| !value.is_empty())
 }
 
-/// Detect NVIDIA rendering from explicit offload requests or connected displays.
 #[cfg(target_os = "linux")]
 fn nvidia_renders_webview() -> bool {
   let prime_offload = nvidia_prime_offload_requested(|name| std::env::var_os(name));
@@ -82,7 +78,6 @@ fn nvidia_renders_webview() -> bool {
 
   let drivers = display_drivers(std::path::Path::new("/sys/class/drm"));
   if drivers.is_empty() {
-    // nvidia-drm without modeset exposes no connectors, so fall back to presence.
     eprintln!("[GPU Compat] Could not tell which GPU drives the displays");
     return is_nvidia_gpu_present();
   }
@@ -148,7 +143,6 @@ fn read_gpu_compat_setting() -> String {
 
   match value {
     Some(serde_json::Value::String(s)) => s.clone(),
-    // Legacy boolean support for users who haven't migrated yet
     Some(serde_json::Value::Bool(true)) => "auto".to_string(),
     Some(serde_json::Value::Bool(false)) => "off".to_string(),
     _ => "auto".to_string(),
@@ -206,13 +200,10 @@ fn gpu_compat_workaround_enabled(
 
 #[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
 fn main() {
-  // Privileged helpers must exit before single-instance checks and webview startup.
   if let Some(exit_code) = deadlock_server_picker::helper::run_if_requested() {
     std::process::exit(exit_code);
   }
 
-  // Plugin backends run in this same executable in worker mode, before any
-  // app or webview initialisation.
   #[cfg(feature = "plugins")]
   if std::env::args_os().nth(1).as_deref() == Some(dmm_plugin_runtime::WORKER_ARG.as_ref()) {
     std::process::exit(dmm_plugin_runtime::run_worker());

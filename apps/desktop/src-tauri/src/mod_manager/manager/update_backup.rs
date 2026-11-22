@@ -4,8 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Backups taken before an update hold only the mods being updated, so
-/// updating one mod doesn't copy every profile's addons.
 pub const UPDATE_BACKUP_PREFIX: &str = "addons-backup-update-";
 const INDEX_FILE: &str = "update.json";
 const VPKS_DIR: &str = "vpks";
@@ -27,14 +25,10 @@ struct BackedUpMod {
   mod_name: String,
   enabled: bool,
   file_tree: Option<ModFileTree>,
-  /// Stored under `<mod_id>/vpks/` by their original names, so restoring them
-  /// as an update records the same original names.
   vpks: Vec<String>,
-  /// Files Mod Options parked, stored under `<mod_id>/parked/`.
   parked: Vec<String>,
 }
 
-/// A mod about to be updated, with the file tree its installed version uses.
 pub struct UpdateBackupTarget {
   pub source: Option<crate::providers::native_sources::NativeSourceProvenance>,
   pub mod_id: String,
@@ -48,7 +42,6 @@ struct ModFiles {
   parked: Vec<PathBuf>,
 }
 
-/// Mod names shown in the backup list, or empty for other kinds of backup.
 pub fn update_backup_mod_names(backup: &Path) -> Vec<String> {
   fs::read(backup.join(INDEX_FILE))
     .ok()
@@ -137,7 +130,6 @@ impl ModManager {
     }))
   }
 
-  /// Bytes an update backup of these mods would copy.
   pub fn update_backup_size(
     &self,
     profile_folder: Option<&str>,
@@ -156,8 +148,6 @@ impl ModManager {
     Ok(bytes)
   }
 
-  /// Copies the files of `mods` into a new backup in `directory`. Returns
-  /// `None` when none of them has files to back up.
   pub fn create_update_backup(
     &self,
     profile_folder: Option<&str>,
@@ -241,9 +231,6 @@ impl ModManager {
     }))
   }
 
-  /// Reinstalls each backed-up mod the way an update would, so the restored
-  /// files take the mod's current load order slot. Returns the backup's
-  /// profile folder and the restored mods with the VPKs they ended up in.
   pub fn restore_update_backup(
     &mut self,
     backup: &Path,
@@ -276,7 +263,6 @@ impl ModManager {
         .iter()
         .map(|name| mod_dir.join(VPKS_DIR).join(name))
         .collect();
-      // Keep the state the player has now; only the files go back.
       let enabled = manifest
         .mods
         .get(mod_id)
@@ -352,7 +338,6 @@ mod tests {
     base
   }
 
-  /// Updating one mod used to copy every profile's addons (#1076).
   #[test]
   fn update_backup_holds_only_the_updated_mod() {
     let game = game_dir();
@@ -493,8 +478,6 @@ mod tests {
     );
   }
 
-  /// Restored files take the slot the mod has at restore time, not the one it
-  /// had when the backup was taken.
   #[test]
   fn restoring_keeps_a_load_order_changed_after_the_backup() {
     let game = game_dir();

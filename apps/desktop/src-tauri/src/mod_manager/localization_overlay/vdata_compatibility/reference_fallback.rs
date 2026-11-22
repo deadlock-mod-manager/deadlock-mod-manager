@@ -1,6 +1,3 @@
-//! Unavailable non-inheritance references cannot be made executable by retaining
-//! a stale name. Existing definitions may restore the installed game's contract;
-//! new definitions and unverified dependency chains still require author review.
 use super::*;
 
 pub(super) fn unavailable_new_hero(
@@ -18,7 +15,6 @@ pub(super) fn unavailable_new_hero(
       .and_then(|value| value.get("_class"))
       .and_then(Kv3Value::as_str)
       == Some("CitadelHeroData_t")
-    // Never introduce a dangling inheritance edge by removing a shared template.
     && merged.root.as_object().is_some_and(|rows| rows.iter().all(|(other, value)| {
       other.eq_ignore_ascii_case(name)
         || references(value, HEROES_VDATA_PATH).iter().all(|reference| {
@@ -57,8 +53,6 @@ pub(super) fn restore(
   if class.is_none() || class != authored.get("_class").and_then(Kv3Value::as_str) {
     return Ok(false);
   }
-  // Scope this migration to the known hero ability-binding contract. A missing
-  // authored ability trigger can change behavior in ways this rule cannot prove.
   if table.file_path != HEROES_VDATA_PATH
     || class != Some("CitadelHeroData_t")
     || !matches!(reference.path.first(), Some(Kv3Seg::Key(key)) if key == "m_mapBoundAbilities")
@@ -104,8 +98,6 @@ pub(super) fn restore(
 }
 
 fn remove_optional_slot(value: &mut Kv3Value, encoding: &mut Kv3Encoding, path: &[Kv3Seg]) -> bool {
-  // Only an obsolete direct map entry may be removed. Never shift array indices
-  // or erase nested metadata merely because a current parent field is absent.
   let [Kv3Seg::Key(map), Kv3Seg::Key(slot)] = path else {
     return false;
   };

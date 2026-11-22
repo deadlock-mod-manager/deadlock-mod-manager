@@ -15,7 +15,6 @@ import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 const SEARCH_HINT_MIN_VISITS = 3;
 
 type SettingsSearchProps = {
-  /** Navigation shown while the query is empty. */
   children: React.ReactNode;
   onSelect: (result: SettingsSearchResult) => void;
 };
@@ -37,7 +36,6 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
   }, []);
 
   const results = useMemo(() => {
-    // Builds without match sync have no match sync settings to find.
     const sections = SETTINGS_SEARCH_INDEX.filter(
       (section) =>
         (section.id !== "match-sync" || isMatchSyncBuilt()) &&

@@ -6,7 +6,6 @@ import {
   useNativeSources,
 } from "@/lib/mod-sources";
 
-/** Installable hosted listings tagged as performance packs. */
 export const usePerformancePacks = () => {
   const { data: sources = [] } = useNativeSources();
   const hosted = sources.filter(

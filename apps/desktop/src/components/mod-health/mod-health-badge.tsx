@@ -32,7 +32,6 @@ export const BADGE_ICONS = {
   needsUpdate: Clock,
 } satisfies Record<ModHealthBadgeKind, typeof Wrench>;
 
-/** Symptoms as a phrase that reads inside a sentence, e.g. "camera and aim, model". */
 const useSymptomPhrase = () => {
   const { t, i18n } = useTranslation();
   const list = new Intl.ListFormat(i18n.language, {
@@ -58,7 +57,6 @@ const ModHealthSummary = ({
   const symptomPhrase = useSymptomPhrase();
   const isPartial = kind === "partlyFixable" || kind === "partlyFixed";
   const listed = kind === "needsUpdate" ? health.symptoms : health.fixSymptoms;
-  // A mod switched to its original files can still have parts no fix covers.
   const showsRemaining =
     kind === "originalFiles" && health.remainingSymptoms.length > 0;
 
@@ -130,7 +128,6 @@ export const ModHealthBadge = ({
   );
 };
 
-/** A symptom chip whose tooltip explains what that part of a mod covers. */
 export const SymptomBadge = ({
   symptom,
   className,

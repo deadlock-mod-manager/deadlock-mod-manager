@@ -25,8 +25,6 @@ pub(super) fn is_path(path: &str) -> bool {
     && path.split('/').all(|part| !matches!(part, "" | "." | ".."))
 }
 
-/// `animated` holds the paths whose animation bindings were repaired or proven;
-/// `models` holds the bytes earlier repairs produced.
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
@@ -40,7 +38,6 @@ pub(super) fn prepare(
     return Ok(output);
   }
   for (path, sources) in sources {
-    // Model conflicts retain normal addon precedence; do not silently select a mesh.
     let [source] = sources.as_slice() else {
       continue;
     };
@@ -84,9 +81,6 @@ fn model_text(model: &Kv3Value) -> Option<&str> {
   model.get("m_modelInfo")?.get("m_keyValueText")?.as_str()
 }
 
-/// Adds the missing camera interface, preserving the skin's complete rig and geometry.
-/// Existing fields are preserved. Numeric camera settings do not depend on the rig;
-/// restoring attachments still requires proof that both rigs are compatible.
 #[cfg(test)]
 pub(super) fn repair(source: &[u8], base: &[u8]) -> Option<Vec<u8>> {
   repair_with_controls(source, base, |_| false, false, None).map(|(bytes, _)| bytes)
@@ -161,7 +155,6 @@ fn repair_with_controls(
   let base_mesh = base_resource
     .find_block(*b"MDAT")
     .and_then(|raw| kv3::decode_preserving(raw).ok());
-  // The mod's own camera list applies unless the current one is restored with it.
   let camera_text = if missing.contains(&"AttachmentCameraData") {
     current_text
   } else {
@@ -171,7 +164,6 @@ fn repair_with_controls(
   let names = base_mesh
     .as_ref()
     .and_then(|(mesh, _)| camera_point_names(&camera_text, mesh));
-  // Every LOD mesh carries its own copy of the attachments.
   let mut meshes = Vec::new();
   for (index, block) in source_resource.blocks().iter().enumerate() {
     if block.kind != *b"MDAT" {
@@ -202,7 +194,6 @@ fn repair_with_controls(
       == Some(true);
   let authored_attachments = missing.contains(&"AttachmentCameraData")
     && contract::satisfied(&source_resource, &model, base, &camera_text) == Some(true);
-  // Existing attachments introduce no new rig or animation dependencies.
   if !compatible && !authored_attachments && !allow_controls(&vanilla) {
     return None;
   }
@@ -337,8 +328,6 @@ fn has_point(mesh: &Kv3Value, name: &str) -> bool {
     })
 }
 
-// Only scalar/vector offsets can be copied without evidence about the skin's rig.
-// Decline a future camera schema that introduces resource or attachment references.
 fn numeric_settings(field: &str) -> bool {
   let Some((_, object)) = field.split_once('=') else {
     return false;
@@ -371,8 +360,6 @@ pub(super) fn missing_camera_fields(model: &Kv3Value, vanilla: &Kv3Value) -> Vec
   let Some(current) = model_text(vanilla).and_then(root_fields) else {
     return Vec::new();
   };
-  // Accessory models may carry a camera offset without a playable camera interface.
-  // Match the complete interface required by the repair rule before diagnosing it.
   if CAMERA_FIELDS
     .iter()
     .any(|name| !current.1.contains_key(*name))
@@ -397,8 +384,6 @@ pub(super) fn missing_camera_fields(model: &Kv3Value, vanilla: &Kv3Value) -> Vec
     .collect()
 }
 
-/// Camera points named by the model's own camera list, when the current game
-/// model has a complete camera interface at the same path.
 pub(super) fn camera_point_requirements(
   model: &Kv3Value,
   current: &Kv3Value,
@@ -466,7 +451,6 @@ fn add_camera_points(
   Some(())
 }
 
-/// Attachment names listed by the model's `AttachmentCameraData`.
 pub(super) fn camera_data_names(text: &str) -> Option<BTreeSet<String>> {
   let (_, fields) = root_fields(text)?;
   let value = assigned_value(&text[fields.get("AttachmentCameraData")?.clone()])?;
@@ -569,8 +553,6 @@ pub(super) fn compatible_named_camera_bones(
   for name in required {
     let mut a = *old_names.get(name)?;
     let mut b = *current_names.get(name)?;
-    // A proven rig rebase retains authored bind frames, while NM supplies the
-    // canonical world pose by name. Unsampled camera controls still need pose proof.
     let sampled = sampled_bones.is_some_and(|bones| bones.contains(name));
     while !a.is_empty() && checked.insert((a, sampled)) {
       if !a.eq_ignore_ascii_case(b)
@@ -657,8 +639,6 @@ fn compatible_rigs(old: &Kv3Value, current: &Kv3Value, allow_scaled: bool) -> Op
     values.extend_from_slice(rotation);
     Some(Kv3Value::Array(values))
   };
-  // Extra authored branches do not change the current camera's bone dependencies.
-  // Every current bone and its complete parent/pose contract must still match.
   let mut poses = Vec::new();
   for (j, name) in b.iter().enumerate() {
     let i = *indices.get(name)?;
@@ -701,7 +681,6 @@ mod tests {
       compatible_named_camera_bones(&authored, &current, &head, Some(&head)),
       Some(true)
     );
-    // The sampled head checks first, but must not exempt an unsampled shared root.
     let both = BTreeSet::from(["head".to_owned(), "root".to_owned()]);
     assert_eq!(
       compatible_named_camera_bones(&authored, &current, &both, Some(&head)),

@@ -29,8 +29,6 @@ const PerformancePage = () => {
   const { t } = useTranslation();
   const { tab, setTab } = usePerformanceUi();
   useLogVideoChanges();
-  // The editor is costly to mount, so once opened it stays mounted (hidden)
-  // across tab switches.
   const [editorOpened, setEditorOpened] = useState(tab === "editor");
   if (tab === "editor" && !editorOpened) setEditorOpened(true);
 

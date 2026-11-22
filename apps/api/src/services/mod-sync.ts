@@ -18,7 +18,7 @@ const modRepository = new ModRepository(db);
 export class ModSyncService {
   private static instance: ModSyncService;
   private readonly lockService: DistributedLockService;
-  private readonly JOB_NAME = "synchronize-mods"; // TODO: we'll refactor this to the processor
+  private readonly JOB_NAME = "synchronize-mods";
 
   constructor() {
     this.lockService = new DistributedLockService(db, logger, {
@@ -74,8 +74,6 @@ export class ModSyncService {
         existing?.isAudio ? "sound" : "all",
         { signal: lock.signal },
       );
-      // A new id may be a sound, which only resolves under /Sound/. Only a 404
-      // falls through: a private Mod with this id must not import a Sound.
       if (!existing && result.skipped === "not_found") {
         result = await provider.createMod(submission, "sound", {
           signal: lock.signal,

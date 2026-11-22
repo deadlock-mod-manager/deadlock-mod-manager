@@ -7,7 +7,6 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { overlaySurface } from "./viewer-tool-types";
 
-/** Stays on screen after loading so nobody mistakes the preview for the game. */
 export const ViewerWipBadge = () => {
   const { t } = useTranslation();
   return (

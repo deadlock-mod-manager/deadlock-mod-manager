@@ -48,7 +48,6 @@ interface RateLimitOptions {
   windowSeconds: number;
 }
 
-/** Per-client rate limit keyed by procedure path and client IP. */
 export function createRateLimitMiddleware(options: RateLimitOptions) {
   return o.middleware(async ({ path, context, next }) => {
     const key = `${path.join(".")}:${context.clientIp}`;

@@ -111,8 +111,6 @@ fn append(
   Some(())
 }
 
-/// Extend a single embedded mesh with isolated camera controls. Existing indices,
-/// bind poses, skin buffers and remapping entries remain unchanged.
 pub(super) fn extend(
   model: Encoded<'_>,
   mesh: Encoded<'_>,

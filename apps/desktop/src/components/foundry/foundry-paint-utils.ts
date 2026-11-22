@@ -32,13 +32,8 @@ export const TARGET_ICONS = {
   abilities: SparkleIcon,
 } satisfies Record<FoundryPaintTargetId, React.ElementType>;
 
-/** The section groups, in the order the list shows them. */
 export const PART_GROUPS: FoundryPaintTargetId[] = ["body", "weapon"];
 
-/**
- * Starting colors, one per part, picked so the set reads as a palette rather
- * than unrelated hues: a warm body, a brass weapon and a violet effect color.
- */
 const TARGET_DEFAULT_COLOR = {
   body: "#c2543f",
   weapon: "#c8963e",
@@ -46,7 +41,6 @@ const TARGET_DEFAULT_COLOR = {
   abilities: "#8e5bd0",
 } satisfies Record<FoundryPaintTargetId, string>;
 
-/** Colors offered before anything has been painted this session. */
 export const PRESET_COLORS = [
   "#c2543f",
   "#c8963e",
@@ -72,7 +66,6 @@ export const defaultPaint = (target: FoundryPaintTargetId): FoundryPaint => ({
 export const coverage = (info: FoundryPaintTargetInfo | undefined): number =>
   (info?.textureCount ?? 0) + (info?.particleCount ?? 0);
 
-/** One draft per selection: a target, a section, or a set of sections. */
 export const selectionKey = (selection: FoundryPaintSelection): string =>
   selection.kind === "target"
     ? targetPaintKey(selection.target)
@@ -88,14 +81,11 @@ const samePaint = (a: FoundryPaint, b: FoundryPaint) =>
   a.patternIntensity === b.patternIntensity &&
   a.patternPhase === b.patternPhase;
 
-/** The paint a selection last had applied, when all of it shares one. */
 export const appliedFor = (
   selection: FoundryPaintSelection,
   applied: Readonly<Record<string, FoundryPaint>>,
   parts: readonly FoundryPaintPart[],
 ): FoundryPaint | undefined => {
-  // A reopened workspace only knows each section's paint, so a whole part
-  // reads as painted when all of its sections share one.
   if (selection.kind === "target") {
     const target = applied[targetPaintKey(selection.target)];
     if (target) return target;
@@ -109,7 +99,6 @@ export const appliedFor = (
     : undefined;
 };
 
-/** The color an apply would change, ignoring patterns the shader can't show. */
 export const isPendingColor = (
   paint: FoundryPaint,
   applied: FoundryPaint | undefined,
@@ -129,7 +118,6 @@ export const tintLayer = (
   brightness: paint.brightness,
 });
 
-/** Forge's painter takes the hero by name, lowercased with underscores. */
 export const heroPainterUrl = (hero: string | null) =>
   hero
     ? `${HERO_PAINTER_URL}?hero=${encodeURIComponent(

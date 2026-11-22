@@ -22,10 +22,6 @@ export class RarExtractor extends ArchiveExtractor {
     return [".rar"];
   }
 
-  /**
-   * node-unrar-js extracts synchronously on one process-wide WASM instance
-   * whose heap never shrinks, so each archive gets its own short-lived worker.
-   */
   async extractAll(
     archivePath: string,
     options: ExtractionOptions,

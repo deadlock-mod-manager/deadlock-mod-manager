@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 
 const ACTION_CLASS = "h-7 px-2.5 text-xs";
 
-/** Mounted only while a round is ready: useLaunch subscribes to the store. */
 const LaunchButton = () => {
   const { t } = useTranslation();
   const { launch } = useLaunch();
@@ -49,7 +48,6 @@ const LaunchButton = () => {
   );
 };
 
-/** 0 when every candidate is a suspect, 1 when one is left. */
 const progressOf = (session: BisectSession) => {
   const total = session.candidates.length;
   if (session.culprits) return 1;
@@ -194,7 +192,6 @@ export const BisectBanner = ({ session, onShowResult }: BannerProps) => {
           : session.config.length === 0
             ? t("bisect.banner.questionBaseline")
             : t("bisect.banner.question");
-        // A failed automatic answer leaves the buttons as the way out.
         if (!busy) {
           actions = (
             <>

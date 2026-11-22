@@ -31,7 +31,6 @@ import { SectionPicker } from "./section-picker";
 export interface RandomizerViewProps {
   roll: Roll;
   heroes: DeadlockHero[];
-  /** Slug of the hero rolls are locked to, straight from the URL. */
   lockedHero?: string;
   abilities: (DeadlockAbility | undefined)[];
   sections: Sections;
@@ -40,7 +39,6 @@ export interface RandomizerViewProps {
   onSectionsChange: (sections: Sections) => void;
 }
 
-/** `--hero` drives every accent on the page, so it is typed rather than cast. */
 interface HeroStyle extends React.CSSProperties {
   "--hero": string;
 }
@@ -188,8 +186,6 @@ export const RandomizerView = ({
               </Fact>
             ) : null}
 
-            {/* The mandate describes how the build spends its souls, so it
-                only means anything while the build is on screen. */}
             {sections.build ? (
               <Fact label={t("facts.mandate")}>
                 <div className='font-primary text-2xl text-[rgb(var(--hero))]'>

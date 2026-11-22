@@ -1,5 +1,3 @@
-//! Reading a skin VPK into the categorized manifest the Foundry UI renders.
-
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -26,8 +24,6 @@ pub(crate) fn is_hero_card_path(path: &str, prefixes: &[String]) -> bool {
   lower.ends_with(".vtex_c") && prefixes.iter().any(|prefix| lower.starts_with(prefix))
 }
 
-/// Whether a base-game entry belongs to one hero. Used to filter the multi-GB
-/// `pak01_dir.vpk` down to a single hero's assets instead of listing the lot.
 fn is_default_hero_asset(path: &str, card_prefixes: &[String], terms: &[String]) -> bool {
   let lower = path.to_ascii_lowercase();
   if is_hero_card_path(&lower, card_prefixes) {
@@ -87,12 +83,6 @@ pub(crate) fn variant_rank(variant: &str) -> usize {
     .unwrap_or(VARIANT_ORDER.len())
 }
 
-/// Classify a VPK entry by its compiled Source 2 extension, promoting textures
-/// that live under a hero-card path to the dedicated `card` bucket.
-///
-/// Particle (`.vpcf_c`) and physics (`.vphys_c`) entries land in `other`: the
-/// Foundry previews a static character model only, so they are carried through
-/// an export untouched but never surfaced as something to edit.
 pub(crate) fn classify(ext: &str, full_path: &str, card_prefixes: &[String]) -> FoundryCategory {
   let lower = full_path.to_ascii_lowercase();
   match ext {
@@ -175,8 +165,6 @@ fn empty_manifest(file_path: String) -> FoundryManifest {
   }
 }
 
-/// Fold the base game's sounds for this hero into the manifest when the skin
-/// ships none of its own, so the sound tab always has something to replace.
 fn append_default_hero_sounds(
   manifest: &mut FoundryManifest,
   hero_display: &str,
@@ -238,9 +226,6 @@ fn finalize(manifest: &mut FoundryManifest) {
   );
 }
 
-/// Parse a skin VPK from a staging copy and group its entries by editing
-/// category. The manifest carries the staged path onward, so every later decode
-/// and workspace unpack reads that copy too.
 pub(crate) fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
   let staged = stage_source_vpk(path)?;
   let file_path = staged.to_string_lossy().to_string();
@@ -287,8 +272,6 @@ pub(crate) fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
   Ok(manifest)
 }
 
-/// Open the base game's default assets for one hero as a Foundry source. This
-/// filters `pak01_dir.vpk` to that hero instead of surfacing the whole archive.
 pub(crate) fn analyze_default_hero(hero_display: String) -> Result<FoundryManifest, Error> {
   let vpk_path = staged_base_game_vpk()?.ok_or_else(|| {
     Error::InvalidInput("Deadlock base VPK not found for default hero import".to_string())
@@ -331,7 +314,6 @@ struct CardDecodeJob {
 }
 
 fn decode_card_preview(job: CardDecodeJob) -> Option<FoundryCardPreview> {
-  // An edited card points at its loose workspace file rather than an archive.
   let edited = job
     .vpk_path
     .extension()
@@ -406,8 +388,6 @@ fn decode_card_jobs(jobs: Vec<CardDecodeJob>) -> Vec<FoundryCardPreview> {
   previews
 }
 
-/// Decode every hero-card texture for the active skin: the mod's own cards plus
-/// the base game's defaults, so the user can swap between them.
 pub(crate) fn decode_foundry_cards(
   file_path: PathBuf,
   hero: Option<String>,
@@ -437,9 +417,6 @@ pub(crate) fn decode_foundry_cards(
     }
   }
 
-  // An edited card in the workspace wins over the packed original, so the
-  // gallery reflects what an export would actually contain. That holds for a
-  // base-game card too: replacing one writes it into the workspace.
   if let Some(files_dir) = workspace_root.map(|root| root.join("files")) {
     for job in &mut jobs {
       let Ok(relative) = super::workspace::safe_entry_relative(&job.entry_path) else {
@@ -511,8 +488,6 @@ mod tests {
 
   #[test]
   fn backgrounds_guns_and_ability_icons_count_as_hero_art() {
-    // Abrams files his art under three names: atlas cards, bull guns and
-    // abilities, and his display name for the background.
     let names = art_names("Abrams", &["atlas", "bull"]);
     let prefixes = card_prefixes(&names);
     for (path, variant) in [

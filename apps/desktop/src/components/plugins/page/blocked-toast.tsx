@@ -16,8 +16,6 @@ import type { ExternalPluginBlockedEvent } from "@/types/generated/ExternalPlugi
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { PageButton } from "./page-button";
 
-/** The newest request DMM refused for this plugin, until dismissed. Stored in
- * the query cache so it survives remounts and can be seeded directly. */
 export const useBlockedRequest = (pluginId: string) => {
   const queryClient = useQueryClient();
   const queryKey = externalPluginBlockedQueryKey(pluginId);
@@ -121,7 +119,6 @@ type BlockedToastProps = {
   onReviewAccess: () => void;
 };
 
-/** Anchored to the bottom right of the plugin's content area. */
 export const BlockedToast = ({
   plugin,
   activity,

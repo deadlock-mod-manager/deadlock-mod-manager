@@ -1,7 +1,5 @@
 use super::*;
 
-/// Ordered `Game` search paths for a profile: one per shard up to the highest
-/// that holds enabled VPKs. Always includes shard 1.
 fn search_paths_for(
   base: &ProfileBase,
   manifest: &ProfileVpkManifest,
@@ -14,8 +12,6 @@ fn search_paths_for(
     }
   }
 
-  // Indexes, not existing directories: skipping the first *existing* shard
-  // would drop `addons2` for a profile whose base directory is gone.
   for (shard_index, dir) in base.shards().skip(1) {
     if VpkManager::count_enabled_vpks(&dir) > 0 {
       max_shard = max_shard.max(shard_index);
@@ -28,8 +24,6 @@ fn search_paths_for(
     .collect()
 }
 
-/// Whether a profile still carries a pre-sharding layout: more paks in one
-/// directory than the engine loads, or `pak100_dir.vpk` and beyond.
 fn needs_shard_migration(base: &ProfileBase) -> bool {
   base.shards().any(|(_, dir)| {
     VpkManager::count_enabled_vpks(&dir) > shard::SHARD_CAPACITY
@@ -38,21 +32,13 @@ fn needs_shard_migration(base: &ProfileBase) -> bool {
 }
 
 impl ModManager {
-  /// Ordered `Game` search paths required for a profile. Always includes shard 1.
   pub fn profile_gameinfo_paths(
     &self,
     profile_folder: Option<String>,
   ) -> Result<Vec<String>, Error> {
     let base = self.get_addons_path(profile_folder.as_deref())?;
-    // A missing manifest loads as an empty default; a malformed or unsupported
-    // one must fail loudly rather than silently emit truncated search paths.
     let manifest = ProfileVpkManifest::load(&base)?;
     let mut paths = search_paths_for(&base, &manifest, profile_folder.as_deref());
-    // Mounted while any mod has a saved fix, even when the package is missing:
-    // library and fix changes delete it and rebuild it in the background, and
-    // library changes leave gameinfo.gi as is, so a rewrite while the package
-    // is gone, or while the fixed mod is disabled, would otherwise leave the
-    // rebuilt package unmounted.
     if self.mod_fix_saved(profile_folder.as_deref())? {
       paths.insert(
         0,
@@ -62,7 +48,6 @@ impl ModManager {
     Ok(paths)
   }
 
-  /// Whether [`Self::migrate_profile_to_shards`] would do any work.
   pub fn profile_needs_shard_migration(&self, profile_folder: Option<&str>) -> Result<bool, Error> {
     Ok(needs_shard_migration(
       &self.get_addons_path(profile_folder)?,
@@ -71,9 +56,6 @@ impl ModManager {
 
   pub fn migrate_profile_to_shards(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let base = self.get_addons_path(profile_folder.as_deref())?;
-    // Runs on the launch path, where nothing else reopens the manifest for
-    // writing. Without this a crash would leave VPKs parked in a staging
-    // directory and the game would start with those mods silently missing.
     if base.exists() {
       ProfileVpkManifest::recover_profile(&base)?;
     }
@@ -84,8 +66,6 @@ impl ModManager {
     Ok(())
   }
 
-  /// Write the modded gameinfo.gi search paths for a single profile, expanding
-  /// it into one `Game` line per shard.
   pub fn apply_profile_gameinfo(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let game_path = self
       .steam_manager
@@ -96,8 +76,6 @@ impl ModManager {
     self.config_manager.update_mod_paths(&game_path, &paths)
   }
 
-  /// Write layered gameinfo.gi search paths: the server folder's shards first
-  /// (higher precedence), then the active profile's shards.
   pub fn apply_layered_gameinfo(
     &mut self,
     server_folder: Option<String>,
@@ -145,8 +123,6 @@ mod tests {
     search_paths_for(&base, &ProfileVpkManifest::default(), profile_folder)
   }
 
-  /// The payoff of sharding: every shard holding enabled VPKs must get its own
-  /// `Game` line, or the engine never looks past `citadel/addons`.
   #[test]
   fn search_paths_cover_every_shard_that_holds_enabled_vpks() {
     let temp = tempfile::tempdir().unwrap();
@@ -170,8 +146,6 @@ mod tests {
     );
   }
 
-  /// A shard is listed because the *manifest* puts a mod there, even if the
-  /// files have not been written yet.
   #[test]
   fn search_paths_follow_the_manifest_when_disk_is_behind() {
     let temp = tempfile::tempdir().unwrap();
@@ -190,8 +164,6 @@ mod tests {
     assert_eq!(search_paths_for(&base, &manifest, None).len(), 4);
   }
 
-  /// Shard 1's directory can be missing while later shards still hold files.
-  /// The overflow shard must keep its search path regardless.
   #[test]
   fn search_paths_survive_a_missing_base_directory() {
     let temp = tempfile::tempdir().unwrap();
@@ -214,7 +186,6 @@ mod tests {
 
     write_pak(&citadel.join("addons").join("profile_x"), "pak01_dir.vpk");
     write_pak(&citadel.join("addons2").join("profile_x"), "pak01_dir.vpk");
-    // Another profile's overflow must not leak into this profile's paths.
     write_pak(&citadel.join("addons3").join("profile_y"), "pak01_dir.vpk");
 
     assert_eq!(
@@ -236,7 +207,6 @@ mod tests {
 
     assert!(!needs_shard_migration(&base));
 
-    // A pak number the engine will not load is the tell-tale legacy state.
     write_pak(&profile, "pak100_dir.vpk");
     assert!(needs_shard_migration(&base));
   }

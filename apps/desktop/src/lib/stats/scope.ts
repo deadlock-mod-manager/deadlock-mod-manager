@@ -17,8 +17,6 @@ export const statsScopeQuery = (scope: StatsScope): string => {
     game_mode: "normal",
     match_mode: scope.mode === "all" ? "ranked,unranked" : scope.mode,
   });
-  // Without a picked date each endpoint keeps its own default window. An explicit
-  // zero asked for all of history, which the global benchmarks cannot answer in time.
   if (scope.since > 0) {
     query.set("min_unix_timestamp", String(scope.since));
   }
@@ -31,8 +29,6 @@ export const statsSinceTimestamp = (date: string): number => {
   return Number.isFinite(timestamp) ? timestamp : 0;
 };
 
-// Valve's ECitadelGameMode_Normal = 1, Unranked = 1 and Ranked = 4.
-// A rank badge is optional during placements, so it cannot identify the mode.
 export const filterStatsMatches = <
   T extends Pick<MatchHistoryEntry, "game_mode" | "match_mode" | "start_time">,
 >(

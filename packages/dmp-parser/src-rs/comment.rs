@@ -1,17 +1,5 @@
 use crate::types::DmpComment;
 
-/// Parses the comment stream Source 2 games write into their dumps.
-///
-/// ```text
-/// error
-///
-/// AbortMessage({FATAL ERROR: Failed to read 16 bytes
-/// })
-/// Uptime( 8.929353 )
-/// Addons:
-/// Command Line: "deadlock.exe" -steam -console
-/// Build: 10725 (revision 10577413)
-/// ```
 pub fn parse_comment(text: &str) -> DmpComment {
     let mut comment = DmpComment {
         kind: text
@@ -23,7 +11,6 @@ pub fn parse_comment(text: &str) -> DmpComment {
         ..DmpComment::default()
     };
 
-    // The header comes first; the console history after it can echo anything.
     for line in text.lines() {
         let line = line.trim_end_matches('\r');
         if let Some(value) = line.strip_prefix("Uptime(") {

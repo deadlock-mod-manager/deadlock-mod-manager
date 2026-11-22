@@ -75,7 +75,6 @@ describe("performance configs and gameinfo.gi", () => {
       if (runtime.caseId === "perf-gameinfo-resync") {
         await step("a game update replaces gameinfo.gi", async () => {
           await writeFile(gameinfo, await stockWithHandEdit());
-          // Window focus checks at most every 10 seconds, so keep coming back.
           await observeUntil(
             "The config is written back",
             async () => {

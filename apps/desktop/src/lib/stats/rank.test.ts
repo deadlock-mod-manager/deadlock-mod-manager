@@ -40,7 +40,6 @@ const rank = (overrides: Partial<PlayerRank> = {}): PlayerRank => ({
 
 describe("badgeToStep", () => {
   it("flattens a badge onto the ladder the progress counter counts in", () => {
-    // Phantom 6 sits at 54 steps, which is where 54000 progress points land.
     expect(badgeToStep(86)).toBe(54);
     expect(badgeToStep(11)).toBe(7);
     expect(badgeToStep(116)).toBe(72);
@@ -122,7 +121,6 @@ describe("rankProgress", () => {
 const distribution: BadgeDistributionEntry[] = [
   { badge_level: 11, total_matches: 0, unique_players: 100 },
   { badge_level: 12, total_matches: 0, unique_players: 200 },
-  // The API returns every badge, including the subranks nobody can ever hold.
   { badge_level: 17, total_matches: 0, unique_players: 0 },
   { badge_level: 21, total_matches: 0, unique_players: 700 },
 ];
@@ -133,7 +131,6 @@ describe("badgeStanding", () => {
 
     expect(standing?.atBadge).toBe(200);
     expect(standing?.totalPlayers).toBe(1000);
-    // 100 below plus half of the 200 sharing the badge.
     expect(standing?.percentile).toBeCloseTo(0.2);
   });
 

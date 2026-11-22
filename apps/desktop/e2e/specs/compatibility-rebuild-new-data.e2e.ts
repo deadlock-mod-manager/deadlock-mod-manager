@@ -14,9 +14,6 @@ import {
 } from "../support/fixed-status-fixtures";
 import { navigate } from "../support/ui";
 
-// The repair receipt's key digests the install-wide observed game data. A
-// health check of a new mod that ships a game data table learns and saves new
-// data after the fixed mod's repair was built, so that repair goes stale.
 describe("repair rebuild after a health check learns game data", () => {
   it("keeps Fixed for this patch", async () => {
     const runtime = await startApplication();
@@ -40,7 +37,6 @@ describe("repair rebuild after a health check learns game data", () => {
           30_000,
           async () => ({ receiptHistoryBefore: before.historyDigest }),
         );
-        // The repair must be rebuilt against the game data the check learned.
         if (
           repairs.historyDigest === null ||
           repairs.historyDigest === before.historyDigest

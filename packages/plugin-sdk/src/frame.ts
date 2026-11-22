@@ -167,7 +167,6 @@ export const isEmbedded = () =>
   typeof window !== "undefined" && window.parent !== window;
 
 const postToHost = (message: FrameMessage) =>
-  // The opaque frame cannot name the host origin; frame-ancestors limits who embeds it.
   window.parent.postMessage(encodeMessage(message), "*");
 
 const hostMessages = new Set<(message: HostMessage) => void>();

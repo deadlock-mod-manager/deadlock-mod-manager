@@ -19,7 +19,6 @@ const HEX_PATTERN = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
 export const isValidHex = (hex: string): boolean => HEX_PATTERN.test(hex);
 
-/** Expand `#rgb` to `#rrggbb` and lowercase it, falling back when invalid. */
 export const normalizeHex = (hex: string, fallbackHex: string): string => {
   const raw = isValidHex(hex)
     ? hex
@@ -129,7 +128,6 @@ const fromHsv = (h: number, s: number, v: number): ColorState => ({
   ...hsvToRgb(h, s, v),
 });
 
-/** The browser's native eyedropper, when the platform webview exposes it. */
 type EyeDropperResult = { sRGBHex: string };
 type EyeDropperCtor = new () => { open: () => Promise<EyeDropperResult> };
 
@@ -138,11 +136,9 @@ const eyeDropperConstructor = (): EyeDropperCtor | undefined =>
     ? undefined
     : (window as unknown as { EyeDropper?: EyeDropperCtor }).EyeDropper;
 
-/** Clamp a pointer position to a box and return it as a 0..1 fraction. */
 const fraction = (value: number, start: number, length: number): number =>
   length <= 0 ? 0 : Math.min(1, Math.max(0, (value - start) / length));
 
-/** Feed pointer positions to `onMove` until the button is released. */
 const trackDrag = (
   onMove: (clientX: number, clientY: number) => void,
   event: MouseEvent,
@@ -158,12 +154,9 @@ const trackDrag = (
 };
 
 export interface ColorPickerProps {
-  /** The current color, as `#rrggbb`. */
   value: string;
   onChange: (hex: string) => void;
-  /** Used when `value` is not a valid hex color. */
   fallbackHex?: string;
-  /** Hidden when false, e.g. on a platform without the native eyedropper. */
   showEyedropper?: boolean;
   labels?: {
     hex?: string;
@@ -172,11 +165,6 @@ export interface ColorPickerProps {
   className?: string;
 }
 
-/**
- * An inline HSV color picker: a saturation/value field, a hue strip, a hex
- * field and the platform eyedropper. Emits `#rrggbb` on every change, so a
- * caller can drive a live preview from it directly.
- */
 export const ColorPicker = ({
   value,
   onChange,
@@ -189,8 +177,6 @@ export const ColorPicker = ({
   const [eyedropperActive, setEyedropperActive] = useState(false);
   const { h, s, v, r, g, b } = color;
 
-  // Follow the controlled value, but ignore the echo of our own emit: comparing
-  // hex keeps a drag from resetting the picker on every frame.
   const currentHex = useMemo(() => rgbToHex(r, g, b), [r, g, b]);
   const [hexDraft, setHexDraft] = useState<string | null>(null);
   useEffect(() => {
@@ -202,8 +188,6 @@ export const ColorPicker = ({
     if (rgb) {
       setColor(fromRgb(rgb.r, rgb.g, rgb.b));
     }
-    // currentHex is deliberately not a dependency: this effect only reacts to
-    // the value handed in from outside.
     // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   }, [value, fallbackHex]);
 
@@ -251,14 +235,11 @@ export const ColorPicker = ({
         emit(fromRgb(rgb.r, rgb.g, rgb.b));
       }
     } catch {
-      // The user dismissed the eyedropper; nothing to report.
     } finally {
       setEyedropperActive(false);
     }
   };
 
-  // The field only commits a complete color, so typing through a partial hex
-  // never jumps the picker around.
   const editHex = (raw: string) => {
     setHexDraft(raw);
     const rgb = isValidHex(raw) ? hexToRgb(raw) : null;
@@ -273,7 +254,6 @@ export const ColorPicker = ({
       <div
         className='relative h-28 w-full cursor-crosshair overflow-hidden rounded-md'
         onMouseDown={(event) => {
-          // A drag across the page would otherwise select its text.
           event.preventDefault();
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickSaturationValue(rect), event.nativeEvent);
@@ -295,7 +275,6 @@ export const ColorPicker = ({
       <div
         className='relative h-2.5 w-full cursor-pointer rounded-full'
         onMouseDown={(event) => {
-          // A drag across the page would otherwise select its text.
           event.preventDefault();
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickHue(rect), event.nativeEvent);

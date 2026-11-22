@@ -20,7 +20,6 @@ const BLUE: &str = "\x1b[34m";
 const MAGENTA: &str = "\x1b[35m";
 const CYAN: &str = "\x1b[36m";
 
-/// Matches tauri-plugin-log's default layout so the log files stay unchanged.
 pub fn plain(out: FormatCallback, message: &Arguments, record: &Record) {
   out.finish(format_args!(
     "{}[{}][{}] {}",
@@ -31,7 +30,6 @@ pub fn plain(out: FormatCallback, message: &Arguments, record: &Record) {
   ));
 }
 
-/// Colored, compact layout for the dev terminal.
 pub fn pretty(out: FormatCallback, message: &Arguments, record: &Record) {
   let (source, source_color) = source(record);
   let (ellipsis, source) = truncate_start(&source, SOURCE_WIDTH);
@@ -55,8 +53,6 @@ pub fn pretty(out: FormatCallback, message: &Arguments, record: &Record) {
   ));
 }
 
-/// Short source label: Rust module path without the crate prefix, or
-/// `web:<module>` for webview logs (instead of the full JS stack location).
 fn source<'a>(record: &Record<'a>) -> (Cow<'a, str>, &'static str) {
   let target = record.target();
   if target.starts_with(WEBVIEW_TARGET) {
@@ -70,7 +66,6 @@ fn source<'a>(record: &Record<'a>) -> (Cow<'a, str>, &'static str) {
   (Cow::Borrowed(target), CYAN)
 }
 
-/// Keeps the last `width - 1` chars behind an ellipsis when `value` is too long.
 fn truncate_start(value: &str, width: usize) -> (&'static str, &str) {
   match value.char_indices().nth_back(width - 1) {
     Some(_) => {

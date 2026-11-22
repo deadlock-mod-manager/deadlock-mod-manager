@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GameBananaMarkup } from "@/components/mod-detail/gamebanana-markup";
 
-/** Sits above the download footer: obsolete mods stay installable. */
 export const ObsoleteNotice = ({ note }: { note?: string | null }) => {
   const { t } = useTranslation();
   const [showNote, setShowNote] = useState(false);

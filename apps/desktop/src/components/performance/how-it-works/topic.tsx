@@ -6,7 +6,6 @@ import {
 import { CaretDownIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 
-/** A topic folded to its title and one line, opened only when wanted. */
 export const Topic = ({
   title,
   summary,

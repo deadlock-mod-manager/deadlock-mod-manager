@@ -1,15 +1,3 @@
-//! Getting the player onto a community server, reliably.
-//!
-//! Deadlock drops a boot-time `+connect` often enough that launching with it
-//! alone lands the player in the hideout instead of on the server. Steam's
-//! `steam://connect/<ip:port>` handler does not have that problem — it is the
-//! path the Deadworks launcher uses — but it only works with a literal
-//! `ip:port` and needs the client to be far enough along to accept it.
-//!
-//! So we do both: launch with `+connect` for the fast path, then tail
-//! `console.log` and re-issue `steam://connect` if the client reaches the
-//! main menu without having connected to the server we asked for.
-
 use std::net::SocketAddr;
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -26,30 +14,21 @@ use crate::mod_manager::console_log_watcher::ConsoleLogTail;
 use super::game_process::{self, GAME_START_TIMEOUT, GameStartOutcome};
 use super::state::{MANAGER, SERVER_CONNECT_WATCHDOG, game_path};
 
-/// Overall budget for getting connected once the process is up.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(240);
-/// Grace period after the client reaches the menu before we re-issue connect.
 const READY_GRACE: Duration = Duration::from_secs(4);
-/// Spacing between `steam://connect` attempts.
 const RETRY_INTERVAL: Duration = Duration::from_secs(20);
 const MAX_ATTEMPTS: u32 = 3;
-/// Reading the tail of `console.log` is cheap, so we can do it often.
 const LOG_POLL_INTERVAL: Duration = Duration::from_millis(750);
-/// Checking whether Deadlock is alive means a full process-table scan under
-/// the global manager lock, so it runs on a much coarser cadence.
 const LIVENESS_INTERVAL: Duration = Duration::from_secs(5);
 
 const PROGRESS_EVENT: &str = "server-connect-progress";
 
-/// Log lines that mean "the client finished loading and is idling in the
-/// menu/hideout", i.e. it is ready to act on a connect request.
 const READY_MARKERS: [&str; 3] = [
   "Host activate:",
   "Hideout Lobby Connection State",
   "CLoopModeLevelLoad::MaybeSwitchToGameLoop",
 ];
 
-/// Log lines that, when they mention our address, mean we got there.
 const CONNECT_MARKERS: [&str; 3] = [
   "Connected to '",
   "Opened Steam Net Connection",
@@ -108,10 +87,6 @@ fn open_steam_connect(address: &str, password: Option<&str>) -> Result<(), Error
   Ok(())
 }
 
-/// Turn whatever the relay handed us into the literal `ip:port` Steam's
-/// connect handler accepts, resolving hostnames along the way. Lobby ids and
-/// anything else that isn't a host/port pair are rejected — those can only be
-/// joined through `+connect`.
 #[tauri::command]
 pub async fn resolve_connect_address(address: String) -> Result<String, Error> {
   let trimmed = address.trim();
@@ -123,12 +98,9 @@ pub async fn resolve_connect_address(address: String) -> Result<String, Error> {
     return Ok(socket.to_string());
   }
 
-  // `lookup_host` needs a host:port pair; anything else (lobby ids, bare
-  // hostnames) is not something we can hand to steam://connect.
   let resolved = lookup_host(trimmed)
     .await
     .map_err(|error| Error::InvalidInput(format!("Could not resolve {trimmed}: {error}")))?
-    // Steam's connect handler is happiest with IPv4 literals.
     .fold(None::<SocketAddr>, |best, candidate| match best {
       Some(current) if current.is_ipv4() => Some(current),
       _ => Some(candidate),
@@ -138,12 +110,6 @@ pub async fn resolve_connect_address(address: String) -> Result<String, Error> {
   Ok(resolved.to_string())
 }
 
-/// Watch the game onto `address`, re-issuing `steam://connect` if the
-/// boot-time `+connect` was dropped. Returns immediately; progress is
-/// reported through the `server-connect-progress` event.
-///
-/// Only one watchdog runs at a time: a second join cancels the first, so two
-/// attempts can never interleave their progress on the shared event channel.
 #[tauri::command]
 pub async fn watch_server_connect(
   app: AppHandle,
@@ -184,15 +150,11 @@ pub async fn watch_server_connect(
   Ok(())
 }
 
-/// Terminal state of a watchdog run, plus how many `steam://connect` retries
-/// it took to get there.
 struct WatchdogEnd {
   status: ConnectStatus,
   attempts: u32,
 }
 
-/// Runs the watchdog to completion, emitting exactly one terminal event unless
-/// a newer watchdog superseded this one.
 async fn run_watchdog(
   app: &AppHandle,
   game_path: &Path,
@@ -201,9 +163,6 @@ async fn run_watchdog(
   cold_start: bool,
   cancel: &CancellationToken,
 ) {
-  // On a cold start the game truncates console.log, so reading from the top
-  // catches the early connect lines. When the client is already up we only
-  // care about what happens from now on.
   let mut tail = if cold_start {
     ConsoleLogTail::from_start(game_path)
   } else {
@@ -232,8 +191,6 @@ async fn run_watchdog(
   }
 }
 
-/// Waits for the Deadlock process to appear. Returns false if we gave up or
-/// were cancelled, having already emitted the terminal event in the former case.
 async fn await_game_start(app: &AppHandle, address: &str, cancel: &CancellationToken) -> bool {
   match game_process::wait_for_game_start(GAME_START_TIMEOUT, LIVENESS_INTERVAL, cancel.cancelled())
     .await
@@ -253,9 +210,6 @@ async fn await_game_start(app: &AppHandle, address: &str, cancel: &CancellationT
   }
 }
 
-/// The main loop: tail the log for a connection, and once the client is idling
-/// in the menu, re-issue `steam://connect` on a fixed cadence. Returns `None`
-/// if a newer watchdog took over.
 async fn drive_connect(
   app: &AppHandle,
   tail: &mut ConsoleLogTail,
@@ -280,8 +234,6 @@ async fn drive_connect(
     if last_liveness_check.elapsed() >= LIVENESS_INTERVAL {
       last_liveness_check = Instant::now();
       match game_process::is_game_running().await {
-        // Cold start already waited for the process, so a miss here means the
-        // player quit — nothing left to connect.
         Ok(false) => {
           return Some(WatchdogEnd {
             status: ConnectStatus::GameClosed,
@@ -332,7 +284,6 @@ async fn drive_connect(
   }
 }
 
-/// Sleeps for `duration`, returning true if the watchdog was cancelled instead.
 async fn sleep_or_cancel(duration: Duration, cancel: &CancellationToken) -> bool {
   tokio::select! {
     () = tokio::time::sleep(duration) => false,
@@ -344,8 +295,6 @@ fn line_is_ready_marker(line: &str) -> bool {
   READY_MARKERS.iter().any(|marker| line.contains(marker))
 }
 
-/// A connect line has to mention both the address and a connection verb —
-/// the address alone shows up in unrelated chatter like ping summaries.
 fn chunk_reports_connection(chunk: &str, address: &str) -> bool {
   chunk.lines().any(|line| {
     line.contains(address) && CONNECT_MARKERS.iter().any(|marker| line.contains(marker))

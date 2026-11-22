@@ -28,16 +28,10 @@ import {
 } from "@/hooks/use-mod-interchange";
 import { ImportWizardDialog } from "./import-wizard-dialog";
 
-/**
- * "Add mods": local files, plus one import entry per mod manager DMM can read
- * (reported by the backend registry, so new managers appear without UI
- * changes) and any manager's exported interchange file.
- */
 export const AddModsMenu = () => {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
-  // Detection only runs for the hint while it could still be shown.
   const hintPossible = usePersistedStore((state) =>
     canShowHint("import-from-manager", state.featureHints, Date.now()),
   );

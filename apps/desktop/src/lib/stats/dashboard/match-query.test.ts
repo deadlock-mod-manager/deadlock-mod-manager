@@ -102,7 +102,6 @@ describe("runMatchQuery", () => {
       query({ metrics: ["kda"] }),
       NOW,
     );
-    // (10 + 0) / 10 deaths, not the mean of 10 and 0.
     expect(result.rows[0]?.kda).toBe(1);
   });
 
@@ -143,7 +142,6 @@ describe("runMatchQuery", () => {
   });
 
   it("orders weekdays Monday first", () => {
-    // 2023-11-12 was a Sunday, 2023-11-13 a Monday (local noon avoids TZ edges).
     const sunday = new Date(2023, 10, 12, 12).getTime() / 1000;
     const monday = new Date(2023, 10, 13, 12).getTime() / 1000;
     const result = runMatchQuery(

@@ -18,21 +18,12 @@ use vpk_parser::{VpkError, VpkParseOptions, VpkParsed, VpkParser};
 pub struct LocalAddonInfo {
   pub file_path: String,
   pub file_name: String,
-  /// Where the file sits in the profile, in the `ShardLocator` wire format
-  /// (`pak01_dir.vpk`, or `addons2/pak01_dir.vpk` in an overflow shard).
   pub locator: String,
-  /// Its `sha256` and `fast_hash` are empty for a file identified without a
-  /// hash lookup (by its name prefix or a catalog owner in the manifest).
   pub vpk_parsed: VpkParsed,
-  pub remote_id: Option<String>, // Will be populated by API call
+  pub remote_id: Option<String>,
   pub match_info: Option<MatchInfo>,
-  /// The mod the profile's `.dmm.json` assigns this exact file to, if exactly
-  /// one entry does. The library may have lost it (Clear Mods State), so the
-  /// frontend restores it from the manifest instead of re-identifying it.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub manifest_mod_id: Option<String>,
-  /// Whether the name is one the game loads (`pak##_dir.vpk`). Only such a
-  /// file can be recorded as a mod's enabled file.
   pub has_enabled_vpk_name: bool,
 }
 
@@ -80,14 +71,11 @@ struct ApiMatchedVpk {
   submission_id: Option<String>,
   file_id: Option<String>,
   source_path: Option<String>,
-  /// Catalog relation the API only attaches for older clients; it goes away
-  /// with the catalog retirement, so it is used for display names only.
   #[serde(rename = "mod")]
   mod_info: Option<ApiModInfo>,
 }
 
 impl ApiMatchedVpk {
-  /// GameBanana slug (`123` or `snd-123`) used as the mod's remote ID.
   fn remote_id(&self) -> Option<String> {
     match (
       self.submission_type.as_deref(),
@@ -152,8 +140,6 @@ pub struct AddonAnalyzer;
 
 const LOOKUP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const LOOKUP_TIMEOUT: Duration = Duration::from_secs(30);
-/// Lookups Analyze keeps in flight at once, the same 4 as its parse batches
-/// and DMM's other API clients.
 const LOOKUP_CONCURRENCY: usize = 4;
 
 impl AddonAnalyzer {
@@ -161,7 +147,6 @@ impl AddonAnalyzer {
     Self
   }
 
-  /// Emit progress event to frontend
   #[allow(clippy::too_many_arguments)]
   fn emit_progress(
     &self,
@@ -189,8 +174,6 @@ impl AddonAnalyzer {
     }
   }
 
-  /// Client for identification lookups. Each request gets a finite timeout so
-  /// an unreachable service fails the lookup instead of stalling the analysis.
   fn lookup_client() -> Result<reqwest::Client, Error> {
     crate::proxy::build_http_client(|builder| {
       builder
@@ -204,8 +187,6 @@ impl AddonAnalyzer {
     format!("{api_url}/api/v2/vpk-analyse-hashes")
   }
 
-  /// Ask the hash analysis API which mod a VPK belongs to. `Ok(None)` means the
-  /// service answered and found no match; a failed request is an error.
   async fn analyze_hashes(
     client: &reqwest::Client,
     vpk_parsed: &VpkParsed,
@@ -213,9 +194,6 @@ impl AddonAnalyzer {
     Self::lookup_hashes(client, &Self::lookup_endpoint(), vpk_parsed).await
   }
 
-  /// Looks up each addon, `LOOKUP_CONCURRENCY` at a time, and yields each with
-  /// its result in the order given, whichever answer arrives first. A failed
-  /// lookup is that addon's result and never stops the others.
   fn lookup_each<'a>(
     client: &'a Result<reqwest::Client, Error>,
     endpoint: &'a str,
@@ -320,7 +298,6 @@ impl AddonAnalyzer {
     )))
   }
 
-  /// Analyze all VPK files in the local addons directory
   pub async fn analyze_local_addons(
     &self,
     game_path: PathBuf,
@@ -332,7 +309,6 @@ impl AddonAnalyzer {
       profile_folder
     );
 
-    // Emit scanning progress
     self.emit_progress(
       &app_handle,
       "scanning",
@@ -376,8 +352,6 @@ impl AddonAnalyzer {
     };
     let mut vpk_file_paths = Vec::new();
     for (shard_index, shard_path) in profile_base.existing_shards() {
-      // The game only loads VPKs at the top of each search path; subfolders
-      // hold internal staging from interrupted operations.
       let mut shard_paths = Vec::new();
       if let Err(e) = Self::find_vpk_file_paths_shallow(&shard_path, &mut shard_paths) {
         return Ok(AnalyzeAddonsResult {
@@ -389,7 +363,6 @@ impl AddonAnalyzer {
       vpk_file_paths.extend(shard_paths.into_iter().map(|path| (shard_index, path)));
     }
 
-    // Separate prefixed VPKs from non-prefixed ones
     let mut prefixed_vpk_paths = Vec::new();
     let mut non_prefixed_vpk_paths = Vec::new();
 
@@ -418,7 +391,6 @@ impl AddonAnalyzer {
 
     let total_files = prefixed_vpk_paths.len() + non_prefixed_vpk_paths.len();
 
-    // Emit files found progress
     self.emit_progress(
       &app_handle,
       "parsing",
@@ -429,12 +401,10 @@ impl AddonAnalyzer {
       15,
     );
 
-    // Process files in parallel batches to avoid overwhelming the system
-    let batch_size = 4; // Process 4 files at a time
+    let batch_size = 4;
     let mut addons = Vec::new();
     let mut processed_files = 0;
 
-    // First, process prefixed VPKs (parse only, no hash analysis needed)
     for batch in prefixed_vpk_paths.chunks(batch_size) {
       let mut handles = Vec::new();
 
@@ -445,16 +415,13 @@ impl AddonAnalyzer {
         handles.push(handle);
       }
 
-      // Wait for all tasks in this batch to complete
       for handle in handles {
         processed_files += 1;
         let progress = 15 + ((processed_files as f32 / total_files as f32) * 35.0) as u8;
 
         match handle.await {
           Ok(Ok(mut addon_info)) => {
-            // Extract mod ID from the prefixed filename
             if let Some(mod_id) = Self::extract_mod_id_from_filename(&addon_info.file_name) {
-              // Mark this as already identified by prefix (no hash analysis needed)
               addon_info.remote_id = Some(mod_id);
             }
             addon_info.manifest_mod_id = Self::owner_of(&owners, &addon_info.file_path);
@@ -498,16 +465,12 @@ impl AddonAnalyzer {
       }
     }
 
-    // Now process non-prefixed VPKs (full parsing)
     for batch in non_prefixed_vpk_paths.chunks(batch_size) {
       let mut handles = Vec::new();
 
       for (shard, file_path) in batch {
         let (shard, file_path) = (*shard, file_path.clone());
         let owner = Self::owner_of(&owners, &file_path.to_string_lossy());
-        // DMM's own record of a catalog mod is as good as a hash match, and
-        // keeps working when the hash service doesn't know the file, so its
-        // contents aren't hashed.
         let catalog_owner = owner.clone().filter(|id| Self::is_catalog_id(id));
         let needs_content_hashes = catalog_owner.is_none();
         let handle = task::spawn_blocking(move || {
@@ -516,16 +479,14 @@ impl AddonAnalyzer {
         handles.push((handle, owner, catalog_owner));
       }
 
-      // Wait for all tasks in this batch to complete
       for (handle, owner, catalog_owner) in handles {
         processed_files += 1;
-        let progress = 15 + ((processed_files as f32 / total_files as f32) * 35.0) as u8; // 15-50%
+        let progress = 15 + ((processed_files as f32 / total_files as f32) * 35.0) as u8;
 
         match handle.await {
           Ok(Ok(mut addon_info)) => {
             addon_info.manifest_mod_id = owner;
             addon_info.remote_id = catalog_owner;
-            // Emit progress with current file info
             self.emit_progress(
               &app_handle,
               "parsing",
@@ -539,7 +500,6 @@ impl AddonAnalyzer {
           }
           Ok(Err(e)) => {
             errors.push(e);
-            // Still emit progress for failed files
             self.emit_progress(
               &app_handle,
               "parsing",
@@ -552,7 +512,6 @@ impl AddonAnalyzer {
           }
           Err(e) => {
             errors.push(format!("Task failed: {e}"));
-            // Still emit progress for failed files
             self.emit_progress(
               &app_handle,
               "parsing",
@@ -573,7 +532,6 @@ impl AddonAnalyzer {
       errors.len()
     );
 
-    // Separate prefixed addons (already have remote_id) from non-prefixed ones (need hash analysis)
     let mut prefixed_addons = Vec::new();
     let mut non_prefixed_addons = Vec::new();
 
@@ -593,13 +551,11 @@ impl AddonAnalyzer {
       non_prefixed_addons.len()
     );
 
-    // Now perform hash analysis for non-prefixed addons only
     log::info!(
       "Starting hash analysis for {} non-prefixed addons",
       non_prefixed_addons.len()
     );
 
-    // Emit hash analysis start progress
     self.emit_progress(
       &app_handle,
       "analyzing_hashes",
@@ -614,13 +570,12 @@ impl AddonAnalyzer {
     let total_addons = non_prefixed_addons.len();
     let client = Self::lookup_client();
     let endpoint = Self::lookup_endpoint();
-    // Progress for each addon goes out as its lookup is about to start.
     let queued = non_prefixed_addons
       .into_iter()
       .enumerate()
       .map(|(index, addon)| {
         let current_addon_num = index + 1;
-        let progress = 50 + ((current_addon_num as f32 / total_addons as f32) * 45.0) as u8; // 50-95%
+        let progress = 50 + ((current_addon_num as f32 / total_addons as f32) * 45.0) as u8;
         self.emit_progress(
           &app_handle,
           "analyzing_hashes",
@@ -656,23 +611,18 @@ impl AddonAnalyzer {
         }
         Err(e) => {
           log::warn!("Failed to analyze hashes for {}: {e}", addon.file_name);
-          // A local import keeps its manifest owner. Any other file that
-          // couldn't be checked is an error, not an unknown mod.
           if addon.manifest_mod_id.is_none() {
             errors.push(format!("Hash analysis failed for {}: {e}", addon.file_name));
             continue;
           }
         }
       }
-      // A local import the catalog doesn't know is still DMM's: keep the
-      // manifest's owner rather than asking the user to identify it.
       if addon.remote_id.is_none() {
         addon.remote_id = addon.manifest_mod_id.clone();
       }
       identified_addons.push(addon);
     }
 
-    // Add prefixed addons to the results
     let prefixed_count = prefixed_addons.len();
     identified_addons.extend(prefixed_addons);
 
@@ -683,7 +633,6 @@ impl AddonAnalyzer {
       total_addons
     );
 
-    // Emit completion progress
     self.emit_progress(
       &app_handle,
       "complete",
@@ -701,8 +650,6 @@ impl AddonAnalyzer {
     })
   }
 
-  /// Every file a manifest entry claims, keyed by its path in this profile.
-  /// A file two entries claim is left out: neither owner can be trusted.
   fn manifest_owners(
     manifest: &ProfileVpkManifest,
     profile_base: &ProfileBase,
@@ -742,19 +689,15 @@ impl AddonAnalyzer {
     Ok(())
   }
 
-  /// Check if a VPK filename has a mod ID prefix and extract it
   fn extract_mod_id_from_filename(filename: &str) -> Option<String> {
     VpkManager::extract_mod_id_from_prefix(filename)
   }
 
-  /// Identify one VPK through the hash analysis API, the same lookup the
-  /// "Analyze local addons" action runs for every addon.
   pub async fn identify_file(
     &self,
     path: &std::path::Path,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
     let owned = path.to_path_buf();
-    // Only the fingerprint is used here, so the file's shard doesn't matter.
     let info =
       task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned, ShardIndex::FIRST, true))
         .await
@@ -763,9 +706,6 @@ impl AddonAnalyzer {
     Self::analyze_hashes(&Self::lookup_client()?, &info.vpk_parsed).await
   }
 
-  /// Fast VPK parsing with minimal data extraction for identification. Only
-  /// the hash lookup uses the whole-file hashes, so the file's contents are
-  /// read past its directory only when `needs_content_hashes`.
   fn parse_vpk_file_fast(
     file_path: &PathBuf,
     shard: ShardIndex,
@@ -779,7 +719,6 @@ impl AddonAnalyzer {
 
     let file_path_str = file_path.to_string_lossy().to_string();
 
-    // Get file metadata first (fast operation)
     let metadata = std::fs::metadata(file_path)
       .map_err(|e| format!("Failed to get metadata for {}: {}", file_name, e))?;
 
@@ -789,10 +728,8 @@ impl AddonAnalyzer {
       .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
       .and_then(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0));
 
-    // Only read the file if it's reasonably sized (avoid huge files)
     let file_size = metadata.len();
     if file_size > 500 * 1024 * 1024 {
-      // Skip files larger than 500MB
       return Err(format!(
         "Skipping {}: file too large ({} MB)",
         file_name,
@@ -800,13 +737,12 @@ impl AddonAnalyzer {
       ));
     }
 
-    // Use minimal parsing options for speed
     let options = VpkParseOptions {
       include_full_file_hash: false,
       file_path: file_path_str.clone(),
       last_modified,
-      include_merkle: false, // Skip merkle tree calculation for now
-      include_entries: true, // Include entries for unidentified mod analysis
+      include_merkle: false,
+      include_entries: true,
     };
 
     let parsed = if needs_content_hashes {
@@ -897,8 +833,6 @@ mod tests {
     .unwrap()
   }
 
-  /// Reads a whole request, so the client never sees a reset, and returns
-  /// its body.
   async fn read_request(socket: &mut tokio::net::TcpStream) -> String {
     use tokio::io::AsyncReadExt;
     let mut request = Vec::new();
@@ -968,7 +902,6 @@ mod tests {
     assert!(lookup(&endpoint).await.is_err());
   }
 
-  /// An origin on a port nothing listens on, so every request to it fails.
   fn closed_endpoint() -> String {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     format!("http://{}", listener.local_addr().unwrap())
@@ -1017,7 +950,6 @@ mod tests {
     let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game/citadel");
-    // Prefixed names skip the hash lookup, so the test stays offline.
     for root in ["addons", "addons2"] {
       let source = tempfile::tempdir().unwrap();
       std::fs::write(source.path().join("readme.txt"), root).unwrap();
@@ -1048,8 +980,6 @@ mod tests {
     vpkmanager::pack_directory(source.path(), &dir.join(name)).unwrap();
   }
 
-  /// A profile as DMM leaves it, with the same `pak01_dir.vpk` name in two
-  /// shards, a two-file mod and a disabled mod parked under its prefix.
   fn managed_profile() -> (tempfile::TempDir, PathBuf) {
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game/citadel");
@@ -1072,8 +1002,6 @@ mod tests {
 
   #[tokio::test]
   async fn identifies_anonymous_pak_files_from_the_profile_manifest() {
-    // Tests have no API server (http://localhost:9000), so any file sent to
-    // hash identification comes back unidentified.
     let _ = crate::runtime_environment::initialize();
     let (game, base) = managed_profile();
     let manifest = std::fs::read(base.join(".dmm.json")).unwrap();
@@ -1283,8 +1211,6 @@ mod tests {
       .map(|addon| addon.vpk_parsed.fingerprint.sha256.clone())
       .collect();
 
-    // Each lookup is answered with its own hash as the submission ID, and
-    // later files wait less, so answers go out in a different order.
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
       "http://{}/api/v2/vpk-analyse-hashes",

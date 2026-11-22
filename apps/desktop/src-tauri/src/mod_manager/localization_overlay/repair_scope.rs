@@ -32,8 +32,6 @@ impl RepairScope {
             continue;
           }
           let path = normalize_path(&path);
-          // Merged tables combine providers; binary assets follow the engine's
-          // winning provider, so an inactive skin must not veto its repairs.
           if !super::is_localization_path(&path)
             && !super::is_mergeable_compiled_data_path(&path)
             && resources
@@ -130,7 +128,6 @@ mod tests {
     assert!(plan.analysis.parse_warnings.is_empty());
     assert!(plan.analysis.asset_warnings.is_empty());
     assert!(plan.analysis.data_warnings.is_empty());
-    // The export boundary must catch a future adapter that forgets to honor scope.
     plan
       .camera_models
       .insert(path.into(), b"accidental replacement".to_vec());
@@ -156,7 +153,6 @@ mod tests {
       mod_id: "selected".into(),
       vpks: vec![pack(temp.path(), "selected", &[(PATH, MOD)])],
     };
-    // No parsing or automatic findings should run for an opted-out resource.
     let original = LocalizationModInput {
       mod_id: "original".into(),
       vpks: vec![pack(temp.path(), "original", &[(PATH, b"not parseable")])],
@@ -195,7 +191,6 @@ mod tests {
     let game =
       b"\"lang\" { \"Language\" \"English\" \"Tokens\" { \"X\" \"Vanilla\" \"Y\" \"Game\" } }";
     pack(&citadel, "pak01", &[(PATH, game), (OWN, game)]);
-    // Every copy omits the game's `Y`, so each one alone needs a repair.
     let input = |id: &str, files: &[(&str, &[u8])]| LocalizationModInput {
       mod_id: id.into(),
       vpks: vec![pack(temp.path(), id, files)],
@@ -229,11 +224,8 @@ mod tests {
       let analysis = LocalizationOverlayPlan::build_selected(&citadel, &inputs, &selected)
         .unwrap()
         .analysis;
-      // The unfixed rival keeps the shared file as shipped, so the repair is
-      // skipped. That says nothing about whether the fixed mod works.
       assert_eq!(analysis.incomplete_mod_ids, ["broken", "fixed", "mixed"]);
       assert_eq!(status(&analysis, "fixed"), ModHealthStatus::NotCovered);
-      // Repairs and defects the analysis did find still count.
       assert_eq!(status(&analysis, "mixed"), ModHealthStatus::Fixed);
       assert_eq!(status(&analysis, "broken"), ModHealthStatus::NeedsUpdate);
       assert_eq!(status(&analysis, "unrelated"), ModHealthStatus::Works);

@@ -30,10 +30,6 @@ const flows = {
   },
 } satisfies Record<string, Flow>;
 
-// A drop carries either a renderer File, read here from app data, or only a
-// file:// path, as drops from some applications do (see dropFilePaths). The
-// File is assembled from 8 MiB Blobs because one 1 GiB IPC read takes the
-// webview down before the app sees the drop.
 const dropRendererFile = async (
   fileName: string,
   readFrom: string,
@@ -48,7 +44,6 @@ const dropRendererFile = async (
       });
       const parts: Blob[] = [];
       for (;;) {
-        // The last 8 bytes hold the big-endian count of bytes read.
         const data = await invoke<ArrayBuffer>("plugin:fs|read", {
           rid,
           len: 8 * 1024 * 1024,
@@ -130,13 +125,11 @@ describe("large local mod import", () => {
       await dropRendererFile(flow.fileName, fixture);
     }
 
-    // A dropped File is staged to disk before the details step opens.
     const dialog = await $('[role="dialog"]');
     const add = await dialog.$("button=Add");
     await add.waitForClickable({ timeout: 240_000 });
     await add.click();
 
-    // Manifest recovery can add a placeholder before metadata and cleanup finish.
     await dialog.waitForDisplayed({ reverse: true, timeout: 240_000 });
     const state = await observeUntil(
       "Large mod was not added",
@@ -171,7 +164,6 @@ describe("large local mod import", () => {
       throw new Error(
         `Imported VPK ${imported} has ${importedSize} bytes, expected ${expectedSize}`,
       );
-    // The copy staged when the file was dropped is removed once it is imported.
     await observeUntil(
       "Staged drop was not discarded",
       () =>

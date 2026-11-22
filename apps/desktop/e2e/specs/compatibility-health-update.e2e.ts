@@ -17,8 +17,6 @@ import { assertOwnedWorld } from "../support/world";
 
 type ModHealthReport = { mods: { modId: string; status: string }[] };
 
-// Reads the saved report the badge and the launch read. Calling
-// check_mod_health here would run the check this case expects the app to run.
 const readHealth = async () => {
   const report = await browser.execute(
     (folder) =>
@@ -30,7 +28,6 @@ const readHealth = async () => {
   return report.mods.find((health) => health.modId === HEALTH_MOD.id)?.status;
 };
 
-// An update replaces the VPK, so it can be missing for a moment.
 const readVpk = async (directory: string) => {
   try {
     return await readFile(path.join(directory, "pak01_dir.vpk"));
@@ -119,7 +116,6 @@ describe("mod health after a mod update", () => {
         ({ bytes }) => bytes?.equals(UPDATED_PAYLOAD) ?? false,
         30_000,
       );
-      // The update kept the VPK name, so only the files' contents changed.
       assert.deepEqual(addon.vpks, ["pak01_dir.vpk"]);
     });
 

@@ -1,13 +1,3 @@
-//! Downloads one file as four Range requests to the same server at once. A
-//! single connection to a far-away file server is limited per connection, so
-//! four of them get much closer to the line's speed.
-//!
-//! The first segment's request doubles as the probe: its answer says whether
-//! the server honours ranges, which node the redirects ended on, and which
-//! version of the file it serves. Every other segment then goes to that node
-//! only. Anything unexpected falls back to the single-stream download, except
-//! GameBanana saying it's busy, which ends the attempt as it always has.
-
 use super::budget::{Admission, TransferBudget, origin_of};
 use super::downloader::{
   DownloadProgress, DownloadSource, MAX_RECONNECTS, PROGRESS_THROTTLE_MS, PauseHandle, STALL_TICK,
@@ -28,27 +18,21 @@ use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 
-/// Smaller files gain little: at a 241 ms round trip most of a short segment
-/// is spent in TCP slow start.
 pub const MIN_SEGMENTED_SIZE: u64 = 8 * 1024 * 1024;
 
 #[derive(Debug)]
 pub enum Segmented {
   Finished,
-  /// The server can't be trusted with segments; download it in one stream.
   Unsupported(String),
 }
 
 #[derive(Debug)]
 enum WorkerError {
-  /// The server answered in a way segments can't use.
   Unsupported(String),
-  /// Stopped because the attempt was ending.
   Stopped,
   Failed(Error),
 }
 
-/// What every segment of one file shares.
 struct Transfer {
   client: reqwest::Client,
   url: String,
@@ -57,7 +41,6 @@ struct Transfer {
   total: u64,
   part_paths: Vec<PathBuf>,
   staging: Mutex<Staging>,
-  /// Bytes on disk across the segments, for progress.
   downloaded: AtomicU64,
   cancel_token: CancellationToken,
   pause: PauseHandle,
@@ -85,7 +68,6 @@ fn strong_etag(headers: &reqwest::header::HeaderMap) -> Option<String> {
   (!etag.starts_with("W/")).then(|| etag.to_string())
 }
 
-/// Waits for a place in the budget. `None` once paused or cancelled.
 async fn admit(
   budget: &Arc<TransferBudget>,
   origin: &str,
@@ -99,7 +81,6 @@ async fn admit(
   }
 }
 
-/// `false` once paused or cancelled.
 async fn backoff(attempt: u32, pause: &PauseHandle, cancel_token: &CancellationToken) -> bool {
   let delay = Duration::from_secs(1 << (attempt - 1));
   tokio::select! {
@@ -109,7 +90,6 @@ async fn backoff(attempt: u32, pause: &PauseHandle, cancel_token: &CancellationT
   }
 }
 
-/// A paused download keeps its staging so Resume continues from the parts.
 async fn stopped(target_path: &Path, cancel_token: &CancellationToken) -> Result<Segmented, Error> {
   if cancel_token.is_cancelled() {
     return cancelled(target_path).await;
@@ -141,7 +121,6 @@ where
   let mut staging = Staging::open(target_path, expected_size, expected_md5).await?;
 
   let Some(probe_index) = staging.first_incomplete() else {
-    // Everything arrived before the app stopped; the checksum decides the rest.
     let source = staging
       .segment(0)
       .source
@@ -159,8 +138,6 @@ where
     )
     .await;
   };
-  // The probe asks for its whole segment, so whatever the answer, nothing it
-  // writes depends on bytes from an earlier attempt.
   staging.restart_segment(probe_index).await?;
 
   let probe_client = download_client(trusted_hosts_only, true, true)?;
@@ -205,8 +182,6 @@ where
   if is_busy(source_kind, status) {
     return Err(busy_error(&response));
   }
-  // Ignoring the Range header, refusing it or failing it: an ordinary request
-  // may still work, and reports the status itself if it fails too.
   if status == reqwest::StatusCode::OK || !status.is_success() {
     discard_staging(target_path).await?;
     return Ok(Segmented::Unsupported(format!(
@@ -262,9 +237,6 @@ where
   });
 
   let mut workers = JoinSet::new();
-  // The probe was counted against the address it asked for; it belongs to the
-  // node it reached. If that node already has four connections, close it and
-  // let its segment wait its turn like the others.
   let mut probe = if admission.retarget(&transfer.origin) {
     Some((response, admission))
   } else {
@@ -336,10 +308,6 @@ where
   .await
 }
 
-/// What the workers' results add up to, once all of them are in. GameBanana
-/// being busy outranks everything: it means wait, never retry another way. A
-/// server segments can't use comes next, since the single stream may still
-/// work. Workers stopped by another's failure say nothing.
 fn settle(results: Vec<Result<(), WorkerError>>) -> Result<(), WorkerError> {
   let mut outcome = Ok(());
   for result in results {
@@ -367,8 +335,6 @@ async fn cancelled(target_path: &Path) -> Result<Segmented, Error> {
   Err(Error::DownloadCancelled)
 }
 
-/// Reports progress until every worker has returned. The first failure stops
-/// the rest, so nothing decides the outcome while a worker still writes.
 async fn collect_workers<F>(
   workers: &mut JoinSet<Result<(), WorkerError>>,
   transfer: &Transfer,
@@ -417,7 +383,6 @@ where
   results
 }
 
-/// Joins the parts, checks the whole file, and only then puts it in place.
 async fn finish<F>(
   target_path: &Path,
   mut staging: Staging,
@@ -454,7 +419,6 @@ where
   tokio::fs::rename(&assembled, target_path)
     .await
     .map_err(|error| Error::FileWriteFailed(format!("Failed to finalize download: {error}")))?;
-  // The file is in place and verified; leftover parts only cost disk space.
   if let Err(error) = discard_staging(target_path).await {
     log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
   }
@@ -462,8 +426,6 @@ where
   Ok(Segmented::Finished)
 }
 
-/// Fetches what's missing of one segment into its part, reconnecting from the
-/// part's length when the connection drops or stalls.
 async fn fetch_segment(
   transfer: Arc<Transfer>,
   index: usize,
@@ -567,8 +529,6 @@ async fn fetch_segment(
       if transfer.cancel_token.is_cancelled() {
         return Err(WorkerError::Stopped);
       }
-      // Stopping rather than waiting frees the queue; Resume continues from the
-      // part's length.
       if transfer.pause.is_paused() {
         file
           .flush()
@@ -674,7 +634,6 @@ mod tests {
     budget
   }
 
-  /// A Range-capable server slow enough that segments overlap.
   async fn range_server(body: &[u8]) -> TestServer {
     let body = body.to_vec();
     TestServer::start(move |request, _| {
@@ -802,8 +761,6 @@ mod tests {
 
   #[tokio::test]
   async fn a_server_that_refuses_ranges_is_left_to_the_single_stream() {
-    // Refused outright, or failed by a server that isn't GameBanana saying
-    // it's busy.
     for status in [416, 400, 500] {
       let dir = tempfile::tempdir().unwrap();
       let target = dir.path().join("mod.zip");
@@ -866,7 +823,6 @@ mod tests {
           .header("etag", ETAG)
           .throttled(8 * 1024, Duration::from_millis(20));
         if request.byte_range().map(|(start, _)| start) == Some(third.start) {
-          // Shifted by one byte: right length, wrong place.
           let mut wrong = Reply::new(
             206,
             body[(third.start + 1) as usize..=third.end as usize].to_vec(),

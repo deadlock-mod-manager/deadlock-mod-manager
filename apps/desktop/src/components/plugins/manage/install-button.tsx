@@ -10,7 +10,6 @@ import { RowButton } from "@/components/plugins/manage/row-button";
 import { useInstallFromCatalog } from "@/components/plugins/manage/use-install-plugin";
 import { type CatalogEntry } from "@/lib/plugins/catalog";
 
-/** Install for published entries; a disabled button that says why otherwise. */
 export const InstallButton = ({
   entry,
   className,

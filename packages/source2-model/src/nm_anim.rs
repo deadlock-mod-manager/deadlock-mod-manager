@@ -1,6 +1,3 @@
-//! Deadlock "NM" (new animation) graph clips: parse the compressed clip data,
-//! resolve a clip for an ability via the anim-graph, and sample bone poses.
-
 mod parse;
 mod preview;
 mod retarget;
@@ -21,13 +18,6 @@ use crate::kv3::KvValue;
 use crate::resource::Resource;
 use crate::vpk_extract::VpkArchive;
 
-/// Every clip a model can play: whatever its anim graphs reference, nested
-/// graphs included, plus clips in `clips/` or `clip/` beside the model among
-/// `listing` (the entries of the archive and its fallbacks).
-///
-/// Graphs are the source of truth: a skin can ship its model in another
-/// folder than the base hero's, heroes share graphs (Viscous plays Kelvin's),
-/// and some keep their clips in `clip/`.
 pub fn model_clip_paths(archive: &VpkArchive, entry_path: &str, listing: &[String]) -> Vec<String> {
     let kv = |path: &str| {
         let bytes = archive.extract_entry(path).ok()?;

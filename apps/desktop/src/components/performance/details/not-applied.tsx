@@ -11,7 +11,6 @@ import { DetailsSection } from "./details-parts";
 import { EngineSectionsCard } from "./engine-sections-card";
 import { EntryReasonList } from "./entry-reason-list";
 
-/** Engine-section edits, settings the game doesn't read, and lines we never write. */
 export const NotApplied = ({
   configId,
   resolved,

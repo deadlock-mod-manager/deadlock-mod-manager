@@ -75,7 +75,6 @@ export const ModHealthAlert = ({
 
   const listed = kind === "needsUpdate" ? health.symptoms : health.fixSymptoms;
   const remaining = kind === "needsUpdate" ? [] : health.remainingSymptoms;
-  // The title names the listed parts, unless they need their own label.
   const labelled = kind === "originalFiles" || remaining.length > 0;
   const fixLabel =
     kind === "fixed" || kind === "partlyFixed"

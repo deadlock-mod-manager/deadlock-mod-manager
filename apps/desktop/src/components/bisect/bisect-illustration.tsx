@@ -20,7 +20,6 @@ const FRAME_MS = 1500;
 const range = (from: number, to: number) =>
   Array.from({ length: TILE_COUNT }, (_, index) => index >= from && index < to);
 
-/** Each frame lists the tile states plus the bracket over the tested group. */
 type Frame = { tiles: TileState[]; bracket?: [number, number]; round?: number };
 
 const tiles = (mask: boolean[], inside: TileState, outside: TileState) =>
@@ -58,7 +57,6 @@ const CHECK_FRAMES = 4;
 const TILE_HUES = [1, 2, 3, 4, 5, 2, 1, 3];
 const TILE_IDS = TILE_HUES.map((_, index) => `tile-${index}`);
 
-/** Loops through `count` frames; holds the last one for reduced motion. */
 const useFrame = (count: number) => {
   const reduced = usePrefersReducedMotion();
   const [frame, setFrame] = useState(0);

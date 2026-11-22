@@ -34,7 +34,6 @@ impl Preferences {
   }
 }
 
-/// Counts characters, not bytes, so non-Latin names get the same 100 limit.
 pub(crate) fn valid_preset_name(name: &str) -> bool {
   !name.trim().is_empty() && name.chars().count() <= 100 && !name.chars().any(char::is_control)
 }

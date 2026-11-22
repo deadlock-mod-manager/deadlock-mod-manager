@@ -21,11 +21,6 @@ type UseSearchProps<T> = {
   queryState?: SearchQueryState;
 };
 
-/**
- * Query and sort state, with the sort set aside while a search is active.
- * Views that search elsewhere (the catalog searches in SQLite) use this
- * directly so they don't build a Fuse index they never read.
- */
 export const useSearchQueryState = (queryState?: SearchQueryState) => {
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const updateModsFilters = usePersistedStore(
@@ -119,7 +114,6 @@ export const useSearch = <T = LocalMod>({
         return sortMods(data as LocalMod[], sortType);
       }
       const results = fuse.search(q).map((result) => result.item) as LocalMod[];
-      // DEFAULT sort preserves Fuse.js relevance order during search
       if (sortType === SortType.DEFAULT) {
         return results;
       }

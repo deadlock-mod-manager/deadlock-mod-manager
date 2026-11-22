@@ -2,7 +2,6 @@ import type { ModDownload } from "@deadlock-mods/database";
 import type { ModFilesUpdatedEventData } from "@deadlock-mods/shared";
 import type { ModFileProcessingJobData } from "@/types/jobs";
 
-/** One job per file version, however many times it gets scheduled */
 export const modFileJobId = (job: ModFileProcessingJobData): string =>
   [
     job.provider,

@@ -45,11 +45,9 @@ export type ModMetadataFormProps = {
   title?: string;
   description?: string;
   hideCardChrome?: boolean;
-  // Shown while no image is chosen, such as a cover rendered from the files.
   defaultImageSrc?: string | null;
   defaultImagePending?: boolean;
   imageNote?: string;
-  // Each file becomes a mod named after it, so there is no name to ask for.
   hideName?: boolean;
 };
 
@@ -65,7 +63,6 @@ const generateFallbackSVG = (): string => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(rawSvg)}`;
 };
 
-// Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
 
 const SAFE_PREVIEW_REGEX = /^(blob:|data:image\/|\/|https?:\/\/)/i;
@@ -112,8 +109,7 @@ const buildSchema = (invalidUrlMsg: string) =>
         "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)",
       )
       .refine((file) => {
-        // Validate file size (10MB limit)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        const maxSize = 10 * 1024 * 1024;
         return file.size <= maxSize;
       }, "File size must be less than 10MB")
       .optional(),
@@ -265,7 +261,6 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               alt={t("modForm.modPreview")}
               className={cn(
                 "h-full w-full",
-                // Rendered covers frame the whole model, as library cards do.
                 defaultImageSrc && preview === resolvedDefault
                   ? "object-contain"
                   : "object-cover",

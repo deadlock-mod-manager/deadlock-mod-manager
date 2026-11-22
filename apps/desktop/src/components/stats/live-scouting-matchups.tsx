@@ -96,7 +96,6 @@ const PooledWinrate = ({ pooled }: { pooled: WinRecord }) => {
   );
 };
 
-/** How your hero has done against each hero the enemy locked. */
 export const ScoutingMatchups = ({
   hero,
   enemyHeroes,

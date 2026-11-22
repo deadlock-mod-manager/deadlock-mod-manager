@@ -10,7 +10,6 @@ import { useTranslation } from "react-i18next";
 import { useOpenConfigInPerformance } from "@/hooks/performance/use-config-listing";
 import type { ConfigListing } from "@/lib/performance/config-listing";
 
-/** Takes Install's place for a GameBanana upload that is a performance config. */
 export const OpenInPerformanceButton = ({
   remoteId,
   variant,
@@ -45,7 +44,6 @@ export const OpenInPerformanceButton = ({
   );
 };
 
-/** Explains on the mod page why a config isn't installed like a mod. */
 export const ConfigListingNotice = ({
   listing,
   remoteId,

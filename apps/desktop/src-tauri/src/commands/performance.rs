@@ -24,7 +24,6 @@ fn game_path() -> Option<PathBuf> {
     .cloned()
 }
 
-/// The game folder and the signed-in account's `userdata/<id>/1422450`.
 struct GamePaths {
   game: Option<PathBuf>,
   account: Option<PathBuf>,
@@ -38,7 +37,6 @@ fn game_paths(manager: &crate::mod_manager::ModManager) -> GamePaths {
   }
 }
 
-/// Runs `f` with a context for the current game folder and catalog.
 fn with_context<T>(
   app_handle: &AppHandle,
   f: impl FnOnce(&PerfContext) -> Result<T, Error>,
@@ -53,9 +51,6 @@ fn with_context<T>(
   run_in_context(app_handle, &paths, f)
 }
 
-/// [`with_context`] for operations that write gameinfo.gi. The manager lock is
-/// held throughout, as every other gameinfo.gi writer holds it, so their
-/// read-then-write cycles can't interleave and undo each other.
 fn with_write_context<T>(
   app_handle: &AppHandle,
   f: impl FnOnce(&PerfContext) -> Result<T, Error>,
@@ -91,8 +86,6 @@ pub async fn perf_get_catalog(app_handle: AppHandle) -> Result<CatalogSummary, E
   with_context(&app_handle, ops::catalog_summary)
 }
 
-/// Fetches a newer catalog from the API if there is one. On failure the current
-/// catalog keeps working; the error is returned so a manual check can report it.
 #[tauri::command]
 pub async fn perf_refresh_catalog(app_handle: AppHandle) -> Result<CatalogSummary, Error> {
   let app_data_dir = app_data_dir(&app_handle)?;
@@ -133,8 +126,6 @@ pub async fn perf_remove(
   with_write_context(&app_handle, ops::remove)
 }
 
-/// Puts back the player's own video.txt as it was before the mod manager first
-/// wrote it.
 #[tauri::command]
 pub async fn perf_restore_video_backup(
   app_handle: AppHandle,
@@ -144,8 +135,6 @@ pub async fn perf_restore_video_backup(
   with_write_context(&app_handle, ops::restore_video_backup)
 }
 
-/// Writes the config's value back for video.txt settings changed in game.
-/// Guarded: Deadlock writes video.txt when it exits.
 #[tauri::command]
 pub async fn perf_video_use_config(
   app_handle: AppHandle,
@@ -156,26 +145,19 @@ pub async fn perf_video_use_config(
   with_write_context(&app_handle, |ctx| ops::use_config_video(ctx, &keys))
 }
 
-/// Keeps the player's in-game value for video.txt settings changed in game.
-/// Only the app's record changes, so the game may be running.
 #[tauri::command]
 pub async fn perf_video_keep(
   app_handle: AppHandle,
   keys: Vec<String>,
 ) -> Result<PerfStatus, Error> {
-  // The write lock keeps the record from racing an apply's.
   with_write_context(&app_handle, |ctx| ops::keep_player_video(ctx, &keys))
 }
 
-/// Makes the current video.txt the player's own base. Only the app's files
-/// change, so the game may be running.
 #[tauri::command]
 pub async fn perf_video_adopt(app_handle: AppHandle) -> Result<PerfStatus, Error> {
   with_write_context(&app_handle, ops::adopt_video)
 }
 
-/// Writes the chosen config back into gameinfo.gi after a game update or a
-/// reset removed it, or removes an overlay when no config is chosen.
 #[tauri::command]
 pub async fn perf_reapply(
   app_handle: AppHandle,
@@ -190,9 +172,6 @@ pub async fn perf_reapply(
   })
 }
 
-/// Background check (app start, window focus): writes the chosen config back
-/// if a game update or reset replaced gameinfo.gi. Hand edits are kept, and
-/// nothing is written while Deadlock runs. Returns whether the file changed.
 #[tauri::command]
 pub async fn perf_sync(app_handle: AppHandle) -> Result<bool, Error> {
   let mut manager = MANAGER

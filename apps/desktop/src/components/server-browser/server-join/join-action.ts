@@ -8,11 +8,8 @@ import { buildConnectArgs, normalizeConnectCode } from "./connect-args";
 interface JoinServerArgs {
   server: ServerBrowserEntry;
   password: string;
-  /** The user's regular DMM launch options, prepended to the connect args. */
   additionalArgs: string;
-  /** Whether Deadlock is already up, in which case we can join without a restart. */
   gameRunning: boolean;
-  /** Whether the launch writes `console.log`, which the watchdog tails. */
   consoleLog: boolean;
 }
 
@@ -41,10 +38,6 @@ export const buildSteamConnectUrl = (
   return `steam://connect/${code}`;
 };
 
-/**
- * Steam's connect handler only takes a literal `ip:port`. Lobby ids and
- * unresolvable hosts return null and can only be joined through `+connect`.
- */
 const resolveSteamAddress = async (
   server: ServerBrowserEntry,
 ): Promise<string | null> => {
@@ -60,7 +53,6 @@ const resolveSteamAddress = async (
   }
 };
 
-/** Re-issues `steam://connect` if Deadlock swallowed the boot-time `+connect`. */
 const watchConnect = async (
   address: string,
   password: string,
@@ -80,12 +72,6 @@ const watchConnect = async (
   }
 };
 
-/**
- * With the game already running, `steam://connect` hands the address to the
- * client without a restart. From cold we launch with `+connect` so the user's
- * launch options survive, and let the watchdog handle a dropped connect.
- * Reconnect monitoring is disabled when console logging is off.
- */
 export const joinServer = async ({
   server,
   password,

@@ -64,7 +64,6 @@ export class BlacklistCommand extends Command {
   ) {
     const { user, member } = interaction;
 
-    // Check permissions
     if (!hasBlacklistPermission(user, member as GuildMember)) {
       return interaction.reply({
         content: `You don't have permission to use this command. Required: ${getBlacklistRequiredPermissionsDisplay()}`,
@@ -75,7 +74,6 @@ export class BlacklistCommand extends Command {
     const modIdOrUrl = interaction.options.getString("mod_id_or_url", true);
 
     try {
-      // Extract mod ID from URL if needed
       const identity = parsePolicyIdentity(modIdOrUrl);
 
       if (subcommand === "add") {

@@ -202,7 +202,6 @@ fn a_failed_write_puts_the_previous_choice_back() {
   assert_eq!(saved_before_write, Some(second));
 }
 
-/// Windows only creates symlinks in Developer Mode or as an administrator.
 #[test]
 fn writes_through_a_symlinked_gameinfo() {
   let original = fixture(CURRENT_STOCK);
@@ -267,8 +266,6 @@ fn reapply_puts_back_what_an_update_removed() {
   );
 }
 
-/// A game update swaps in a different stock file: the config is resolved
-/// against the new file, and turning it off afterwards gives that file back.
 #[test]
 fn reapply_after_an_update_to_a_different_build() {
   let old_build = fixture("stock-2026-03-27.gi");
@@ -300,7 +297,6 @@ fn reapply_removes_an_overlay_nothing_asks_for() {
   apply(&setup.ctx(), preset_request("synthetic"), false).expect("apply");
   let applied = setup.gameinfo();
 
-  // A backup taken while the config was on, restored after removing it.
   remove(&setup.ctx()).expect("remove");
   setup.replace_gameinfo(&applied);
   assert_eq!(
@@ -519,9 +515,6 @@ fn writes_refuse_a_file_that_changed_since_it_was_read() {
   assert_eq!(leftovers, 1);
 }
 
-/// Deadlock writes the Steam account's video.txt on its first launch after
-/// an update, and reads that one from then on: a sync with gameinfo.gi
-/// already in place still writes the video settings there.
 #[test]
 fn sync_writes_video_settings_to_a_video_txt_that_appeared_since() {
   let setup = Setup::new(&fixture(CURRENT_STOCK));

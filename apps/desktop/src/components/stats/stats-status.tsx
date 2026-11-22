@@ -20,21 +20,14 @@ interface StatsFreshness {
 }
 
 interface StatsStatusProps {
-  /** Absent until an account is known: there is nothing loaded to refresh. */
   freshness?: StatsFreshness;
 }
 
-/**
- * How fresh the numbers are and whether this app keeps them current. It lives in the page title row, which otherwise sits empty, so
- * the account and tabs below get a row to themselves.
- */
 export const StatsStatus = ({ freshness }: StatsStatusProps) => {
   const { t } = useTranslation();
 
   return (
     <div className='flex shrink-0 items-center gap-4'>
-      {/* Freshness is context, not a control, so it stays quiet text. Refresh
-          sits right after the timestamp because that is the thing it changes. */}
       {freshness && (
         <>
           <div className='flex items-center gap-1'>
@@ -48,9 +41,6 @@ export const StatsStatus = ({ freshness }: StatsStatusProps) => {
               </span>
             )}
             <Tooltip>
-              {/* The trigger has to sit on something enabled: a disabled button
-                  swallows pointer events, so the cooldown explanation - the one
-                  case the tooltip actually matters - would never appear. */}
               <TooltipTrigger asChild>
                 <span className='inline-flex'>
                   <Button

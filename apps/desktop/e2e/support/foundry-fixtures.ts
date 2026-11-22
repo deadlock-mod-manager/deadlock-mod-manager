@@ -15,8 +15,6 @@ export const FOUNDRY_MATERIAL = "materials/models/heroes/kelvin/body.vmat_c";
 export const WORKSPACE_FAILURE =
   "Couldn’t prepare this skin for editing. You can still preview it. Retry to edit and export.";
 
-// One compiled resource with a DATA block. Source2-model's Resource reader uses
-// offsets relative to the block's offset field, not the start of the file.
 const resource = (data: Buffer, trailing = Buffer.alloc(0)): Buffer => {
   const header = Buffer.alloc(28);
   header.writeUInt32LE(header.length + data.length, 0);
@@ -36,7 +34,7 @@ export const foundryTextureBytes = (): Buffer => {
   data.writeUInt16LE(2, 20);
   data.writeUInt16LE(2, 22);
   data.writeUInt16LE(1, 24);
-  data[26] = 4; // RGBA8888, one uncompressed mip.
+  data[26] = 4;
   data[27] = 1;
   return resource(
     data,
@@ -45,8 +43,6 @@ export const foundryTextureBytes = (): Buffer => {
 };
 
 export const foundryMaterialBytes = (shader = "pbr.vfx"): Buffer => {
-  // Uncompressed KV3 v1: { m_shaderName, m_textureParams: [{ m_name, m_pValue }] }.
-  // The value, string and type streams follow source2-model's KV3 reader.
   const strings = [
     "m_shaderName",
     shader,
@@ -170,7 +166,6 @@ const readJournal = async (root: string, name: string) => {
       .json()
       .parse(JSON.parse(await readFile(path.join(root, name), "utf8")));
   } catch (error) {
-    // Fresh workspaces have no journals until their first edit completes.
     if (error instanceof Error && "code" in error && error.code === "ENOENT")
       return [];
     throw error;

@@ -4,7 +4,6 @@ type HeroMapping = {
 };
 
 const HERO_MAP: Record<string, HeroMapping> = {
-  // heroes_wip
   abrams: { enumKey: "Abrams", displayName: "Abrams" },
   artist: { enumKey: "Violet", displayName: "Violet" },
   baba: { enumKey: "Baba", displayName: "Baba" },
@@ -36,7 +35,6 @@ const HERO_MAP: Record<string, HeroMapping> = {
   werewolf: { enumKey: "Silver", displayName: "Silver" },
   wraith: { enumKey: "Wraith", displayName: "Wraith" },
   yamato: { enumKey: "Yamato", displayName: "Yamato" },
-  // heroes_staging
   archer: { enumKey: "GreyTalon", displayName: "Grey Talon" },
   archer_v2: { enumKey: "GreyTalon", displayName: "Grey Talon" },
   astro: { enumKey: "Holliday", displayName: "Holliday" },

@@ -9,7 +9,7 @@ export const queueConfigs: Record<string, QueueConfig> = {
         type: "exponential",
         delay: 2000,
       },
-      timeout: 15 * 60 * 1000, // 15 minutes timeout
+      timeout: 15 * 60 * 1000,
       removeOnComplete: 100,
       removeOnFail: 50,
     },

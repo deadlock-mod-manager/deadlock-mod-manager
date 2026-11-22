@@ -13,7 +13,7 @@ export const FeatureFlagSchema = z.object({
   description: z.string().nullable(),
   type: FeatureFlagTypeSchema,
   value: z.unknown(),
-  enabled: z.unknown(), // Backwards compatibility
+  enabled: z.unknown(),
   exposed: z.boolean(),
 });
 

@@ -5,11 +5,6 @@ import { env } from "./env";
 import { logger } from "./logger";
 import { redisConnectionOptions } from "./redis-options";
 
-/**
- * Lua script that atomically increments a rate-limit counter and sets its TTL.
- * If the key is new (counter == 1) or somehow lost its TTL, the expiry is (re-)applied.
- * Returns {current_count, ttl}.
- */
 const RATE_LIMIT_SCRIPT = `
 local current = redis.call('INCR', KEYS[1])
 if current == 1 then
@@ -60,9 +55,6 @@ redisPublisher.on("connect", () => {
   logger.info("Redis publisher connected");
 });
 
-/**
- * Shared cache-manager instance for the API.
- */
 export const cache = createRedisCache(env.REDIS_URL, {
   ttl: CACHE_TTL.DEFAULT,
 });

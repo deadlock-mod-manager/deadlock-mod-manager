@@ -11,7 +11,6 @@ import { FunnelSimpleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { EditorFilter } from "@/lib/performance/editor/filter";
 
-/** Why the list is empty for this search or filter, and the way back to a full list. */
 export const NoMatches = ({
   search,
   filter,

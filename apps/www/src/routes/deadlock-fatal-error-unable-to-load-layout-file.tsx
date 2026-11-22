@@ -23,7 +23,6 @@ const getPage = (t: TFunction<"error-fatal">): GuidePageData => ({
   faqs: Object.values(t("faqs", { returnObjects: true })),
 });
 
-/** The error the KeyValues parser helps fix. */
 const KV_PARSER_ERROR = "kv3";
 
 export const Route = createFileRoute(

@@ -15,7 +15,6 @@ import modProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/
 import soundProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/sound-profile.json";
 import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
 
-// Bun module mocks persist across files; isolate provider dependencies from other suites.
 if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
   it("verifies sync deferral with isolated service mocks", () => {
     const result = Bun.spawnSync([process.execPath, "test", import.meta.path], {

@@ -4,7 +4,6 @@ use log;
 use std::fs;
 use std::path::Path;
 
-/// Handles file system utility operations
 pub struct FileSystemHelper;
 
 impl FileSystemHelper {
@@ -12,12 +11,10 @@ impl FileSystemHelper {
     Self
   }
 
-  /// Open a folder in the system file explorer
   pub fn open_folder(&self, path: &str) -> Result<(), Error> {
     utils::show_in_folder(path)
   }
 
-  /// Create directory recursively if it doesn't exist
   pub fn create_directories(&self, path: &Path) -> Result<(), Error> {
     if !path.exists() {
       log::info!("Creating directories: {:?}", path);
@@ -26,7 +23,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Remove directory and all its contents
   pub fn remove_directory_recursive(&self, path: &Path) -> Result<(), Error> {
     if path.exists() {
       log::info!("Removing directory recursively: {:?}", path);
@@ -35,7 +31,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Copy a file from source to destination
   pub fn copy_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if let Some(parent) = dest.parent() {
       self.create_directories(parent)?;
@@ -47,8 +42,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Replaces `dest`. Falls back to copying when the rename fails: across
-  /// volumes, or while a scanner holds the file past the retries.
   pub fn move_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if let Some(parent) = dest.parent() {
       self.create_directories(parent)?;
@@ -69,7 +62,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Files of different lengths are never read.
   pub fn files_have_same_contents(&self, a: &Path, b: &Path) -> Result<bool, Error> {
     use std::io::BufRead;
 
@@ -92,7 +84,6 @@ impl FileSystemHelper {
     }
   }
 
-  /// Get all files in a directory with a specific extension
   pub fn get_files_with_extension(
     &self,
     dir: &Path,
@@ -117,7 +108,6 @@ impl FileSystemHelper {
     Ok(files)
   }
 
-  /// Recursively find all files with a specific extension
   pub fn find_files_recursive(
     &self,
     dir: &Path,
@@ -149,15 +139,12 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Create a directory symlink (cross-platform)
-  /// On Windows, this creates a directory junction which doesn't require admin privileges
   #[cfg(windows)]
   pub fn create_directory_symlink(&self, target: &Path, link: &Path) -> Result<(), Error> {
     use std::os::windows::fs::symlink_dir;
 
     log::info!("Creating directory symlink: {:?} -> {:?}", link, target);
 
-    // First try symlink_dir (requires admin or developer mode)
     match symlink_dir(target, link) {
       Ok(()) => {
         log::info!("Created symlink successfully");
@@ -171,8 +158,6 @@ impl FileSystemHelper {
       }
     }
 
-    // Fall back to junction (doesn't require admin privileges)
-    // Uses the junction crate which calls Windows APIs directly (no shell invocation)
     junction::create(target, link).map_err(|e| {
       Error::Io(std::io::Error::other(format!(
         "Failed to create junction: {}",
@@ -184,7 +169,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Create a directory symlink (Unix)
   #[cfg(unix)]
   pub fn create_directory_symlink(&self, target: &Path, link: &Path) -> Result<(), Error> {
     use std::os::unix::fs::symlink;
@@ -195,7 +179,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Check if a path is a symlink
   pub fn is_symlink(&self, path: &Path) -> bool {
     path
       .symlink_metadata()
@@ -203,7 +186,6 @@ impl FileSystemHelper {
       .unwrap_or(false)
   }
 
-  /// Check if two paths point to the same location (handles symlinks and Windows junctions)
   pub fn paths_point_to_same_location(&self, path1: &Path, path2: &Path) -> bool {
     match (fs::canonicalize(path1), fs::canonicalize(path2)) {
       (Ok(canonical1), Ok(canonical2)) => canonical1 == canonical2,
@@ -211,8 +193,6 @@ impl FileSystemHelper {
     }
   }
 
-  /// Remove a symlink or junction (cross-platform)
-  /// On Windows, directory symlinks/junctions require remove_dir() instead of remove_file()
   pub fn remove_symlink(&self, path: &Path) -> Result<(), Error> {
     if !path.exists() && !self.is_symlink(path) {
       return Ok(());
@@ -220,7 +200,6 @@ impl FileSystemHelper {
 
     log::info!("Removing symlink/junction: {:?}", path);
 
-    // Try remove_file first (works for file symlinks on all platforms)
     match fs::remove_file(path) {
       Ok(()) => return Ok(()),
       Err(e) => {
@@ -228,12 +207,10 @@ impl FileSystemHelper {
       }
     }
 
-    // Fall back to remove_dir (needed for directory symlinks/junctions on Windows)
     fs::remove_dir(path)?;
     Ok(())
   }
 
-  /// Move all contents from source directory to destination directory
   pub fn move_directory_contents(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if !src.exists() {
       return Ok(());
@@ -248,14 +225,10 @@ impl FileSystemHelper {
       let dest_path = dest.join(&file_name);
 
       if src_path.is_dir() {
-        // Recursively move subdirectories
         self.move_directory_contents(&src_path, &dest_path)?;
         fs::remove_dir(&src_path)?;
       } else {
-        // Move file (copy + delete for cross-device moves)
         if dest_path.exists() {
-          // Only delete source if files are identical (same size)
-          // to avoid silent data loss
           let src_size = fs::metadata(&src_path).map(|m| m.len()).unwrap_or(0);
           let dest_size = fs::metadata(&dest_path).map(|m| m.len()).unwrap_or(1);
 
@@ -266,7 +239,6 @@ impl FileSystemHelper {
             );
             fs::remove_file(&src_path)?;
           } else {
-            // Files differ - find a unique conflict filename to avoid data loss
             let base_name = src_path.file_name().unwrap_or_default().to_string_lossy();
             let mut conflict_path = dest.join(format!("{}.conflict", base_name));
             let mut counter = 1;

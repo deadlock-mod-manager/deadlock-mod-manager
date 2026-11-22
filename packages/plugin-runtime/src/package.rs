@@ -1,7 +1,3 @@
-//! Validates and unpacks a plugin archive into a fresh directory. Nothing
-//! from the archive decides where a file lands except its validated
-//! relative name, and every size is checked against what was actually read.
-
 use super::abi;
 use super::manifest::{PluginManifest, is_safe_package_path};
 use crate::Error;
@@ -30,9 +26,6 @@ fn invalid(message: impl Into<String>) -> Error {
   Error::InvalidInput(message.into())
 }
 
-/// Unpacks `archive` into `destination`, which must not exist yet. With
-/// `expected_hash`, an archive whose SHA-256 differs is refused before any
-/// entry is read.
 pub fn extract(
   archive: &Path,
   destination: &Path,
@@ -136,7 +129,6 @@ pub fn extract(
   })
 }
 
-/// Resolves a manifest-relative path inside an unpacked package.
 pub fn package_file(root: &Path, relative: &str) -> Option<PathBuf> {
   is_safe_package_path(relative).then(|| {
     relative
@@ -150,7 +142,6 @@ pub(crate) mod tests {
   use super::*;
   use zip::write::SimpleFileOptions;
 
-  /// Every catalog permission, as the lifecycle tests grant it.
   pub(crate) fn full_permissions() -> serde_json::Value {
     serde_json::json!([
       { "id": "files", "kind": "file", "extensions": ["vpk"], "access": "read" },

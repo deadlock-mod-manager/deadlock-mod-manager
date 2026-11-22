@@ -18,7 +18,6 @@ import { OptionRow } from "./view-options";
 
 const API_DOCS_URL = "https://api.deadlock-api.com/docs";
 
-/** Long enough that a half-typed path is never sent to the API. */
 const TYPING_SETTLE_MS = 600;
 
 export const ApiQueryEditor = ({
@@ -31,8 +30,6 @@ export const ApiQueryEditor = ({
   onChange: (next: { path: string; listPath: string }) => void;
 }) => {
   const { t } = useTranslation();
-  // Every committed path is a request, so typing edits a local copy and only
-  // a pause, Enter or a picked example hands it to the widget.
   const [draft, setDraft] = useState({ path, listPath });
   const timer = useRef<number | undefined>(undefined);
   const latestOnChange = useRef(onChange);

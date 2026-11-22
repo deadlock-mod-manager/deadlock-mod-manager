@@ -36,11 +36,8 @@ interface LiveSoulsCurveProps {
   color: string;
 }
 
-/** Matches run past this often enough that the axis starts there. */
 const MIN_AXIS_MINUTES = 25;
-/** Souls gridlines sit on round numbers. */
 const Y_STEP = 5000;
-/** How far back "lately" reaches for the recent souls rate. */
 const RECENT_MINUTES = 3;
 const Y_AXIS_WIDTH = 32;
 
@@ -52,7 +49,6 @@ const AXIS_TICK = {
   fill: "hsl(var(--muted-foreground) / 0.7)",
 };
 
-/** Minute ticks, with the first and last flush to the plot's edges. */
 const TimeTick = ({
   end,
   x,
@@ -74,7 +70,6 @@ const TimeTick = ({
   );
 };
 
-/** Your souls and lead beside the "now" dot; recharts passes the dot's box. */
 const Callout = ({
   souls,
   lead,
@@ -90,7 +85,6 @@ const Callout = ({
   const charWidth = 6.6;
   const width = (souls.length + (lead ? lead.length + 1 : 0)) * charWidth + 16;
   const centerY = viewBox.y + (viewBox.height ?? 0) / 2;
-  // Early in the match the dot hugs the axis, so the callout flips right.
   const before = viewBox.x - width - 12;
   const left =
     before < Y_AXIS_WIDTH ? viewBox.x + (viewBox.width ?? 0) + 12 : before;
@@ -121,10 +115,6 @@ const Callout = ({
   );
 };
 
-/**
- * Your souls this match against the bracket's curve: its average and middle
- * 68%, with your current lead carried to the end of the axis.
- */
 export const LiveSoulsCurve = ({
   className,
   curve,
@@ -162,8 +152,6 @@ export const LiveSoulsCurve = ({
           projected: point.avg * ratio,
         })),
     ];
-    // The band and the projection may run off the top; the axis follows the
-    // bracket's average and you, so the curve keeps its shape.
     const highest = Math.max(souls, bracket.at(-1)?.avg ?? 0);
     const top = Math.ceil(highest / Y_STEP) * Y_STEP;
     const yTicks = Array.from(

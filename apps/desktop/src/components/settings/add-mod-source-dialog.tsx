@@ -25,11 +25,8 @@ import { usePersistedStore } from "@/lib/store";
 interface AddModSourceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Filled in and previewed on open, as when a website's link opens this. */
   initialUrl?: string;
-  /** The source ID a link expects, so a descriptor for another source is refused. */
   expectedSourceId?: string;
-  /** Explains why a link opened the dialog. */
   reason?: string;
   onAdded?: (source: NativeSourceSummary) => void;
 }
@@ -68,8 +65,6 @@ export const AddModSourceDialog = ({
     onSuccess: finish,
     meta: { skipGlobalErrorHandler: true },
   });
-  // Runs once: a link's URL is previewed without the user pressing Preview,
-  // but adding still waits for them.
   const previewInitial = preview.mutate;
   useEffect(() => {
     if (initialUrl) previewInitial(initialUrl);

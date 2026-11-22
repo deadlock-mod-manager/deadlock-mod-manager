@@ -181,7 +181,6 @@ fn collect_needed<'a>(
       pending.push(child);
     }
   }
-  // Ability triggers can legitimately refer back to each other; inheritance cannot.
   let mut remaining: BTreeSet<_> = needed.keys().cloned().collect();
   loop {
     let leaves: Vec<_> = remaining
@@ -373,8 +372,6 @@ pub(super) fn prepare(
         }) {
           continue;
         }
-        // Existing unresolved vanilla references can be native engine fallbacks.
-        // Report only references introduced by mods or lost during preparation.
         let vanilla_reference = row(&table.base_root, name).is_some_and(|value| {
           references(value, &table.file_path)
             .iter()
@@ -474,7 +471,6 @@ pub(super) fn prepare(
   for (index, name) in omitted_heroes {
     reference_fallback::omit(&mut merged[index], &name);
   }
-  // A failed chain may subsequently be satisfied by another successful repair.
   warnings.retain(|warning| {
     matches!(
       warning.kind,

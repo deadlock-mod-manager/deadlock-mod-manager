@@ -26,7 +26,6 @@ export type LivePaceNotice =
 interface LivePaceProps {
   rows: LiveGradeRow[];
   notice: LivePaceNotice | null;
-  /** "Ritualist Haze", or just the hero when graded against everyone. */
   peers: string;
   clock: string | null;
   minutes: number | null;
@@ -58,7 +57,6 @@ const Ruler = ({ row }: { row: LiveGradeRow }) => {
           />
         ))}
       </div>
-      {/* The bracket average is where half the bracket is beaten. */}
       <div className='absolute top-1/2 left-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-[1px] bg-primary/50' />
       <div
         className='absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50'
@@ -72,10 +70,6 @@ const Ruler = ({ row }: { row: LiveGradeRow }) => {
   );
 };
 
-/**
- * The local player's match so far, graded against players on the same hero in
- * their rank bracket at the same minute.
- */
 export const LivePace = ({
   rows,
   notice,
@@ -122,7 +116,6 @@ export const LivePace = ({
             <div
               className={cn(
                 "flex items-center gap-4 py-2.5",
-                // A hairline that takes no height, so rows keep their pitch.
                 index > 0 &&
                   "shadow-[inset_0_1px_0_hsl(var(--foreground)/0.04)]",
               )}

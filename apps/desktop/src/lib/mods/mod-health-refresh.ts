@@ -1,12 +1,5 @@
-// Enable all and collection installs land one mod at a time.
 const REFRESH_DELAY_MS = 1500;
 
-/**
- * Coalesces backend compatibility events and installed-file changes per
- * profile. Each batch rebuilds the fixed mods' repair package and checks the
- * profile's mod health. The check skips mods whose files are unchanged, so it
- * only analyses what changed, including an update that kept its VPK names.
- */
 export const createModHealthRefreshQueue = ({
   refreshFixes,
   checkHealth,

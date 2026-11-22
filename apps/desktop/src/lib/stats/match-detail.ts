@@ -12,7 +12,6 @@ export type ItemTransaction = {
   time: number;
 };
 
-/** Metadata also records ability upgrades in `items`; the asset map removes them. */
 export const itemTransactions = (
   entries: MatchMetadataItem[],
   itemsById: Map<number, DeadlockItem>,
@@ -59,7 +58,6 @@ export const inventoryAt = (
     return owned ? [item] : [];
   });
 
-/** The API samples stats periodically; hold the last known sample while scrubbing. */
 export const statAt = (
   stats: MatchMetadataStat[],
   time: number,

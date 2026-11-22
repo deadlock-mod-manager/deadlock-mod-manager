@@ -22,7 +22,6 @@ const MOD_MANAGER_MARKER_START: &str = gameinfo_search_paths::LEGACY_START;
 #[cfg(test)]
 const MOD_MANAGER_MARKER_END: &str = gameinfo_search_paths::LEGACY_END;
 
-/// Backup metadata for gameinfo.gi files
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameInfoBackup {
   pub original_hash: String,
@@ -32,7 +31,6 @@ pub struct GameInfoBackup {
   pub is_vanilla: bool,
 }
 
-/// Status of gameinfo.gi file
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameInfoStatus {
   pub current_hash: String,
@@ -51,14 +49,12 @@ pub enum GameInfoResetSource {
   Backup,
 }
 
-/// Validation result for gameinfo.gi
 #[derive(Debug, Clone)]
 pub struct GameInfoValidation {
   pub is_valid: bool,
   pub errors: Vec<String>,
 }
 
-/// Manages game configuration files and mod setup
 pub struct GameConfigManager {
   filesystem: FileSystemHelper,
   game_setup: bool,
@@ -76,7 +72,6 @@ impl GameConfigManager {
     }
   }
 
-  /// Calculate SHA-256 hash of a file
   fn calculate_file_hash(&self, file_path: &Path) -> Result<String, Error> {
     use sha2::{Digest, Sha256};
 
@@ -87,7 +82,6 @@ impl GameConfigManager {
     Ok(format!("{:x}", result))
   }
 
-  /// Get current Unix timestamp
   fn current_timestamp(&self) -> u64 {
     SystemTime::now()
       .duration_since(UNIX_EPOCH)
@@ -110,7 +104,6 @@ impl GameConfigManager {
     )
   }
 
-  /// Bind automatic cleanup to the mount state observed after a game exit.
   pub fn cleanup_revision(&self, game_path: &Path) -> Result<Option<u64>, Error> {
     Ok((!self.marker_addons_paths(game_path)?.is_empty()).then_some(self.search_paths_revision))
   }
@@ -119,7 +112,6 @@ impl GameConfigManager {
     self.search_paths_revision
   }
 
-  /// Do not remove mounts staged by an operation newer than the observed exit.
   pub fn remove_mod_paths_at_revision(
     &mut self,
     game_path: &Path,
@@ -132,7 +124,6 @@ impl GameConfigManager {
     Ok(true)
   }
 
-  /// Validate gameinfo.gi syntax and structure
   pub fn validate_gameinfo_syntax(
     &self,
     gameinfo_path: &Path,
@@ -152,7 +143,6 @@ impl GameConfigManager {
     })
   }
 
-  /// Get the current status of gameinfo.gi
   pub fn get_gameinfo_status(&mut self, game_path: &Path) -> Result<GameInfoStatus, Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
@@ -165,7 +155,6 @@ impl GameConfigManager {
     let current_hash = self.calculate_file_hash(&gameinfo_path)?;
     let content = fs::read_to_string(&gameinfo_path)?;
 
-    // Check if backup exists
     let backup_path = gameinfo_path.with_extension("gi.bak");
     let backup_exists = backup_path.exists();
     let mut backup_valid = false;
@@ -174,12 +163,10 @@ impl GameConfigManager {
       if let Some(backup_info) = self.backups.get(&gameinfo_path) {
         backup_valid = backup_info.original_hash == backup_hash;
       } else {
-        // Load backup info if not in memory
-        backup_valid = true; // Assume valid if we can read it
+        backup_valid = true;
       }
     }
 
-    // Settings reports invalid syntax separately from ownership and enabled mounts.
     let (is_modified_by_mod_manager, has_mod_paths, syntax_valid) =
       match gameinfo_search_paths::inspect(&content, || managed_mounts::claims(game_path)) {
         Ok(inspection) => (
@@ -191,7 +178,6 @@ impl GameConfigManager {
         Err(error) => return Err(error),
       };
 
-    // Check if file was modified externally
     let mut is_modified_externally = false;
     if let Some(backup_info) = self.backups.get(&gameinfo_path)
       && backup_info.original_hash != current_hash
@@ -211,7 +197,6 @@ impl GameConfigManager {
     })
   }
 
-  /// Create a backup of gameinfo.gi if none exists
   pub fn backup_gameinfo(&mut self, game_path: &Path) -> Result<(), Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -222,13 +207,11 @@ impl GameConfigManager {
       ));
     }
 
-    // Don't overwrite existing backups
     if backup_path.exists() {
       log::info!("Backup already exists at {backup_path:?}");
       return Ok(());
     }
 
-    // Validate the file before backing it up
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
       log::warn!(
@@ -237,11 +220,9 @@ impl GameConfigManager {
       );
     }
 
-    // Create backup
     log::info!("Creating backup: {backup_path:?}");
     fs::copy(&gameinfo_path, &backup_path)?;
 
-    // Preserve file permissions and metadata
     #[cfg(unix)]
     {
       let metadata = fs::metadata(&gameinfo_path)?;
@@ -249,7 +230,6 @@ impl GameConfigManager {
       fs::set_permissions(&backup_path, permissions)?;
     }
 
-    // Calculate hash and store backup metadata
     let original_hash = self.calculate_file_hash(&gameinfo_path)?;
     let file_size = fs::metadata(&gameinfo_path)?.len();
     let content = fs::read_to_string(&gameinfo_path)?;
@@ -272,7 +252,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Restore a validated backup, retaining a safety copy of the current file.
   pub fn restore_gameinfo_backup(&mut self, game_path: &Path) -> Result<(), Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -283,7 +262,6 @@ impl GameConfigManager {
       ));
     }
 
-    // Validate backup integrity
     if let Some(backup_info) = self.backups.get(&gameinfo_path) {
       let backup_hash = self.calculate_file_hash(&backup_path)?;
       if backup_hash != backup_info.original_hash {
@@ -294,7 +272,6 @@ impl GameConfigManager {
       }
     }
 
-    // Validate backup syntax before restoring
     let backup_content = fs::read_to_string(&backup_path)?;
     gameinfo_search_paths::validate_reset(&backup_content)?;
     let game_setup = !Self::inspect_gameinfo(game_path, &backup_content)?
@@ -310,7 +287,6 @@ impl GameConfigManager {
     Self::commit_gameinfo(&gameinfo_path, current.as_deref(), &backup_content)?;
     self.search_paths_revision += 1;
 
-    // Verify restoration
     let restored_hash = self.calculate_file_hash(&gameinfo_path)?;
     if let Some(backup_info) = self.backups.get(&gameinfo_path)
       && restored_hash != backup_info.original_hash
@@ -326,7 +302,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Apply vanilla gameinfo.gi content to the game
   pub fn apply_vanilla_gameinfo(
     &mut self,
     game_path: &Path,
@@ -336,11 +311,9 @@ impl GameConfigManager {
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
-    // Validate the downloaded content
     ensure_file_writable(&gameinfo_path)?;
     gameinfo_search_paths::validate_reset(&vanilla_content)?;
 
-    // Preserve the current file even if an older .bak already exists.
     let current = gameinfo::read(&gameinfo_path)?;
     if let Some(current) = &current {
       Self::keep_gameinfo_copy(&gameinfo_path, current, "pre-reset")?;
@@ -351,14 +324,12 @@ impl GameConfigManager {
       }
     }
 
-    // Write the vanilla content
     Self::commit_gameinfo(&gameinfo_path, current.as_deref(), &vanilla_content)?;
     self.search_paths_revision += 1;
     self.game_setup = false;
     self.backups.remove(&gameinfo_path);
     log::info!("Successfully replaced gameinfo.gi with vanilla version");
 
-    // Validate the result
     let status = self.get_gameinfo_status(game_path)?;
     if status.has_mod_paths {
       log::warn!("Warning: File may still contain mod paths after reset");
@@ -401,7 +372,6 @@ impl GameConfigManager {
     }
   }
 
-  /// Validate that the current patch was applied correctly
   pub fn validate_gameinfo_patch(
     &self,
     game_path: &Path,
@@ -419,7 +389,6 @@ impl GameConfigManager {
     let inspection = Self::inspect_gameinfo(game_path, &content)?;
     let has_mod_paths = !inspection.mod_paths.is_empty();
 
-    // Check if the patch state matches expectations
     if expected_vanilla && has_mod_paths {
       return Err(Error::GameConfigParse(
         "File should be in vanilla state but contains mod paths".to_string(),
@@ -436,7 +405,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Open gameinfo.gi file with the system's default editor
   pub fn open_gameinfo_with_editor(&self, game_path: &Path) -> Result<(), Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
@@ -452,7 +420,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Setup the game for mods by creating necessary directories and modifying config
   pub fn setup_game_for_mods(&mut self, game_path: &Path) -> Result<(), Error> {
     if self.game_setup {
       log::info!("Game already setup");
@@ -461,25 +428,18 @@ impl GameConfigManager {
 
     log::info!("Setting up game for mods at: {game_path:?}");
 
-    // Validate game files first
     self.validate_game_files(game_path)?;
 
-    // Create backup before any modifications
     self.backup_gameinfo(game_path)?;
 
-    // Create mods directory: game_path/game/citadel/addons/
     let addons_path = game_path.join("game").join("citadel").join("addons");
     self.filesystem.create_directories(&addons_path)?;
     log::info!("Created addons directory: {addons_path:?}");
 
-    // Setup replays symlink to ensure replays are saved consistently
     if let Err(e) = self.setup_replays_symlink(game_path) {
       log::warn!("Failed to setup replays symlink: {e}");
-      // Continue anyway - this is not critical for mod functionality
     }
 
-    // A previous session already wrote the marker block, which may mount a
-    // profile folder. Rewriting it would leave only the default addons folder.
     if self.marker_addons_paths(game_path)?.is_empty() {
       let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
       self.modify_search_paths(&gameinfo_path, false)?;
@@ -487,26 +447,22 @@ impl GameConfigManager {
       log::info!("Keeping the existing mod search paths in gameinfo.gi");
     }
 
-    // Validate the patch was applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, false) {
       log::error!("Mod setup validation failed: {e}");
       return Err(e);
     }
 
-    // Mark game as setup
     self.game_setup = true;
     log::info!("Game setup for mods completed successfully");
 
     Ok(())
   }
 
-  /// Toggle between modded and vanilla game configuration
   pub fn toggle_mods(&mut self, game_path: &Path, vanilla: bool) -> Result<(), Error> {
     log::info!("Toggling mods: vanilla={vanilla}");
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
-    // Validate file exists and syntax before modification
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
       log::error!("Cannot modify invalid gameinfo.gi: {:?}", validation.errors);
@@ -519,7 +475,6 @@ impl GameConfigManager {
     self.modify_search_paths(&gameinfo_path, vanilla)?;
     self.game_setup = !vanilla;
 
-    // Validate the changes were applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, vanilla) {
       log::error!("Toggle validation failed: {e}");
       return Err(e);
@@ -534,7 +489,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Modify the search paths in gameinfo.gi
   pub fn modify_search_paths(&mut self, gameinfo_path: &Path, vanilla: bool) -> Result<(), Error> {
     let game_path = gameinfo_path
       .ancestors()
@@ -570,7 +524,6 @@ impl GameConfigManager {
       || managed_mounts::claims(game_path),
     )?;
     if updated.content == original {
-      // An identical profile/launch request still supersedes pending cleanup.
       self.search_paths_revision += 1;
       return Ok(());
     }
@@ -601,8 +554,6 @@ impl GameConfigManager {
 
   fn keep_gameinfo_copy(path: &Path, content: &[u8], purpose: &str) -> Result<(), Error> {
     use sha2::{Digest, Sha256};
-    // tempfile passes paths directly to Win32 when persisting. Canonical paths
-    // carry the verbatim prefix needed for long game paths and hash-named copies.
     let directory = path
       .parent()
       .unwrap_or_else(|| Path::new("."))
@@ -625,12 +576,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Setup replays symlink to ensure replays are saved to a consistent location
-  ///
-  /// When launching modded, replays are saved to citadel/addons/replays/
-  /// When launching vanilla, replays are saved to citadel/replays/
-  /// This creates a symlink from citadel/replays -> citadel/addons/replays/
-  /// so all replays are stored in one place regardless of launch mode.
   pub fn setup_replays_symlink(&self, game_path: &Path) -> Result<(), Error> {
     let citadel_path = game_path.join("game").join("citadel");
     let vanilla_replays_path = citadel_path.join("replays");
@@ -643,13 +588,9 @@ impl GameConfigManager {
       modded_replays_path
     );
 
-    // Ensure the target directory (addons/replays) exists
     self.filesystem.create_directories(&modded_replays_path)?;
 
-    // Check current state of citadel/replays
     if vanilla_replays_path.exists() {
-      // First check if both paths already point to the same location
-      // This handles both symlinks and Windows junctions correctly
       if self
         .filesystem
         .paths_point_to_same_location(&vanilla_replays_path, &modded_replays_path)
@@ -658,7 +599,6 @@ impl GameConfigManager {
         return Ok(());
       }
 
-      // Check if it's a symlink pointing elsewhere
       if self.filesystem.is_symlink(&vanilla_replays_path) {
         log::info!(
           "Replays symlink points to wrong location, recreating: {:?}",
@@ -666,7 +606,6 @@ impl GameConfigManager {
         );
         self.filesystem.remove_symlink(&vanilla_replays_path)?;
       } else if vanilla_replays_path.is_dir() {
-        // It's a regular directory - move contents to modded location and remove it
         log::info!(
           "Moving existing replays from {:?} to {:?}",
           vanilla_replays_path,
@@ -676,7 +615,6 @@ impl GameConfigManager {
           .filesystem
           .move_directory_contents(&vanilla_replays_path, &modded_replays_path)?;
 
-        // Remove the now-empty directory
         fs::remove_dir(&vanilla_replays_path).map_err(|e| {
           Error::Io(std::io::Error::new(
             e.kind(),
@@ -688,7 +626,6 @@ impl GameConfigManager {
         })?;
         log::info!("Removed original replays directory");
       } else {
-        // It's a file (unlikely but handle it)
         log::warn!(
           "citadel/replays exists but is not a directory, removing: {:?}",
           vanilla_replays_path
@@ -697,7 +634,6 @@ impl GameConfigManager {
       }
     }
 
-    // Create the symlink: citadel/replays -> citadel/addons/replays
     self
       .filesystem
       .create_directory_symlink(&modded_replays_path, &vanilla_replays_path)?;
@@ -706,16 +642,10 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Check if the game has been set up for mods
   pub fn is_game_setup(&self) -> bool {
     self.game_setup
   }
 
-  /// Deadworks content, or the bootstrap the Deadworks launcher installs, is on
-  /// disk, so the game needs the search paths from
-  /// <https://docs.deadworks.net/guides/content-discovery/>.
-  /// Steam file verification drops them too, so they are derived again on
-  /// every write rather than preserved.
   fn uses_deadworks(game_path: &Path) -> bool {
     let citadel = game_path.join("game").join("citadel");
     citadel.join("deadworks_addons").is_dir()
@@ -725,8 +655,6 @@ impl GameConfigManager {
         .is_file()
   }
 
-  /// `citadel/addons[/...]` paths inside the marker block, in source order.
-  /// Returns an empty vec when the markers are absent.
   pub fn marker_addons_paths(&self, game_path: &Path) -> Result<Vec<String>, Error> {
     let path = game_path.join("game/citadel/gameinfo.gi");
     if !path.exists() {
@@ -736,8 +664,6 @@ impl GameConfigManager {
       .map(|inspection| inspection.mod_paths)
   }
 
-  /// Update gameinfo.gi with complete `citadel/addonsN[/...]` search paths.
-  /// The first path has the highest precedence.
   pub fn update_mod_paths(&mut self, game_path: &Path, paths: &[String]) -> Result<(), Error> {
     if paths.iter().any(|path| !shard::is_valid_search_path(path)) {
       return Err(Error::InvalidInput(
@@ -756,8 +682,6 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Get the paths for game configuration files
-  /// Validate that all required game files exist for mod installation
   pub fn validate_game_files(&self, game_path: &Path) -> Result<(), Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
@@ -959,7 +883,6 @@ mod tests {
       for vanilla in [false, false, true, false, true] {
         mgr.toggle_mods(&game_path, vanilla).expect("toggle mods");
         let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
-        // Switching back and forth leaves no stray whitespace lines behind.
         assert_eq!(
           seen[usize::from(vanilla)].get_or_insert_with(|| content.clone()),
           &content
@@ -1000,7 +923,6 @@ mod tests {
           .update_mod_paths(&game_path, &paths)
           .expect("update paths");
         let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
-        // The same paths leave the file untouched, not one blank line longer.
         assert_eq!(first.get_or_insert_with(|| content.clone()), &content);
         assert_line_endings(&content, newline);
         assert_eq!(mgr.marker_addons_paths(&game_path).unwrap(), paths);
@@ -1024,7 +946,6 @@ mod tests {
   #[test]
   fn marker_addons_paths_returns_empty_when_no_file() {
     let (_dir, game_path) = setup_game_dir();
-    // Don't create gameinfo.gi at all.
     let mgr = GameConfigManager::new();
     let result = mgr.marker_addons_paths(&game_path).expect("ok");
     assert!(result.is_empty());
@@ -1096,10 +1017,6 @@ mod tests {
     assert_eq!(result, vec!["citadel/addons/server_xyz".to_string()]);
   }
 
-  /// Build a minimally valid gameinfo.gi with the mod-manager marker block
-  /// containing a stale `server_xxx` Game entry. Used by the integration-style
-  /// tests that exercise `update_mod_path_multi` end-to-end without needing
-  /// the full Tauri MANAGER plumbing.
   fn claim_profiles(game_path: &Path, folders: &[&str]) {
     for folder in folders {
       let profile = game_path.join("game/citadel/addons").join(folder);
@@ -1166,7 +1083,7 @@ mod tests {
     write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry(&game_path));
 
     let mut mgr = GameConfigManager::new();
-    mgr.game_setup = true; // skip setup_game_for_mods (which expects vanilla layout)
+    mgr.game_setup = true;
 
     mgr
       .update_mod_paths(&game_path, &["citadel/addons/profile_default".to_string()])

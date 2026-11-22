@@ -37,7 +37,6 @@ const ids = (value: DashboardLayout, tabId: string) =>
 
 describe("dashboard layout", () => {
   it("falls back to the default for a layout that no longer parses", () => {
-    // Type-valid, but the schema wants at least one tab.
     const broken: DashboardLayout = { version: 1, tabs: [] };
     expect(parseLayout(broken)).toEqual({
       layout: DEFAULT_LAYOUT,

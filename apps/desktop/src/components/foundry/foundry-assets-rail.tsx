@@ -26,10 +26,6 @@ const GROUPS: GroupId[] = [
 ];
 const FILTERS: Filter[] = ["all", "models", "materials", "textures"];
 
-/**
- * A `.vmdl_c` assembles the whole character, so it leads the models; the loose
- * `.vmesh_c` parts follow.
- */
 const modelRank = (entry: FoundryEntry): number =>
   entry.path.endsWith(".vmdl_c") ? 0 : entry.path.endsWith(".vmesh_c") ? 1 : 2;
 
@@ -43,7 +39,6 @@ const groupEntries = (manifest: FoundryManifest) =>
     other: manifest.other,
   }) satisfies Record<GroupId, FoundryEntry[]>;
 
-/** The asset browser's left column: every file in the VPK, grouped by type. */
 export const FoundryAssetsRail = () => {
   const { t } = useTranslation();
   const {

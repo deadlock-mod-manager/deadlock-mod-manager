@@ -189,7 +189,6 @@ export class ModRepository {
     return result.length > 0;
   }
 
-  /** Includes blacklisted and trashed mods, which the sync still tracks. */
   async findIndexModifiedAtByRemoteIds(
     remoteIds: string[],
   ): Promise<Map<string, Date | null>> {
@@ -231,9 +230,7 @@ export class ModRepository {
       .update(mods)
       .set({
         lastSyncedAt: new Date(),
-        // Overrides the $onUpdate bump: syncing changed nothing about the mod
         updatedAt: sql`${mods.updatedAt}`,
-        // Drizzle leaves undefined columns out of the SET clause
         remoteIndexModifiedAt,
       })
       .where(eq(mods.remoteId, remoteId));

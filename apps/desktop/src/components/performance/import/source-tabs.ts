@@ -31,6 +31,5 @@ export const initialTab = (source: ImportSource | null): SourceTab => {
   }
 };
 
-/** Sources that arrive from elsewhere in the app instead of from the tabs. */
 export const isHandedOver = (source: ImportSource | null) =>
   source?.kind === "staged" || source?.kind === "gameBanana";

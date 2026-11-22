@@ -1,4 +1,3 @@
-//! Reuse table fingerprints across rebuilds without retaining decoded game data.
 use super::compiled_resource;
 use crate::errors::Error;
 use crate::mod_manager::vdata_history::{VdataHistoryIndex, VdataSnapshot};
@@ -68,9 +67,6 @@ pub(super) fn record(
   bytes: &[u8],
 ) -> Result<bool, Error> {
   static CACHE: OnceLock<Mutex<ObservationCache>> = OnceLock::new();
-  // Include the whole resource: even a malformed header must miss. The path
-  // scopes learned string bindings; neither build number nor file metadata is
-  // sufficient to identify content. Parser changes invalidate on process restart.
   let digest = Sha256::digest(bytes).into();
   let cache = CACHE.get_or_init(|| Mutex::new(ObservationCache::default()));
   let cached = cache
@@ -128,8 +124,6 @@ mod tests {
       );
       assert_eq!(cached.to_bytes().unwrap(), direct.to_bytes().unwrap());
     }
-    // A fresh history still learns cached data. Reuse never means skipping the
-    // observation, and corrupt resources cannot inherit a previous successful parse.
     let mut fresh = VdataHistoryIndex::default();
     let bytes = compiled_resource(rows("old"));
     assert!(record(&mut fresh, path, 1, &bytes).unwrap());

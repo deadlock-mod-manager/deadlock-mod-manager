@@ -64,8 +64,6 @@ pub struct LocalizationModInput {
   pub vpks: Vec<PathBuf>,
 }
 
-/// Directory metadata is enough to identify which loose language files can
-/// supply these mods' baselines; other languages need only existence stamps.
 pub(crate) fn localization_paths(mods: &[LocalizationModInput]) -> Result<BTreeSet<String>, Error> {
   let mut paths = BTreeSet::new();
   for input in mods {
@@ -87,7 +85,6 @@ pub(crate) fn localization_paths(mods: &[LocalizationModInput]) -> Result<BTreeS
   Ok(paths)
 }
 
-/// Whether a mod contains any resource the compatibility analysis inspects.
 pub(crate) fn has_checkable_resources(input: &LocalizationModInput) -> Result<bool, Error> {
   for path in &input.vpks {
     let entries = vpk_parser::VpkParser::parse_directory_from_file(path).map_err(|error| {
@@ -182,7 +179,6 @@ pub struct LocalizationParseWarning {
   pub mod_id: String,
   pub file_path: String,
   pub skipped_lines: Vec<usize>,
-  /// Set when the whole file could not be read and was skipped.
   pub error: Option<String>,
 }
 
@@ -230,9 +226,6 @@ pub struct LocalizationOverlayAnalysis {
   pub compatibility_mod_ids: Vec<String>,
   pub excluded_mod_ids: Vec<String>,
   pub protected_resources: Vec<repair_scope::ProtectedResource>,
-  /// Selected mods with a file this analysis skipped because an unselected
-  /// mod also provides it. Their findings are incomplete, so finding nothing
-  /// doesn't mean they work.
   #[serde(skip)]
   pub incomplete_mod_ids: Vec<String>,
   pub scanned_vpks: usize,
@@ -253,12 +246,7 @@ pub struct LocalizationOverlayAnalysis {
   pub asset_repairs: Vec<asset_compatibility::AssetRepair>,
   pub asset_warnings: Vec<asset_compatibility::AssetWarning>,
   pub animation_checks: Vec<animation_contract::AnimationDependencyCheck>,
-  /// Mod-only models that nothing loaded references. Their asset warnings are
-  /// left out of review and mod health.
   pub unloaded_models: Vec<String>,
-  /// Warned models that are not a hero's model, such as a particle's model.
-  /// Hero camera, animation and model-mapping warnings on them stay listed
-  /// but neither pause launch nor affect mod health.
   pub prop_models: Vec<String>,
   pub data_repairs: Vec<vdata_compatibility::DataRepair>,
   pub data_warnings: Vec<vdata_compatibility::DataWarning>,
@@ -412,12 +400,9 @@ struct CompiledDataTable {
   baselines: Vec<CompiledDataBaseline>,
   restorations: Vec<vdata_compatibility::DataRepair>,
   unreadable: Vec<vdata_compatibility::DataWarning>,
-  // An unreadable source would win in game, so the table is left out.
   shadowed: bool,
 }
 
-/// Findings about whole mod files. They do not depend on conflict choices, so
-/// every recomputation of the prepared data carries them.
 #[derive(Default)]
 struct FileFindings {
   repairs: Vec<vdata_compatibility::DataRepair>,
@@ -449,7 +434,6 @@ pub struct LocalizationOverlayPlan {
   groups: BTreeMap<String, CandidateGroup>,
   compiled_data: Vec<CompiledDataTable>,
   file_findings: FileFindings,
-  // Mod text files with a game copy; the overlay always restores their base.
   seeded_text: BTreeSet<String>,
   animation_skeletons: BTreeMap<String, Vec<u8>>,
   animation_clips: BTreeMap<String, Vec<u8>>,
@@ -554,8 +538,6 @@ impl LocalizationOverlayPlan {
     Ok((plan, observed, changed))
   }
 
-  /// Analyses one mod on its own against a shared game index. `recorded`
-  /// lists game tables already learned into `observed` during this pass.
   pub(crate) fn build_standalone(
     game: &Arc<GameIndex>,
     input: LocalizationModInput,
@@ -681,7 +663,6 @@ impl LocalizationOverlayPlan {
     let mut game_text = BTreeSet::new();
     let mut seeded_text = BTreeSet::new();
     let mut read_text = BTreeSet::new();
-    // Paths whose winning file could not be read stay as shipped.
     let mut unreadable_text = BTreeSet::new();
     let mut compiled_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut skeleton_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
@@ -892,7 +873,6 @@ impl LocalizationOverlayPlan {
           let total_tokens = mod_file.tokens.len();
           let mut changed_in_file = 0usize;
           let mut stale_in_file = 0usize;
-          // A copy of a game file hides every game token it lacks.
           let mod_tokens: BTreeSet<_> = mod_file
             .tokens
             .keys()
@@ -1000,7 +980,6 @@ impl LocalizationOverlayPlan {
     )?;
     let animated = animation_models.keys().cloned().collect();
     report(RepairPlanStage::RepairingModels, total);
-    // Convert old attachments first, so points restored from the game are not converted again.
     camera_attachment_frame::prepare(
       resources,
       &camera_sources,
@@ -1386,9 +1365,6 @@ fn write_staged_resource(root: &Path, path: &str, bytes: &[u8]) -> Result<(), Er
   Ok(())
 }
 
-/// Read the packed overlay back and compare every entry with the file staged
-/// for it. The archive is closed before returning, since an open handle can
-/// block replacing the file on Windows.
 fn verify_packed_overlay(workspace: &Path, output_path: &Path) -> Result<(), Error> {
   let mismatch = |detail: String| {
     Error::ModInvalid(format!(
@@ -1443,7 +1419,6 @@ fn build_compiled_data(
 
   let mut tables = Vec::new();
   let mut sources_by_path = sources_by_path;
-  // Hero references must resolve even when no mod overrides the abilities table.
   if sources_by_path.contains_key(HEROES_VDATA_PATH) {
     sources_by_path
       .entry(vdata_compatibility::ABILITIES_PATH.into())
@@ -1451,8 +1426,6 @@ fn build_compiled_data(
   }
   for (file_path, sources) in sources_by_path {
     let Some(base_bytes) = resources.game_bytes(&file_path)? else {
-      // A unique compiled file is already visible through its owning mod VPK. DMM
-      // only needs to build an overlay when there is a base table to merge into.
       continue;
     };
     let mut table = build_compiled_table(
@@ -1532,7 +1505,6 @@ fn build_compiled_table(
       )),
     }
   }
-  // An unreadable file that wins in game must not be replaced by a merge of the others.
   let shadowed = readable_priority
     .is_none_or(|top| unreadable.iter().any(|(priority, _)| *priority <= top))
     && !unreadable.is_empty();
@@ -1556,8 +1528,6 @@ fn build_compiled_table(
   })
 }
 
-/// One mod's contribution to a compiled table, built apart from the others so
-/// a source that cannot be read adds nothing.
 fn compile_source(
   file_path: &str,
   base_root: &Kv3Value,
@@ -1922,9 +1892,6 @@ impl TableSources {
   }
 }
 
-/// Game rows or object fields an outdated copy of a table lacks. The merge
-/// restores them; the copy alone would hide them from the game. Arrays are
-/// authored as a whole and are not compared.
 fn omits_game_content(game: &Kv3Value, authored: &Kv3Value) -> bool {
   let (Kv3Value::Object(game), Kv3Value::Object(authored)) = (game, authored) else {
     return false;
@@ -2093,8 +2060,6 @@ impl CompiledDataTable {
       return Ok(0);
     }
     if merged.applied_rows.is_empty() {
-      // The original mod still overrides this table through the addons search path.
-      // Emit current bytes even when all stale data was ignored or vanilla was selected.
       write_staged_resource(output_root, &self.file_path, &self.base_bytes)?;
       return Ok(0);
     }
@@ -2405,7 +2370,6 @@ fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocaliza
   })
 }
 
-/// Older tools save localization as UTF-16 with a byte order mark.
 fn decode_localization_text(bytes: &[u8]) -> Option<String> {
   let utf16 = |units: &[u8], unit: fn([u8; 2]) -> u16| {
     let (pairs, []) = units.as_chunks::<2>() else {
@@ -2556,8 +2520,6 @@ fn escape_keyvalues(value: &str) -> String {
     .replace('\t', "\\t")
 }
 
-/// Preserve the first key in BTree order when a file contains case variants,
-/// matching the existing lookup semantics without scanning every token per query.
 fn token_index(tokens: &BTreeMap<String, String>) -> BTreeMap<String, &str> {
   let mut index = BTreeMap::new();
   for (key, value) in tokens {
@@ -2789,10 +2751,6 @@ fn collect_compiled_patches(
         path.pop();
       }
     }
-    // Array positions are structural rather than stable field identities. A
-    // different mod may add, remove, or reorder items, so treating individual
-    // indexes as independent patches can apply a value to the wrong item or an
-    // index that no longer exists.
     (Kv3Value::Array(_), Kv3Value::Array(_)) => {
       patches.push((path.clone(), candidate.clone(), candidate_encoding.clone()));
     }
@@ -4431,7 +4389,6 @@ pub(crate) mod tests {
     ]);
     let mut historical_rows = stale_snapshot_rows(34, 1);
     historical_rows.push(("hero_chrono".into(), old_hero.clone()));
-    // Development heroes can reuse a released hero's model without being its donor.
     let mut shared_model_hero = old_hero.clone();
     let Kv3Value::Object(fields) = &mut shared_model_hero else {
       unreachable!()

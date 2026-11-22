@@ -1,6 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
 
-/** The hero with the most mods, ties going to the first seen. */
 export const getTopHero = (mods: Pick<ModDto, "hero">[]): string | null => {
   const counts = new Map<string, number>();
   let top: string | null = null;

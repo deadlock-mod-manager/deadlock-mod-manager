@@ -54,7 +54,6 @@ describe("Reinstall keeps the player's choices", () => {
     const afterReinstall = await settle(world, FIXED);
     const badge = await badgeStatus(REINSTALLED_MOD);
 
-    // Turning another mod off and on reorders the profile by saved position.
     await setModEnabled(world, LOAD_ORDER[2], false);
     await setModEnabled(world, LOAD_ORDER[2], true);
     const afterReorder = await settle(world, FIXED);

@@ -19,21 +19,12 @@ import type {
   FoundryWorkspace,
 } from "@/types/foundry";
 
-/**
- * Parse a skin VPK and return its entries grouped by editing category. The
- * backend flags non-hero (map) mods via `isHeroSkin = false` so the Foundry can
- * refuse them before opening the editor.
- */
 export const analyzeFoundryVpk = async (
   filePath: string,
 ): Promise<FoundryManifest> => {
   return await invoke<FoundryManifest>("foundry_analyze_vpk", { filePath });
 };
 
-/**
- * Open the base game's default skin assets for one hero from `pak01_dir.vpk`.
- * This is read-only and does not create or download a mod.
- */
 export const analyzeDefaultFoundryHero = async (
   heroDisplay: string,
 ): Promise<FoundryManifest> => {
@@ -42,10 +33,6 @@ export const analyzeDefaultFoundryHero = async (
   });
 };
 
-/**
- * Resolve the absolute path to a stored mod's primary VPK so it can be imported
- * into the Foundry without a manual file pick.
- */
 export const resolveModVpk = async (
   modId: string,
   installedVpks: string[] = [],
@@ -58,10 +45,6 @@ export const resolveModVpk = async (
   });
 };
 
-/**
- * Unpack the loaded skin into an editable file tree. Every edit writes into that
- * tree; the user's original VPK is never touched.
- */
 export const prepareFoundryWorkspace = async (
   filePath: string,
   name: string,
@@ -74,7 +57,6 @@ export const prepareFoundryWorkspace = async (
   });
 };
 
-/** Pack the workspace into a VPK, either to `outputPath` or into the workspace. */
 export const buildFoundryVpk = async (
   workspaceRoot: string,
   outputPath: string | null = null,
@@ -87,11 +69,6 @@ export const buildFoundryVpk = async (
   });
 };
 
-/**
- * Replace one workspace file. A PNG/JPG handed to a `.vtex_c` entry is re-encoded
- * into that texture's container; any other file must already match the entry's
- * compiled format.
- */
 export const replaceFoundryFile = async (
   workspaceRoot: string,
   entryPath: string,
@@ -104,7 +81,6 @@ export const replaceFoundryFile = async (
   );
 };
 
-/** Undo every edit to one entry, restoring the packed original. */
 export const revertFoundryFile = async (
   workspaceRoot: string,
   entryPath: string,
@@ -117,7 +93,6 @@ export const revertFoundryFile = async (
   });
 };
 
-/** The colors a skin's original color maps wear, as `#rrggbb`. */
 export const foundrySkinPalette = async (
   filePath: string,
   textures: string[],
@@ -129,7 +104,6 @@ export const foundrySkinPalette = async (
   });
 };
 
-/** Set one sound's in-game volume edits; the backend rebuilds the clip. */
 export const adjustFoundrySound = async (
   workspaceRoot: string,
   entryPath: string,
@@ -144,10 +118,6 @@ export const adjustFoundrySound = async (
   });
 };
 
-/**
- * Decode a `.vtex_c` entry (card or texture) to a PNG data URL for previewing,
- * preferring the workspace's edited copy when one exists.
- */
 export const decodeFoundryTexture = async (
   filePath: string,
   entryPath: string,
@@ -162,10 +132,6 @@ export const decodeFoundryTexture = async (
   });
 };
 
-/**
- * Decode every hero-card texture for the active skin and the matching base-game
- * defaults. The Foundry starts this in the background as soon as a skin loads.
- */
 export const decodeFoundryCards = async (
   filePath: string,
   hero: string | null,
@@ -182,7 +148,6 @@ export const decodeFoundryCards = async (
 
 export { decodeFoundryModel } from "./model-assets";
 
-/** How much of the hero each paint target covers in the loaded skin. */
 export const foundryPaintTargets = async (
   filePath: string,
   workspaceRoot: string | null,
@@ -195,7 +160,6 @@ export const foundryPaintTargets = async (
   });
 };
 
-/** Recolor one part of the hero across every texture (and particle) it covers. */
 export const paintFoundryTarget = async (
   workspaceRoot: string,
   filePath: string,
@@ -217,7 +181,6 @@ export const paintFoundryTarget = async (
   });
 };
 
-/** The paintable sections of a model: every color map it draws with. */
 export const foundryModelParts = async (
   filePath: string,
   modelPath: string,
@@ -230,7 +193,6 @@ export const foundryModelParts = async (
   });
 };
 
-/** Paint the chosen sections of a model, identified by their color maps. */
 export const paintFoundryParts = async (
   workspaceRoot: string,
   filePath: string,
@@ -254,10 +216,6 @@ export const paintFoundryParts = async (
   });
 };
 
-/**
- * Remove exactly these sections of the model from the game, putting back any
- * removed earlier and no longer listed. An empty list restores the model.
- */
 export const removeFoundryParts = async (
   workspaceRoot: string,
   filePath: string,
@@ -274,7 +232,6 @@ export const removeFoundryParts = async (
   });
 };
 
-/** A PNG swatch of one pattern, for the picker tiles. */
 export const foundryPatternSwatch = async (
   pattern: Exclude<FoundryPatternId, "none">,
   phase = 0,
@@ -287,7 +244,6 @@ export const foundryPatternSwatch = async (
   });
 };
 
-/** Pack the workspace and deliver it to the chosen destination. */
 export const exportFoundryWorkspace = async (
   workspaceRoot: string,
   request: FoundryExportRequest,
@@ -301,18 +257,10 @@ export const exportFoundryWorkspace = async (
   });
 };
 
-/**
- * Drop the backend's cached VPK indexes. Worth doing when a skin is unloaded: a
- * parsed pak01 is a large index to keep around for nothing.
- */
 export const releaseFoundryArchives = async (): Promise<void> => {
   await invoke("foundry_release_archives");
 };
 
-/**
- * Extract a playable clip from a compiled `.vsnd_c`. Clips that aren't MP3
- * encoded have no preview and reject; callers treat that as "not playable".
- */
 export const decodeFoundrySound = async (
   filePath: string,
   entryPath: string,
@@ -325,15 +273,6 @@ export const decodeFoundrySound = async (
   });
 };
 
-/**
- * The model that stands in for a whole skin: the hero's body.
- *
- * The backend resolves the hero's actual body model through the game's
- * `heroes.vdata_c`, so `primaryModelPath` is an answer rather than a guess and
- * is used whenever it is there. The local fallback only covers a manifest from
- * an older backend or a skin with no hero: a `.vmdl_c` assembles the whole
- * character, so it beats a lone `.vmesh_c`, which is one body part.
- */
 export const getPrimaryModelPath = (
   manifest: FoundryManifest,
 ): string | null => {

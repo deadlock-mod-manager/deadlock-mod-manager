@@ -16,7 +16,6 @@ const cloneMaterial = (source: THREE.Material) => {
   const material = source.clone();
   material.transparent = true;
   material.depthWrite = false;
-  // Preserve the source material's shader extensions before adding opacity.
   material.onBeforeCompile = (shader, renderer) => {
     source.onBeforeCompile(shader, renderer);
     shader.vertexShader =
@@ -35,7 +34,6 @@ const cloneMaterial = (source: THREE.Material) => {
   return material;
 };
 
-/** Uses actual decoded model meshes; owns clones, never the caller's cached assets. */
 export const modelDrawable = (
   system: ParticleSystem,
   spec: SpriteRendererSpec,

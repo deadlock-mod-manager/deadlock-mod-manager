@@ -185,7 +185,6 @@ pub(super) fn apply(desired: &[FirewallRule]) -> Result<Vec<FirewallRule>, Picke
   let existing = table(&binary)?;
   let script = transaction(existing.as_ref(), desired)?;
   if !script.is_empty() {
-    // nft submits one atomic kernel transaction: failures preserve prior rules.
     let mut child = Command::new(&binary)
       .args(["-f", "-"])
       .env_clear()
@@ -273,8 +272,6 @@ mod tests {
     assert!(!script.contains("delete table"));
   }
 
-  /// Synthetic snapshots can't prove `inspect` accepts what nft really
-  /// prints back. Run as root: `cargo test -- --ignored`.
   #[cfg(target_os = "linux")]
   #[test]
   #[ignore = "writes a real nftables table; needs root and nft"]

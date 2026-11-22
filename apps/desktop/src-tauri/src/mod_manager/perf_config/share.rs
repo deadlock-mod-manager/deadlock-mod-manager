@@ -1,21 +1,3 @@
-//! Share codes and ConVars snippets.
-//!
-//! A share code is `dmm-perf:1:` followed by the config as JSON, deflated and
-//! base64url-encoded without padding:
-//!
-//! ```text
-//! { "n": name,
-//!   "p": presetId,                                   (presets)
-//!   "e": [["ConVars/r_ssao", "0"], ["ConVars/x", null]], (other configs)
-//!   "o": [["ConVars/fps_max", "s", "240"], ["ConVars/y", "o"], ["ConVars/z", "e"]],
-//!   "x": true }                                      (engine sections included)
-//! ```
-//!
-//! Presets travel by id plus overrides, so a code stays short and follows the
-//! catalog's fixes; other configs carry their entries. Optional fields are
-//! left out when empty. Codes come from strangers, so decoding caps every size
-//! and refuses anything that couldn't be written into gameinfo.gi safely.
-
 use std::io::{Read, Write};
 
 use base64::Engine;
@@ -63,7 +45,6 @@ struct Payload {
   x: bool,
 }
 
-/// Whether `text` starts like a share code (the prefix is case-insensitive).
 pub fn looks_like_code(text: &str) -> bool {
   text
     .get(..PREFIX.len())
@@ -125,7 +106,6 @@ pub fn decode(code: &str) -> Result<DecodedShare, Error> {
       "This share code was made by a newer version of Deadlock Mod Manager".to_string(),
     ));
   }
-  // Chat apps wrap long lines and some tools add padding.
   let data: String = data.chars().filter(|char| !char.is_whitespace()).collect();
   let compressed = URL_SAFE_NO_PAD
     .decode(data.trim_end_matches('='))
@@ -143,8 +123,6 @@ pub fn decode(code: &str) -> Result<DecodedShare, Error> {
   check(&payload)
 }
 
-/// The entries that will be written, as blocks to paste into gameinfo.gi by
-/// hand: ConVars first, then any engine sections the config edits.
 pub fn snippet(resolved: &ResolvedConfig) -> String {
   let mut sections: Vec<SnippetNode> = Vec::new();
   for entry in resolved
@@ -242,7 +220,6 @@ fn compact_override(entry: &EntryOverride) -> Result<Vec<String>, Error> {
   })
 }
 
-/// Validates a payload and turns it into config data.
 fn check(payload: &Payload) -> Result<DecodedShare, Error> {
   let name = payload.n.trim();
   if name.chars().count() > MAX_NAME_CHARS || name.chars().any(char::is_control) {

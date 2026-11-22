@@ -31,16 +31,11 @@ import appCss from "../styles.css?url";
 interface MyRouterContext {
   queryClient: QueryClient;
   i18n: i18n;
-  /** Active language, set by the router's URL rewrite. */
   locale: LocaleState;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  // On a first visit to an English page from a browser that prefers one of
-  // our other languages, send it to that language's URL.
   beforeLoad: async ({ location, context }) => {
-    // The page's language must be loaded before it renders (on the server,
-    // and in the browser if a navigation ever switches language).
     await ensureLocale(context.i18n, context.locale.current);
     if (!isServer) return;
     if (context.locale.current !== DEFAULT_LOCALE) return;
@@ -52,8 +47,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       statusCode: 302,
     });
   },
-  // Resolve the session while server-rendering so the navbar's account menu
-  // hydrates in its final state. In the browser the query refreshes itself.
   loader: async ({ context: { queryClient } }) => {
     if (isServer) {
       await prefetchWithin(queryClient, sessionQueryOptions, 1000);
@@ -90,8 +83,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body suppressHydrationWarning>
-        {/* Inside <body>: next-themes renders an inline <script>, which React
-            cannot place when the provider wraps the <html> element itself. */}
         <ThemeProvider
           attribute='class'
           defaultTheme='dark'

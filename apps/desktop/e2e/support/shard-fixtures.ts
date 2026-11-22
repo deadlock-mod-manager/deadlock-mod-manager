@@ -11,17 +11,12 @@ export const SHARDS = {
   name: "E2E Shards",
 };
 
-// Local mod identities are UUIDs; disabled copies are matched back to them by
-// that prefix, so a made-up ID would show up as an unrecognized file.
 export const shardModId = (index: number) =>
   `local-00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 
-// One more than a single addon folder holds puts the last two mods in addons2.
 export const LIBRARY_MODS = Array.from({ length: 101 }, (_, index) =>
   shardModId(index),
 );
-// Exactly one mod overflows, so both conflicting mods sit in `pak01_dir.vpk`
-// and only their shard decides which loads first.
 export const CONFLICT_MODS = LIBRARY_MODS.slice(0, 100);
 export const SHARD_ONE_WINNER = shardModId(0);
 export const OVERFLOW_CHALLENGER = shardModId(99);
@@ -63,8 +58,6 @@ export const prepareShardWorld = async (world: CreatedWorld): Promise<void> => {
     ],
     SHARDS.id,
   );
-  // Shard status lives on the developer page. The specs count badges across all
-  // 101 mods, so Linux's default library pagination is turned off.
   const storePath = path.join(world.configuration.roots.appData, "state.json");
   const store = z
     .object({ "local-config": z.string() })

@@ -88,7 +88,6 @@ const defaultConfigName = (
   });
 };
 
-/** What the review shows once the user changes a default; never applied. */
 const previewRequest = (
   report: ImportReport,
   overrides: EntryOverride[],
@@ -156,7 +155,6 @@ export const ImportDialogBody = ({
   const [writeVideo, setWriteVideo] = useState(true);
   const [name, setName] = useState("");
   const nameEdited = useRef(false);
-  // Kept through a failed re-analysis so the variant picker stays usable.
   const [lastReport, setLastReport] = useState<ImportReport | null>(null);
 
   const { mutate: analyze, reset: resetAnalysis } = analysis;

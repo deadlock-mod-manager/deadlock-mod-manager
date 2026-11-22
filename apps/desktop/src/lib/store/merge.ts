@@ -10,11 +10,6 @@ export const isPlainObject = (
   return proto === Object.prototype || proto === null;
 };
 
-// Recursively merge `incoming` into `base`, only walking into plain objects.
-// Arrays, scalars, and class instances on `incoming` win wholesale; functions on
-// `incoming` are dropped so we never overwrite the action methods bound to the
-// live store. Used for opted-in nested settings objects so adding a new field
-// does not strip sibling defaults on hydration.
 export const deepMergeOne = (base: unknown, incoming: unknown): unknown => {
   if (incoming === undefined) {
     return base;
@@ -32,14 +27,6 @@ export const deepMergeOne = (base: unknown, incoming: unknown): unknown => {
   return out;
 };
 
-// Build a zustand `merge` callback that performs a per-key merge between the
-// freshly persisted snapshot and the in-memory default state. Top-level keys
-// listed in `deepKeys` are deep-merged so newly-added nested defaults survive;
-// every other key is taken as-is from persisted state (the zustand default).
-//
-// Functions on `persisted` (which should not exist post-JSON, but let's be
-// defensive) are always dropped so action methods on the in-memory state
-// remain bound.
 export const buildPersistMerge =
   (deepKeys: ReadonlySet<string>) =>
   (persisted: unknown, current: State): State => {

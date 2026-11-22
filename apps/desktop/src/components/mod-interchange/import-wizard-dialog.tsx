@@ -120,10 +120,7 @@ export const ImportWizardDialog = ({
   >({});
   const [manual, setManual] = useState<Record<string, string>>({});
   const [linked, setLinked] = useState<Record<string, string>>({});
-  // DMM refuses to enable mods while Deadlock runs; the import then parks
-  // them disabled. Say so before the user starts.
   const [gameRunning, setGameRunning] = useState(false);
-  // Reading hashes every VPK once (cached afterwards): show real progress.
   const [readProgress, setReadProgress] = useState<{
     current: number;
     total: number;
@@ -151,7 +148,6 @@ export const ImportWizardDialog = ({
     return !!id && libraryIds.has(id);
   };
 
-  // Read the source as soon as the wizard opens.
   useEffect(() => {
     if (!source) return;
     setStep("loading");
@@ -174,7 +170,6 @@ export const ImportWizardDialog = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
-  // Default selection: everything that is new.
   useEffect(() => {
     if (!document) return;
     setModKeys(

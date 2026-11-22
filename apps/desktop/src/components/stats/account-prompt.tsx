@@ -13,10 +13,6 @@ import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { STEAM_ID64_BASE } from "@/lib/stats/steam-id";
 
-/**
- * Accepts a SteamID64, a Steam3 account id or a profile URL and reduces it to the
- * account id deadlock-api uses.
- */
 export const parseAccountId = (input: string): number | null => {
   const digits = input.trim().match(/(\d{5,20})/)?.[1];
   if (!digits) {
@@ -32,10 +28,6 @@ interface AccountPromptProps {
   onSubmit: (accountId: number) => void;
 }
 
-/**
- * Shown when no local Steam account could be read - Deadlock only ships through
- * Steam, so this is mostly a portable-install / permissions fallback.
- */
 export const AccountPrompt = ({ onSubmit }: AccountPromptProps) => {
   const { t } = useTranslation();
   const [value, setValue] = useState("");

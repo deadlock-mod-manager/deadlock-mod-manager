@@ -1,7 +1,3 @@
-/**
- * Package a mod project into .dmodpkg
- */
-
 export async function packCommand(_options?: {
   config?: string;
   output?: string;
@@ -10,6 +6,5 @@ export async function packCommand(_options?: {
   validate?: boolean;
   sign?: string;
 }) {
-  // TODO: Implement pack command
   console.log("Pack command implementation pending");
 }

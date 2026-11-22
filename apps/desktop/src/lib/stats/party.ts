@@ -1,24 +1,15 @@
 import type { BadgeRange, HeroCombStats } from "@/lib/stats/api";
 
-/** Deadlock queues parties of up to six, a full team. */
 export const MAX_PARTY_SIZE = 6;
 
-/** Each player offers up to three heroes in queue; the game gives them one. */
 export const MAX_PICKS = 3;
 
-/**
- * Below this many matches a lineup's winrate is mostly noise, so the list mutes
- * it instead of hiding it: a rare lineup is still one the party can get.
- */
 export const LOW_SAMPLE_MATCHES = 200;
 
-/** Swaps that move the expected winrate by less than this are noise. */
 const MIN_SWAP_GAIN = 0.005;
 
-/** Inclusive rank tiers, 0 (Obscurus) to 11 (Eternus). `null` is every rank. */
 export type RankRange = { minTier: number; maxTier: number } | null;
 
-/** Tiers hold subranks 1 to 6; Obscurus has none and is badge 0. */
 export const rankRangeBadges = (range: RankRange): BadgeRange =>
   range
     ? {
@@ -29,7 +20,6 @@ export const rankRangeBadges = (range: RankRange): BadgeRange =>
 
 type CombRecord = { wins: number; matches: number };
 
-/** Records keyed by their sorted hero ids, e.g. `"10,11,13"`. */
 export type CombIndex = Map<string, CombRecord>;
 
 const combKey = (heroIds: number[]) =>
@@ -49,9 +39,7 @@ export const indexCombs = (combs: HeroCombStats[]): CombIndex => {
 
 export interface LineupStat {
   winrate: number;
-  /** Matches as exactly this lineup; null for an estimate. */
   matches: number | null;
-  /** Matches behind the winrate: the exact count, or the trios' total. */
   sample: number;
   isEstimate: boolean;
 }
@@ -68,11 +56,6 @@ const subsetsOfThree = (heroIds: number[]): number[][] => {
   return subsets;
 };
 
-/**
- * Pairs and trios have exact records. deadlock-api cannot hand out every set
- * of four or more in one request, so a larger lineup is estimated from the
- * trios inside it, weighted by how often each was played.
- */
 export const lineupStat = (
   lineup: number[],
   pairs: CombIndex,
@@ -109,10 +92,6 @@ export const lineupStat = (
     : null;
 };
 
-/**
- * Every lineup the game can hand the party: one pick per player, and never the
- * same hero twice. Players without a pick yet are left out.
- */
 export const partyLineups = (members: number[][]): number[][] =>
   members
     .filter((picks) => picks.length > 0)
@@ -133,17 +112,12 @@ export interface RatedLineup {
 
 export interface PartyOdds {
   lineups: RatedLineup[];
-  /** Mean winrate over the lineups with data, each counted the same. */
   expected: number | null;
   isEstimate: boolean;
 }
 
 type Rater = (members: number[][]) => PartyOdds;
 
-/**
- * Rates parties against one pair and trio index. Lineup stats are memoized,
- * since the swap search re-rates the same lineups once per candidate hero.
- */
 const createRater = (pairs: CombIndex, trios: CombIndex): Rater => {
   const memo = new Map<string, LineupStat | null>();
   const statOf = (heroIds: number[]) => {
@@ -170,10 +144,6 @@ const createRater = (pairs: CombIndex, trios: CombIndex): Rater => {
   };
 };
 
-/**
- * What the party can expect, best lineup first. The game does not say how it
- * picks among a player's heroes, so every lineup counts the same.
- */
 export const partyOdds = (
   members: number[][],
   pairs: CombIndex,
@@ -189,18 +159,11 @@ export const partyOdds = (
 };
 
 export interface PickAdvice {
-  /** The pick to give up; null when the player has a free slot. */
   replace: number | null;
   heroId: number;
-  /** Change to the party's expected winrate. */
   gain: number;
 }
 
-/**
- * The one change to a player's picks that lifts the party's expected winrate
- * most: filling a free slot, or else swapping out their weakest pick. Null
- * when no hero would help.
- */
 export const pickAdvice = (
   members: number[][],
   memberIndex: number,
@@ -209,11 +172,6 @@ export const pickAdvice = (
   trios: CombIndex,
 ): PickAdvice | null => {
   const rate = createRater(pairs, trios);
-  /**
-   * Whether `lineup` has a well-played record with `heroId` in it: the exact
-   * pair or trio, or for bigger lineups a trio inside it. One win reads as
-   * 100%, and an estimate can come from trios without the hero at all.
-   */
   const hasSolidRecord = (lineup: number[], heroId: number) =>
     (lineup.length <= 3
       ? [(lineup.length === 2 ? pairs : trios).get(combKey(lineup))]
@@ -236,11 +194,9 @@ export const pickAdvice = (
             without: withPicks(picks.filter((pick) => pick !== heroId))
               .expected,
           }))
-          // The weakest pick is the one the party does best without.
           .sort((a, b) => (b.without ?? 0) - (a.without ?? 0))[0]?.heroId ??
         null);
   const kept = picks.filter((pick) => pick !== replace);
-  // Lineups hold one hero per player with picks, in party order.
   const slot = members
     .slice(0, memberIndex)
     .filter((entry) => entry.length > 0).length;
@@ -249,8 +205,6 @@ export const pickAdvice = (
   for (const heroId of candidates) {
     if (picks.includes(heroId)) continue;
     const { lineups, expected } = withPicks([...kept, heroId]);
-    // Lineups without data leave the mean, so a hero this player has no
-    // record on would look like a gain just for dropping the pick it replaces.
     const hasRecord = lineups.some(
       ({ heroIds }) =>
         heroIds[slot] === heroId && hasSolidRecord(heroIds, heroId),

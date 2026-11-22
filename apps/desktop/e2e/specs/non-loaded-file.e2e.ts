@@ -74,7 +74,6 @@ const runAnalyze = async () => {
   await $('[role="menuitem"]=Analyze Local Addons').click();
 };
 
-/** What the profile looks like once the background repair refresh settles. */
 const settled = async (world: string) => {
   await observeUntil(
     "repair rebuilt",
@@ -113,8 +112,7 @@ describe("A hand-placed file the game doesn't load", () => {
     await step(`put ${HAND_PLACED} in the profile by hand`, () =>
       process.env.DMM_E2E_PHASE === "add-to-library"
         ? writeFile(path.join(directory, HAND_PLACED), handPlacedBytes())
-        : // A second copy of the installed mod, which the hash service knows.
-          copyFile(
+        : copyFile(
             path.join(directory, "pak01_dir.vpk"),
             path.join(directory, HAND_PLACED),
           ),
@@ -125,10 +123,8 @@ describe("A hand-placed file the game doesn't load", () => {
       const file = card(HAND_PLACED);
       await file.waitForDisplayed();
       await file.$("p=Not loaded by Deadlock").waitForDisplayed();
-      // The copy is recognised as the mod, yet still isn't recorded as its file.
       if (process.env.DMM_E2E_PHASE === "analyze-match")
         await file.$("p*=100% match").waitForDisplayed();
-      // Its actions unlock once Analyze has registered what it found.
       await file.$("button=Quarantine").waitForEnabled();
       assert.equal(await file.$("button=Add to Library").isExisting(), false);
       await browser.saveScreenshot(

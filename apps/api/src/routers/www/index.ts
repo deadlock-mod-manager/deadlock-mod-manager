@@ -48,7 +48,6 @@ export const publicRouter = {
         const data = (await response.json()) as { version: string };
         return { version: data.version };
       } catch {
-        // Fallback to hardcoded version if GitHub fetch fails
         return { version };
       }
     }),
@@ -76,7 +75,6 @@ export const publicRouter = {
         };
         const betterStackStatus = data.data.attributes.aggregate_state;
 
-        // Map betterstack status to our status format
         let status: "operational" | "downtime" | "degraded";
         switch (betterStackStatus.toLowerCase()) {
           case "operational":

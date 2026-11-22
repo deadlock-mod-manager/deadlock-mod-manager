@@ -797,7 +797,6 @@ describe("parseRequirements", () => {
   });
 
   it("skips incompatibilities (negative state codes)", () => {
-    // 2 is uninstalled and 6 is disabled, so these are conflicts, not dependencies
     expect(
       parseRequirements([
         ["Conflicting Mod", "https://gamebanana.com/mods/222", "1", "2"],

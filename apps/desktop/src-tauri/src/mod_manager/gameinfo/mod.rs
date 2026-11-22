@@ -1,5 +1,3 @@
-//! Shared, lossless GameInfo source inspection and file commits.
-
 mod conditions;
 mod source;
 mod write;

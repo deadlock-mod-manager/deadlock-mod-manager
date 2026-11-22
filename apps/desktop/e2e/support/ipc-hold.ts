@@ -12,12 +12,6 @@ declare global {
   }
 }
 
-/**
- * Holds back the reply to the next `command` call for `profileFolder` until
- * `releaseHeldIpcReply`. Tauri sends each command through `fetch` to its IPC
- * protocol, so the backend still runs the command at once; only the app's
- * view of the result waits, as if the command had been slow.
- */
 export const holdNextIpcReply = (command: string, profileFolder: string) =>
   browser.execute(
     (target: string, folder: string) => {
@@ -36,7 +30,6 @@ export const holdNextIpcReply = (command: string, profileFolder: string) =>
         input: RequestInfo | URL,
         init?: RequestInit,
       ): Promise<Response> => {
-        // Tauri posts a command's arguments as JSON to `ipc://localhost/<command>`.
         if (
           hold.captured ||
           !String(input).endsWith(`/${target}`) ||
@@ -50,9 +43,6 @@ export const holdNextIpcReply = (command: string, profileFolder: string) =>
         hold.delivered = true;
         return response;
       };
-      // Assigning a plain function to `window.fetch` doesn't type-check under
-      // Bun's `fetch` type, which adds `preconnect`; the webview has no such
-      // property to keep.
       Object.defineProperty(window, "fetch", {
         configurable: true,
         writable: true,

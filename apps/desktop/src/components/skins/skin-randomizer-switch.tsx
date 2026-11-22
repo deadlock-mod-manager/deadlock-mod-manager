@@ -16,13 +16,10 @@ import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 interface SkinRandomizerSwitchProps {
-  /** Every hero's mods, for the selections that reach across heroes. */
   groups: ReadonlyMap<string, HeroModGroup<LocalMod>>;
-  /** How many heroes have enough in their pool to be rolled on launch. */
   randomizedHeroCount: number;
 }
 
-/** The page-wide randomizer switch and the selections that span every hero. */
 export const SkinRandomizerSwitch = ({
   groups,
   randomizedHeroCount,

@@ -15,8 +15,6 @@ export const GameGuardToggle = () => {
     (state) => state.setBlockActionsWhileGameRunning,
   );
 
-  // Saved only once the backend has it, so the switch never shows protection
-  // the guard is not actually applying.
   const toggleMutation = useMutation({
     mutationFn: applyGameGuardSetting,
     onSuccess: (_, enabled) => {

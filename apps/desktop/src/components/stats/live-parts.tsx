@@ -16,12 +16,9 @@ export const GRADE_COLORS = {
 } satisfies Record<Grade, string>;
 
 const GRADE_SIZES = {
-  /** The pace card's legend. */
   xs: "h-[18px] w-[22px] rounded-md font-mono text-[10.5px]",
   sm: "h-6 w-[30px] rounded-md font-mono text-[12.5px]",
-  /** The last match card's grade. */
   lg: "h-14 w-14 rounded-2xl border text-3xl",
-  /** Your overall grade on the now strip. */
   xl: "h-[72px] w-[72px] rounded-2xl border text-[40px] tracking-[-1px]",
 };
 
@@ -87,7 +84,6 @@ export const RankTag = ({
   );
 };
 
-/** Where a rank badge would be, for a player without one. */
 export const UnrankedTag = ({
   label,
   className,
@@ -105,7 +101,6 @@ export const UnrankedTag = ({
   </span>
 );
 
-/** A small coloured label next to a player name. */
 export const Tag = ({
   color,
   children,
@@ -120,7 +115,6 @@ export const Tag = ({
   </span>
 );
 
-/** The Live tab's panel frame: the hairline, radius and padding of its design. */
 export const PANEL_CLASS =
   "stats-surface rounded-[14px] border border-foreground/[0.06]";
 
@@ -138,8 +132,6 @@ export const LivePanel = ({
   children: ReactNode;
 }) => (
   <section
-    // Padding is a pixel short of the design's: its stroke sits inside the
-    // frame, a CSS border adds to it.
     className={cn(PANEL_CLASS, "flex flex-col px-[21px] py-[19px]", className)}>
     <div className='flex items-center justify-between gap-4'>
       <div className='flex min-w-0 flex-col gap-[3px]'>
@@ -156,21 +148,15 @@ export const LivePanel = ({
   </section>
 );
 
-/**
- * Two teams' shares of one number, side by side. `left` and `right` are CSS
- * backgrounds, so either side can be a gradient.
- */
 export const SplitBar = ({
   share,
   left,
   right,
   variant,
 }: {
-  /** The left side's share, 0 to 1. */
   share: number;
   left: string;
   right: string;
-  /** `race` is the top bar's souls race; `compare` the scouting report's thin one. */
   variant: "race" | "compare";
 }) => {
   const race = variant === "race";
@@ -188,13 +174,11 @@ export const SplitBar = ({
   );
 };
 
-/** A filled share of a faint track. */
 export const Meter = ({
   value,
   color,
   className,
 }: {
-  /** 0 to 1. */
   value: number;
   color: string;
   className?: string;

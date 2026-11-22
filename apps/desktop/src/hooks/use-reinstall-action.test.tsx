@@ -36,7 +36,6 @@ mock.module("@/lib/download/manager", () => ({
 const { useReinstallAction } = await import("./use-reinstall-action");
 const { usePersistedStore } = await import("@/lib/store");
 
-// A download status left behind by a download that never reported back.
 const stale: LocalMod = {
   ...placeholderModFromManifest(
     "42",
@@ -126,7 +125,6 @@ describe("reinstalling a mod with a stale download status", () => {
     seedMods([stale]);
     reinstallMod.mockImplementation(async (_mod, options) => {
       options.onStep?.("purging");
-      // Started elsewhere while the purge waited on a prompt.
       isQueued.mockImplementation(() => true);
       options.onStep?.("downloading");
       return { outcome: "failed" };

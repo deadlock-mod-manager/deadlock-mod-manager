@@ -104,7 +104,6 @@ export const HeroesTab = ({
               )}>
               <span>{t("stats.heroes.hero")}</span>
               {columns.map((column) => (
-                // A real button, so sorting is reachable by keyboard.
                 <button
                   aria-pressed={sortKey === column.key}
                   className={cn(

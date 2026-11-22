@@ -212,8 +212,6 @@ export const useBatchUpdate = () => {
     );
   };
 
-  /** `selectionRequired` in the result lists every mod still waiting for a
-   * VPK choice, including ones from earlier runs. */
   const executeBatchUpdate = async (
     targets: UpdatableMod[],
   ): Promise<BatchUpdateResult> => {
@@ -272,8 +270,6 @@ export const useBatchUpdate = () => {
       const rawResult = await invokeGuarded("batch_update_mods", {
         mods: batchUpdateMods,
         profileFolder,
-        // Mods sent back for a VPK choice were left untouched by the run that
-        // already backed them up.
         skipBackup:
           !backsUpUpdate(backupMode, targets.length) ||
           targets.every((target) =>
@@ -353,7 +349,6 @@ export const useBatchUpdate = () => {
           (pending) =>
             !targets.some((target) => target.mod.remoteId === pending.modId),
         ),
-        // The dialog's list empties when it closes, so each pick keeps its target.
         ...result.selectionRequired.flatMap((pending) => {
           const target = targets.find(
             (um) => um.mod.remoteId === pending.modId,
@@ -382,8 +377,6 @@ export const useBatchUpdate = () => {
     } finally {
       stopListening();
       setUpdateProgress(null);
-      // A failed update leaves the previous install in place, but the download
-      // events already moved these mods to Downloading/Extracting.
       usePersistedStore
         .getState()
         .restoreInterruptedUpdates(
@@ -394,7 +387,6 @@ export const useBatchUpdate = () => {
     }
   };
 
-  /** Returns how many mods still wait for a VPK choice. */
   const dismissSelection = (modId: string): number => {
     const pending = pendingSelections.find((p) => p.modId === modId);
     const remaining = pendingSelections.filter((p) => p.modId !== modId);

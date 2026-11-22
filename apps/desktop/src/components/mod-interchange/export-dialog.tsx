@@ -31,8 +31,6 @@ interface ExportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Export for other mod managers: choose what to include, where to save,
- *  watch it copy, then open the result. */
 export const ExportDialog = ({ open, onOpenChange }: ExportDialogProps) => {
   const { t } = useTranslation();
   const exportBundle = useExportInterchangeBundle();

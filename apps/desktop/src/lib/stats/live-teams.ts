@@ -10,13 +10,11 @@ const TEAMS = {
 
 export const teamColor = (team: Team) => TEAMS[team].color;
 
-/** The i18n key of the team's name. */
 export const teamName = (team: Team) => TEAMS[team].name;
 
 export const otherTeam = (team: Team): Team =>
   team === "hiddenKing" ? "archmother" : "hiddenKing";
 
-/** A top bar player with the hero they are on, when it could be matched. */
 export interface ResolvedPlayer {
   player: LiveScoreboardPlayer;
   hero: DeadlockHero | undefined;
@@ -43,12 +41,10 @@ export const resolveBoard = (
   };
 };
 
-/** The id to show for a player's portrait, even when the hero list missed it. */
 export const heroIdOf = ({ player, hero }: ResolvedPlayer): number =>
   hero?.id ?? player.heroId ?? 0;
 
 type TeamNumber = "souls" | "kills" | "deaths" | "assists" | "objectiveDamage";
 
-/** A team's total, counting what the top bar could not read as zero. */
 export const teamTotal = (players: ResolvedPlayer[], key: TeamNumber): number =>
   players.reduce((sum, { player }) => sum + (player[key] ?? 0), 0);

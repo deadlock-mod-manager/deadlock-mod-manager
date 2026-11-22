@@ -22,7 +22,6 @@ import { seo } from "@/utils/seo";
 interface RandomizerSearch {
   s?: string;
   p?: string;
-  /** Slug of the hero the rolls are locked to. */
   h?: string;
 }
 
@@ -52,9 +51,6 @@ function RandomizerPage() {
   const seed = decodeSeed(search.s);
   const sections = decodeSections(search.p);
 
-  // The seed lives in the URL so a roll is shareable and the browser's back
-  // button walks previous rolls. Landing without one picks a fresh seed, which
-  // has to happen on the client to keep the server and the first render in sync.
   useEffect(() => {
     if (seed === null) {
       void navigate({
@@ -85,8 +81,6 @@ function RandomizerPage() {
     });
   };
 
-  // Picking a hero is a new roll for that hero, so it gets a fresh seed and
-  // its own history entry like a reroll does.
   const setHero = (slug: string | undefined) => {
     void navigate({
       to: "/randomizer",
@@ -107,8 +101,6 @@ function RandomizerPage() {
     );
   }
 
-  // Ability icons come from the same one-off asset load as the rest, so the
-  // skeleton holds until every part of the roll can be drawn at once.
   if (seed === null || !roll || isLoading) {
     return <RollSkeleton />;
   }

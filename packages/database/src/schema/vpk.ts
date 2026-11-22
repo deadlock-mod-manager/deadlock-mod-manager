@@ -21,7 +21,6 @@ export const vpk = pgTable(
     id: typeId("id", "vpk")
       .primaryKey()
       .$defaultFn(() => generateId("vpk").toString()),
-    // Retained while the deployed Lockdex still writes catalog references.
     modId: text("mod_id").references(() => mods.id, { onDelete: "cascade" }),
     modDownloadId: text("mod_download_id").references(() => modDownloads.id, {
       onDelete: "set null",
@@ -35,31 +34,28 @@ export const vpk = pgTable(
     upstreamUpdatedAt: timestamp("upstream_updated_at", {
       mode: "date",
     }),
-    sourcePath: text("source_path").notNull(), // e.g. "weapons_pack_dir.vpk" or "mods/weapons_pack_dir.vpk"
+    sourcePath: text("source_path").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
-    fastHash: text("fast_hash").notNull(), // xxhash64 hex (16 chars) or blake3 16/32
-    sha256: text("sha256").notNull(), // 64 hex chars
-    contentSig: text("content_sig").notNull(), // sha256 of sorted (path,size,crc32)
-    vpkVersion: integer("vpk_version").notNull(), // 1/2 etc.
+    fastHash: text("fast_hash").notNull(),
+    sha256: text("sha256").notNull(),
+    contentSig: text("content_sig").notNull(),
+    vpkVersion: integer("vpk_version").notNull(),
     fileCount: integer("file_count").notNull(),
     hasMultiparts: boolean("has_multiparts").notNull().default(false),
     hasInlineData: boolean("has_inline_data").notNull().default(false),
-    merkleRoot: text("merkle_root"), // if you compute per-entry hashes
+    merkleRoot: text("merkle_root"),
     state: vpkStateEnum("state").notNull().default("ok"),
     scannedAt: timestamp("scanned_at", { mode: "date" })
       .notNull()
       .$defaultFn(() => new Date()),
-    fileMtime: timestamp("file_mtime", { mode: "date" }), // when on disk
+    fileMtime: timestamp("file_mtime", { mode: "date" }),
     ...timestamps,
   },
   (table) => [
-    // one VPK identity per whole file
     uniqueIndex("vpk_sha256_uk").on(table.sha256),
 
-    // content-level identity across repackaged files (filename changes, same inner content)
     index("vpk_content_sig_idx").on(table.contentSig),
 
-    // speed up “did we already parse this VPK in this download at this path?”
     uniqueIndex("vpk_src_uk").on(table.modDownloadId, table.sourcePath),
     index("vpk_identity_source_idx").on(
       table.provider,
@@ -69,7 +65,6 @@ export const vpk = pgTable(
       table.sourcePath,
     ),
 
-    // helpful for quick prefilter
     index("vpk_fast_size_idx").on(table.fastHash, table.sizeBytes),
   ],
 );
@@ -122,7 +117,6 @@ export interface VpkUpsertResult {
 export interface UningestedDownloadQuery {
   limit: number;
   maxSizeBytes: number;
-  /** Archive extensions without the dot, e.g. "zip" */
   extensions: string[];
 }
 
@@ -133,6 +127,5 @@ export type UningestedDownload = {
   url: string;
   file: string;
   size: number;
-  /** ISO timestamp of the files marker the ingestion is recorded against */
   upstreamUpdatedAt: string;
 };

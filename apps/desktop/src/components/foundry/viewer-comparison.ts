@@ -10,7 +10,6 @@ import { attachNprOutlines } from "./npr-outline";
 import type { ViewerLook } from "./viewer-tools";
 import { createComparisonPlayback } from "./comparison-playback";
 
-/** Both results live in one scene and advance on the same fixed-step clock. */
 export const createViewerComparison = (
   context: ViewerEffectContext,
   materials: AnimatedMaterials,
@@ -67,8 +66,6 @@ export const createViewerComparison = (
       effects = factories
         .map((factory) => factory({ ...context, scene: effectScene }))
         .filter((effect): effect is ViewerEffect => effect !== null);
-      // Late effects start at the current posed model. Both sides share every
-      // subsequent fixed step and seek; loading stock must not rewind the mod.
       context.model.visible = visible;
     },
     dispose() {

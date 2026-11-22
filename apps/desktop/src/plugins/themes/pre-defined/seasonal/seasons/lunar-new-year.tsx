@@ -31,7 +31,6 @@ const Sidebar = () => {
   const { t } = useTranslation();
   const year = new Date().getFullYear();
   const thisYear = lunarNewYear(year);
-  // Keep the greeting through the Lantern Festival, two weeks after the new year.
   const festival =
     thisYear && daysUntil(thisYear) >= -14 ? thisYear : lunarNewYear(year + 1);
   const days = festival ? daysUntil(festival) : undefined;

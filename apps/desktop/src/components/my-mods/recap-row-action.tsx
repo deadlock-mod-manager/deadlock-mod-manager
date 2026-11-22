@@ -6,7 +6,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 export type RecapAction = {
   label: string;
-  /** False while another row is installing; the file selector is shared. */
   available: boolean;
   enable: (mod: LocalMod) => void;
 };
@@ -19,7 +18,6 @@ export const RecapRowAction = ({
   action: RecapAction;
 }) => {
   const { t } = useTranslation();
-  // The recap is a snapshot; the store says whether the mod got enabled since.
   const liveMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod.remoteId),
   );

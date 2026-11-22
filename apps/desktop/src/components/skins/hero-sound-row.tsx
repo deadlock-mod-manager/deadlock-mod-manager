@@ -17,10 +17,6 @@ interface HeroSoundRowProps {
   onDelete: () => void;
 }
 
-/**
- * A hero sound or extra. These stack on top of a skin instead of replacing it,
- * so each one gets its own switch rather than a pick-one card.
- */
 export const HeroSoundRow = ({
   mod,
   hero,
@@ -32,8 +28,6 @@ export const HeroSoundRow = ({
 }: HeroSoundRowProps) => {
   const { t } = useTranslation();
   const categoryKey = getModCategoryLabelKey(mod.category);
-  // The category is what tells a killsound apart from a voice pack, which the
-  // name and author often do not.
   const categoryLabel = categoryKey
     ? t(`modCategories.${categoryKey}`)
     : mod.category;

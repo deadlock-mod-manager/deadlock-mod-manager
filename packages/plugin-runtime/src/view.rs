@@ -1,9 +1,6 @@
 use crate::{Error, PluginHost, SessionDenied, lock, manifest, package};
 use std::{fs, path::PathBuf};
 
-/// The information a native UI adapter needs to open an authenticated view.
-/// `token` names this generation's view in frame URLs and relayed calls, so
-/// a frame reaches only its own plugin and goes stale when the plugin updates.
 #[derive(Debug, Clone)]
 pub struct PluginView {
   pub plugin_id: String,
@@ -47,7 +44,6 @@ impl PluginHost {
     Ok(view)
   }
 
-  /// The view a frame URL or relayed call names, while its generation is current.
   pub fn view_session(&self, token: &str) -> Result<PluginView, SessionDenied> {
     let view = lock(&self.views)
       .values()
@@ -58,8 +54,6 @@ impl PluginHost {
     Ok(view)
   }
 
-  /// Session authorization, package confinement and asset limits stay together.
-  /// `None` means the requested resource is absent or unsafe.
   pub fn read_view_asset(
     &self,
     id: &str,

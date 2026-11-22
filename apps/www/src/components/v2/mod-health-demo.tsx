@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 
 type Phase = "broken" | "fixing" | "fixed";
 
-/** Three skins the check can fix, and three that already match the game. */
 const LIBRARY = [
   { id: "661996", name: "Formal Wraith", fixable: true },
   { id: "655209", name: "Faun Celeste (QUALITY UPDATE)", fixable: false },
@@ -29,8 +28,6 @@ const HealthBadge = ({ fixed }: { fixed: boolean }) => {
   const { t } = useTranslation("v2");
   const Icon = fixed ? CheckIcon : WrenchIcon;
 
-  // The tooltip is positioned against the card, so it never spills past the
-  // demo's clipped edge.
   return (
     <>
       <span
@@ -59,10 +56,6 @@ const HealthBadge = ({ fixed }: { fixed: boolean }) => {
   );
 };
 
-/**
- * The Mods Library after a game update: the mod health banner, its badges and
- * Fix N mods, which works the way it does in the app.
- */
 export const ModHealthDemo = () => {
   const { t } = useTranslation("v2");
   const [phase, setPhase] = useState<Phase>("broken");

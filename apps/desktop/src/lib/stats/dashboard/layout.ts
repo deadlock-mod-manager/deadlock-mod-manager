@@ -1,17 +1,6 @@
 import { z } from "zod";
 
-/**
- * The Stats dashboard as data: tabs holding widgets on a 12-column grid. The
- * built-in tabs are just the default value of this layout, so editing them and
- * building new ones go through the same code.
- *
- * Widget sources reference panels and presets by id rather than by schema enum:
- * an id a later release drops must render as a broken widget, not throw away the
- * user's whole layout on load.
- */
-
 export const GRID_COLUMNS = 12;
-/** One height step in the editor. Small enough to fit a stat tile snugly. */
 export const ROW_HEIGHT_PX = 40;
 export const MIN_ROWS = 2;
 export const MAX_ROWS = 30;
@@ -104,13 +93,11 @@ export const matchQuerySchema = z.object({
   metrics: z.array(z.enum(MATCH_METRICS)).min(1).max(MAX_SERIES),
   aggregate: z.enum(MATCH_AGGREGATES).default("avg"),
   groupBy: z.enum(MATCH_GROUPS).default("none"),
-  /** Only the newest N matches; `null` is the whole history. */
   lastMatches: z.number().int().positive().nullable().default(null),
   sinceDays: z.number().int().positive().nullable().default(null),
   heroId: z.number().int().nullable().default(null),
   result: z.enum(["all", "wins", "losses"]).default("all"),
   rankedOnly: z.boolean().default(false),
-  /** Rolling average over N matches, only meaningful when grouped per match. */
   smoothing: z.number().int().min(2).max(50).nullable().default(null),
 });
 export type MatchQuery = z.infer<typeof matchQuerySchema>;
@@ -128,7 +115,6 @@ const widgetSourceSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("api"),
     path: z.string(),
-    /** Dot path to the list inside the response, for endpoints that wrap it. */
     listPath: z.string().default(""),
   }),
 ]);
@@ -136,11 +122,8 @@ export type WidgetSource = z.infer<typeof widgetSourceSchema>;
 
 const widgetViewSchema = z.object({
   chart: z.enum(CHART_TYPES),
-  /** Category / x-axis field. Scatter uses it as the point label. */
   x: z.string().default(""),
-  /** Value fields, one series each. */
   y: z.array(z.string()).max(MAX_SERIES).default([]),
-  /** Field the rows are sorted by before `limit` applies; empty keeps API order. */
   sortBy: z.string().default(""),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
   limit: z.number().int().positive().max(500).nullable().default(null),
@@ -155,10 +138,8 @@ export type WidgetView = z.infer<typeof widgetViewSchema>;
 
 const widgetSchema = z.object({
   id: z.string(),
-  /** Empty means "use the source's own name". */
   title: z.string().default(""),
   w: z.number().int().min(1).max(GRID_COLUMNS),
-  /** Height in grid rows; `null` lets the content decide. */
   h: z.number().int().min(MIN_ROWS).max(MAX_ROWS).nullable(),
   source: widgetSourceSchema,
   view: widgetViewSchema.optional(),
@@ -167,7 +148,6 @@ export type DashboardWidget = z.infer<typeof widgetSchema>;
 
 const tabSchema = z.object({
   id: z.string(),
-  /** `null` shows the translated default name for the built-in tab ids. */
   title: z.string().nullable(),
   icon: z.enum(TAB_ICONS).catch("chart"),
   widgets: z.array(widgetSchema),
@@ -202,10 +182,6 @@ const panel = (
     source: { kind: "panel", panel: panelId },
   }) satisfies DashboardWidget;
 
-/**
- * The built-in tabs. Panels that share a row get the same fixed height so the
- * row lines up; full-width and closing panels size to their content.
- */
 export const DEFAULT_LAYOUT: DashboardLayout = {
   version: 1,
   tabs: [
@@ -265,10 +241,6 @@ export const DEFAULT_TAB_IDS = new Set(
 export const cloneLayout = (layout: DashboardLayout): DashboardLayout =>
   structuredClone(layout);
 
-/**
- * Reads a persisted layout. Anything that no longer parses falls back to the
- * default instead of leaving the Stats page blank.
- */
 export const parseLayout = (stored: DashboardLayout | null) => {
   if (stored === null) {
     return { layout: DEFAULT_LAYOUT, recovered: false };
@@ -279,7 +251,6 @@ export const parseLayout = (stored: DashboardLayout | null) => {
     : { layout: DEFAULT_LAYOUT, recovered: true };
 };
 
-/** Panels the app no longer has. Saved layouts lose them instead of showing them broken. */
 const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
 
 const listedIn =
@@ -287,11 +258,9 @@ const listedIn =
   (widget: DashboardWidget): boolean =>
     widget.source.kind === "panel" && panels.has(widget.source.panel);
 
-/** Whether every widget on `tab` is one of `panels`. An empty tab holds none. */
 const holdsOnly = (tab: DashboardTab, panels: ReadonlySet<string>): boolean =>
   tab.widgets.length > 0 && tab.widgets.every(listedIn(panels));
 
-/** Removes the given panels, and the tabs that held nothing else. */
 const withoutPanels = (
   layout: DashboardLayout,
   panels: ReadonlySet<string>,
@@ -339,7 +308,6 @@ export const updateTab = (
   patch: Partial<Pick<DashboardTab, "title" | "icon">>,
 ): DashboardLayout => mapTab(layout, tabId, (tab) => ({ ...tab, ...patch }));
 
-/** Swaps two tabs, so a tab can step past neighbours the page is not showing. */
 export const swapTabs = (
   layout: DashboardLayout,
   tabId: string,
@@ -388,7 +356,6 @@ export const resizeWidget = (
     ),
   }));
 
-/** Moves a widget to the slot of another one, shifting everything between. */
 export const reorderWidget = (
   layout: DashboardLayout,
   tabId: string,

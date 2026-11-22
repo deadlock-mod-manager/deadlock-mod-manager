@@ -1,18 +1,9 @@
-/**
- * In-game video menu options, as Deadlock words them
- * (`panorama/layout/popups/popup_settings.xml` + `citadel_main_english.txt`).
- * These get a label and a readable value; every other `setting.*` key in an
- * author's video.txt is kept too and written as shipped.
- */
 import { normalizeValue } from "../scripts/lib/kv";
 
 export interface VideoMenuOption {
   label: string;
-  /** Menu value (normalized) to the text the menu shows. */
   values?: Record<string, string>;
-  /** Slider shown as a percentage of the value. */
   percent?: boolean;
-  /** Slider range; values outside it can't be set from the menu. */
   range?: [number, number];
   bool?: boolean;
 }
@@ -92,7 +83,6 @@ export const VIDEO_MENU = new Map(
   }),
 );
 
-/** A value as the menu shows it, or `null` when the menu can't show it. */
 export const videoDisplay = (
   option: VideoMenuOption,
   value: string,

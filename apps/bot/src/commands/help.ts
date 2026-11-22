@@ -17,7 +17,6 @@ interface HelpEntry {
 
 const everyone = () => true;
 
-// Keep in sync with the commands and buttons the bot registers
 const helpEntries: HelpEntry[] = [
   {
     usage: "/ping",

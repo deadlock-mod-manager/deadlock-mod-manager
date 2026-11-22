@@ -22,7 +22,6 @@ pub enum SubmissionType {
 impl SubmissionType {
   pub const ALL: [Self; 3] = [Self::Mod, Self::Sound, Self::Wip];
 
-  /// Path segment GameBanana uses for this type in profile and fileserver URLs.
   pub fn gamebanana_path(self) -> &'static str {
     match self {
       Self::Mod => "mods",

@@ -130,7 +130,6 @@ describe("coexistence with other gameinfo editors", () => {
       "Keep both Hyperline blocks while enabling and reapplying DMM paths",
       async () => {
         const first = await launch(false, ALPHA.folder);
-        // Deadworks uses this historical prefix to detect DMM.
         assert(first.includes("// Deadlock Mod Manager - Start"));
         assert(!first.includes("// Deadlock Mod Manager - End"));
         assert(
@@ -206,7 +205,6 @@ describe("coexistence with other gameinfo editors", () => {
         await expectRejectedLaunch("DMM search-path markers are incomplete");
         assert.equal(await readFile(gameinfo, "utf8"), malformedMarkers);
         assert.equal((await readBrokenLaunches(world)).length, count);
-        // Emulate Steam replacing the file while the same manager still has setup cached.
         await writeFile(gameinfo, PRESERVED_GAMEINFO);
         await launch(false, BETA.folder);
       },

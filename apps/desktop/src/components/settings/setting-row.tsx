@@ -37,12 +37,6 @@ export const SettingRow = ({
   </div>
 );
 
-/**
- * Both words share one grid cell so the column is as wide as the longer one in
- * the current language, keeping switches aligned across rows and still on toggle.
- * It stays a click target but is hidden from screen readers, so the switch needs
- * its own aria-label to keep the state word out of its accessible name.
- */
 export const SwitchStatus = ({
   checked,
   htmlFor,

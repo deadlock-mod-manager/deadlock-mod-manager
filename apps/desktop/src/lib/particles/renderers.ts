@@ -33,7 +33,6 @@ export const compileRenderer = (
     stringOf(layers[0]?.m_hTexture, "") ||
     stringOf(operator.m_hTexture, "") ||
     null;
-  // The supported diffuse mask and distortion layers retain distinct data color spaces.
   const mask =
     stringOf(
       layers

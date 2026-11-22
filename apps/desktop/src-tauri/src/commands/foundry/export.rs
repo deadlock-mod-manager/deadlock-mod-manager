@@ -1,15 +1,3 @@
-//! Where a finished skin goes.
-//!
-//! Three destinations, all fed by the same freshly packed VPK:
-//! - **File** — write it wherever the user pointed the save dialog.
-//! - **New mod** — create a local mod in the store so it shows up in the library
-//!   like any other, ready to install.
-//! - **Replace source** — write over the VPK the Foundry loaded, so an already
-//!   installed mod picks up the edits.
-//!
-//! Replacing is the destructive one, so it only ever targets the exact file the
-//! user opened, keeps a `.bak` of it, and refuses a path that is not a VPK.
-
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -21,7 +9,6 @@ use crate::errors::Error;
 use super::types::{ExportDestinationKind, FoundryBuildResult};
 use super::workspace::{build_workspace_vpk, sanitize_workspace_name};
 
-/// Where the built VPK should land.
 pub(crate) enum ExportDestination {
   File { output_path: PathBuf },
   NewMod { name: String },
@@ -44,10 +31,7 @@ pub struct FoundryExportResult {
   pub backup_path: Option<String>,
 }
 
-/// A local mod id in the shape the rest of the app expects.
 fn new_local_mod_id() -> String {
-  // The store folder is keyed by this, so it only needs to be unique and
-  // filesystem-safe; the timestamp keeps ids sortable while debugging.
   let nanos = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map(|since| since.as_nanos())
@@ -55,8 +39,6 @@ fn new_local_mod_id() -> String {
   format!("local-foundry-{nanos:x}")
 }
 
-/// The metadata sidecar the mod store keeps beside a local mod's files, in the
-/// same shape the local-import path writes.
 fn write_mod_metadata(mod_dir: &Path, mod_id: &str, name: &str) -> Result<(), Error> {
   let created_at = chrono::Utc::now().to_rfc3339();
   let metadata = serde_json::json!({
@@ -79,8 +61,6 @@ fn write_mod_metadata(mod_dir: &Path, mod_id: &str, name: &str) -> Result<(), Er
   Ok(())
 }
 
-/// A neutral placeholder tile, so a Foundry mod has cover art in the library
-/// without the user having to supply one.
 fn write_preview(mod_dir: &Path, name: &str) -> Result<(), Error> {
   let label = name
     .chars()
@@ -90,7 +70,6 @@ fn write_preview(mod_dir: &Path, name: &str) -> Result<(), Error> {
       other => other,
     })
     .collect::<String>();
-  // `r##"…"##`: the SVG's `fill="#…"` would close an `r#"…"#` string.
   let svg = format!(
     r##"<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
   <rect width="320" height="180" fill="#1a1712"/>
@@ -110,7 +89,6 @@ fn mods_store_path() -> Result<PathBuf, Error> {
   manager.get_mods_store_path()
 }
 
-/// Build the workspace and deliver it to `destination`.
 pub(crate) fn export_workspace(
   workspace_root: PathBuf,
   destination: ExportDestination,
@@ -161,9 +139,6 @@ pub(crate) fn export_workspace(
         )));
       }
 
-      // Keep the original alongside: an in-place overwrite is the one export
-      // that destroys something, and a mod the user downloaded may not be
-      // re-downloadable.
       let backup_path = source_path.with_extension("vpk.bak");
       std::fs::copy(&source_path, &backup_path)?;
 

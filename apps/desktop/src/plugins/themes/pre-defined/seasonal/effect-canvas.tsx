@@ -5,7 +5,6 @@ import type { Season } from "./season";
 
 export type Effect = {
   resize: (width: number, height: number) => void;
-  /** Advance by `dt` seconds and paint. The canvas is not cleared between frames. */
   frame: (ctx: CanvasRenderingContext2D, dt: number, time: number) => void;
   dispose?: () => void;
 };
@@ -36,7 +35,6 @@ export const EffectCanvas = ({
     let last = performance.now();
 
     const resize = () => {
-      // Soft particles look the same at 1x and cost a quarter of the pixels on hi-DPI screens.
       const { innerWidth: width, innerHeight: height } = window;
       canvas.width = width;
       canvas.height = height;
@@ -45,7 +43,6 @@ export const EffectCanvas = ({
 
     const loop = (now: number) => {
       frameId = requestAnimationFrame(loop);
-      // High refresh rate monitors would otherwise repaint the full-window canvas 144-240 times a second.
       if (now - last < MIN_FRAME_MS) return;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
@@ -96,7 +93,6 @@ export const random = (min: number, max: number) =>
 export const pick = <T,>(items: readonly T[]): T =>
   items[Math.floor(Math.random() * items.length)];
 
-/** Soft round sprite; drawing it is far cheaper than a fresh radial gradient per particle. */
 export const glowSprite = (rgb: string, size = 64) => {
   const sprite = document.createElement("canvas");
   sprite.width = size;

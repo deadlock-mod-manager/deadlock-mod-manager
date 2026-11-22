@@ -45,8 +45,6 @@ type RepairPackage = {
   inGameinfo: boolean;
 };
 
-// What a game started from Steam would load: the repair package on disk and
-// the gameinfo.gi search path that mounts it.
 const readRepairPackage = async (world: string): Promise<RepairPackage> => {
   const {
     configuration: { roots },
@@ -93,7 +91,6 @@ const readManifest = async (world: string) => {
   );
 };
 
-// Fixture mods are named after their IDs; an imported mod is not.
 const card = (name: string) =>
   `//*[@title="${name}"]/ancestor::*[.//button[@role="switch"]][1]`;
 
@@ -146,7 +143,6 @@ const removeMod = async (
 
 const loadOtherModFirst = async (world: string) => {
   await searchLibrary("");
-  // The search re-renders the tabs, so look the tab up again on every try.
   const tab = '//*[@role="tab" and contains(normalize-space(), "Conflicts")]';
   await browser.waitUntil(
     async () => {
@@ -170,9 +166,6 @@ const loadOtherModFirst = async (world: string) => {
   );
 };
 
-// Fixes a second mod, then switches it back to its original files as the
-// health dialog's "Use original files" does, which deletes the package and
-// rebuilds it for the first mod alone.
 const fixThenRestoreSecondMod = async (world: string) => {
   const result = await browser.execute(
     (folder, modId) =>
@@ -220,7 +213,6 @@ describe("compatibility fix persistence", () => {
     assert.ok(fixed.packageExists, "fixing must write the repair package");
     assert.ok(fixed.inGameinfo, "fixing must mount the repair package");
 
-    // Each library change deletes the package; it is rebuilt shortly after.
     const expectRepairsKept = (change: string) =>
       step(`keep repairs after ${change}`, async () => {
         const manifest = await readManifest(world);

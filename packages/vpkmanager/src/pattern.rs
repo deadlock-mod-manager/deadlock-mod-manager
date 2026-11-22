@@ -1,60 +1,26 @@
-//! Procedural paint patterns for skin textures.
-//!
-//! A flat recolor moves a skin onto one hue; a pattern paints structure over it.
-//! Each style is a pure `(u, v, phase) -> RGB` function evaluated per texel, so
-//! nothing needs authoring and any texture of any size can be painted.
-//!
-//! The blend deliberately **keeps the source pixel's brightness**: the pattern's
-//! brightest channel is rescaled to match the original's before mixing. Without
-//! that, a dark seam or a black cutout would light up and the model would lose
-//! its shading and silhouette — the paint has to sit on the material, not
-//! replace it.
-//!
-//! Noise and color-space helpers follow the approach in the MIT-licensed
-//! vpkmerge; the style set and their tuning are our own.
-
 use crate::error::{Result, VpkManagerError};
 use crate::source2::{self, Image, ImageData};
 use crate::texture_edit::EditedTexture;
 
-/// The pattern styles the paint tab offers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PatternStyle {
-    /// Soft drifting blobs of colour, like oil on water.
     Liquid,
-    /// Interference rings from two offset radial grids.
     Moire,
-    /// Mirrored wedges around the texture's centre.
     Kaleido,
-    /// Thin iridescent bands that shift with the viewing angle.
     Holo,
-    /// Torn horizontal displacement with channel separation.
     Glitch,
-    /// A heat-map ramp driven by the pattern's own intensity.
     Thermal,
-    /// Four-tone disruptive blotches.
     Camo,
-    /// A woven twill weave.
     Carbon,
-    /// Deep field with scattered bright specks.
     Galaxy,
-    /// Regular dot grid whose dot size follows brightness.
     Halftone,
-    /// Cracked crust over a glowing core.
     Lava,
-    /// Scanline grid fading into a two-tone horizon.
     Vaporwave,
-    /// Translucent gel: rounded blobs with bright rims, after Deadlock's own goo.
     Viscous,
-    /// Near-black field split by thin crystalline filaments of violet light.
     DarkMatter,
-    /// Marble in pure greys: warped veins of white through a dark ground.
     Monochrome,
-    /// Art-deco rays and rings in gold on black, matching Deadlock's era.
     Deco,
-    /// Fractured ice: pale blue plates with bright cracks between them.
     Frost,
-    /// Circuit board: quantized traces with the odd solder node.
     Circuit,
 }
 
@@ -84,14 +50,10 @@ impl PatternStyle {
     }
 }
 
-/// How a pattern is applied: which style, how strongly it blends over the
-/// original, and where in the pattern's cycle it is sampled.
 #[derive(Debug, Clone, Copy)]
 pub struct Pattern {
     pub style: PatternStyle,
-    /// 0 leaves the texture alone, 1 is the pattern at full strength.
     pub intensity: f32,
-    /// Shifts the pattern's hue and offset, 0..1.
     pub phase: f32,
 }
 
@@ -106,8 +68,6 @@ impl Pattern {
     }
 }
 
-// --- noise -----------------------------------------------------------------
-
 fn hash2(i: i64, j: i64) -> f32 {
     let mut h = (i
         .wrapping_mul(374_761_393)
@@ -116,8 +76,6 @@ fn hash2(i: i64, j: i64) -> f32 {
     ((h ^ (h >> 16)) & 0xff_ffff) as f32 / 16_777_216.0
 }
 
-/// Tiling value noise on a `period x period` lattice, so a painted texture wraps
-/// cleanly instead of showing a seam where the UV shell repeats.
 fn vnoise(x: f32, y: f32, period: i64) -> f32 {
     let gx = x * period as f32;
     let gy = y * period as f32;
@@ -173,9 +131,6 @@ fn pack(rgb: [f32; 3]) -> [u8; 3] {
     ]
 }
 
-/// Ridged noise: fold the field at its midpoint so the *seam* becomes a sharp
-/// line. Raising it to a power thins that line into a vein, which is the shape
-/// behind marble, cracked ice and crystalline filaments alike.
 fn ridge(value: f32, sharpness: f32) -> f32 {
     (1.0 - (2.0 * value - 1.0).abs())
         .clamp(0.0, 1.0)
@@ -190,11 +145,7 @@ fn mix(a: [f32; 3], b: [f32; 3], t: f32) -> [f32; 3] {
     ]
 }
 
-// --- styles ----------------------------------------------------------------
-
 fn liquid(u: f32, v: f32, phase: f32) -> [u8; 3] {
-    // Warping the field by a second, coarser field is what turns smooth noise
-    // into something that reads as flow rather than as fog.
     let warp = 0.38 * fbm(u * 1.4, v * 1.4, 4, 4);
     let flow = fbm(u + warp, v - warp, 3, 5);
     let swirl = fbm(u * 2.6 - warp, v * 2.6 + warp, 7, 3);
@@ -205,8 +156,6 @@ fn liquid(u: f32, v: f32, phase: f32) -> [u8; 3] {
 fn moire(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let ring =
         |cx: f32, cy: f32, scale: f32| (((u - cx).powi(2) + (v - cy).powi(2)).sqrt() * scale).sin();
-    // Three grids rather than two, at closer scales: the beat between them is
-    // tighter, so the interference reads as a pattern instead of a haze.
     let interference = ring(0.5, 0.5, 210.0) * ring(0.43, 0.58, 228.0) * ring(0.61, 0.4, 196.0);
     let level = 0.5 + 0.5 * interference;
     let banded = (level * 7.0).floor() / 7.0 + level * 0.2;
@@ -238,12 +187,8 @@ fn glitch(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let torn = hash2(row as i64, (phase * 64.0) as i64);
     let shifted = (u + (torn - 0.5) * 0.34).rem_euclid(1.0);
 
-    // Channel separation is what reads as "glitch": one field sampled at three
-    // offsets. The offsets are wider than before, so the fringing is visible
-    // instead of averaging back into grey.
     let sample = |offset: f32| fbm((shifted + offset).rem_euclid(1.0) * 2.0, v, 7, 3);
     let base = sample(0.0);
-    // Every few rows drop to near-black, the dropout that sells the effect.
     let dropout = if torn > 0.93 { 0.15 } else { 1.0 };
     pack([
         (base * 1.25 * dropout).clamp(0.0, 1.0),
@@ -254,7 +199,6 @@ fn glitch(u: f32, v: f32, phase: f32) -> [u8; 3] {
 
 fn thermal(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let heat = (fbm(u * 1.8, v * 1.8, 5, 5) + phase).fract();
-    // Black → deep blue → magenta → orange → white, the usual thermal ramp.
     let stops: [[f32; 3]; 5] = [
         [0.02, 0.02, 0.10],
         [0.16, 0.10, 0.62],
@@ -282,14 +226,11 @@ fn carbon(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let cell = 18.0;
     let tx = (u * cell).fract();
     let ty = (v * cell).fract();
-    // A twill weave: alternating cells run the highlight the other way, and the
-    // tow crossing under is darkened so the over/under actually reads.
     let over = ((u * cell).floor() as i64 + (v * cell).floor() as i64) % 2 == 0;
     let along = if over { tx } else { ty };
     let across = if over { ty } else { tx };
     let sheen = (along * std::f32::consts::PI).sin();
     let shade = 0.72 + 0.28 * (across * std::f32::consts::PI).sin();
-    // A little fibre noise keeps large flat panels from looking printed.
     let fibre = 0.04 * fbm(u * 40.0, v * 40.0, 24, 2);
     let level = ((0.09 + 0.44 * sheen) * shade + fibre).clamp(0.0, 1.0);
     pack([level, level, level * (1.06 + 0.05 * phase)])
@@ -305,15 +246,11 @@ fn galaxy(u: f32, v: f32, phase: f32) -> [u8; 3] {
 
 fn halftone(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let cell = 16.0;
-    // Rotating the screen off-axis is what print does, and it stops the dots
-    // lining up with the texture's own pixel grid into a shimmering plaid.
     let (sin_a, cos_a) = (0.45f32.sin(), 0.45f32.cos());
     let (ru, rv) = (u * cos_a - v * sin_a, u * sin_a + v * cos_a);
     let cx = (ru * cell).fract() - 0.5;
     let cy = (rv * cell).fract() - 0.5;
     let radius = (cx * cx + cy * cy).sqrt();
-    // The dot fills its cell at 0.707, so this range runs from a bare highlight
-    // to nearly solid ink instead of staying in the pale end of the scale.
     let target = 0.12 + 0.52 * fbm(u * 5.0, v * 5.0, 9, 4);
     let ink = if radius < target { 0.0 } else { 1.0 };
     pack(hsv(phase * 360.0, 0.12, 0.08 + 0.88 * ink))
@@ -321,7 +258,6 @@ fn halftone(u: f32, v: f32, phase: f32) -> [u8; 3] {
 
 fn lava(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let crust = fbm(u * 3.1, v * 3.1, 7, 5);
-    // Near the mid-band the crust "cracks" and the glow shows through.
     let crack = (1.0 - (crust - 0.5).abs() * 5.0).clamp(0.0, 1.0);
     let rock = [0.10, 0.08, 0.08];
     let glow = hsv(18.0 + phase * 30.0, 0.95, 0.55 + 0.45 * crack);
@@ -338,7 +274,6 @@ fn vaporwave(u: f32, v: f32, phase: f32) -> [u8; 3] {
     if v < horizon {
         return pack(sky);
     }
-    // Below the horizon: a receding grid, lines closing up towards it.
     let depth = (v - horizon) / (1.0 - horizon).max(0.001);
     let rows = ((1.0 - depth).max(0.02).recip() * 1.6 + phase * 4.0).fract();
     let columns = ((u - 0.5) / depth.max(0.05) * 6.0).fract();
@@ -350,8 +285,6 @@ fn vaporwave(u: f32, v: f32, phase: f32) -> [u8; 3] {
     pack(mix([0.08, 0.02, 0.18], [0.24, 0.96, 0.90], line))
 }
 
-/// Deadlock's own goo: rounded cells of translucent gel, each catching a bright
-/// rim where its surface turns away.
 fn viscous(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let blob = fbm(u * 2.4, v * 2.4, 5, 4);
     let surface = fbm(u * 7.0 + phase, v * 7.0, 11, 3);
@@ -365,7 +298,6 @@ fn viscous(u: f32, v: f32, phase: f32) -> [u8; 3] {
     pack(mix(gel, highlight, rim * (0.35 + 0.4 * surface)))
 }
 
-/// A near-black field shot through with thin filaments of violet light.
 fn dark_matter(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let field = fbm(u * 3.0, v * 3.0, 6, 5);
     let filament = ridge(field, 5.0);
@@ -373,27 +305,21 @@ fn dark_matter(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let hue = 258.0 + 54.0 * fbm(u * 1.5, v * 1.5, 3, 3) + phase * 90.0;
     let void_color = hsv(hue, 0.9, 0.07);
     let glow = hsv(hue - 34.0, 0.72, 1.0);
-    // Two passes: a wide dim halo under a narrow bright core, which is what makes
-    // the filaments read as light rather than as painted lines.
     let base = mix(void_color, hsv(hue, 0.85, 0.28), halo * 0.55);
     pack(mix(base, glow, filament))
 }
 
-/// Marble in pure greys: veins of white warped through a dark ground.
 fn monochrome(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let warp = 0.34 * fbm(u * 1.2, v * 1.2, 3, 4);
     let field = fbm(u * 2.1 + warp, v * 2.1 - warp + phase, 4, 5);
     let vein = ridge(field, 2.4);
-    // A touch of the underlying field in the ground keeps it from reading flat.
     let level = (0.07 + 0.16 * field + 0.82 * vein).clamp(0.0, 1.0);
     pack([level, level, level])
 }
 
-/// Art-deco: radiating rays over concentric rings, gold on near-black.
 fn deco(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let (dx, dy) = (u - 0.5, v - 0.5);
     let angle = dy.atan2(dx);
-    // Triangle waves rather than sines: deco is drawn with hard edges.
     let rays = (((angle * 14.0 / std::f32::consts::TAU + phase).fract() * 2.0) - 1.0).abs();
     let radius = (dx * dx + dy * dy).sqrt();
     let rings = (((radius * 22.0).fract() * 2.0) - 1.0).abs();
@@ -404,12 +330,9 @@ fn deco(u: f32, v: f32, phase: f32) -> [u8; 3] {
     pack(mix(ground, gold, inked * 0.88 + figure * 0.12))
 }
 
-/// Fractured ice: pale plates with bright cracks along their seams.
 fn frost(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let plates = fbm(u * 4.6, v * 4.6, 8, 4);
     let crack = ridge(plates, 5.0);
-    // The plates need real depth between them, otherwise pale-on-pale reads as
-    // fog rather than as ice with edges.
     let plate = hsv(
         202.0 + 20.0 * plates,
         (0.42 - 0.24 * plates).clamp(0.0, 1.0),
@@ -418,12 +341,6 @@ fn frost(u: f32, v: f32, phase: f32) -> [u8; 3] {
     pack(mix(plate, [0.94, 0.99, 1.0], crack * (0.7 + 0.25 * phase)))
 }
 
-/// Circuit board: traces quantized to a lattice, with the odd solder node.
-///
-/// The lattice is deliberately coarse and the traces deliberately soft-edged.
-/// A fine lattice with hair-thin traces looks right on a 2K texture but is
-/// invisible in the picker's small swatch, where only a couple of samples land
-/// per cell and every one of them can miss the trace entirely.
 fn circuit(u: f32, v: f32, phase: f32) -> [u8; 3] {
     const CELLS: f32 = 10.0;
     const TRACE_HALF_WIDTH: f32 = 0.16;
@@ -432,7 +349,6 @@ fn circuit(u: f32, v: f32, phase: f32) -> [u8; 3] {
     let (fx, fy) = ((u * CELLS).fract(), (v * CELLS).fract());
     let roll = hash2(cell_x as i64, cell_y as i64);
 
-    // Each cell carries one trace, run either across or down.
     let distance = if roll < 0.5 {
         (fy - 0.5).abs()
     } else {
@@ -477,11 +393,6 @@ fn pattern_pixel(style: PatternStyle, u: f32, v: f32, phase: f32) -> [u8; 3] {
     }
 }
 
-/// Blend the pattern over an already-decoded image, in place.
-///
-/// Public so the paint pass can run a recolor and a pattern over the *same*
-/// decode: doing them as two separate `*_texture` calls would decode and
-/// re-encode the mip chain twice, and the BCn encode is the whole cost.
 pub fn paint_image(image: &mut Image, pattern: Pattern) -> Result<()> {
     let (width, height) = (image.width.max(1), image.height.max(1));
     let ImageData::Rgba8(pixels) = &mut image.data else {
@@ -501,8 +412,6 @@ pub fn paint_image(image: &mut Image, pattern: Pattern) -> Result<()> {
                 f32::from(pixels[index].max(pixels[index + 1]).max(pixels[index + 2]));
             let generated_max =
                 f32::from(generated[0].max(generated[1]).max(generated[2])).max(1.0);
-            // Rescale the pattern to the original pixel's brightness before blending,
-            // so black stays black and the model keeps its shading.
             let scale = original_max / generated_max;
             for channel in 0..3 {
                 let original = f32::from(pixels[index + channel]);
@@ -516,7 +425,6 @@ pub fn paint_image(image: &mut Image, pattern: Pattern) -> Result<()> {
     Ok(())
 }
 
-/// Paint a pattern onto a compiled texture, rebuilding its mip chain.
 pub fn pattern_texture(original: &[u8], pattern: Pattern) -> Result<EditedTexture> {
     let mut image = source2::decode(original)?;
     paint_image(&mut image, pattern)?;
@@ -528,8 +436,6 @@ pub fn pattern_texture(original: &[u8], pattern: Pattern) -> Result<EditedTextur
     })
 }
 
-/// Render a standalone RGBA8 swatch of a style, for the picker's preview tile.
-/// Pure pattern generation: no VPK, no texture, cheap enough to call per style.
 pub fn pattern_swatch(pattern: Pattern, size: u32) -> Vec<u8> {
     let size = size.clamp(1, 512);
     let mut rgba = Vec::with_capacity((size * size * 4) as usize);
@@ -591,8 +497,6 @@ mod tests {
         for style in ALL {
             for phase in [0.0, 0.33, 0.99] {
                 for (u, v) in [(0.0, 0.0), (0.5, 0.5), (0.999, 0.999), (0.5, 0.55)] {
-                    // A u8 cannot be out of range, but a NaN cast silently becomes 0, so
-                    // check the styles produce something that varies rather than collapse.
                     let _ = pattern_pixel(style, u, v, phase);
                 }
             }
@@ -616,8 +520,6 @@ mod tests {
                 .collect::<Vec<_>>();
             let min = *levels.iter().min().unwrap();
             let max = *levels.iter().max().unwrap();
-            // Across 0..765 of summed channels, a usable pattern spans a good part
-            // of the range rather than hovering on one tone.
             assert!(
                 max - min > 90,
                 "{style:?} is nearly flat: range {min}..{max}"
@@ -627,7 +529,6 @@ mod tests {
 
     #[test]
     fn monochrome_stays_grey() {
-        // The point of this one is that it has no hue at all.
         for phase in [0.0, 0.4, 0.9] {
             for (u, v) in [(0.1, 0.2), (0.5, 0.5), (0.87, 0.33)] {
                 let [r, g, b] = monochrome(u, v, phase);

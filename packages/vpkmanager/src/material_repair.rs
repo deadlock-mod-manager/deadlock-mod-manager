@@ -1,6 +1,3 @@
-//! Verified material parameter and model binding edits.
-//! Callers supply an evidence-backed target mapping; this module does not infer intent.
-
 use crate::source2::{
     kv3::{self, Encoding, EncodingChildren, Value},
     resource::Resource,
@@ -116,9 +113,6 @@ fn verify_blocks(before: &[u8], after: &[u8], allowed: &[[u8; 4]]) -> Result<()>
     Ok(())
 }
 
-/// Port only the reviewed static glow edits. Current masks, shader features,
-/// resource references and attribute indices stay intact. Health tint expressions
-/// are removed because this mod explicitly requests static colors.
 pub fn material_variant(current: &[u8], authored: &[u8], path: &str) -> Result<Vec<u8>> {
     let (mut target, mut encoding, format) = decode(current)?;
     let (source, _, _) = decode(authored)?;
@@ -226,7 +220,6 @@ pub fn references(bytes: &[u8]) -> Result<Vec<(u64, String)>> {
         .collect()
 }
 
-/// Preserve existing references and reject conflicting path/ID assignments.
 pub fn add_references(bytes: &[u8], additions: &[(u64, String)]) -> Result<Vec<u8>> {
     let mut entries = references(bytes)?;
     for (id, path) in additions {

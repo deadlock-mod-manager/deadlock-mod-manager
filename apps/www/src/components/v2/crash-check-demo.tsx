@@ -34,10 +34,6 @@ const Row = ({
   </li>
 );
 
-/**
- * The desktop app's "Did Deadlock just crash?" dialog, with the same change
- * rows. Disable both works the way it does in the app.
- */
 export const CrashCheckDemo = () => {
   const { t } = useTranslation("v2");
   const [disabled, setDisabled] = useState(false);

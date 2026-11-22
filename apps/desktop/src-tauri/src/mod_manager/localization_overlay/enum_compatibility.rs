@@ -6,8 +6,6 @@ struct EnumReplacement {
   encoding: Kv3Encoding,
 }
 
-/// Only aliases demonstrated by matching old/current vanilla fields are migrated.
-/// No prefix is removed from arbitrary strings or unrecognized enum values.
 pub(super) struct EnumCompatibility {
   aliases: BTreeMap<(String, String), Option<EnumReplacement>>,
 }

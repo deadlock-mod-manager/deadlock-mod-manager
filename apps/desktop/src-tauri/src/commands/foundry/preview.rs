@@ -1,5 +1,3 @@
-//! Read-only mod browsing metadata and a bounded cache of rendered local thumbnails.
-
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -16,7 +14,6 @@ use super::types::{FoundryEntrySource, FoundryManifest};
 use crate::errors::Error;
 use crate::vpk_archive_cache::open_archive;
 
-/// Bump when model decoding changes.
 const PREVIEW_VERSION: &str = "dmm-mod-preview-4";
 const MAX_THUMBNAILS: usize = 128;
 const MAX_CACHE_BYTES: u64 = 32 * 1024 * 1024;
@@ -88,8 +85,6 @@ pub async fn foundry_mod_preview_info(file_path: String) -> Result<ModPreviewInf
     let manifest = analyze_vpk_path(Path::new(&file_path)).map_err(archive_error)?;
     let heroes = mod_entries(&manifest)
       .filter_map(|entry| {
-        // Only model and material folders count; a skin often borrows another
-        // hero's sounds without being ambiguous about whose skin it is.
         let detection = hero_parser::detect_hero_from_paths(std::slice::from_ref(&entry.path));
         (detection.category == "hero")
           .then_some(detection.hero_display)

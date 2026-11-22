@@ -20,14 +20,12 @@ export type DeadworksContentPreview = {
   advertised: boolean;
   totalItems: number;
   pendingItems: number;
-  /** Uncompressed size of the pending items that came with a size. */
   pendingBytes: number;
   truncated: boolean;
   missingSource: boolean;
   blockedMaps: string[];
 };
 
-/** A file whose host serves a different build than the server runs. */
 export type DeadworksMismatch = {
   key: string;
   name: string;

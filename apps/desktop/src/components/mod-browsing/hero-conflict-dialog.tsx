@@ -17,10 +17,8 @@ export type HeroConflictResolution = "swap" | "enable-both" | "cancel";
 
 interface HeroConflictDialogProps {
   open: boolean;
-  /** Null when the clash is a shared model with no known hero. */
   heroName: string | null;
   currentMod: LocalMod | null;
-  /** Further enabled mods that the swap would also disable. */
   otherCurrentCount?: number;
   newMod: LocalMod | null;
   onResolve: (resolution: HeroConflictResolution) => void;

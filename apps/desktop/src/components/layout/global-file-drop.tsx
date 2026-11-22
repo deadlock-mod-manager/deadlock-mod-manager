@@ -8,10 +8,6 @@ import { useAddModDialog } from "@/lib/add-mod-dialog";
 const hasFiles = (event: DragEvent) =>
   event.dataTransfer?.types.includes("Files") ?? false;
 
-/**
- * Lets users drop a mod file anywhere in the window. The drop opens the Add
- * Mods dialog with the file loaded; that dialog keeps its own drop zone.
- */
 export const GlobalFileDrop = () => {
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
@@ -20,7 +16,6 @@ export const GlobalFileDrop = () => {
     (source) => useAddModDialog.getState().show(source),
     (message) => toast.error(message),
   );
-  // The listeners stay attached for the whole drag; read the latest handler.
   const handleDataTransferRef = useRef(handleDataTransfer);
   handleDataTransferRef.current = handleDataTransfer;
 
@@ -40,7 +35,6 @@ export const GlobalFileDrop = () => {
     };
     const handleDragOver = (event: DragEvent) => {
       if (!hasFiles(event)) return;
-      // A drop zone on the page (VPK replacement) handles its own drops.
       setDragging(!event.defaultPrevented);
       if (event.defaultPrevented) return;
       event.preventDefault();

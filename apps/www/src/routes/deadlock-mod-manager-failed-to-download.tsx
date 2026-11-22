@@ -22,7 +22,6 @@ const getPage = (t: TFunction<"error-download">): GuidePageData => ({
   faqs: Object.values(t("faqs", { returnObjects: true })),
 });
 
-/** The message that has its own guide. */
 const OS_ERROR_5_MESSAGE = "writeFailed";
 
 export const Route = createFileRoute(

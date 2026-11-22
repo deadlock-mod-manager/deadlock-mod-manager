@@ -67,17 +67,14 @@ export const sortMods = <T extends ModDto>(mods: T[], sortType: SortType) => {
 
 export const FILTER_DATE_FORMAT = "yyyy-MM-dd";
 
-/** Parses a date filter date (YYYY-MM-DD) as local midnight. */
 export const parseFilterDate = (date: string): Date | undefined =>
   date ? parse(date, FILTER_DATE_FORMAT, new Date()) : undefined;
 
-/** Formats a date filter date for display, e.g. "Sep 1, 2026". */
 export const formatFilterDate = (date: string): string => {
   const parsed = parseFilterDate(date);
   return parsed ? format(parsed, "MMM d, yyyy") : "";
 };
 
-// A `[after, before)` range in unix seconds; `null` leaves that side open.
 type DateRange = { after: number | null; before: number | null };
 
 const DATE_PERIOD_DAYS = {
@@ -103,7 +100,6 @@ export const getDateRange = (filter: DateFilter): DateRange => {
       const to = parseFilterDate(filter.to);
       return {
         after: from ? getUnixTime(from) : null,
-        // `to` is inclusive, so the range ends at the next local midnight.
         before: to ? getUnixTime(addDays(to, 1)) : null,
       };
     }

@@ -77,7 +77,6 @@ test.skipIf(process.platform === "win32")(
       expect(await start(scope).exited).toBe(0);
       await Bun.sleep(50);
       expect(await Bun.file(join(root, "launched")).exists()).toBe(false);
-      // A different sandbox whose ID contains the old ID must not block launch.
       await writeFile(join(root, "running"), "9123\n");
       await waitFor(() => Bun.file(join(root, "launched")).exists());
       expect(await readFile(join(root, "launched"), "utf8")).toBe(

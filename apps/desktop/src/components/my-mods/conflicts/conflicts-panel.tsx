@@ -21,10 +21,6 @@ import { IgnoredSection } from "./ignored-section";
 import { LoadOrderHelp } from "./load-order-help";
 import { NoOverlapsState } from "./no-overlaps-state";
 
-/**
- * `visibleModIds` holds the mods left by the library's search and filters; an
- * overlap stays listed while any of its mods is visible.
- */
 export const ConflictsPanel = ({
   visibleModIds,
 }: {
@@ -129,7 +125,6 @@ export const ConflictsPanel = ({
       open={helpOpen}>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='text-sm'>
-          {/* With overlaps the summary is status; without, it only explains the tab. */}
           <p
             className={
               groups.length > 0

@@ -77,41 +77,34 @@ impl ModConfig {
 
     /// Validate configuration
     pub fn validate(&self) -> Result<()> {
-        // Validate name format (kebab-case)
         if !self.name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
             return Err(DmodpkgError::validation(
                 "name must be kebab-case (a-z0-9-)"
             ));
         }
 
-        // Validate version is semver
         if self.version.is_empty() {
             return Err(DmodpkgError::validation("version cannot be empty"));
         }
 
-        // Validate display_name is not empty
         if self.display_name.is_empty() {
             return Err(DmodpkgError::validation("display_name cannot be empty"));
         }
 
-        // Validate description length
         if self.description.len() > 500 {
             return Err(DmodpkgError::validation(
                 "description must be 500 characters or less"
             ));
         }
 
-        // Validate authors
         if self.authors.is_empty() {
             return Err(DmodpkgError::validation("at least one author is required"));
         }
 
-        // Validate layers
         if self.layers.is_empty() {
             return Err(DmodpkgError::validation("at least one layer is required"));
         }
 
-        // Validate layer names are unique
         let mut layer_names = std::collections::HashSet::new();
         for layer in &self.layers {
             if !layer_names.insert(&layer.name) {
@@ -121,7 +114,6 @@ impl ModConfig {
             }
         }
 
-        // Validate variant groups
         for group in &self.variant_groups {
             self.validate_variant_group(group)?;
         }
@@ -137,14 +129,12 @@ impl ModConfig {
             ));
         }
 
-        // Check default variant exists
         if !group.variants.iter().any(|v| v.id == group.default) {
             return Err(DmodpkgError::validation(
                 format!("default variant '{}' not found in group '{}'", group.default, group.id)
             ));
         }
 
-        // Validate variant IDs are unique
         let mut variant_ids = std::collections::HashSet::new();
         for variant in &group.variants {
             if !variant_ids.insert(&variant.id) {
@@ -153,7 +143,6 @@ impl ModConfig {
                 ));
             }
 
-            // Validate layers referenced by variant exist
             for layer_name in &variant.layers {
                 if !self.layers.iter().any(|l| &l.name == layer_name) {
                     return Err(DmodpkgError::validation(
@@ -222,41 +211,34 @@ impl BundleConfig {
 
     /// Validate configuration
     pub fn validate(&self) -> Result<()> {
-        // Validate name format (kebab-case)
         if !self.name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
             return Err(DmodpkgError::validation(
                 "name must be kebab-case (a-z0-9-)"
             ));
         }
 
-        // Validate version
         if self.version.is_empty() {
             return Err(DmodpkgError::validation("version cannot be empty"));
         }
 
-        // Validate display_name
         if self.display_name.is_empty() {
             return Err(DmodpkgError::validation("display_name cannot be empty"));
         }
 
-        // Validate description length
         if self.description.len() > 1000 {
             return Err(DmodpkgError::validation(
                 "description must be 1000 characters or less"
             ));
         }
 
-        // Validate authors
         if self.authors.is_empty() {
             return Err(DmodpkgError::validation("at least one author is required"));
         }
 
-        // Validate mods
         if self.mods.is_empty() {
             return Err(DmodpkgError::validation("at least one mod is required"));
         }
 
-        // Validate mod package filenames
         for mod_entry in &self.mods {
             if !mod_entry.package.ends_with(".dmodpkg") {
                 return Err(DmodpkgError::validation(
@@ -265,7 +247,6 @@ impl BundleConfig {
             }
         }
 
-        // Validate presets
         for preset in &self.presets {
             self.validate_preset(preset)?;
         }
@@ -281,7 +262,6 @@ impl BundleConfig {
             ));
         }
 
-        // Validate referenced packages exist
         for mod_config in &preset.mods {
             if !self.mods.iter().any(|m| m.package == mod_config.package) {
                 return Err(DmodpkgError::validation(

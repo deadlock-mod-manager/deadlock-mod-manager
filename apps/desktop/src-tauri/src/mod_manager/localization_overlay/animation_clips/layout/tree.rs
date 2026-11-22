@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
 
-/// NM import preserves hierarchy traversal within each sampling LOD. Recover
-/// its two ordered partitions using named pose anchors and the authored tree.
 pub(super) struct LayoutTree {
   children: Vec<Vec<usize>>,
   anchors: Vec<Option<usize>>,

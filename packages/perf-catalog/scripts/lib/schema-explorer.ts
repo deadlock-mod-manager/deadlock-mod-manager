@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ConvarMeta } from "../../src/schema";
 
-/** The parts of SchemaExplorer's `schemas/deadlock.json` the catalog reads. */
 export const schemaHeaderSchema = z.object({
   revision: z.number().int(),
   version_date: z.string(),
@@ -24,7 +23,6 @@ export const schemaDumpSchema = schemaHeaderSchema.extend({
   enums: z.array(
     z.object({
       name: z.string(),
-      // Values past 2^53 (high bitmask flags) arrive as strings
       members: z.array(
         z.object({
           name: z.string(),
@@ -75,7 +73,6 @@ const number = (value: string | undefined): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
-/** Floats print with six decimals in the dump; `0.500000` reads better as `0.5`. */
 const tidyDefault = (
   value: string | undefined,
   kind: ConvarMeta["kind"],
@@ -90,10 +87,6 @@ const tidyDefault = (
 
 const ENUM_ITEM = /(?:^|[\s,;(])(-?\d+)\s*(?:=|:|\s-\s)\s*/g;
 
-/**
- * Values an int convar's help text enumerates ("0 = Off, 1 = Low, 2 = High").
- * Conservative: at least two distinct values, short labels, nothing else.
- */
 const enumFromHelp = (
   help: string,
 ): { value: string; label: string }[] | undefined => {

@@ -1,5 +1,3 @@
-//! video.txt, with the in-game video menu's names and values for each setting.
-
 use super::kv::parse_kv;
 use super::{ParsedConfig, ParsedLeaf, clean, collapse};
 use crate::mod_manager::perf_config::live::normalize_value;
@@ -7,8 +5,6 @@ use crate::mod_manager::perf_config::types::{
   IgnoredKind, IgnoredPart, ImportFormat, VideoSetting,
 };
 
-/// Header keys naming the author's GPU. Never written: the game uses them to
-/// spot a new graphics card and reset its settings.
 const MACHINE_SPECIFIC_HEADER: &[&str] = &["vendorid", "deviceid"];
 
 enum MenuValues {
@@ -19,8 +15,6 @@ enum MenuValues {
   Plain,
 }
 
-/// The game's video menu (`panorama/layout/popups/popup_settings.xml` and its
-/// English strings): option name and the values each choice writes.
 const MENU_SETTINGS: &[(&str, &str, MenuValues)] = &[
   (
     "r_citadel_upscaling",
@@ -113,9 +107,6 @@ const MENU_SETTINGS: &[(&str, &str, MenuValues)] = &[
   ),
 ];
 
-/// Reads `setting.*` values from a video.txt, a `"video.cfg"` block or a
-/// headerless fragment. Machine-specific keys and device ids are reported,
-/// never recommended.
 pub(super) fn parse_video(text: &str) -> ParsedConfig {
   let text = clean(text);
   let document = parse_kv(&text);

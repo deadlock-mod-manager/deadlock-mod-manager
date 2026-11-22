@@ -1,5 +1,3 @@
-//! Restore absent NM bindings after proving the sampled hierarchy and pose layout.
-//! Extra authored deformation bones and original geometry remain intact.
 use super::{
   CompiledDataSource, Kv3Value, Resource,
   animation_model_evidence::{self, AnimationInputs, ModelRig},
@@ -144,7 +142,6 @@ pub(super) fn prepare(
 
 fn eligible(source: &Kv3Value, current: &Kv3Value) -> bool {
   FIELDS.iter().all(|field| {
-    // An explicit null binding is as absent as a missing one.
     source.get(field).is_none_or(|value| {
       matches!(value, Kv3Value::Null) || value.as_array().is_some_and(|values| values.is_empty())
     }) && current
@@ -232,8 +229,6 @@ fn sampled_contract(
   if samples.is_empty() {
     return Err("Empty sampled rig".into());
   }
-  // The current animation compiler can use different case for a model's bone.
-  // Require an unambiguous match, preserving the model's actual name in DATA.
   let names = |rig: &ModelRig| -> Option<BTreeMap<String, String>> {
     let names: Vec<_> = rig.names().map(str::to_owned).collect();
     let mapped: BTreeMap<_, _> = names
@@ -254,7 +249,6 @@ fn sampled_contract(
       .ok_or("Invalid sampled bone name")?
       .to_ascii_lowercase();
     let Some(current_name) = current_names.get(&name) else {
-      // The current NM rig may also serve model variants with unused branches.
       if unused.contains(&name) {
         continue;
       }
@@ -263,7 +257,6 @@ fn sampled_contract(
     let source_name = old_names
       .get(&name)
       .ok_or_else(|| format!("Missing sampled bone: {name}"))?;
-    // Verify the complete ancestor chain, including ancestors not sampled by NM.
     let mut source_name = source_name.as_str();
     let mut current_name = current_name.as_str();
     while !source_name.is_empty() && checked.insert(source_name.to_owned()) {
@@ -326,8 +319,6 @@ fn unmapped_reference_controls(
   }
   let parents = skeleton.get("m_parentIndices")?.as_array()?;
   let mut required = BTreeSet::new();
-  // A branch is unused only when neither render rig maps any of its descendants.
-  // Retain ancestors of every mapped sample, including custom authored targets.
   for (index, name) in names.iter().enumerate() {
     if !source_names.contains_key(name) && !current_names.contains_key(name) {
       continue;

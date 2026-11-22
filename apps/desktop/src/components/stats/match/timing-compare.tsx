@@ -16,10 +16,6 @@ const CHECKPOINTS = [600, 1200, 1800];
 
 const MIN_BASELINE_SAMPLES = 5;
 
-/**
- * This match against the player's usual one on the hero: buy times for the two
- * power spikes and souls at fixed minutes. Earlier and richer read as good.
- */
 export const TimingCompare = ({
   bought,
   me,
@@ -39,7 +35,6 @@ export const TimingCompare = ({
 }) => {
   const { t } = useTranslation();
   const usualCurve = curve
-    // A handful of parsed games is not a habit; below that there is nothing to compare.
     .filter((point) => point.samples >= MIN_BASELINE_SAMPLES)
     .map((point): [number, number] => [point.game_time, point.net_worth_avg])
     .sort((a, b) => a[0] - b[0]);

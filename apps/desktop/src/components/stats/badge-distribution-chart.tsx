@@ -12,7 +12,6 @@ import { resolveRank } from "@/lib/stats/api";
 import { formatCompact, formatPercent } from "@/lib/stats/format";
 import { badgeHistogram } from "@/lib/stats/rank";
 
-/** Rank artwork as the axis: eleven tier names would never fit side by side. */
 const BadgeTick = ({
   x,
   y,
@@ -43,15 +42,9 @@ const BadgeTick = ({
 interface BadgeDistributionChartProps {
   distribution: BadgeDistributionEntry[];
   rankAssets: RankAsset[];
-  /** The player's badge, whose tier gets called out. */
   ownBadge: number;
 }
 
-/**
- * Where every ranked player sits, one bar per tier. A histogram rather than a
- * percentile number alone, because the shape is the point: the ladder is not
- * evenly populated, and "top 20%" means something different at each end of it.
- */
 export const BadgeDistributionChart = ({
   distribution,
   rankAssets,

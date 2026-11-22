@@ -42,18 +42,8 @@ const BASE = { id: "940002", name: "E2E Required Base" };
 const BLOCKED = { id: "940003", name: "E2E Incompatible Mod" };
 const OLD_DATE = 1_780_000_000;
 const primaryFileId = 940101;
-/** Before the real clock, so the update reads as installed once applied. */
 const RENAMED_DATE = 1_785_000_000;
-/**
- * Authors version a lone file's name (`unstoppable_6860.zip` to
- * `unstoppable_6861.zip`), so it shares no base name with the installed one.
- */
 const RENAMED_FILE = "legacy_6861.zip";
-/**
- * GameBanana file caches as the E2E app reaches them: the app maps
- * `https://<domain>/<category>/<file>` to `/fileservers/<domain>/...` on the
- * fixture origin.
- */
 const cachePath = (domain: string) =>
   `/fileservers/${domain}.gamebanana.com/mods/legacy.zip`;
 const DEAD_CACHE = "filecache44";
@@ -226,7 +216,6 @@ export async function prepareReliabilityWorld(world: CreatedWorld) {
   }
 }
 
-// Exact ordered query lists match the provider's multicall response order.
 const orderedSubsets = (values: number[]): number[][] =>
   values.flatMap((value) =>
     [[value]].concat(
@@ -365,7 +354,6 @@ export async function reliabilityRoutes(caseId: string) {
         _aRecords:
           scenario === "gamebanana-default-fallback"
             ? [
-                // The busiest cache is the one `/dl/` sends the download to.
                 fileserver(44, DEAD_CACHE, 9_000_000),
                 fileserver(45, LIVE_CACHE, 1_000_000),
               ]
@@ -442,12 +430,6 @@ export async function reliabilityRoutes(caseId: string) {
   };
 }
 
-/**
- * GameBanana's `/dl/` link sends the download to a cache that cuts every
- * transfer short, as a cache that went down mid-download would (#569). The
- * dead cache also fails its availability check; the other cache serves the
- * file.
- */
 const defaultFallbackRoutes = (
   origin: string,
   archive: Buffer,
@@ -561,7 +543,6 @@ export function assertReliabilityNetwork(
         request.url.startsWith("/fileservers/")),
   );
   if (id === "gamebanana-default-fallback") {
-    // Four attempts: the first and the downloader's three reconnects.
     const dead = [`/dl/${primaryFileId}`, cachePath(DEAD_CACHE)];
     assert.deepEqual(
       downloads.map((request) => request.url),
@@ -579,7 +560,6 @@ export function assertReliabilityNetwork(
       cachePath(DEAD_CACHE),
       cachePath(LIVE_CACHE),
     ]);
-    // Default looks the caches up only once its standard link has given up.
     const gaveUp = downloads[downloads.length - 2].endedAt;
     assert(gaveUp);
     assert(

@@ -18,7 +18,6 @@ import type toolRandomizer from "@/locales/en/tool-randomizer.json";
 import type toolVpk from "@/locales/en/tool-vpk.json";
 import type v2 from "@/locales/en/v2.json";
 
-/** English files are the source of truth for translation keys. */
 declare module "i18next" {
   interface CustomTypeOptions {
     defaultNS: "common";

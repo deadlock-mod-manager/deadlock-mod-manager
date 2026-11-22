@@ -71,7 +71,6 @@ export const Chip = ({
   );
 };
 
-/** A config card; hovering or focusing it points at its pin on the scale. */
 export const ConfigCardShell = ({
   configId,
   active,
@@ -98,7 +97,6 @@ export const ConfigCardShell = ({
   );
 };
 
-/** Tier and badges on the left; where the config comes from and when, on the right. */
 export const CardHeader = ({
   label,
   provenance,
@@ -114,7 +112,6 @@ export const CardHeader = ({
   </div>
 );
 
-/** Plain counts under the blurb; chips stay for tags that describe the config. */
 export const MetaRow = ({ children }: { children: ReactNode }) => (
   <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs tabular-nums [&_svg]:size-3.5 [&_svg]:shrink-0'>
     {children}
@@ -153,7 +150,6 @@ export const MetaItem = ({
   );
 };
 
-/** Actions on the right; `start` holds secondary controls such as rename. */
 export const CardFooter = ({
   start,
   children,

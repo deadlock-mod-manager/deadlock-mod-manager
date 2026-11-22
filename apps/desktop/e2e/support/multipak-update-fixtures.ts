@@ -50,10 +50,6 @@ export const multipakVpk = (
     { path: `scripts/e2e-${id}.txt`, contents: `${id}/${version}/${name}\n` },
   ]);
 
-// A GameBanana cache that serves both mods, so each download shows which
-// routing it used: Default downloads from `/dl/` and keeps the cache as a
-// fallback, Automatic downloads from the cache. The E2E app reaches caches
-// under `/fileservers/<domain>/` on the fixture origin.
 const ROUTING_CACHE = "/fileservers/filecache45.gamebanana.com/mods";
 
 export const multipakUpdateRoutes = () => buildMultipakRoutes(false);
@@ -131,7 +127,6 @@ const buildMultipakRoutes = async (routingCache: boolean) => {
         ),
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
-      // Automatic checks can request either mod before both installs finish.
       ...[archives, [archives[1]]].map((mods) =>
         Object.assign(
           json(
@@ -155,7 +150,6 @@ const buildMultipakRoutes = async (routingCache: boolean) => {
           ? [fileserver(45, "filecache45", 1_000_000)]
           : [],
       }),
-      // A updates from the cache to v2; B is first downloaded from it.
       ...(routingCache
         ? archives.flatMap((mod, index) => [
             {
@@ -176,7 +170,6 @@ const buildMultipakRoutes = async (routingCache: boolean) => {
         [
           json(`/apiv11/Mod/${mod.id}/ProfilePage`, profiles[index]),
           Object.assign(json(`/apiv11/Mod/${mod.id}/DownloadPage`, {}), {
-            // The chooser and Rust URL resolver each fetch metadata at install.
             sequence: (["v1", "v1", "v2"] as const).map((version) => ({
               status: 200,
               body: JSON.stringify({ _aFiles: [file(mod, version)] }),
@@ -223,8 +216,6 @@ export const assertMultipakUpdateNetwork = (
   );
 };
 
-// A installs with Default routing and updates with Automatic; a fresh process
-// then downloads B with Automatic.
 export const assertUpdateRoutingNetwork = (
   _id: string,
   requests: readonly FixtureRequest[],

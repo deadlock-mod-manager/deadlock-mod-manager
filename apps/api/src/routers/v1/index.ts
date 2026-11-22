@@ -53,7 +53,6 @@ export const v1Router = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      // V1: Return only the first download (primary/largest file)
       const sortedDownloads = downloads.sort((a, b) => b.size - a.size);
       const primaryDownload = [sortedDownloads[0]];
       return toModDownloadDto(primaryDownload);

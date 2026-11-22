@@ -15,12 +15,6 @@ export const SLOTS_PER_CATEGORY = 4;
 export const ABILITY_SLOTS = 4;
 export const AP_COSTS = [1, 2, 5] as const;
 
-/**
- * Plausible tier ramps for one category, in the tier each slot ends up at. A
- * real build starts cheap and grows into the late game, so every shape ends on
- * at least one tier 4 item - matches run long, and a build that tops out at
- * tier 3 has nothing left to buy by the time they do.
- */
 const TIER_SHAPES: readonly (readonly number[])[] = [
   [1, 2, 3, 4],
   [1, 2, 4, 4],
@@ -34,45 +28,23 @@ const TIER_SHAPES: readonly (readonly number[])[] = [
   [1, 1, 3, 4],
 ];
 
-/**
- * What a full build is allowed to cost. A long Deadlock match leaves a player
- * somewhere in the forties of thousands of souls, and a roll nobody can
- * finish buying is not a roll worth playing - so the build is capped rather
- * than left to whatever the tier shapes add up to.
- */
 export const SOUL_BUDGET = 46_000;
 
-/** How much likelier a hero's "Good" draft items are than its ordinary ones. */
 const GOOD_BUCKET_WEIGHT = 3;
-/** How often a rolled item that has an upgrade gets taken all the way. */
 const UPGRADE_CHANCE = 0.5;
-/**
- * The map has three lanes and every one of them is a duo lane, so the lane
- * itself is all there is to roll.
- */
 const LANES = ["yellow", "blue", "green"] as const;
 
-/** Lane names are translated at render time, under `lanes.<lane>`. */
 type Lane = (typeof LANES)[number];
 const CHALLENGE_COUNT = 3;
 
-/**
- * Items that only work on abilities with charges. Every hero's draft data
- * lists them, charged ability or not, so they are checked against the kit.
- */
 export const CHARGE_ITEMS: ReadonlySet<string> = new Set([
   "upgrade_extra_charge",
   "upgrade_rapid_recharge",
   "upgrade_rechargingbullets",
 ]);
 
-/**
- * The first point each unlock can take, in unlock order. Stands in for a hero
- * that comes without a level table.
- */
 const DEFAULT_UNLOCK_GATES = [1, 2, 3, 5];
 
-/** Label and blurb are translated at render time, under `mandates.<mandate>`. */
 type Mandate = "gunslinger" | "caster" | "bulwark";
 
 const MANDATES: Record<ItemCategory, Mandate> = {
@@ -82,32 +54,19 @@ const MANDATES: Record<ItemCategory, Mandate> = {
 };
 
 export interface RolledItem {
-  /** What goes into the slot first. */
   item: DeadlockUpgrade;
-  /**
-   * What the item is later upgraded into, in the same slot. The shop deducts
-   * the component's cost, so the slot ends up costing the upgrade's price.
-   */
   upgrade?: DeadlockUpgrade;
-  /** 1-based signature ability this item is imbued onto, when it is an imbue. */
   imbueSlot?: number;
-  /** True when this hero's draft data rates the item highly. */
   recommended: boolean;
 }
 
 interface AbilityStep {
-  /** 1-based signature slot, matching `hero.items.signature{n}`. */
   slot: number;
-  /** 1, 2 or 3 - which of the ability's three upgrades this point buys. */
   step: number;
   apCost: number;
   apSpent: number;
 }
 
-/**
- * One step of levelling an ability, in the order they happen in a match. Every
- * ability goes through four: the unlock, then its three upgrades.
- */
 export type SkillStep =
   | { kind: "unlock"; slot: number }
   | ({ kind: "upgrade" } & AbilityStep);
@@ -118,35 +77,25 @@ export interface Roll {
   lane: Lane;
   mandate: Mandate;
   build: RolledItem[];
-  /** Signature slots in the order they get unlocked. The ultimate is last. */
   unlockOrder: number[];
   abilityOrder: AbilityStep[];
-  /** Unlocks and upgrades together, four per ability, as the match hands them out. */
   skillOrder: SkillStep[];
   challenges: Challenge[];
   totalSouls: number;
   soulsByCategory: Record<ItemCategory, number>;
-  /** How many shop items this hero actually drafts, of everything buyable. */
   draftPoolSize: number;
 }
 
 export interface RollOptions {
-  /** Slug of the hero to lock the roll to. An unknown slug rolls as usual. */
   heroSlug?: string;
-  /**
-   * Every ability by class name. Without it the roll cannot tell which heroes
-   * have charged abilities, and leaves the charge items in every pool.
-   */
   abilities?: ReadonlyMap<string, DeadlockAbility>;
 }
 
 const costOf = (item: DeadlockUpgrade) => item.cost ?? 0;
 
-/** The item a slot ends up holding once its upgrade is bought. */
 export const finalItem = (entry: RolledItem): DeadlockUpgrade =>
   entry.upgrade ?? entry.item;
 
-/** Imbue items that may not go on the ultimate, per the item's own flag. */
 const isUltimateSafe = (item: DeadlockUpgrade): boolean =>
   item.imbue !== "imbue_active_non_ult";
 
@@ -154,10 +103,6 @@ const tierCap = (hero: DeadlockHero, category: ItemCategory, tier: number) =>
   hero.item_slot_info[category]?.max_purchases_for_tier?.[tier - 1] ??
   SLOTS_PER_CATEGORY;
 
-/**
- * Tiers to try for a wanted tier, nearest first. Keeps a roll from dead-ending
- * when a hero's draft pool has nothing left at the tier the shape asked for.
- */
 const tierFallbacks = (wanted: number, maxTier: number): number[] => {
   const tiers: number[] = [];
   for (let distance = 0; distance < maxTier; distance++) {
@@ -170,12 +115,6 @@ const tierFallbacks = (wanted: number, maxTier: number): number[] => {
   return tiers;
 };
 
-/**
- * Whether the hero has anything for Extra Charge and friends to work on. An
- * ability that is missing from the data counts as charged: leaving a charge
- * item in the pool is a smaller mistake than taking it from a hero who needs
- * it.
- */
 const hasChargedAbility = (
   hero: DeadlockHero,
   abilities: ReadonlyMap<string, DeadlockAbility> | undefined,
@@ -198,20 +137,11 @@ const rollBuild = (
   const usable = charged
     ? upgrades
     : upgrades.filter((item) => !CHARGE_ITEMS.has(item.class_name));
-  // Heroes carry their own draft pool, so the shop is not the same for all of
-  // them. The whole shop stands in when a hero has no draft data, and equally
-  // when its data matches nothing we can buy - renamed class names after a
-  // patch would otherwise leave the build empty.
   const drafted = usable.filter((item) => draft[item.class_name] !== undefined);
   const draftable = drafted.length > 0 ? drafted : usable;
   const maxTier = draftable.reduce((max, u) => Math.max(max, u.item_tier), 1);
   const blocked = new Set<string>();
 
-  /**
-   * An item and anything it shares a component tree with belong in one slot.
-   * The shop folds the component into the upgrade, so putting both into
-   * separate slots would pay twice for something the player already owns.
-   */
   const block = (item: DeadlockUpgrade) => {
     blocked.add(item.class_name);
     for (const component of item.component_items ?? []) {
@@ -241,8 +171,6 @@ const rollBuild = (
   let soulsLeft = SOUL_BUDGET;
   let picksLeft = ITEM_CATEGORIES.length * SLOTS_PER_CATEGORY;
 
-  // Whichever category is filled last takes whatever the budget has left, so
-  // the order is shuffled rather than always squeezing the same one.
   for (const category of shuffle(rng, ITEM_CATEGORIES)) {
     const pool = draftable.filter((item) => item.item_slot_type === category);
     const takenPerTier = new Map<number, number>();
@@ -252,8 +180,6 @@ const rollBuild = (
     const shape = pick(rng, TIER_SHAPES);
 
     for (const wantedTier of shape.slice(0, SLOTS_PER_CATEGORY)) {
-      // Whatever this slot costs, the slots after it still have to fit in the
-      // budget, so each pick reserves the cheapest possible item for each one.
       const reserved = (picksLeft - 1) * cheapestCost;
       const affordable = (item: DeadlockUpgrade) =>
         costOf(item) <= soulsLeft - reserved;
@@ -275,8 +201,6 @@ const rollBuild = (
         let item = target;
         let upgrade: DeadlockUpgrade | undefined;
 
-        // An item built out of a component is shown as the way to it: the
-        // component first, then the upgrade into the rolled item.
         const components = draftable.filter(
           (other) =>
             (target.component_items ?? []).includes(other.class_name) &&
@@ -286,8 +210,6 @@ const rollBuild = (
           item = weightedPick(rng, components, weightOf);
           upgrade = target;
         } else {
-          // A plain item with an upgrade gets taken all the way some of the
-          // time, as long as the upgrade still fits the budget and tier limits.
           const upgradesTo = draftable.filter(
             (other) =>
               (other.component_items ?? []).includes(target.class_name) &&
@@ -328,9 +250,6 @@ const rollBuild = (
     }
   }
 
-  // Slots are listed by what they end up as, so the list climbs from cheap to
-  // expensive: an upgrade path is bought where its final item belongs, and the
-  // late game is where the big items land.
   const orderKeys = new Map(
     picked.map((entry) => [entry.item.class_name, rng()]),
   );
@@ -347,11 +266,6 @@ const rollBuild = (
   });
 };
 
-/**
- * The first point each unlock can take, read off the hero's level table. An
- * ability unlocked once `n` points are already earned cannot have received
- * any of them, so point `n + 1` is its earliest.
- */
 export const unlockGates = (hero: DeadlockHero): number[] => {
   const levels = Object.entries(hero.level_info)
     .map(([level, info]) => ({ level: Number(level), info }))
@@ -372,7 +286,6 @@ export const unlockGates = (hero: DeadlockHero): number[] => {
     : DEFAULT_UNLOCK_GATES;
 };
 
-/** The three signatures unlock in any order; the ultimate is always last. */
 const rollUnlockOrder = (rng: Rng): number[] => [
   ...shuffle(
     rng,
@@ -395,15 +308,11 @@ const rollAbilityOrder = (
   let apSpent = 0;
 
   while (progress.some((entry) => entry.taken < AP_COSTS.length)) {
-    // No points go into an ability before it is unlocked. The first unlock
-    // is open from the first point on, so there is always something to buy.
     const open = progress.filter(
       (entry) =>
         entry.taken < AP_COSTS.length &&
         entry.gate <= apSpent + AP_COSTS[entry.taken],
     );
-    // Cheap upgrades are far likelier to come first, the way points actually
-    // get spent - without ever locking out a greedy 5 point opener.
     const chosen = weightedPick(
       rng,
       open,
@@ -423,11 +332,6 @@ const rollAbilityOrder = (
   return steps;
 };
 
-/**
- * Weaves the unlocks in between the point upgrades. An unlock arrives once
- * `gate - 1` points are earned, and a point upgrade the moment its running
- * total is - on a tie the upgrade came first, a level earlier.
- */
 const skillOrder = (
   unlockOrder: number[],
   gates: number[],
@@ -476,8 +380,6 @@ export const rollLoadout = (
   options: RollOptions = {},
 ): Roll => {
   const rng = createRng(seed);
-  // The hero is drawn even when one is locked, so the rest of the roll spends
-  // the random stream the same way either way.
   const drawn = pick(rng, heroes);
   const hero =
     heroes.find((candidate) => heroSlug(candidate) === options.heroSlug) ??

@@ -1,8 +1,3 @@
-//! `http.fetch` transport. The runtime has already checked the request
-//! against the plugin's grant; this layer refuses destinations that resolve
-//! to non-public addresses, follows no redirects, ignores proxies (so the
-//! address check covers the real destination) and caps time and size.
-
 use dmm_plugin_runtime::{Error as RuntimeError, HttpRequest, HttpResponse};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::{Arc, OnceLock};
@@ -41,7 +36,6 @@ fn is_public_v6(ip: Ipv6Addr) -> bool {
   let segments = ip.segments();
   let embedded_v4 =
     |high: u16, low: u16| Ipv4Addr::new((high >> 8) as u8, high as u8, (low >> 8) as u8, low as u8);
-  // NAT64 (64:ff9b::/96) and 6to4 (2002::/16) reach the IPv4 they embed.
   if segments[..6] == [0x64, 0xff9b, 0, 0, 0, 0] {
     return is_public_v4(embedded_v4(segments[6], segments[7]));
   }
@@ -65,8 +59,6 @@ pub fn is_public(ip: IpAddr) -> bool {
   }
 }
 
-/// A destination that resolved only to private, loopback or link-local
-/// addresses.
 #[derive(Debug)]
 struct PrivateDestination(String);
 
@@ -78,8 +70,6 @@ impl std::fmt::Display for PrivateDestination {
 
 impl std::error::Error for PrivateDestination {}
 
-/// The system resolver with every non-public address removed, so the
-/// connection can only go to an address that passed the check.
 struct PublicResolver;
 
 impl reqwest::dns::Resolve for PublicResolver {
@@ -188,9 +178,6 @@ async fn perform(request: &HttpRequest) -> Result<HttpResponse, RuntimeError> {
   })
 }
 
-/// Performs `request` from a hostcall thread. Hostcalls run on plain threads
-/// or the blocking pool, never on an async worker, so blocking on the app
-/// runtime here is sound.
 pub fn fetch(request: &HttpRequest) -> Result<HttpResponse, RuntimeError> {
   tauri::async_runtime::block_on(perform(request))
 }

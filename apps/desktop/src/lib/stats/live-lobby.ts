@@ -15,41 +15,29 @@ export interface CareerRecord extends WinRecord {
   kda: number;
 }
 
-/** One lobby player's record, overall and split by hero. */
 export interface LobbyRecord {
   overall: CareerRecord;
   heroes: Map<number, CareerRecord>;
 }
 
-/** Everything known about the lobby beyond what the top bar shows. */
 export interface LiveLobby {
   records: Map<number, LobbyRecord>;
   ranks: Map<number, number>;
-  /** Recent results per account, newest first; `true` is a win. */
   form: Map<number, boolean[]>;
-  /** Your record with each teammate and against each opponent, by account. */
   mates: Map<number, WinRecord>;
   enemies: Map<number, WinRecord>;
-  /** Your record on your current hero against each enemy hero, by hero id. */
   matchups: Map<number, WinRecord>;
   isPending: boolean;
 }
 
 export const FORM_LENGTH = 10;
 
-/** A hero this share of someone's matches is the one they main. */
 const ONE_TRICK_SHARE = 0.5;
-/** Below this many matches a share says nothing. */
 const ONE_TRICK_MIN_MATCHES = 30;
-/** Streaks shorter than this are noise, not a tag. */
 const MIN_STREAK = 3;
-/** Fewer games than this against a hero says nothing about the matchup. */
 const MIN_MATCHUP_GAMES = 5;
-/** Below this win rate a matchup is a hard one. */
 const HARD_MATCHUP = 0.45;
-/** From this win rate a matchup reads as going your way. */
 const WINNING_MATCHUP = 0.55;
-/** From this win rate a matchup is one of your best. */
 const GOOD_MATCHUP = 0.6;
 
 export const winrateOf = (record: WinRecord): number =>
@@ -132,7 +120,6 @@ export const recentForm = (history: MatchHistoryEntry[]): boolean[] =>
     .slice(0, FORM_LENGTH)
     .map(isWin);
 
-/** The run the player is on, when it is long enough to mention. */
 export const streakOf = (
   form: boolean[],
 ): { won: boolean; length: number } | null => {
@@ -167,10 +154,6 @@ export const matchupsFor = (
 
 const SUBRANKS = 6;
 
-/**
- * The badge in the middle of a group. Badges are `tier * 10 + subrank` with
- * subranks 1-6, so they are averaged on a scale without the gaps.
- */
 export const averageBadge = (badges: number[]): number | null => {
   const steps = badges
     .filter((badge) => badge > 0)
@@ -185,10 +168,8 @@ export const averageBadge = (badges: number[]): number | null => {
   return Math.floor(step / SUBRANKS) * 10 + (step % SUBRANKS) + 1;
 };
 
-/** What the lobby knows about one player. */
 export interface LobbyEntry {
   record: LobbyRecord | undefined;
-  /** Their record on the hero they are playing now. */
   onHero: CareerRecord | undefined;
   badge: number | undefined;
   form: boolean[] | undefined;
@@ -221,12 +202,9 @@ const mean = (values: number[]) =>
     ? null
     : values.reduce((sum, value) => sum + value, 0) / values.length;
 
-/** One team's numbers for the scouting report's side-by-side. */
 export interface TeamScouting {
   rank: number | null;
-  /** Average games each player has on the hero they locked. */
   onHero: number | null;
-  /** Pooled win rate on the heroes they locked. */
   winrate: number | null;
   matches: number;
 }
@@ -249,7 +227,6 @@ export const teamScouting = (
   };
 };
 
-/** A note next to a player's name in the scouting report. */
 export type ScoutingTag =
   | { kind: "beatYou"; lost: number; count: number }
   | { kind: "againstYou"; count: number }
@@ -300,7 +277,6 @@ export type MatchupTone = "good" | "even" | "bad" | "unknown";
 export interface Matchup<Hero extends { id: number }> {
   hero: Hero;
   record: WinRecord;
-  /** `null` until there are enough games to say anything. */
   winrate: number | null;
   tone: MatchupTone;
   note: "hardest" | "best" | null;
@@ -308,11 +284,9 @@ export interface Matchup<Hero extends { id: number }> {
 
 export interface MatchupReport<Hero extends { id: number }> {
   matchups: Matchup<Hero>[];
-  /** All the matchups' games together. */
   pooled: WinRecord;
 }
 
-/** Your record on your hero against each enemy hero, and across all of them. */
 export const matchupReport = <Hero extends { id: number }>(
   records: Map<number, WinRecord>,
   enemyHeroes: Hero[],

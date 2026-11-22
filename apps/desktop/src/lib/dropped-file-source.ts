@@ -16,7 +16,6 @@ export class CombinedArchiveError extends ValidationError {
   }
 }
 
-// Checked on every list a drop can resolve to, not only the first one.
 const detect = (files: File[]): DetectedSource | null => {
   if (combinesArchives(files)) throw new CombinedArchiveError();
   return detectSource(files);

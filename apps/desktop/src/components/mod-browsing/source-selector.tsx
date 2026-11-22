@@ -35,8 +35,6 @@ export const SourceSelector = ({
     markFeatureUsed("custom-mod-sources");
     navigate("/settings", { state: { activeTab: "mods" } });
   };
-  // The current source stays listed after it is disabled so the trigger keeps
-  // its label while the catalog explains why it is unavailable.
   const choices =
     sources.data?.filter(
       (source) => !source.removed && (source.enabled || source.key === value),

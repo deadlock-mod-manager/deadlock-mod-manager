@@ -15,7 +15,6 @@ import { healthAction, healthBadgeKind } from "@/lib/mods/mod-health";
 import { isModOutdated } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
-/** Lives inside the menu content, so it only subscribes while the menu is open. */
 export const ModHealthMenuItems = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const profileFolder = useActiveProfileFolder();

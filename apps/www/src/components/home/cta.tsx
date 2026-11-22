@@ -15,10 +15,6 @@ import { APP_NAME, DOWNLOAD_PAGE_URL } from "@/lib/constants";
 
 type CtaSize = "sm" | "lg";
 
-/**
- * Filled gold button. "lg" is the page's primary action; "sm" is the
- * navbar's, kept noticeably smaller so it stays secondary to the hero.
- */
 export const primaryCta = (size: CtaSize) =>
   cn(
     "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:translate-y-px [&_svg]:size-4 [&_svg]:shrink-0",
@@ -27,12 +23,6 @@ export const primaryCta = (size: CtaSize) =>
       : "h-8 pr-3 pl-2.5 text-[13px]",
   );
 
-/**
- * The note under the primary action floats below it on wide screens. On phones
- * the action takes its own row and the note sits in flow with its line
- * reserved, so a wrapped sibling link never ends up underneath it and filling
- * it after hydration doesn't shift the page.
- */
 const ctaWrapperClassName =
   "relative inline-flex max-sm:w-full max-sm:flex-col max-sm:items-start";
 const noteClassName =
@@ -46,11 +36,6 @@ const NoteCheck = () => (
   />
 );
 
-/**
- * The page's one primary action: download the right build for this OS. When a
- * direct download starts, a note confirms it and names the next step. Phones,
- * tablets and Macs can't run the app, so they get SendToPcCta instead.
- */
 export const DownloadCta = () => {
   const { t } = useTranslation("common");
   const { os, mobile, canInstall, linkProps } = usePlatformDownload();
@@ -84,11 +69,6 @@ export const DownloadCta = () => {
 
 type SendResult = "copied" | "shared" | "failed";
 
-/**
- * Hands the downloads page link to the visitor's PC: the share sheet when
- * there is one (phones), otherwise the clipboard. Returns null when the
- * visitor dismisses the share sheet.
- */
 const sendLinkToPc = async (
   preferShare: boolean,
 ): Promise<SendResult | null> => {
@@ -110,7 +90,6 @@ const sendLinkToPc = async (
   }
 };
 
-/** Primary action for devices that can't install the app. */
 const SendToPcCta = ({ preferShare }: { preferShare: boolean }) => {
   const { t } = useTranslation("common");
   const [result, setResult] = useState<SendResult | null>(null);
@@ -145,7 +124,6 @@ const SendToPcCta = ({ preferShare }: { preferShare: boolean }) => {
   );
 };
 
-/** Secondary actions are text links with a trailing arrow, never boxes. */
 export const secondaryCta = (size: CtaSize) =>
   cn(
     "group/cta inline-flex shrink-0 items-center gap-2 rounded-md font-medium text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4",

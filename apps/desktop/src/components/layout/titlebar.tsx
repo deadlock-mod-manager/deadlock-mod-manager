@@ -34,7 +34,6 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
 
-// Tauri can set the webview zoom but not read it, so track it for the webview's lifetime.
 let zoomLevel = 1;
 
 interface MenuItem {
@@ -66,8 +65,6 @@ export const Titlebar = () => {
     setCurrentWindow(getCurrentWindow());
   }, []);
 
-  // Tapping Alt on its own toggles the menu bar, as in other Windows apps.
-  // Alt held for a shortcut such as Alt+F4 leaves it alone.
   useEffect(() => {
     let altTapped = false;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -229,7 +226,6 @@ export const Titlebar = () => {
     setShowAboutDialog(true);
   };
 
-  // Register global shortcuts
   useGlobalShortcuts([
     {
       key: "Ctrl+M",

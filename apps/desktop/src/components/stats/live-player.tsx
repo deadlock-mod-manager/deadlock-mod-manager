@@ -4,14 +4,9 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { heroIdOf, type ResolvedPlayer } from "@/lib/stats/live-teams";
 import { cn } from "@/lib/utils";
 
-/** The top bar lists each player once per team, but names can repeat. */
 export const playerKey = ({ player }: ResolvedPlayer, index: number) =>
   `${player.name}-${index}`;
 
-/**
- * A player's hero portrait, ringed in their team colour when `ring` is set.
- * `radius` rounds the portrait and the ring alike.
- */
 export const LiveHeroAvatar = ({
   entry,
   className,
@@ -27,10 +22,8 @@ export const LiveHeroAvatar = ({
   radius: string;
   ring?: string;
   ringClassName?: string;
-  /** The portrait's own hairline. */
   bordered?: boolean;
   frameClassName?: string;
-  /** Overlays drawn on top of the portrait. */
   children?: ReactNode;
 }) => (
   <span className={frameClassName}>
@@ -57,7 +50,6 @@ export const LiveHeroAvatar = ({
   </span>
 );
 
-/** A player row, picked out in the team colour when it is you. */
 export const LivePlayerRow = ({
   isLocal,
   color,

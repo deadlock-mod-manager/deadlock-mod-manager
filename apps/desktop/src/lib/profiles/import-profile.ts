@@ -59,7 +59,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     fileserverPreference,
   } = deps;
 
-  /** Records the attempt and reports which mods didn't make it in. */
   const finishImport = (
     context: ReturnType<typeof resolveImportContext>,
     attempt: AnalyticsAttempt<"profile_import">,

@@ -1,36 +1,21 @@
-//! Which Steam friends probably played a match deadlock-api hasn't stored yet. Pure and
-//! clock-injected so it unit-tests without Steam or the API; [`super::sync`] feeds it
-//! from the GC and deadlock-api clients.
-
 const HOUR: i64 = 60 * 60;
 const DAY: i64 = 24 * HOUR;
 
-// Bounds for a friend's typical gap between matches, and the fallback when the stored
-// history is too short to tell.
 const MIN_GAP: i64 = HOUR;
 const MAX_GAP: i64 = 3 * DAY;
 const DEFAULT_GAP: i64 = DAY;
-/// How many of a friend's newest stored matches the cadence is read from.
 pub const GAP_SAMPLE: usize = 20;
-// A match takes a while to start and finish; being online only briefly after the last
-// stored match doesn't mean another one was played.
 const MIN_ACTIVITY_AFTER_LAST: i64 = 45 * 60;
-// Unless they're in Deadlock right now, a friend whose newest stored match is this old has
-// most likely stopped playing, and isn't worth a lookup.
 const MAX_IDLE: i64 = 14 * DAY;
-// Being in Deadlock right now always ranks ahead of a cadence guess.
 const IN_GAME_BOOST: u64 = 1 << 32;
 
-/// What Steam's persona state says about a friend right now.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Persona {
   pub in_deadlock: bool,
   pub online: bool,
-  /// Last time the friend was seen online, if Steam shares it.
   pub last_seen: Option<i64>,
 }
 
-/// Median gap between consecutive matches in `starts_newest_first`, clamped.
 fn typical_gap(starts_newest_first: &[i64]) -> i64 {
   let sample = &starts_newest_first[..starts_newest_first.len().min(GAP_SAMPLE)];
   let mut gaps: Vec<i64> = sample.windows(2).map(|w| (w[0] - w[1]).abs()).collect();
@@ -41,8 +26,6 @@ fn typical_gap(starts_newest_first: &[i64]) -> i64 {
   gaps[gaps.len() / 2].clamp(MIN_GAP, MAX_GAP)
 }
 
-/// `Some(score)` if the friend likely played after `last_end` (the end of their newest
-/// stored match); higher scores are more likely and should be looked up first.
 pub fn estimate(
   now: i64,
   last_end: i64,
@@ -68,7 +51,6 @@ pub fn estimate(
   }
 }
 
-/// The `budget` highest-scoring friends, best first.
 pub fn pick<T>(mut scored: Vec<(T, u64)>, budget: usize) -> Vec<T> {
   scored.sort_by_key(|&(_, score)| std::cmp::Reverse(score));
   scored
@@ -84,7 +66,6 @@ mod tests {
 
   const NOW: i64 = 1_000_000_000;
 
-  // A friend playing about every 2h, newest match ending `ago` seconds before NOW.
   fn regular(ago: i64) -> (i64, Vec<i64>) {
     let last_start = NOW - ago - 1800;
     let starts = (0..10).map(|i| last_start - i * 2 * HOUR).collect();
@@ -121,7 +102,6 @@ mod tests {
       ..Default::default()
     };
     assert!(estimate(NOW, end, &starts, Some(seen)).is_some());
-    // Offline ever since the last stored match: nothing new to find.
     let gone = Persona {
       last_seen: Some(end + 10 * 60),
       ..Default::default()

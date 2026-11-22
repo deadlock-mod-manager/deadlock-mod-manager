@@ -100,7 +100,7 @@ function KvParserComponent() {
       "text/plain": [".gi", ".txt", ".vdf", ".kv"],
     },
     multiple: false,
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 5 * 1024 * 1024,
   });
 
   const handleLoadSample = () => {

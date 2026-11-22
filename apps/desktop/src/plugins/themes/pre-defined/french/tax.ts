@@ -3,7 +3,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 export const FRENCH_TAX_RATE = 0.055;
 const BYTES_PER_GIGABYTE = 1_000_000_000;
 
-/** Estimate bandwidth tax from completed, selected archives, excluding unchosen variants. */
 export function calculateFrenchTax(
   mods: readonly Pick<LocalMod, "status" | "selectedDownloads">[],
 ) {

@@ -87,8 +87,6 @@ pub struct VdataHistoryIndex {
   observed_strings: BTreeMap<Fingerprint, BTreeSet<Fingerprint>>,
 }
 
-/// The learned history consulted before the shipped one. It borrows both, so
-/// each mod check reads the shipped history without copying it.
 #[derive(Debug, Clone, Copy)]
 pub struct VdataHistory<'a> {
   learned: &'a VdataHistoryIndex,
@@ -104,8 +102,6 @@ impl<'a> From<&'a VdataHistoryIndex> for VdataHistory<'a> {
   }
 }
 
-/// Immutable fingerprints of one observed game table. Keeping these separate
-/// lets callers reuse exact-source observations without retaining decoded trees.
 pub(crate) struct VdataSnapshot {
   discovery: BTreeMap<Fingerprint, Fingerprint>,
   exact: BTreeMap<Fingerprint, Fingerprint>,
@@ -128,7 +124,6 @@ impl VdataSnapshot {
   }
 
   pub(crate) fn cache_size(&self) -> usize {
-    // Charge map entries and B-tree allocation overhead conservatively.
     (self.discovery.len() + self.exact.len() + self.fields.len() + self.bindings.len())
       .saturating_mul(192)
   }
@@ -169,7 +164,6 @@ enum FingerprintMode {
 }
 
 impl VdataHistoryIndex {
-  /// String bindings remain exact even in the older numeric history format.
   pub fn observed_string_field(
     &self,
     file_path: &str,
@@ -217,7 +211,6 @@ impl VdataHistoryIndex {
         let exact_rows = if exact { reader.changes()? } else { Vec::new() };
         let fields = reader.changes()?;
         if magic != MAGIC {
-          // Older files only retain fingerprints, so carry all known field values forward.
           for field in &fields {
             if let Some(value) = field.value {
               observed_strings
@@ -451,7 +444,6 @@ impl VdataHistoryIndex {
       exact_rows: map_changes(&previous_exact, exact),
       fields: map_changes(&previous_fields, fields),
     });
-    // Compact the retained prefix into one complete snapshot, keeping the latest 64 changes.
     if table.builds.len() > 64 {
       let oldest = table.builds.remove(0);
       let next = &mut table.builds[0];
@@ -606,8 +598,6 @@ fn contains_double(value: &Kv3Value) -> bool {
   }
 }
 
-/// Encodes historical full-table snapshots into a delta-compressed fingerprint index.
-/// This is public so the repository's maintenance utility can refresh the embedded asset.
 pub fn encode_history_index(tables: &[(String, Vec<(u32, Kv3Value)>)]) -> Result<Vec<u8>, String> {
   let mut output = Vec::new();
   output.extend_from_slice(MAGIC);
@@ -783,7 +773,6 @@ fn hash_value(hasher: &mut Sha256, value: &Kv3Value, mode: FingerprintMode) {
     Kv3Value::Int(value) => hash_parts_into(hasher, &[b"int", &value.to_le_bytes()]),
     Kv3Value::UInt(value) => hash_parts_into(hasher, &[b"uint", &value.to_le_bytes()]),
     Kv3Value::Double(value) => {
-      // Compiler noise can identify a likely build, but cannot prove an edit was absent.
       let value = match mode {
         FingerprintMode::Discovery => canonical_double(*value),
         FingerprintMode::Exact => *value,
@@ -1027,7 +1016,6 @@ mod tests {
     )]);
     let mut bytes =
       encode_history_index(&[("scripts/heroes.vdata_c".into(), vec![(1, root)])]).unwrap();
-    // One v3 ledger entry: count, key, value count, value.
     bytes.truncate(bytes.len() - 72);
     bytes[..8].copy_from_slice(EXACT_MAGIC);
     let history = VdataHistoryIndex::from_bytes(&bytes).unwrap();
@@ -1044,7 +1032,6 @@ mod tests {
   #[test]
   fn round_trips_and_matches_the_closest_baseline() {
     let path = "scripts/abilities.vdata_c";
-    // Repeat rows so this small fixture meets the same confidence threshold as production.
     let mut candidate_rows = match root(32, 100) {
       Kv3Value::Object(rows) => rows,
       _ => unreachable!(),
@@ -1251,7 +1238,6 @@ mod tests {
     assert!(baseline.is_none());
     assert_eq!(evidence.status, BaselineStatus::Ambiguous);
     assert_eq!(evidence.build_versions, vec![1, 2]);
-    // When both agree, the learned build is the one returned.
     let (baseline, evidence) = combined.match_with_evidence(path, &with_padding(1.003));
     assert_eq!(baseline.unwrap().build_version, 2);
     assert_eq!(evidence.status, BaselineStatus::Matched);

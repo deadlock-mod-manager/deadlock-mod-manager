@@ -262,7 +262,6 @@ fn refuses_a_declared_health_group_without_an_embedded_render_surface() {
     let Value::Array(masks) = value.get_mut("m_refMeshGroupMasks").unwrap() else {
         panic!()
     };
-    // Both groups exist, but there is no embedded head draw call in the registry.
     masks[1] = Value::UInt(1);
     let changed = rebuild(&current, &value, &encoding, &format).unwrap();
     assert!(

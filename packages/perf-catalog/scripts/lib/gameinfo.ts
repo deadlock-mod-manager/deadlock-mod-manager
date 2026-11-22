@@ -2,29 +2,22 @@ import type { ConfigEntry } from "../../src/schema";
 import { type KvNode, normalizeValue, parseCommentedPair, parseKv } from "./kv";
 
 interface ConvarValue {
-  /** Key as the author wrote it. */
   key: string;
   value: string;
-  /** Children of an object-valued convar (`rate { min default max }`). */
   object?: Map<string, { key: string; value: string }>;
 }
 
 interface Leaf {
-  /** Section path below `GameInfo`, author casing. Empty for root keys. */
   path: string[];
   key: string;
   value: string;
 }
 
 export interface ParsedGameinfo {
-  /** A whole file (has a `GameInfo` block) rather than a ConVars snippet. */
   fullFile: boolean;
   pgiVersion: string | null;
-  /** Lower-cased name to the last occurrence, in first-occurrence order. */
   convars: Map<string, ConvarValue>;
-  /** Scalars outside the root ConVars block. */
   leaves: Leaf[];
-  /** Full-line `// key "value"` comments outside ConVars, with their section. */
   commented: Leaf[];
   errors: string[];
 }
@@ -71,7 +64,6 @@ const readConvars = (nodes: KvNode[]): Map<string, ConvarValue> => {
     } else {
       entry = { key: node.key, value: node.value };
     }
-    // Map.set keeps the first occurrence's position; the engine reads the last value.
     convars.set(node.key.toLowerCase(), entry);
   }
   return convars;
@@ -111,7 +103,6 @@ export const parseGameinfo = (text: string): ParsedGameinfo => {
   };
   if (gameInfo) walk(top, []);
 
-  // Assign each full-line comment to the innermost section around it.
   const commented: Leaf[] = [];
   if (gameInfo) {
     for (const comment of document.comments) {
@@ -143,7 +134,6 @@ export const parseGameinfo = (text: string): ParsedGameinfo => {
   };
 };
 
-/** Leaves grouped by section path + key; a group with several values is a list. */
 const groupLeaves = (leaves: Leaf[]): Map<string, Leaf[]> => {
   const groups = new Map<string, Leaf[]>();
   for (const leaf of leaves) {
@@ -155,12 +145,6 @@ const groupLeaves = (leaves: Leaf[]): Map<string, Leaf[]> => {
   return groups;
 };
 
-/**
- * Sections that hold a list rather than key/value pairs (SearchPaths,
- * RenderModes): a key repeats inside them. With `distinctOnly`, a repeated key
- * only counts when its values differ, so an author's duplicated line doesn't
- * turn a section into a list.
- */
 const listSections = (
   parsed: ParsedGameinfo,
   distinctOnly = false,
@@ -176,11 +160,6 @@ const listSections = (
 
 const sectionId = (path: string[]): string => lower(path).join("/");
 
-/**
- * Every scalar of a stock file as entries: ConVars (object convars as one
- * entry per child) and section scalars, without FileSystem/SearchPaths and list
- * sections.
- */
 export const stockEntries = (parsed: ParsedGameinfo): ConfigEntry[] => {
   const entries: ConfigEntry[] = [];
   for (const convar of parsed.convars.values()) {
@@ -236,15 +215,9 @@ const jaccard = (a: Map<string, number>, b: Map<string, number>): number => {
 
 interface BaseMatch {
   stock: StockVersion;
-  /** Matched by `PGIVersion`. */
   exact: boolean;
 }
 
-/**
- * The stock file a config was built on: the `PGIVersion` match when the config
- * carries one (closest among builds sharing that hash), otherwise the closest
- * stock file by section-scalar overlap, tie-broken by matching ConVars.
- */
 export const pickBase = (
   config: ParsedGameinfo,
   history: StockVersion[],
@@ -285,18 +258,10 @@ interface DeltaRules {
 
 export interface Delta {
   entries: ConfigEntry[];
-  /** Edits we drop: list sections, root keys, excluded sections. */
   skipped: { listSection: string[]; rootKey: string[]; excluded: string[] };
-  /** Top-level sections the config edits that the base file doesn't have. */
   unknownSections: string[];
 }
 
-/**
- * The author's changes relative to `base`. ConVars that are new or differ
- * (normalized), section scalars that are new or differ, and section keys the
- * author commented out (value `null`). A key that is merely missing is never a
- * deletion.
- */
 export const computeDelta = (
   config: ParsedGameinfo,
   base: ParsedGameinfo,
@@ -337,8 +302,6 @@ export const computeDelta = (
 
   const configGroups = groupLeaves(config.leaves);
   const baseGroups = groupLeaves(base.leaves);
-  // A key the author repeats inside a section stock holds as key/value pairs
-  // is a slip, not a list: the last value wins.
   const baseSectionIds = new Set(
     base.leaves.map((leaf) => sectionId(leaf.path)),
   );

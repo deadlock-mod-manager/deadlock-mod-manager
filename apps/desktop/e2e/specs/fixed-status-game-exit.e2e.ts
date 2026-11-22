@@ -17,11 +17,6 @@ import { FIXED_MOD, PLAIN_MOD, STATUS } from "../support/fixed-status-fixtures";
 import { setModEnabled } from "../support/shard-actions";
 import { navigate } from "../support/ui";
 
-// A library change while Deadlock runs deletes the repair package, and the
-// rebuild waits for the game. Once the game exits, the fixed mod must get its
-// repair back without another change. The E2E build skips the "Deadlock is
-// running" guard, so the toggle goes through as it does with the protection
-// off or after "Change anyway".
 describe("fixed status after a change made while the game runs", () => {
   it("rebuilds the repair once the game exits", async () => {
     const runtime = await startApplication();
@@ -38,12 +33,9 @@ describe("fixed status after a change made while the game runs", () => {
       await setModEnabled(world, PLAIN_MOD, true);
       await step("while the game runs", async () => {
         await waitForStatus(STATUS.folder, FIXED_MOD, "fixable", 15_000);
-        // Shown only while the window knows the game is running, so the exit
-        // below is one the window sees.
         await $('[data-testid="mod-health-banner"]')
           .$("p=Close Deadlock to fix mods.")
           .waitForDisplayed({ timeout: 15_000 });
-        // Past the refresh debounce: the skipped rebuild left nothing behind.
         const samples = await sampleStatus(
           "while the game runs",
           STATUS.folder,

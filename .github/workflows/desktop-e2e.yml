@@ -57,13 +57,13 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup-desktop-e2e
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: apps/desktop -> target
           shared-key: desktop-e2e-debug
@@ -76,7 +76,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:build
       - name: Build native helper
         run: pnpm --filter @deadlock-mods/desktop e2e:build:picker
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-binaries
           retention-days: 3
@@ -94,13 +94,11 @@ jobs:
       fail-fast: false
       matrix:
         suite: ${{ fromJSON(inputs.suites || '["smoke","updater","library-groups","compatibility","local","local-large","profiles","conflicts","downloads","filesystem","gamebanana","settings","skins","interchange","shards","missing-vpks","catalog","navigation","onboarding","stats","diagnostics","performance","addons-analysis","analysis","analyze","fixed-status","profile-share"]') }}
-        # Fixed seeds keep failures reproducible: 0 is the default, 887
-        # replays #891 and 4 retries an update straight after a failure.
         include: ${{ fromJSON((!inputs.suites || contains(inputs.suites, '"monkey"')) && '[{"suite":"monkey","seed":"0"},{"suite":"monkey","seed":"887"},{"suite":"monkey","seed":"4"}]' || '[]') }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup-desktop-e2e
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: desktop-e2e-binaries
           path: apps/desktop
@@ -113,7 +111,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:test -- --suite $env:E2E_SUITE --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
@@ -131,7 +129,6 @@ jobs:
     container: ${{ matrix.image }}
     timeout-minutes: 60
     env:
-      # Arch can ship a system libvips that makes sharp compile from source.
       SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
     defaults:
       run:
@@ -156,16 +153,16 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed base-devel curl git file pkgconf unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg openssl protobuf
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup-desktop-e2e
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: apps/desktop -> target
           shared-key: desktop-e2e-debug-${{ matrix.distro }}
       - name: Build application
         run: pnpm --filter @deadlock-mods/desktop e2e:build
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-binaries-${{ matrix.distro }}
           retention-days: 3
@@ -179,7 +176,6 @@ jobs:
     container: ${{ matrix.image }}
     timeout-minutes: 25
     env:
-      # Arch can ship a system libvips that makes sharp compile from source.
       SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
     defaults:
       run:
@@ -188,7 +184,6 @@ jobs:
       fail-fast: false
       matrix:
         distro: [debian, arch]
-        # local and profiles need the Windows native input helper.
         suite:
           [
             smoke,
@@ -218,8 +213,6 @@ jobs:
               suite: monkey,
               seed: "887",
             }
-        # The app has no per-distro code paths, so one full Linux run is
-        # enough. Arch's rolling WebKitGTK only needs the startup check.
         exclude:
           - { distro: arch, suite: compatibility }
           - { distro: arch, suite: conflicts }
@@ -246,9 +239,9 @@ jobs:
           pacman -Syu --noconfirm --needed curl git unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg \
             mesa xorg-server-xvfb xorg-xauth xdotool dbus ttf-dejavu
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/setup-desktop-e2e
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: desktop-e2e-binaries-${{ matrix.distro }}
           path: apps/desktop/target/debug
@@ -263,7 +256,7 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
@@ -290,28 +283,24 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
           sudo docker system prune -af || true
           sudo apt-get clean
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
-      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
-      # Hashes in package.nix are refreshed on main by nix-test.yml, so a PR
-      # that changes pnpm-lock.yaml or Cargo.lock fails here until then.
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7
       - name: Build application
         run: nix build .#e2e --print-build-logs
       - name: Check harness feature
         run: grep -rqa "e2e-harness builds require an E2E configuration" result/bin
-      # Ship the closure as a binary-cache artifact: magic-nix-cache gets rate
-      # limited when every scenario job substitutes at once.
       - name: Export application closure
         run: |
           nix copy --to "file://$RUNNER_TEMP/nix-closure?compression=zstd" ./result
           readlink -f result > "$RUNNER_TEMP/nix-closure/e2e-out-path"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-binaries-nix
           retention-days: 3
@@ -328,15 +317,15 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: desktop-e2e-binaries-nix
           path: ${{ runner.temp }}/nix-closure
@@ -345,22 +334,13 @@ jobs:
           out="$(cat "$RUNNER_TEMP/nix-closure/e2e-out-path")"
           nix copy --from "file://$RUNNER_TEMP/nix-closure" --no-check-sigs "$out"
           echo "DMM_NIX_E2E_BINARY=$out/bin/deadlock-mod-manager" >> "$GITHUB_ENV"
-      # Nix's libglvnd looks for drivers in /run/opengl-driver, which NixOS
-      # provides through hardware.graphics; recreate it from the pinned mesa.
       - name: Provide NixOS graphics drivers
         run: sudo ln -sfn "$(nix build --inputs-from . nixpkgs#mesa --no-link --print-out-paths)" /run/opengl-driver
-      # The harness only drives the app, so it runs on the host toolchain.
-      # Doctor is skipped: it probes the host for WebKitGTK, which the Nix
-      # closure provides instead.
       - uses: ./.github/actions/setup-desktop-e2e
-      # The display and session bus come from the host: Nix's dbus only ships
-      # a stub session.conf that includes NixOS's /etc/dbus-1 configuration.
       - name: Install display packages
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb xauth dbus
-      # Debian and Arch cover app behaviour; these suites check that the Nix
-      # package starts and can reach the game and app-data directories.
       - name: Run serial scenarios on a virtual display
         run: |
           status=0
@@ -371,7 +351,7 @@ jobs:
           exit "$status"
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: desktop-e2e-nix
           retention-days: 14

@@ -5,9 +5,6 @@ const logger = mainLogger.child().withContext({
   service: "desktop-updates",
 });
 
-// Kaspersky flags desktop processes that poll GitHub release downloads
-// (NetTool.GitHubGetRepo.HTTP.C&C), so the app checks for updates through the
-// API. Installers still download straight from GitHub, once per update.
 const RELEASES_URL =
   "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases";
 

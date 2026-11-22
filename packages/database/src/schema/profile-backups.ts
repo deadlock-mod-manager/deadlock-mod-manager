@@ -19,7 +19,6 @@ export const profileBackups = pgTable(
       .notNull()
       .default(0),
     contentHash: text("content_hash").notNull(),
-    // Bumped on every save so a stale client can't overwrite a newer backup.
     revision: integer("revision").notNull().default(1),
     payload: jsonb("payload").notNull(),
     ...timestamps,

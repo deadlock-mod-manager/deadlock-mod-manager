@@ -13,7 +13,6 @@ export interface ModGroup {
   name: string;
   modIds: string[];
   collapsed: boolean;
-  /** One member is picked at random and installed on each launch. */
   randomize?: boolean;
 }
 
@@ -50,12 +49,9 @@ export interface ProfileVpkFile {
   locator: string;
 }
 
-/** A manifest entry whose VPKs were deleted outside DMM. */
 interface MissingModFiles {
   modId: string;
-  /** Original names of the lost VPKs. */
   missingVpks: string[];
-  /** Every VPK is gone and nothing can restore the mod. */
   orphaned: boolean;
 }
 

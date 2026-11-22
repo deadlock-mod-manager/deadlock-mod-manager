@@ -1,8 +1,3 @@
-//! Tells the frontend when a VPK under the game's addons roots appears,
-//! changes, disappears, or is renamed, so edits made outside DMM are
-//! noticed while DMM is open. The frontend then reconciles every profile
-//! against its manifest; this module only reports that something changed.
-
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
@@ -16,18 +11,10 @@ use crate::app_runtime::AppHandle;
 
 pub const ADDONS_CHANGED_EVENT: &str = "addons-vpks-changed";
 
-/// DMM's own operations rename many files in a row; report a burst once,
-/// after it goes quiet.
 const QUIET_PERIOD: Duration = Duration::from_millis(500);
 
-/// The watched `citadel` directory and its watcher. Dropping the watcher ends
-/// its debounce thread.
 static WATCHER: Mutex<Option<(PathBuf, RecommendedWatcher)>> = Mutex::new(None);
 
-/// Watch every `addons*` root under `citadel`. Shard roots such as `addons2`
-/// are created on demand, so the watch covers `citadel` itself. Calling this
-/// again for the same directory is a no-op; a new directory replaces the old
-/// watch.
 pub fn watch(app_handle: AppHandle, citadel: PathBuf) -> notify::Result<()> {
   let mut current = WATCHER.lock().unwrap_or_else(|poison| poison.into_inner());
   if current.as_ref().is_some_and(|(path, _)| *path == citadel) {
@@ -76,8 +63,6 @@ fn is_addon_vpk_change(citadel: &Path, event: &Event) -> bool {
   relevant_kind && event.paths.iter().any(|path| is_addon_vpk(citadel, path))
 }
 
-/// A `.vpk` anywhere below an `addons` or `addonsN` root of `citadel`. The
-/// game's own paks sit directly in `citadel` and do not count.
 fn is_addon_vpk(citadel: &Path, path: &Path) -> bool {
   let is_vpk = path
     .extension()

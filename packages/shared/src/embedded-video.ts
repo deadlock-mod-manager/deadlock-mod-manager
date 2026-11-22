@@ -35,7 +35,6 @@ function parseVimeo(url: URL, host: string): EmbeddedVideo | null {
     id = segments[1];
     hash = url.searchParams.get("h");
   } else if (host === "vimeo.com") {
-    // Unlisted videos carry their access hash as a second path segment
     [id, hash] = segments;
   }
   if (!id || !VIMEO_ID.test(id)) return null;
@@ -44,11 +43,6 @@ function parseVimeo(url: URL, host: string): EmbeddedVideo | null {
     : { provider: "vimeo", id };
 }
 
-/**
- * Resolves a video page link (as GameBanana lists them in `_aEmbeddedMedia`)
- * to a provider and video id. Returns null for unsupported hosts so callers
- * never build iframe URLs from unvalidated input.
- */
 export function parseEmbeddedVideo(rawUrl: string): EmbeddedVideo | null {
   let url: URL;
   try {
@@ -61,10 +55,6 @@ export function parseEmbeddedVideo(rawUrl: string): EmbeddedVideo | null {
   return parseYouTube(url, host) ?? parseVimeo(url, host);
 }
 
-/**
- * Parses, de-duplicates, and caps the videos a submission embeds. A duplicate
- * that carries a Vimeo access hash upgrades an earlier entry without one.
- */
 export function parseEmbeddedVideos(
   urls: readonly string[],
   limit = 10,

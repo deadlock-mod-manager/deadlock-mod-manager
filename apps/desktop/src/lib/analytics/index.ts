@@ -16,7 +16,6 @@ let consentEpoch = 0;
 let initialized = false;
 let userId: string | undefined;
 
-// Nothing is sent until the user ID is known, so GA never counts a device twice.
 const isEnabled = () =>
   !!measurementId &&
   !!version &&
@@ -29,9 +28,7 @@ const syncConsent = () => {
     if (typeof window !== "undefined" && measurementId) {
       Reflect.set(window, `ga-disable-${measurementId}`, !isEnabled());
     }
-  } catch {
-    // Preference updates and app startup must still work when GA is unavailable.
-  }
+  } catch {}
 };
 usePersistedStore.subscribe((state, previous) => {
   if (
@@ -103,9 +100,7 @@ export const captureMilestone = <K extends AnalyticsMilestone>(
         },
       });
     }
-  } catch {
-    // A failed persistence write must not interrupt installation or launch.
-  }
+  } catch {}
 };
 
 export const trackAppReady = (

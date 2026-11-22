@@ -13,7 +13,6 @@ import { IMAGE_EXTENSIONS, CardInspector } from "./foundry-card-inspector";
 import { LoadingBoard } from "./foundry-card-loading-board";
 import { CardSlot } from "./foundry-card-slot";
 
-/** The cards tab: every card slot the hero has, and the selected one's details. */
 export const FoundryCardsWorkspace = ({
   sidePanelClassName,
 }: {

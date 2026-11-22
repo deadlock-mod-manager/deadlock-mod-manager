@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import { ART, type ArtId } from "./art";
 import { openAdventDoor, useAdventDoors } from "./progress";
 
-/** Doors are scattered like on a paper calendar; finding today's door is part of the fun. */
 const DOOR_ORDER = [
   7, 15, 2, 22, 11, 19, 4, 13, 24, 9, 17, 1, 20, 6, 14, 3, 23, 10, 18, 5, 12,
   21, 8, 16,
@@ -41,7 +40,6 @@ export const AdventCalendar = () => {
   const today = new Date();
   const year = today.getFullYear();
   const opened = useAdventDoors(year);
-  // In December the doors keep to the date; a theme forced out of season opens all of them.
   const inDecember = today.getMonth() === 11;
   const canOpen = (door: number) => !inDecember || door <= today.getDate();
   const waiting = DOOR_ORDER.filter(

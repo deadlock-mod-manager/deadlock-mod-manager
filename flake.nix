@@ -1,7 +1,6 @@
 {
   description = "Deadlock Mod Manager - A mod manager for the Valve game Deadlock";
 
-  # CI pushes nightly builds here, so users can download them instead of compiling
   nixConfig = {
     extra-substituters = [ "https://deadlock-mod-manager.cachix.org" ];
     extra-trusted-public-keys = [
@@ -26,13 +25,11 @@
       rust-overlay,
     }:
     let
-      # Package only supports Linux (Tauri with GTK/WebKit)
       linuxSystems = [
         "x86_64-linux"
         "aarch64-linux"
       ];
     in
-    # Dev shells and packages for Linux systems only
     flake-utils.lib.eachSystem linuxSystems (
       system:
       let
@@ -42,7 +39,6 @@
         };
         isLinux = builtins.elem system linuxSystems;
 
-        # Rust toolchain for Tauri and native libraries
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
           extensions = [
             "rust-src"
@@ -55,7 +51,6 @@
             else [ ];
         };
 
-        # System libraries needed for Tauri
         tauriLibraries = with pkgs; [
           webkitgtk_4_1
           gtk3
@@ -66,18 +61,14 @@
           openssl
           librsvg
           libsoup_3
-          # tauri-cli looks it up at build time
           libayatana-appindicator
-          # GStreamer for media playback
           gst_all_1.gstreamer
           gst_all_1.gst-plugins-base
           gst_all_1.gst-plugins-good
           gst_all_1.gst-plugins-bad
-          # TLS support for WebKitGTK (needed for HTTPS in WebView)
           glib-networking
         ];
 
-        # Build inputs for native development
         buildInputs =
           with pkgs;
           tauriLibraries
@@ -86,19 +77,13 @@
             openssl.dev
           ];
 
-        # Native build inputs (compilers, linkers, etc.)
         nativeBuildInputs = with pkgs; [
           pkg-config
           makeWrapper
         ];
 
-        # Development libraries for linking (reuse tauriLibraries)
         libraries = tauriLibraries;
 
-        # The nightly's store path follows its source. Leave out repository docs
-        # and maintenance files the build doesn't read, so a commit touching only
-        # those can reuse a nightly CI already pushed to Cachix. Keep the whole
-        # pnpm workspace, lockfiles and scripts: the dependency hashes depend on them.
         nightlySrc = pkgs.lib.fileset.toSource {
           root = ./.;
           fileset = pkgs.lib.fileset.difference ./. (
@@ -130,19 +115,13 @@
 
       in
       {
-        # Packages only available on Linux (Tauri with GTK/WebKit)
         packages = pkgs.lib.optionalAttrs isLinux {
-          # Desktop application (main mod manager)
-          # cargoHash is managed by CI workflow
           default = pkgs.callPackage ./package.nix {
             src = nightlySrc;
           };
 
           nightly = self.packages.${system}.default;
 
-          # Desktop E2E harness build: mirrors `pnpm e2e:build` (e2e-harness
-          # feature, harness frontend, e2e Tauri config) but keeps the Nix
-          # packaging and wrapper so scenarios exercise what Nix users run.
           e2e = self.packages.${system}.default.overrideAttrs (prev: {
             cargoBuildFeatures = [ "e2e-harness" ];
             tauriBuildFlags = [
@@ -152,11 +131,9 @@
             env = prev.env // {
               VITE_DMM_E2E_HARNESS = "1";
             };
-            # The default package already runs the Rust tests.
             doCheck = false;
           });
 
-          # Native FFI libraries for Bun
           vpk-parser = pkgs.callPackage ./packages/vpk-parser/package.nix {
             inherit rustToolchain;
             src = self;
@@ -172,46 +149,37 @@
             src = self;
           };
 
-          # CLI tool for mod package management
           dmodpkg-cli = pkgs.callPackage ./apps/dmodpkg/package.nix {
             inherit (self.packages.${system}) dmodpkg;
           };
         };
 
-        # Dev shell only available on Linux (requires GTK/WebKit)
         devShells = pkgs.lib.optionalAttrs isLinux {
           default = pkgs.mkShell {
             inherit buildInputs nativeBuildInputs;
 
             packages = with pkgs; [
-              # Rust toolchain
               rustToolchain
               cargo-watch
               cargo-edit
 
-              # Node.js ecosystem
               nodejs_24
               pnpm_11
               bun
 
-              # Development tools
               turbo
               lefthook
               git
 
-              # Docker and container tools
               docker
               docker-compose
 
-              # Database tools
               postgresql
               redis
 
-              # Build tools
               gnumake
               gcc
 
-              # Additional utilities
               ripgrep
               fd
               jq
@@ -243,7 +211,6 @@
               fi
              '';
 
-            # Rust environment
             RUST_BACKTRACE = "1";
             CARGO_TARGET_DIR = "./target";
           };

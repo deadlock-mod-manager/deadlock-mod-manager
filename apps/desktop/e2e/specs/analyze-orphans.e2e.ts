@@ -54,7 +54,6 @@ const runAnalyze = async () => {
   await $('[role="menuitem"]=Analyze Local Addons').click();
 };
 
-/** Analyze, expecting the review list to name `fileName`. */
 const analyzeForReview = (fileName: string) =>
   step(`Analyze lists ${fileName} for review`, async () => {
     await runAnalyze();
@@ -66,7 +65,6 @@ const closeResults = async () => {
   await waitForOverlaysClosed();
 };
 
-/** Analyze, expecting every file to be accounted for: a toast, no review. */
 const analyzeWithoutReview = (label: string) =>
   step(label, async () => {
     await runAnalyze();
@@ -78,7 +76,6 @@ const analyzeWithoutReview = (label: string) =>
 
 const press = async (fileName: string, action: string) => {
   const button = await card(fileName).$(`button=${action}`);
-  // Disabled until Analyze finishes registering what it found.
   await button.waitForEnabled();
   await button.click();
 };

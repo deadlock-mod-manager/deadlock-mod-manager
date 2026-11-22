@@ -1,21 +1,11 @@
 import type { PerfTier } from "../src/schema";
 
-/**
- * GameBanana configs we list but never redistribute: the app downloads the
- * file from GameBanana and runs it through the import review. Configs that are
- * the same as a curated preset (Sqooky 656341, OptiLock 678180/690233) are left
- * out. `sources.json` pins the file id and md5; the generator downloads it only
- * to compute the stats below and keeps no file content.
- */
 export interface CommunityDefinition {
   gamebananaId: number;
-  /** Stable id in the catalog. */
   id: string;
   tier: PerfTier;
   blurb: string;
-  /** Path fragment of the gameinfo variant to analyze and import by default. */
   variantHint: string;
-  /** Pin this file instead of the newest live one (the mod lists several configs). */
   fileId?: number;
 }
 

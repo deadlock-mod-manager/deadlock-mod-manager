@@ -39,7 +39,6 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
         }
       }}>
       <div className='flex items-start gap-3'>
-        {/* Thumbnail */}
         <div className='relative h-12 w-12 shrink-0 overflow-hidden rounded-md'>
           {mod.isAudio ? (
             <AudioPlayerPreview

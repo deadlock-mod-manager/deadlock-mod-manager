@@ -4,12 +4,7 @@ import { resolveStorePath } from "@/lib/runtime-bootstrap";
 
 const logger = createLogger("stats-cache");
 
-// A separate store file so the ~540 KB match history never lands in the zustand
-// blob that carries the mod library.
 const STORE_FILE = "stats-cache.json";
-// Bump when a cached payload's shape changes; older entries are then ignored.
-// v2: match history carries the ranked badge, which replaced /mmr-history.
-// v3: history and metadata retain personal outcomes and recorded abandons.
 const CACHE_VERSION = 3;
 
 export const STATS_TTL = {
@@ -20,10 +15,7 @@ export const STATS_TTL = {
   mates: 60 * 60 * 1000,
   steamProfiles: 24 * 60 * 60 * 1000,
   benchmark: 24 * 60 * 60 * 1000,
-  // deadlock-api caches hero combinations for an hour itself.
   heroCombs: 60 * 60 * 1000,
-  // The ranked population barely moves within a day, and the endpoint returns
-  // the whole ladder in one go.
   distribution: 12 * 60 * 60 * 1000,
   assets: 7 * 24 * 60 * 60 * 1000,
 } as const;
@@ -37,21 +29,13 @@ type CacheEntry<T> = {
 export type CachedResult<T> = {
   data: T;
   fetchedAt: number;
-  /** True when the network failed and this is the last known good payload. */
   isStale: boolean;
 };
 
-/** Nothing is worth keeping past the longest TTL any caller can ask for. */
 const MAX_TTL = Math.max(...Object.values(STATS_TTL));
 
 let storePromise: Promise<Store> | null = null;
 
-/**
- * Drops entries from a superseded cache version and anything older than the
- * longest TTL. Without this the file only ever grows: a key that stops being
- * requested (an account the user no longer looks at) is never read, so it is
- * never noticed as expired.
- */
 const evictExpired = async (store: Store): Promise<void> => {
   const now = Date.now();
   const stale: string[] = [];
@@ -102,11 +86,6 @@ const writeEntry = async <T>(key: string, data: T): Promise<number> => {
   return fetchedAt;
 };
 
-/**
- * Disk-backed read-through cache. Returns cached data while it is younger than
- * `ttl`, and falls back to whatever is cached when the network call fails, so the
- * dashboard stays usable offline instead of erroring out.
- */
 export const cachedFetch = async <T>(
   key: string,
   ttl: number,
@@ -134,10 +113,6 @@ export const cachedFetch = async <T>(
   }
 };
 
-/**
- * Drops the player-specific entries on a manual refresh while keeping the
- * rarely-changing asset payloads (the hero list alone is ~1 MB).
- */
 export const clearCachedPrefix = async (prefix: string): Promise<void> => {
   try {
     const store = await getCacheStore();

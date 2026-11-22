@@ -17,7 +17,6 @@ interface ToastCall {
 const toasts: ToastCall[] = [];
 const warnings: string[] = [];
 const applied: string[][] = [];
-// Mods whose download list can't be fetched, and the batch's answer.
 let unpreparable = new Set<string>();
 let batch: (ids: string[]) => Promise<ProfileImportResult> = async () => ({
   profileFolder: "folder",
@@ -31,7 +30,6 @@ mock.module("@/lib/analytics", () => ({
   captureMilestone: () => {},
 }));
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
-// The saved log file keeps a line's message but not its metadata.
 const log = {
   withMetadata: () => log,
   withError: () => log,
@@ -133,7 +131,6 @@ const installed = (modId: string): InstalledModInfo => ({
   installedVpks: [`pak01_dir.vpk`],
 });
 
-/** Installs `ok`, fails `failed` in the batch with a raw backend error. */
 const batchResult =
   (ok: string[], failed: string[]) =>
   async (ids: string[]): Promise<ProfileImportResult> => ({
@@ -170,8 +167,6 @@ const flow = () =>
     fileserverPreference: "default",
   });
 
-// Four mods: Alpha installs, 2 isn't in the catalog, Charlie's downloads
-// can't be fetched, Delta fails in the batch.
 const mixed = () => {
   unpreparable = new Set(["3"]);
   batch = batchResult(["1"], ["4"]);
@@ -223,7 +218,6 @@ describe("profile import completion", () => {
           error: "ModFileNotFound",
         },
       ]);
-      // The dialog that started the import shows the result instead.
       expect(toasts).toEqual([]);
       expect(warnings).toHaveLength(1);
       expect(warnings[0]).toEndWith(

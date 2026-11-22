@@ -53,7 +53,6 @@ export const readRepairState = async (world: string): Promise<RepairState> => {
   };
 };
 
-/** Every Alpha mod mirrors the manifest again, in both copies of the library. */
 export const isRepaired = (state: RepairState): boolean =>
   [state.localMods, state.alphaMods].every(
     (mods) =>
@@ -67,10 +66,6 @@ export const isRepaired = (state: RepairState): boolean =>
 const addonsDirectory = (root: string, folder: string) =>
   path.join(root, "game", "citadel", "addons", folder);
 
-/**
- * The repair may only rewrite the store: the manifest owns the files, so every
- * installed byte - and the untouched second profile - has to stay as seeded.
- */
 export const assertRepairDisk = async (
   world: string,
   step: string,

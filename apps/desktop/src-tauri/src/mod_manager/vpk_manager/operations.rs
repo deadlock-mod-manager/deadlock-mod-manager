@@ -26,8 +26,6 @@ impl VpkManager {
     Ok(PendingVpkOperation::with_staging((), staging))
   }
 
-  /// Moves rather than copies: callers discard the extraction, and a large
-  /// variant mod would otherwise sit on disk twice.
   pub fn place_selected_vpks_with_prefix(
     &self,
     source_dir: &Path,
@@ -37,7 +35,6 @@ impl VpkManager {
   ) -> Result<Vec<String>, Error> {
     let mut prefixed_vpks = Vec::new();
 
-    // Get all VPK files from source directory with their relative paths
     let mut all_vpk_files = Vec::new();
     self.collect_vpks_from_dir(source_dir, &mut all_vpk_files)?;
 
@@ -47,7 +44,6 @@ impl VpkManager {
       mod_id
     );
 
-    // Create a map of relative paths to full paths
     let mut vpk_map: std::collections::HashMap<String, std::path::PathBuf> =
       std::collections::HashMap::new();
     for vpk_path in all_vpk_files {
@@ -68,7 +64,6 @@ impl VpkManager {
       file_tree.files.iter().filter(|f| f.is_selected).count()
     );
 
-    // Place only selected files
     for file in &file_tree.files {
       log::debug!(
         "Processing file: {} (selected: {}, path: {})",
@@ -81,12 +76,8 @@ impl VpkManager {
         continue;
       }
 
-      // Match file path (normalize separators)
       let normalized_path = file.path.replace('\\', "/");
-      // Taken so a repeated entry can't try to move a file that's already gone.
       let source = vpk_map.remove(&normalized_path);
-      // The tree's name tells apart variants that share a filename on disk.
-      // It can come over IPC, so anything but a bare `.vpk` name is ignored.
       let tree_name = Some(file.name.as_str()).filter(|name| is_plain_vpk_name(name));
       let prefixed_name = tree_name
         .or_else(|| source.as_ref().and_then(|path| path.file_name()?.to_str()))
@@ -103,9 +94,6 @@ impl VpkManager {
           );
           prefixed_name
         }
-        // An earlier attempt already moved it. Its size and its folder still
-        // in the extraction rule out a leftover from another install; a file
-        // at the root has no folder to prove that.
         (None, Some(prefixed_name))
           if std::fs::metadata(destination_dir.join(&prefixed_name))
             .is_ok_and(|placed| placed.len() == file.size)
@@ -133,7 +121,6 @@ impl VpkManager {
     Ok(prefixed_vpks)
   }
 
-  /// Copy VPK files from source directory to addons with mod ID prefix
   pub fn copy_vpks_with_prefix(
     &self,
     source_dir: &Path,
@@ -143,7 +130,6 @@ impl VpkManager {
     let mut prefixed_vpks = Vec::new();
     let mut vpk_files = Vec::new();
 
-    // Recursively collect all VPK files
     self.collect_vpks_from_dir(source_dir, &mut vpk_files)?;
     vpk_files.sort();
 
@@ -165,7 +151,6 @@ impl VpkManager {
     Ok(prefixed_vpks)
   }
 
-  /// Helper method to recursively collect VPK files
   fn collect_vpks_from_dir(
     &self,
     dir: &Path,
@@ -184,7 +169,6 @@ impl VpkManager {
     Ok(())
   }
 
-  /// Find all VPK files with a specific mod ID prefix
   pub fn find_prefixed_vpks(&self, addons_path: &Path, mod_id: &str) -> Result<Vec<String>, Error> {
     let mut prefixed_vpks = Vec::new();
 
@@ -211,9 +195,6 @@ impl VpkManager {
     Ok(prefixed_vpks)
   }
 
-  /// Enable VPKs, taking the prefixed sources from `disabled_dir` (always the
-  /// profile base) and writing the enabled `pak##_dir.vpk` into `enabled_dir`
-  /// (the target shard directory). The two are equal for shard 1.
   pub fn enable_vpks_in(
     &self,
     disabled_dir: &Path,
@@ -225,8 +206,6 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
-    // Reject any missing source before touching the filesystem so a mod can
-    // never be left partially enabled with silently dropped VPKs.
     let missing: Vec<String> = prefixed_vpks
       .iter()
       .filter(|name| !disabled_dir.join(name).exists())
@@ -252,7 +231,6 @@ impl VpkManager {
       )));
     }
 
-    // Track successful renames (enabled path, original prefixed path) for rollback.
     let mut renamed = RenameTransaction::new();
     let mut new_names = Vec::new();
 
@@ -301,9 +279,6 @@ impl VpkManager {
       .collect()
   }
 
-  /// Disable VPKs, reading the enabled `pak##_dir.vpk` from `enabled_dir` (the
-  /// mod's current shard) and writing the prefixed `{mod_id}_*.vpk` results into
-  /// `disabled_dir` (always the profile base). The two are equal for shard 1.
   pub fn disable_vpks_in(
     &self,
     enabled_dir: &Path,
@@ -375,7 +350,6 @@ impl VpkManager {
       fs::create_dir_all(disabled_dir)?;
     }
 
-    // Track successful renames (prefixed path, original enabled path) for rollback.
     let mut renamed = RenameTransaction::new();
     let mut prefixed_out = Vec::new();
 
@@ -398,10 +372,6 @@ impl VpkManager {
           );
           return Err(renamed.rollback(fs_retry::map_file_lock_error("disable", &vpk_name, e)));
         }
-        // This was a deletion, not a rename: `new_path` already existed and is
-        // not something we can restore, so it must not enter the rollback list.
-        // Rolling it back would move the pre-existing staged variant into the
-        // active slot and corrupt state.
       } else {
         if let Err(e) =
           fs_retry::retry_file_operation("rename", &vpk_name, || fs::rename(&old_path, &new_path))
@@ -455,9 +425,6 @@ impl VpkManager {
     }
   }
 
-  /// Disable the mod's current variant and enable the selected one, recording
-  /// every file it touches in `snapshot`. Uses `?` throughout; the caller turns
-  /// any early return into a full restore.
   fn swap_enabled_vpks_inner(
     &self,
     request: &SwapRequest<'_>,
@@ -476,7 +443,6 @@ impl VpkManager {
     for prefixed in self.find_prefixed_vpks(request.base, request.mod_id)? {
       snapshot.capture(&request.base.join(prefixed))?;
     }
-    // The disabled copies this swap is about to write do not exist yet.
     for original in request.current_original_names {
       snapshot.track(request.base.join(format!("{}_{original}", request.mod_id)));
     }
@@ -516,8 +482,6 @@ impl VpkManager {
     Ok(installed)
   }
 
-  /// Replace VPK files for a mod with new ones
-  /// Handles both enabled (pak##_dir.vpk) and disabled (modid_*.vpk) mods
   pub fn replace_vpks(
     &self,
     addons_path: &Path,
@@ -544,11 +508,9 @@ impl VpkManager {
       source_vpk_paths.len()
     );
 
-    // Determine if mod is enabled (has installed_vpks) or disabled (has prefixed VPKs)
     let is_enabled = !installed_vpks.is_empty();
 
     if is_enabled {
-      // Mod is enabled - replace pak##_dir.vpk files
       if source_vpk_paths.len() != installed_vpks.len() {
         return Err(Error::InvalidInput(format!(
           "Replacement VPK count ({}) does not match installed VPK count ({})",
@@ -572,7 +534,6 @@ impl VpkManager {
         );
       }
     } else {
-      // Mod is disabled - replace prefixed VPKs
       log::info!("Looking for prefixed VPKs with pattern: {mod_id}_*.vpk");
       let prefixed_vpks = self.find_prefixed_vpks(addons_path, mod_id)?;
       log::info!(
@@ -581,7 +542,6 @@ impl VpkManager {
       );
 
       if prefixed_vpks.is_empty() {
-        // List all VPK files in addons to help debug
         let all_vpks: Vec<String> = fs::read_dir(addons_path)
           .ok()
           .map(|entries| {

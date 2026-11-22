@@ -13,17 +13,11 @@ import {
 } from "./schemas";
 
 export interface RelayClientOptions {
-  /** Per-request timeout in milliseconds. Default 5000. */
   timeoutMs?: number;
-  /** Number of attempts (including the first) before giving up. Default 2. */
   retries?: number;
-  /** Base for exponential backoff between retries (ms). Default 250. */
   retryBackoffMs?: number;
-  /** Optional fetch implementation (defaults to global fetch). */
   fetch?: typeof fetch;
-  /** Optional User-Agent string. */
   userAgent?: string;
-  /** Circuit breaker config; pass null to disable. */
   circuitBreaker?: CircuitBreakerOptions | null;
 }
 
@@ -127,7 +121,6 @@ export class RelayClient {
     return RelaysResponseSchema.parse(json);
   }
 
-  /** Fetches the relays.json bootstrap manifest used to seed the mesh. */
   async fetchRelaysManifest(manifestUrl: string): Promise<RelaysManifest> {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (this.userAgent) headers["User-Agent"] = this.userAgent;

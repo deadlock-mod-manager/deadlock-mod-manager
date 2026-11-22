@@ -1,9 +1,3 @@
-//! What a Deadworks server says it needs, read straight off the game server.
-//!
-//! Servers publish their addons, maps and download URL as `dw_*` keys in their
-//! A2S_RULES reply (<https://docs.deadworks.net/guides/content-discovery/>).
-//! Every value is untrusted: names become file names and the URL is fetched.
-
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -17,9 +11,7 @@ const RULES_REQUEST: [u8; 5] = [0xFF, 0xFF, 0xFF, 0xFF, 0x56];
 const NO_CHALLENGE: [u8; 4] = [0xFF; 4];
 const CHALLENGE_REPLY: u8 = 0x41;
 const RULES_REPLY: u8 = 0x45;
-/// The spec's budget: no reply within it means the server advertises nothing.
 const RULES_DEADLINE: Duration = Duration::from_millis(1500);
-/// Resend interval, so one lost datagram does not cost the whole budget.
 const RESEND_INTERVAL: Duration = Duration::from_millis(500);
 const MAX_NAME_LEN: usize = 64;
 const HASH_LEN: usize = 16;
@@ -32,7 +24,6 @@ pub enum ContentKind {
 }
 
 impl ContentKind {
-  /// Directory segment in the fastdl layout and prefix in cache keys.
   pub fn dir(self) -> &'static str {
     match self {
       ContentKind::Addon => "addons",
@@ -45,14 +36,11 @@ impl ContentKind {
 pub struct ContentEntry {
   pub kind: ContentKind,
   pub name: String,
-  /// First 16 hex digits of the SHA-256 of the uncompressed `.vpk`.
   pub hash: String,
-  /// Uncompressed size, when the server sent one.
   pub size: Option<u64>,
 }
 
 impl ContentEntry {
-  /// Stable id the frontend echoes back to accept a mismatched build.
   pub fn key(&self) -> String {
     format!("{}:{}", self.kind.dir(), self.name)
   }
@@ -61,7 +49,6 @@ impl ContentEntry {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Advertisement {
   pub entries: Vec<ContentEntry>,
-  /// The server dropped entries to fit one datagram; install what is listed.
   pub truncated: bool,
   pub fastdl: Option<reqwest::Url>,
 }
@@ -79,7 +66,6 @@ fn is_valid_name(name: &str) -> bool {
   if WINDOWS_DEVICE_NAMES.contains(&name) {
     return false;
   }
-  // com1-com9 and lpt1-lpt9
   let bytes = name.as_bytes();
   !(bytes.len() == 4
     && (name.starts_with("com") || name.starts_with("lpt"))
@@ -93,8 +79,6 @@ fn is_valid_hash(hash: &str) -> bool {
       .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
-/// Parse one `name[:hash[:size]]` entry. An entry without a hash means the
-/// server could not read the file, so it is skipped like an invalid one.
 fn parse_entry(kind: ContentKind, raw: &str) -> Option<ContentEntry> {
   let mut parts = raw.split(':');
   let name = parts.next()?;
@@ -117,7 +101,6 @@ fn parse_entry(kind: ContentKind, raw: &str) -> Option<ContentEntry> {
   })
 }
 
-/// Entries plus whether the server listed fewer than its `_n` count.
 fn parse_list(
   rules: &HashMap<String, String>,
   key: &str,
@@ -135,8 +118,6 @@ fn parse_list(
   (entries, raw.len() < advertised_total)
 }
 
-/// An absolute http(s) URL with a host and no credentials, query or fragment.
-/// Anything else is treated as absent.
 fn parse_fastdl(raw: &str) -> Option<reqwest::Url> {
   let trimmed = raw.trim().trim_end_matches('/');
   let url = reqwest::Url::parse(trimmed).ok()?;
@@ -149,7 +130,6 @@ fn parse_fastdl(raw: &str) -> Option<reqwest::Url> {
   ok.then_some(url)
 }
 
-/// `None` when the server does not speak version 1 of the spec.
 pub fn parse_advertisement(rules: &HashMap<String, String>) -> Option<Advertisement> {
   if rules.get("dw_ver").map(|v| v.trim()) != Some("1") {
     return None;
@@ -172,7 +152,6 @@ fn read_cstr(data: &[u8], pos: &mut usize) -> Option<String> {
   Some(value)
 }
 
-/// Parse an `FF FF FF FF 45` reply. Rule order is not relied on.
 fn parse_rules_reply(data: &[u8]) -> Option<HashMap<String, String>> {
   if data.len() < 7 || data[..4] != [0xFF; 4] || data[4] != RULES_REPLY {
     return None;
@@ -199,11 +178,6 @@ fn rules_request(challenge: [u8; 4]) -> [u8; 9] {
   packet
 }
 
-/// Query A2S_RULES, answering the challenge. Returns `None` when the server
-/// stays silent for the spec's budget, which means it advertises nothing.
-///
-/// Source addresses can be spoofed, so a rules reply only counts after we have
-/// echoed a challenge, except on loopback where the server skips it.
 pub async fn query_rules(target: SocketAddr) -> Result<Option<HashMap<String, String>>, Error> {
   let bind = if target.is_ipv4() {
     "0.0.0.0:0"
@@ -361,7 +335,6 @@ mod tests {
     assert!(parse_rules_reply(&[0xFF, 0xFF, 0xFF, 0xFF, 0x41, 1, 2, 3, 4]).is_none());
   }
 
-  /// A local stand-in server: challenges first, then answers the echoed request.
   #[tokio::test]
   async fn answers_the_challenge_before_reading_rules() {
     let server = UdpSocket::bind("127.0.0.1:0").await.expect("bind");

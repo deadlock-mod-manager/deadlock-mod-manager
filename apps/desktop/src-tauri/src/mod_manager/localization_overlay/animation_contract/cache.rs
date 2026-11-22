@@ -1,4 +1,3 @@
-//! Cache intrinsic animation metadata, never dependency resolution or verdicts.
 use super::{Node, NodeResult, decode_node};
 use sha2::{Digest, Sha256};
 use std::{
@@ -58,8 +57,6 @@ impl NodeCache {
 
 pub(super) fn decode(bytes: &[u8], path: &str) -> NodeResult {
   static CACHE: OnceLock<Mutex<NodeCache>> = OnceLock::new();
-  // Parsing depends on the resource type and exact bytes, not its provider.
-  // The caller resolves the effective resource again on every analysis.
   let key = (
     path.rsplit('.').next().unwrap_or_default().to_owned(),
     Sha256::digest(bytes).into(),

@@ -8,13 +8,8 @@ use crate::errors::Error;
 use crate::mod_manager::game_process_manager::is_deadlock_command;
 
 const CHECK_TIMEOUT: Duration = Duration::from_secs(5);
-/// Lets the host reap the killed processes, so the check after a stop doesn't
-/// see them. Matches the native stop.
 const STOP_SETTLE: Duration = Duration::from_millis(500);
 
-// Unlike ps's space-joined arguments, /proc preserves argv[0]'s boundaries.
-// Each record is pid\0comm\0argv[0]\0\0; a process without a command line is
-// pid\0comm\0\0.
 const HOST_PROCESSES: &str = r#"
 for proc in "$1"/[0-9]*; do
   IFS= read -r name 2>/dev/null < "$proc/comm" || continue
@@ -24,15 +19,12 @@ for proc in "$1"/[0-9]*; do
 done
 "#;
 
-/// A command that runs on the host, outside the sandbox.
 fn host_command() -> Command {
   let mut command = Command::new("flatpak-spawn");
   command.args(["--host", "--watch-bus"]);
   command
 }
 
-/// The sandbox hides host processes, so read their names and first arguments
-/// on the host and apply the native process match.
 async fn host_game_pids() -> Result<Vec<u32>, Error> {
   let mut command = host_command();
   command.args(["sh", "-c", HOST_PROCESSES, "host-processes", "/proc"]);
@@ -47,9 +39,6 @@ struct LastScan {
 }
 
 impl LastScan {
-  /// Several pollers scan at once and can finish out of order, so only a scan
-  /// that started after the stored one may replace it. Returns the newest
-  /// recorded answer.
   fn record(&mut self, seq: u64, running: bool) -> bool {
     if seq > self.seq {
       *self = Self { seq, running };
@@ -60,9 +49,6 @@ impl LastScan {
 
 static SCAN_SEQ: AtomicU64 = AtomicU64::new(0);
 
-/// The host's last answer. A failed check reports it again, so a transient
-/// failure doesn't read as the game closing (which would reset gameinfo.gi
-/// while the game still runs).
 static LAST_SCAN: Mutex<LastScan> = Mutex::new(LastScan {
   seq: 0,
   running: false,
@@ -74,8 +60,6 @@ fn last_scan() -> MutexGuard<'static, LastScan> {
     .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-/// Scans the host and records the answer. Returns this scan's own answer and
-/// the newest recorded one, which differ when a later scan finished first.
 async fn scan_host() -> Result<(bool, bool), Error> {
   let seq = SCAN_SEQ.fetch_add(1, Ordering::Relaxed) + 1;
   let running = !host_game_pids().await?.is_empty();
@@ -83,18 +67,14 @@ async fn scan_host() -> Result<(bool, bool), Error> {
   Ok((running, newest))
 }
 
-/// Whether the game runs on the host, by the newest scan that has finished.
 pub(crate) async fn is_game_running() -> Result<bool, Error> {
   Ok(scan_host().await?.1)
 }
 
-/// The newest recorded answer, for when the host can't be checked.
 pub(crate) fn last_known_running() -> bool {
   last_scan().running
 }
 
-/// Kills the game on the host, as the native stop does. The sandbox can't
-/// signal processes it can't see.
 pub(crate) async fn stop_game() -> Result<(), Error> {
   let pids = host_game_pids().await?;
   if pids.is_empty() {
@@ -106,14 +86,11 @@ pub(crate) async fn stop_game() -> Result<(), Error> {
   command
     .args(["sh", "-c", r#"exec kill -KILL "$@""#, "kill"])
     .args(pids.iter().map(u32::to_string));
-  // kill exits nonzero when one PID exited after the scan, though it signaled
-  // the rest; the recheck below decides whether the stop worked.
   if let Err(error) = host_output(command, CHECK_TIMEOUT).await {
     log::warn!("Host kill reported an error; checking for remaining game processes: {error}");
   }
 
   tokio::time::sleep(STOP_SETTLE).await;
-  // This scan started after the kill, so its own answer is the one to trust.
   if scan_host().await?.0 {
     return Err(Error::GameStopFailed);
   }
@@ -121,13 +98,10 @@ pub(crate) async fn stop_game() -> Result<(), Error> {
   Ok(())
 }
 
-/// Picks the game's PIDs out of `HOST_PROCESSES` output.
 fn game_pids(output: &[u8]) -> Vec<u32> {
   String::from_utf8_lossy(output)
     .split("\0\0")
     .filter_map(|record| {
-      // An empty argv[0] adds a NUL, which lands at the start of the next
-      // record.
       let mut fields = record.trim_start_matches('\0').splitn(3, '\0');
       let pid = fields.next()?.parse().ok()?;
       let name = fields.next()?;
@@ -137,7 +111,6 @@ fn game_pids(output: &[u8]) -> Vec<u32> {
     .collect()
 }
 
-/// Runs a host command within `timeout`, failing on a nonzero exit.
 async fn host_output(mut command: Command, timeout: Duration) -> Result<Vec<u8>, Error> {
   let output = tokio::time::timeout(timeout, command.kill_on_drop(true).output())
     .await
@@ -211,7 +184,6 @@ mod tests {
         "C:\\windows\\steam.exe\0C:\\Games.exe files\\deadlock.exe\0",
       ),
       ("3", "kworker", ""),
-      // An empty argv[0] must not hide the record after it.
       ("10", "empty-argv0", "\0--flag\0"),
       ("11", "MainThrd", "S:\\Steam\\Deadlock\\deadlock.exe\0"),
     ] {

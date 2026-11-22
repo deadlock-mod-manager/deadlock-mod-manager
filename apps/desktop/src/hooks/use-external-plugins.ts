@@ -13,8 +13,6 @@ import type { ExternalPluginNotificationEvent } from "@/types/generated/External
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { useFeatureEnabled } from "./use-feature-enabled";
 
-/** Installed external plugins, refetched whenever the backend disables,
- * revokes, updates, removes or stops one. */
 export const useExternalPlugins = () => {
   const queryClient = useQueryClient();
   const enabled = useFeatureEnabled("plugins");
@@ -38,7 +36,6 @@ export const useExternalPlugins = () => {
   });
 };
 
-/** Shows the notifications plugins send as toasts under the plugin's name. */
 export const useExternalPluginNotifications = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();

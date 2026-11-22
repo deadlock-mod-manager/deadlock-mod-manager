@@ -1,24 +1,3 @@
-//! The video.txt half of a config. Authors like OptiLock ship a video.txt next
-//! to their gameinfo.gi and say the config looks wrong without it: the
-//! gameinfo.gi values assume those render settings, and several of them
-//! (distance-field shadows and AO, shadow cascades, mip bias past the menu's
-//! range) can only be set there now.
-//!
-//! Since the 2026-09-29 update Deadlock reads the Steam account's copy
-//! (`userdata/<account>/1422450/local/cfg/video.txt`) and only falls back to
-//! the game folder's until the game first writes that one, so the account's
-//! copy wins when both exist.
-//!
-//! Only `setting.*` lines are touched, edited in place; the header (Version,
-//! VendorID, DeviceID) never is. The game rewrites the file whenever a graphics
-//! setting changes and keeps no comments, so instead of markers a record in
-//! the app's data folder keeps, per key, the value written and the value it
-//! replaced. Reverting only touches keys that still hold our value: anything
-//! changed in game since is the player's.
-//!
-//! The first write also copies the whole file aside, so the player can always
-//! go back to exactly what they had, whatever happened to the record since.
-
 use std::collections::HashMap;
 use std::fs;
 use std::io::ErrorKind;
@@ -34,17 +13,12 @@ use crate::errors::Error;
 const RECORD_FILE: &str = "video.json";
 const BACKUP_FILE: &str = "video-backup.txt";
 
-/// One `setting.*` key we wrote.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WrittenKey {
-  /// The full key, `setting.r_shadows`.
   key: String,
   written: String,
-  /// The value it replaced; `None` when the file didn't have the key.
   original: Option<String>,
-  /// The player chose to keep the value they set in game: no apply writes
-  /// ours over it until they ask for the config's value again.
   #[serde(default)]
   kept: bool,
 }
@@ -52,18 +26,13 @@ struct WrittenKey {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Record {
-  /// The video.txt the keys were written to.
   path: Option<PathBuf>,
   #[serde(default)]
   keys: Vec<WrittenKey>,
-  /// Where the untouched file was copied from, and when.
   #[serde(default)]
   backup: Option<VideoBackup>,
 }
 
-/// The video.txt Deadlock reads: the Steam account's copy when the game has
-/// written one, else the game folder's. `account_dir` is
-/// `userdata/<account>/1422450`.
 pub fn locate(game_path: Option<&Path>, account_dir: Option<&Path>) -> Option<PathBuf> {
   let account = account_dir.map(|dir| dir.join("local").join("cfg").join("video.txt"));
   let game = game_path.map(|dir| {
@@ -76,17 +45,12 @@ pub fn locate(game_path: Option<&Path>, account_dir: Option<&Path>) -> Option<Pa
   account.into_iter().chain(game).find(|path| path.is_file())
 }
 
-/// What a re-apply does with a key changed in game since we wrote it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChangedKeys {
-  /// Leave it: the player picked it (launch re-applies).
   Keep,
-  /// Write ours again (an explicit Apply).
   Overwrite,
 }
 
-/// Writes `settings` into the video.txt at `path`, reverting keys an earlier
-/// config wrote that this one doesn't set. With nothing to write, only reverts.
 pub fn apply(
   app_data_dir: &Path,
   path: Option<&Path>,
@@ -94,7 +58,6 @@ pub fn apply(
   changed: ChangedKeys,
 ) -> Result<VideoOutcome, Error> {
   let mut record = load(app_data_dir)?;
-  // Keys from the file we wrote before, when the game reads another now.
   let mut inherited: HashMap<String, WrittenKey> = HashMap::new();
   if record.path.as_deref() != path || settings.is_empty() {
     inherited = record
@@ -145,10 +108,6 @@ pub fn apply(
   for (key, value) in wanted {
     let lower = key.to_ascii_lowercase();
     let live = current.get(&lower).cloned();
-    // The game builds a new video.txt from the old one, ours included: a key
-    // that still holds our value, or one the player kept, carries over with
-    // the player's original. Anything else is that file's own value (another
-    // Steam account's, say), which ours replaces.
     let previous = owned.get(&lower).or_else(|| {
       inherited
         .get(&lower)
@@ -158,8 +117,6 @@ pub fn apply(
       && !holds(&current, previous)
       && (previous.kept || changed == ChangedKeys::Keep)
     {
-      // The player's value stays; the record keeps the original for Remove,
-      // which only reverts keys still holding ours.
       keys.push(previous.clone());
       continue;
     }
@@ -176,7 +133,6 @@ pub fn apply(
       edits.push((key, Some(value)));
     }
   }
-  // Keys the previous config owned that this one doesn't set go back.
   for (lower, previous) in owned.iter().chain(&inherited) {
     if keys.iter().any(|key| key.key.eq_ignore_ascii_case(lower)) {
       continue;
@@ -200,17 +156,12 @@ pub fn apply(
   })
 }
 
-/// Puts back what we replaced, key by key, where the file still holds our value.
 pub fn revert(app_data_dir: &Path) -> Result<(), Error> {
   let mut record = load(app_data_dir)?;
   revert_keys(&mut record)?;
   save(app_data_dir, &record)
 }
 
-/// How the settings we wrote stand in the video.txt the game reads (`located`):
-/// still ours, or changed since (in game, or by Steam Cloud from another PC).
-/// Settings left in a file the game no longer reads count as neither until
-/// the next sync writes them to the right one.
 pub fn state(app_data_dir: &Path, located: Option<&Path>) -> VideoState {
   let Ok(record) = load(app_data_dir) else {
     return VideoState::default();
@@ -240,8 +191,6 @@ pub fn state(app_data_dir: &Path, located: Option<&Path>) -> VideoState {
   state
 }
 
-/// Writes the config's value back for `keys` (without the `setting.`
-/// prefix), keeping the player's no longer.
 pub fn use_written(app_data_dir: &Path, keys: &[String]) -> Result<(), Error> {
   let mut record = load(app_data_dir)?;
   let Some(path) = record.path.clone() else {
@@ -260,8 +209,6 @@ pub fn use_written(app_data_dir: &Path, keys: &[String]) -> Result<(), Error> {
   save(app_data_dir, &record)
 }
 
-/// Keeps the values the player set in game for `keys` (without the
-/// `setting.` prefix): applies leave them, and Turn off does too.
 pub fn keep_current(app_data_dir: &Path, keys: &[String]) -> Result<(), Error> {
   let mut record = load(app_data_dir)?;
   for key in record.keys.iter_mut().filter(|key| named(key, keys)) {
@@ -276,23 +223,16 @@ fn named(key: &WrittenKey, names: &[String]) -> bool {
     .any(|name| key.key["setting.".len()..].eq_ignore_ascii_case(name))
 }
 
-/// Whether the settings belong in another file than the one we last wrote:
-/// the game reads a different video.txt now, or it only appeared since.
 pub fn out_of_place(app_data_dir: &Path, located: Option<&Path>) -> bool {
   located.is_some_and(|located| {
     load(app_data_dir).is_ok_and(|record| record.path.as_deref() != Some(located))
   })
 }
 
-/// The saved copy of the player's own video.txt, if there is one.
 pub fn backup(app_data_dir: &Path) -> Option<VideoBackup> {
   load(app_data_dir).ok()?.backup
 }
 
-/// Makes the video.txt the game reads (`located`) the player's own, config
-/// values included: it becomes the saved copy Restore writes back, and the
-/// settings we wrote in it are forgotten, so Turn off and the next config's
-/// apply leave them alone.
 pub fn adopt(app_data_dir: &Path, located: Option<&Path>) -> Result<(), Error> {
   let path = located
     .ok_or_else(|| Error::PerformanceConfig("Deadlock hasn't created video.txt yet".into()))?;
@@ -304,8 +244,6 @@ pub fn adopt(app_data_dir: &Path, located: Option<&Path>) -> Result<(), Error> {
   save(app_data_dir, &record)
 }
 
-/// Writes the saved copy back over the file it came from, exactly as it was,
-/// and forgets every key we wrote since.
 pub fn restore_backup(app_data_dir: &Path) -> Result<(), Error> {
   let mut record = load(app_data_dir)?;
   let backup = record
@@ -314,8 +252,6 @@ pub fn restore_backup(app_data_dir: &Path) -> Result<(), Error> {
     .ok_or_else(|| Error::PerformanceConfig("There is no saved video.txt to restore".into()))?;
   let saved = fs::read(cache_dir(app_data_dir).join(BACKUP_FILE))?;
   let target = PathBuf::from(&backup.path);
-  // Keys written to another file since (the game moved to the Steam
-  // account's copy) go back too, or they would outlive the restore.
   if record.path.as_deref() != Some(target.as_path()) {
     revert_keys(&mut record)?;
   }
@@ -368,14 +304,12 @@ fn read(path: &Path) -> Result<String, Error> {
   Ok(String::from_utf8_lossy(&fs::read(path)?).into_owned())
 }
 
-/// Whether the file still holds the value we wrote for `key`.
 fn holds(current: &HashMap<String, String>, key: &WrittenKey) -> bool {
   current
     .get(&key.key.to_ascii_lowercase())
     .is_some_and(|value| values_equal(value, &key.written))
 }
 
-/// `setting.*` values by lower-case key; the last line wins, as in the game.
 fn setting_values(text: &str) -> HashMap<String, String> {
   text
     .lines()
@@ -387,12 +321,10 @@ fn setting_values(text: &str) -> HashMap<String, String> {
 struct SettingLine<'a> {
   key: &'a str,
   value: &'a str,
-  /// Byte range of the value inside the line, without its quotes.
   value_start: usize,
   value_end: usize,
 }
 
-/// `<ws>"setting.key"<ws>"value"...`; anything else isn't a setting line.
 fn parse_line(line: &str) -> Option<SettingLine<'_>> {
   let key_start = line.find('"')? + 1;
   if !line[..key_start - 1].trim().is_empty() {
@@ -418,8 +350,6 @@ fn parse_line(line: &str) -> Option<SettingLine<'_>> {
   })
 }
 
-/// Sets (`Some`) or deletes (`None`) each key. Existing lines are edited in
-/// place; new keys go just before the closing brace.
 fn edit_settings(text: &str, edits: &[(String, Option<String>)]) -> Result<String, Error> {
   if edits.is_empty() {
     return Ok(text.to_string());
@@ -501,8 +431,6 @@ fn write_checked(path: &Path, expected: &str, updated: &str) -> Result<(), Error
   write_bytes_checked(path, expected.as_bytes(), updated.as_bytes())
 }
 
-/// Writes through a temp file after checking the file still holds `expected`:
-/// the game rewrites video.txt whenever a graphics setting changes.
 fn write_bytes_checked(path: &Path, expected: &[u8], updated: &[u8]) -> Result<(), Error> {
   let current = match fs::read(path) {
     Ok(bytes) => bytes,

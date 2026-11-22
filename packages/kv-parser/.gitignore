@@ -1,8 +1,4 @@
-# Rust
 target/
-# Cargo.lock is tracked for Nix reproducibility
-# Cargo.lock
 
-# Node
 node_modules/
 dist/

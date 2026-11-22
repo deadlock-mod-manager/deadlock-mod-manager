@@ -3,10 +3,8 @@ import type { ModAuthorContactDto } from "./schemas/mod.schemas";
 type ContactType = ModAuthorContactDto["type"];
 
 interface ContactPlatform {
-  /** GameBanana's contact titles, lowercased */
   titles: string[];
   hosts: string[];
-  /** Builds the profile link from a bare handle */
   profileUrl: (handle: string) => string;
 }
 
@@ -75,7 +73,6 @@ const PLATFORMS = {
 
 const DISCORD_INVITE_HOSTS = ["discord.gg", "discord.com", "discordapp.com"];
 const HANDLE = /^@?([\w.-]{1,64})$/u;
-// Current Discord usernames, plus the old name#1234 form some profiles still show.
 const DISCORD_USERNAME = /^@?([\w.]{2,32}(?:#\d{4})?)$/u;
 const DISCORD_INVITE_PATH = /^\/(?:invite\/)?([\w-]{2,32})\/?$/u;
 const MAX_CONTACTS = 12;
@@ -87,7 +84,6 @@ const matchesHost = (hostname: string, hosts: string[]) => {
   );
 };
 
-/** Parses a link an author typed, with or without the scheme. */
 const parseLink = (value: string): URL | null => {
   if (!value.includes("/") && !value.includes(".")) return null;
   try {
@@ -103,7 +99,6 @@ const parseLink = (value: string): URL | null => {
 const lastPathSegment = (url: URL) =>
   /([^/]+)\/?$/u.exec(url.pathname)?.[1] ?? url.hostname;
 
-/** Whether a stored contact link may be opened for the given platform. */
 export const isAuthorContactUrl = (type: ContactType, url: string): boolean => {
   let parsed: URL;
   try {
@@ -164,11 +159,6 @@ const typeForTitle = (title: string): ContactType | null => {
   return null;
 };
 
-/**
- * Turns GameBanana's free-text contact list into links we can open. Entries
- * for platforms we don't know, or values that aren't a handle or a link to
- * that platform, are dropped.
- */
 export const parseGameBananaContacts = (
   entries: ReadonlyArray<{ title?: string; value?: string }>,
 ): ModAuthorContactDto[] => {

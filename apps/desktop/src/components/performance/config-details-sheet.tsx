@@ -3,10 +3,8 @@ import { useState } from "react";
 import { ConfigDetails } from "./details/config-details";
 import { usePerformanceUi } from "./performance-context";
 
-/** Right-hand sheet for a preset, GameBanana or user config. */
 export const ConfigDetailsSheet = () => {
   const { detailsConfigId, openDetails } = usePerformanceUi();
-  // Keep showing the last config while the sheet animates closed.
   const [shownConfigId, setShownConfigId] = useState(detailsConfigId);
   if (detailsConfigId !== null && detailsConfigId !== shownConfigId) {
     setShownConfigId(detailsConfigId);

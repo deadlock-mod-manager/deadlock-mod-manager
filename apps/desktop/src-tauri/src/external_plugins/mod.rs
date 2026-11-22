@@ -1,4 +1,3 @@
-//! Desktop adapters for the independently testable plugin runtime.
 pub mod download;
 pub mod events;
 #[cfg(not(feature = "cef"))]
@@ -10,13 +9,8 @@ use dmm_plugin_runtime::ExternalPluginActivity;
 use serde::Serialize;
 use ts_rs::TS;
 
-/// Emitted with a plugin id when it is installed, disabled, revoked, updated,
-/// removed or stopped after repeated crashes, or when its pending update
-/// changes, so the app refreshes its plugin views.
 pub const CHANGED_EVENT: &str = "external-plugins-changed";
 
-/// Emitted with [`ExternalPluginBlockedEvent`] when the host refuses a
-/// plugin's hostcall for permission or scope reasons.
 pub const BLOCKED_EVENT: &str = "external-plugins-blocked";
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -27,8 +21,6 @@ pub struct ExternalPluginBlockedEvent {
   pub activity: ExternalPluginActivity,
 }
 
-/// Emitted with [`ExternalPluginNotificationEvent`] when a plugin shows a
-/// notification within its rate limit.
 pub const NOTIFICATION_EVENT: &str = "external-plugins-notification";
 
 #[derive(Debug, Clone, Serialize, TS)]

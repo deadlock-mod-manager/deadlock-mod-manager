@@ -68,8 +68,6 @@ mock.module("@/components/settings/minimal-mode-card", () => ({
   MinimalModeCard: ({ total }: { total: number }) => <div data-total={total} />,
 }));
 
-// Loaded before the bootstrap resolves, the way main.tsx imports the settings
-// page before initializeApplication().
 const { FeaturesSettings } = await import("./features-settings");
 const { initializeRuntimeBootstrap } = await import("@/lib/runtime-bootstrap");
 

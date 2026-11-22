@@ -1,11 +1,6 @@
 use crate::errors::Error;
 use crate::steam_user::{self, SteamAccountDto};
 
-/// Remembered Steam accounts, the one currently signed in first. Read-only: no
-/// credentials are touched, so this needs no consent gate.
-///
-/// Locating Steam and stat-ing every account's userdata is filesystem work, so it
-/// runs on the blocking pool instead of a runtime thread.
 #[tauri::command]
 pub async fn get_steam_accounts() -> Result<Vec<SteamAccountDto>, Error> {
   if crate::runtime_environment::is_e2e_active() {

@@ -20,10 +20,6 @@ export const filePayload = (name: string): Buffer =>
     },
   ]);
 
-/**
- * Alpha holds a two-file mod in pak01 and pak02, then a one-file mod in pak03.
- * The two-file mod carries a file tree in author order, as GameBanana mods do.
- */
 export const prepareFileOrderWorld = async (world: CreatedWorld) => {
   await prepareInstalledProfiles(
     world,

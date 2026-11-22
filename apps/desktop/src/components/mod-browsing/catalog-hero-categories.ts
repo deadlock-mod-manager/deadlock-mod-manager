@@ -7,7 +7,6 @@ import {
   toggleCatalogCategory,
 } from "./catalog-categories";
 
-/** Only a direct child of a Skins root represents a hero; NPC and style names do not. */
 export const heroCategoryForKey = (key: string, paths: CatalogCategory[][]) => {
   const path = categoryPathForKey(key, paths);
   const root = path?.[0];
@@ -130,7 +129,6 @@ const skinHeroCategoryKeys = (paths: CatalogCategory[][]) => {
   return heroCategories;
 };
 
-/** Changing heroes resets source-specific skin types so no previous hero stays hidden in a key. */
 export const changeCatalogHeroes = (
   heroes: string[],
   selection: CatalogFilterSelection,
@@ -149,7 +147,6 @@ export const changeCatalogHeroes = (
   };
 };
 
-/** A linked exclusion targets the selected skin branches, rather than every skin or hero mod. */
 export const catalogQueryFilterSelection = (
   selection: CatalogFilterSelection,
   paths: CatalogCategory[][],

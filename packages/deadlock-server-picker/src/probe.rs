@@ -51,7 +51,6 @@ async fn measure_location(
     if let Some(latency) = ping(ip).await {
       samples.push(latency);
       responsive = Some(address.to_owned());
-      // Refine a responsive endpoint without scanning every relay in a PoP.
       for _ in 0..2 {
         if cancellation.is_cancelled() {
           break;
@@ -81,7 +80,6 @@ async fn ping(address: Ipv4Addr) -> Option<f64> {
     use windows::Win32::NetworkManagement::IpHelper::{
       ICMP_ECHO_REPLY, IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho,
     };
-    // The buffer uses machine-word alignment for the native ICMP_ECHO_REPLY.
     let mut reply = [0usize; 32];
     let request = [0u8; 8];
     unsafe {

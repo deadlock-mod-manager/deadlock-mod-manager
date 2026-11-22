@@ -57,8 +57,6 @@ export function CompatibilityReviewProvider({
   const activeRequest = useRef<ReviewRequest | null>(null);
   const activeFixRequest = useRef<LaunchFixRequest | null>(null);
   const nextId = useRef(0);
-  // useHeroDetection already polls this key every 5s; a second interval here
-  // would drift out of phase and double the process scans.
   const game = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
@@ -73,8 +71,6 @@ export function CompatibilityReviewProvider({
   }, []);
 
   const review = useCallback<Review>((profileFolder, options) => {
-    // A newer launch replaces an unanswered review instead of being dropped,
-    // so a request that never closed cannot block every later launch.
     activeRequest.current?.resolve(false);
     return new Promise<boolean>((resolve) => {
       const next = {

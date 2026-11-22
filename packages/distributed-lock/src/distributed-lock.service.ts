@@ -34,7 +34,6 @@ interface ActiveLock {
   expiresAt: Date;
   expiryTimer: NodeJS.Timeout;
   controller: AbortController;
-  /** The renewal in flight, if any. Renewals never overlap. */
   renewal?: Promise<void>;
 }
 
@@ -65,11 +64,10 @@ export class DistributedLockService {
     options: LockOptions = {},
   ): Promise<AcquiredLock | null> {
     const {
-      timeout = 5 * 60 * 1000, // 5 minutes default
-      heartbeatInterval = 30 * 1000, // 30 seconds default
+      timeout = 5 * 60 * 1000,
+      heartbeatInterval = 30 * 1000,
       instanceId = this.instanceId,
     } = options;
-    // The owner stops one beat before expiry, so the first renewal needs room.
     if (timeout <= 2 * heartbeatInterval) {
       throw new ValidationError(
         `Lock timeout (${timeout} ms) must exceed twice the heartbeat interval (${heartbeatInterval} ms)`,
@@ -81,10 +79,8 @@ export class DistributedLockService {
     const lockId = `lock-${uuidv4()}`;
 
     try {
-      // Clean up expired locks first
       await this.cleanupExpiredLocks();
 
-      // Try to acquire the lock using upsert with conflict handling
       const result = await this.db
         .insert(jobLocks)
         .values({
@@ -104,7 +100,7 @@ export class DistributedLockService {
             expiresAt,
             heartbeatAt: now,
           },
-          where: lt(jobLocks.expiresAt, now), // Only update if the existing lock is expired
+          where: lt(jobLocks.expiresAt, now),
         })
         .returning();
 
@@ -115,7 +111,6 @@ export class DistributedLockService {
 
       const acquiredLock = result[0];
 
-      // Verify we actually got the lock (not an expired one from another instance)
       if (acquiredLock.lockedBy !== instanceId) {
         this.logger.warn(
           `Lock for job ${jobName} is held by another instance: ${acquiredLock.lockedBy}`,
@@ -131,7 +126,6 @@ export class DistributedLockService {
         })
         .info(`Successfully acquired lock for job: ${jobName}`);
 
-      // Set up automatic heartbeat
       const signal = this.startHeartbeat(
         acquiredLock.id,
         jobName,
@@ -167,10 +161,8 @@ export class DistributedLockService {
    */
   async releaseLock(lockId: string): Promise<void> {
     try {
-      // Stop heartbeat timer
       this.stopHeartbeat(lockId);
 
-      // Delete the lock
       const result = await this.db
         .delete(jobLocks)
         .where(eq(jobLocks.id, lockId))
@@ -189,16 +181,11 @@ export class DistributedLockService {
     }
   }
 
-  /**
-   * Update heartbeat for a specific lock
-   */
   private async updateHeartbeat(lockId: string): Promise<void> {
     const activeLock = this.activeLocks.get(lockId);
     if (!activeLock) {
       throw new RuntimeError(`Lock ${lockId} is no longer held`);
     }
-    // A slow renewal must not race the next one: an older response arriving
-    // last would move the lease, and the expiry timer, back in time.
     if (!activeLock.renewal) {
       activeLock.renewal = this.renew(lockId, activeLock).finally(() => {
         activeLock.renewal = undefined;
@@ -218,11 +205,8 @@ export class DistributedLockService {
         .where(and(eq(jobLocks.id, lockId), gt(jobLocks.expiresAt, now)))
         .returning({ id: jobLocks.id });
     } catch (error) {
-      // Nobody else can take the lock before it expires, so a failed renewal
-      // is retried on the next beat; the expiry timer stops the owner in time.
       throw new RuntimeError(`Failed to renew lock ${lockId}`, error);
     }
-    // Released or stopped while the renewal was in flight.
     if (this.activeLocks.get(lockId) !== activeLock) return;
     if (renewed.length === 0) {
       const failure = new RuntimeError(`Lock ${lockId} is no longer held`);
@@ -238,10 +222,6 @@ export class DistributedLockService {
     );
   }
 
-  /**
-   * Abort the owner one beat before its lease runs out, whether or not a
-   * renewal is still pending: after that another instance may claim the row.
-   */
   private scheduleExpiry(
     lockId: string,
     expiresAt: Date,
@@ -257,9 +237,6 @@ export class DistributedLockService {
     );
   }
 
-  /**
-   * Clean up expired locks
-   */
   private async cleanupExpiredLocks(): Promise<void> {
     try {
       const now = new Date();
@@ -284,9 +261,6 @@ export class DistributedLockService {
     }
   }
 
-  /**
-   * Start automatic heartbeat for a lock
-   */
   private startHeartbeat(
     lockId: string,
     jobName: string,
@@ -321,9 +295,6 @@ export class DistributedLockService {
     return activeLock.controller.signal;
   }
 
-  /**
-   * Stop heartbeat for a lock
-   */
   private stopHeartbeat(
     lockId: string,
     reason = new RuntimeError(`Lock ${lockId} is no longer held`),

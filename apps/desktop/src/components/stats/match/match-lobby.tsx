@@ -67,7 +67,6 @@ const PlayerLine = ({
   </div>
 );
 
-/** The lane both pairs played, with souls when laning ended and who came out ahead. */
 export const LanePanel = ({
   sides,
   meId,
@@ -174,7 +173,6 @@ export const LanePanel = ({
 
 const DUEL_UNIT_PX = 36;
 
-/** Kills traded with each enemy, as a two-sided bar around who got the better of it. */
 export const DuelsPanel = ({
   duels,
   heroesById,
@@ -285,7 +283,6 @@ interface LobbyRosterProps {
   onSelectPlayer: (accountId: number) => void;
 }
 
-/** Everyone in the match: MVP placing, the team's average rank, and shared history. */
 export const LobbyRoster = ({
   match,
   meId,

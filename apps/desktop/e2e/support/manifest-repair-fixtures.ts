@@ -14,11 +14,6 @@ const documentSchema = z.object({
   version: z.number(),
 });
 
-/**
- * A store that arrived from a build which tracked installed files itself: the
- * mods are still enabled in the profile and their VPKs are still on disk under
- * the manifest, but the mirrored install state claims an unfinished download.
- */
 const withoutInstallState = (mod: z.infer<typeof modSchema>) => {
   const { installedVpks: _vpks, installedFileTree: _tree, ...rest } = mod;
   return { ...rest, status: "downloading" };

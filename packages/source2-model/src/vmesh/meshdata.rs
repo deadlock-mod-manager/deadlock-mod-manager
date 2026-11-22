@@ -273,9 +273,6 @@ pub(crate) fn drawcalls_from_mesh_data(mesh_data: &KvValue) -> Vec<DrawCall> {
     drawcalls
 }
 
-/// Whether every draw call of a mesh has an explicit index count of zero: a
-/// part the Foundry removed from the game. Such a mesh draws nothing in game,
-/// so the preview must skip it rather than fall back to its whole index buffer.
 pub(crate) fn drawcalls_all_emptied(mesh_data: &KvValue) -> bool {
     let counts = mesh_data
         .get("m_sceneObjects")
@@ -304,11 +301,6 @@ pub(crate) fn is_lod_mesh(name: &str) -> bool {
     lower.contains("_lod") || lower.ends_with("lod0") || lower.ends_with("lod1")
 }
 
-/// The model's default mesh-group mask and one group mask per mesh.
-///
-/// These are 64-bit: a model with many body groups (Rat King's banner, sewer
-/// lid, 19 ammo states and seven guards) sets bits past 32, and reading them as
-/// `u32` dropped the whole table, so every optional mesh rendered at once.
 pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u64, Vec<u64>)> {
     let data = res
         .block_bytes("DATA")
@@ -323,27 +315,20 @@ pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u64, Vec<u64>)
     (!masks.is_empty()).then_some((default_mask, masks))
 }
 
-/// One choice of a body group: bit `bit` of the mesh-group masks.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MeshGroupChoice {
-    /// The body group it belongs to, like `default`.
     pub body_group: String,
-    /// The choice's own name, like `inflated`.
     pub name: String,
     pub bit: u32,
 }
 
-/// A model's mesh groups when it has alternates to switch between: Viscous
-/// swaps his `body` for the `inflated` ball, Rat King adds armour pieces.
 #[derive(Debug, Clone)]
 pub struct MeshGroups {
     pub choices: Vec<MeshGroupChoice>,
     pub default_mask: u64,
-    /// One group mask per mesh, as `default_mesh_group_masks` reads them.
     pub masks: Vec<u64>,
 }
 
-/// `m_meshGroups` names read `<body group>_@<choice index>_#&<choice name>`.
 fn mesh_group_choice(name: &str, bit: u32) -> MeshGroupChoice {
     let (body_group, choice) = name.split_once("_@").unwrap_or((name, ""));
     let choice = choice
@@ -356,7 +341,6 @@ fn mesh_group_choice(name: &str, bit: u32) -> MeshGroupChoice {
     }
 }
 
-/// The model's mesh groups, or `None` when it has fewer than two.
 pub fn model_mesh_groups(res: &Resource) -> Option<MeshGroups> {
     let (default_mask, masks) = default_mesh_group_masks(res)?;
     let data = res
@@ -377,10 +361,6 @@ pub fn model_mesh_groups(res: &Resource) -> Option<MeshGroups> {
     })
 }
 
-/// One LOD mask per mesh (`m_refLODGroupMasks`): bit 0 marks the meshes the
-/// game draws up close. Mesh names are no guide — a hero's LOD meshes rarely
-/// carry `_lod` in their name — so the mask is what keeps the lower LODs from
-/// being stacked inside the full-detail body.
 pub(crate) fn lod_group_masks(res: &Resource) -> Option<Vec<u64>> {
     let data = res
         .block_bytes("DATA")
@@ -394,16 +374,12 @@ pub(crate) fn lod_group_masks(res: &Resource) -> Option<Vec<u64>> {
     (!masks.is_empty()).then_some(masks)
 }
 
-/// Whether mesh `index` belongs to LOD0. Without a mask table every mesh does.
 pub(crate) fn mesh_is_lod0(lod_masks: Option<&[u64]>, index: usize) -> bool {
     lod_masks
         .and_then(|masks| masks.get(index))
         .is_none_or(|mask| mask & 1 != 0)
 }
 
-/// Which of a model's `m_refMeshes` a preview decodes: LOD0 of every body
-/// group when the model has groups to switch between (`model_mesh_groups`),
-/// otherwise what the game draws by default.
 pub fn preview_mesh_selection(res: &Resource, mesh_count: usize) -> Vec<bool> {
     if model_mesh_groups(res).is_none() {
         return default_mesh_selection(res, mesh_count);
@@ -419,8 +395,6 @@ pub fn preview_mesh_selection(res: &Resource, mesh_count: usize) -> Vec<bool> {
     }
 }
 
-/// Which of a model's `m_refMeshes` the game draws by default: LOD0 and a
-/// body group the default mask turns on.
 pub fn default_mesh_selection(res: &Resource, mesh_count: usize) -> Vec<bool> {
     let lod_masks = lod_group_masks(res);
     let groups = default_mesh_group_masks(res);
@@ -432,7 +406,6 @@ pub fn default_mesh_selection(res: &Resource, mesh_count: usize) -> Vec<bool> {
             mesh_is_lod0(lod_masks.as_deref(), index) && group
         })
         .collect::<Vec<_>>();
-    // A model whose tables select nothing is still better shown whole.
     if shown.iter().any(|&shown| shown) {
         shown
     } else {
@@ -559,8 +532,6 @@ pub(crate) fn material_index_for_material(
                 .is_some_and(|candidate| candidate == material)
         })
         .map(|index| index + 1)
-        // A named material that failed to decode gets the neutral default, not
-        // whichever other material happened to decode.
         .unwrap_or(0)
 }
 
@@ -570,7 +541,6 @@ mod mesh_group_tests {
 
     #[test]
     fn mesh_group_names_split_into_body_group_and_choice() {
-        // Viscous' groups as `m_meshGroups` stores them.
         assert_eq!(
             mesh_group_choice("default_@1_#&inflated", 1),
             MeshGroupChoice {
@@ -611,8 +581,6 @@ mod emptied_drawcall_tests {
     fn only_explicitly_zeroed_draw_calls_count_as_removed() {
         assert!(drawcalls_all_emptied(&mesh(&[Some(0), Some(0)])));
         assert!(!drawcalls_all_emptied(&mesh(&[Some(0), Some(300)])));
-        // A count the file never stored is not a removal; such meshes keep
-        // their whole-buffer fallback.
         assert!(!drawcalls_all_emptied(&mesh(&[None])));
         assert!(!drawcalls_all_emptied(&mesh(&[])));
     }

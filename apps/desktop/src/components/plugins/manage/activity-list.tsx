@@ -7,7 +7,6 @@ import { usePluginProfiles } from "@/components/plugins/access/use-plugin-profil
 import { useRelativeTime } from "@/components/plugins/plugin-format";
 import type { ExternalPluginActivity } from "@/types/generated/ExternalPluginActivity";
 
-/** Activity entries in the detail panel's event style: icon, line, relative time. */
 export const ActivityEvents = ({
   entries,
 }: {

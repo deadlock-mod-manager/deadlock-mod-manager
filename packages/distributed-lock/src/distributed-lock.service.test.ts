@@ -96,7 +96,6 @@ describe("lock ownership after renewal", () => {
         await aborted(lock.signal);
         expect(lock.signal.reason).toBeInstanceOf(RuntimeError);
         const stoppedAt = renewals();
-        // A hanging renewal blocks the ones after it; failures are retried.
         if (renewal === "hangs") expect(stoppedAt).toBe(1);
         else expect(stoppedAt).toBeGreaterThan(2);
         await Bun.sleep(40);

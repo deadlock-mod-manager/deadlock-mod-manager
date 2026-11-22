@@ -116,7 +116,6 @@ describe("stats dashboard tabs", () => {
         await expectActiveTabInView();
         await openTabSettings();
         await typeOver(nameField, "My stats");
-        // Closing the settings keeps the typed name.
         await closeTabSettings();
         await expectActiveTab("My stats");
         await openTabSettings();

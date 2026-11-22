@@ -1,6 +1,5 @@
 import type { LocalMod, ModDownloadItem } from "@/types/mods";
 
-// Re-uploads receive a random suffix from the provider.
 const uploadBaseName = (name: string) =>
   name.replace(/_[0-9a-f]{5}(\.[^.]+)$/i, "$1").toLowerCase();
 
@@ -52,7 +51,6 @@ export function selectUpdateDownloads(
     const match = matches[0];
     if (match) selected.add(match);
   }
-  // Two old files mapping to one new variant need an explicit choice.
   return selected.size === names.length
     ? downloads.filter((file) => selected.has(file))
     : [];

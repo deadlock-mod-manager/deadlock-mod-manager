@@ -21,9 +21,6 @@ pub async fn create_profile_folder(
   create_profile_folder_unguarded(&profile_id, &profile_name)
 }
 
-/// Callers must have passed the game guard already. Kept separate so a batch
-/// import the user confirmed does not need a second override to create its
-/// folder.
 fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Result<String, Error> {
   log::info!("Creating profile folder for: {profile_id} - {profile_name}");
 
@@ -229,7 +226,6 @@ struct ResolvedProfileVpk {
   profile_base: crate::mod_manager::shard::ProfileBase,
   shard: ShardIndex,
   filename: String,
-  /// The listed name is a link; `path` is its target.
   linked: bool,
 }
 
@@ -301,8 +297,6 @@ pub async fn delete_profile_vpk(
 ) -> Result<(), Error> {
   crate::game_guard::ensure_game_idle_locked("delete_profile_vpk", guard_permit.as_deref())?;
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
-  // Held through the removal, so an install can't put a mod's file at this
-  // path after the ownership check.
   let manager = MANAGER.lock().unwrap();
   let base = manager.get_addons_path(profile_folder.as_deref())?;
   let resolved = resolve_profile_vpk_in(base, &vpk_name)?;
@@ -320,8 +314,6 @@ pub async fn delete_profile_vpk(
   Ok(())
 }
 
-/// Deleting or moving a link would act on its target, which may be a file a
-/// mod owns under another name.
 fn ensure_unlinked(resolved: &ResolvedProfileVpk) -> Result<(), Error> {
   if resolved.linked {
     return Err(Error::UnauthorizedPath(format!(
@@ -342,15 +334,8 @@ fn is_managed(resolved: &ResolvedProfileVpk, manifest: &ProfileVpkManifest) -> b
   })
 }
 
-/// Folder inside a profile where Analyze sets aside files the user chose to
-/// quarantine. The game only loads VPKs at the top of each search path, and
-/// Analyze and the VPK scan read only that level, so nothing here is loaded or
-/// offered again until the user moves it back.
 const QUARANTINE_DIR: &str = ".dmm-quarantine";
 
-/// Move an unmanaged VPK into the profile's quarantine folder and return where
-/// it went. The manager lock is held throughout, so no mod can take the file
-/// between the ownership check and the move.
 #[tauri::command]
 pub async fn quarantine_profile_vpk(
   profile_folder: Option<String>,
@@ -392,8 +377,6 @@ fn quarantine_unmanaged_vpk(
     Err(error) => return Err(error.into()),
   }
 
-  // Overflow shards reuse the base folder's pakNN names, so their files keep
-  // the shard in front to stay distinguishable.
   let name = if resolved.shard == ShardIndex::FIRST {
     resolved.filename.clone()
   } else {
@@ -409,8 +392,6 @@ fn quarantine_unmanaged_vpk(
   Ok(destination)
 }
 
-/// `name` in `folder`, or `name (2)`, `name (3)`... when it is taken. Any
-/// entry counts as taken, a dangling link too, which `rename` would replace.
 fn free_path(folder: &std::path::Path, name: &str) -> std::path::PathBuf {
   let taken = |path: &std::path::Path| path.symlink_metadata().is_ok();
   let candidate = folder.join(name);
@@ -444,7 +425,6 @@ pub async fn show_profile_vpk_in_folder(
   crate::utils::show_in_folder(resolved.path.to_string_lossy().as_ref())
 }
 
-/// The Default profile arrives as an empty folder and lives in the root addons folder.
 fn import_install_folder(final_profile_folder: &str) -> Option<String> {
   (!final_profile_folder.is_empty()).then(|| final_profile_folder.to_string())
 }
@@ -467,8 +447,6 @@ fn install_imported_mod(
   mod_manager.install_mod(deadlock_mod, import_install_folder(final_profile_folder))
 }
 
-/// Mods the profile already has, enabled or not. Importing one beside its old
-/// files would keep both versions loaded, so these are replaced instead.
 fn profile_mod_ids(
   mod_manager: &crate::mod_manager::ModManager,
   final_profile_folder: &str,
@@ -542,8 +520,6 @@ pub async fn import_profile_batch(
       "No mods provided for import".to_string(),
     ));
   }
-  // Trees shared before names were unique can repeat a name, and both the
-  // download and the install go by these names.
   let mods: Vec<_> = mods
     .into_iter()
     .map(|mut mod_data| {
@@ -580,7 +556,6 @@ pub async fn import_profile_batch(
   };
   let mut installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
 
-  // `Some` holds the result of replacing a mod the profile already has.
   let mut download_results: Vec<Result<Option<Result<Mod, Error>>, String>> = Vec::new();
 
   let native_sources = native_sources.inner();
@@ -601,13 +576,10 @@ pub async fn import_profile_batch(
       .map_err(|error| format!("Failed to resolve download files: {error:?}"))
     }
   };
-  // The next mod's files are looked up while this one downloads, so the first
-  // download doesn't wait for every lookup.
   let mut next_download_files = None;
   let mut handled_ids = std::collections::HashSet::new();
 
   for (index, mod_data) in mods.iter().enumerate() {
-    // download_results stays index-aligned with mods; the install loop below zips them.
     let resolved = match next_download_files.take() {
       Some(resolved) => resolved,
       None => resolve(index).await,
@@ -653,11 +625,6 @@ pub async fn import_profile_batch(
     let manager = get_download_manager(app_handle.clone()).await;
     let resolve_next =
       futures::future::OptionFuture::from((index + 1 < total_mods).then(|| resolve(index + 1)));
-    // A reinstall can add a mod to the profile after the snapshot, while
-    // earlier mods download or this one is looked up, so check again the
-    // first time this import reaches the mod. Later occurrences keep that
-    // answer, because a plain download writes the mod into the manifest
-    // itself. A failed read keeps the snapshot's answer.
     if !installed_ids.contains(&mod_data.mod_id)
       && handled_ids.insert(mod_data.mod_id.as_str())
       && profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)
@@ -666,8 +633,6 @@ pub async fn import_profile_batch(
       installed_ids.insert(mod_data.mod_id.clone());
     }
     if installed_ids.contains(&mod_data.mod_id) {
-      // Applied right away, as a batch update does, so only one mod's
-      // prepared files exist at a time.
       let (prepared, next) = tokio::join!(prepare_replacement(manager, task), resolve_next);
       next_download_files = next;
       download_results.push(prepared.map(|prepared| {
@@ -774,8 +739,6 @@ pub async fn import_profile_batch(
     }
   }
 
-  // Replacements can land out of load order. Reordering renames files already
-  // reported, so report the manifest's final names.
   if replaced_any {
     let mut mod_manager = MANAGER.lock().unwrap();
     let folder = import_install_folder(&final_profile_folder);
@@ -868,8 +831,6 @@ pub(crate) fn seed_manifest_entries(
     } else {
       entry.disabled_vpks.len()
     };
-    // Names pair with files by position, so a list of a different length
-    // would rename files after the wrong variant.
     if !entry.original_vpk_names.is_empty() && entry.original_vpk_names.len() != vpk_count {
       log::warn!(
         "Dropping {} original VPK names for mod {}: they do not match its {vpk_count} VPKs",
@@ -972,8 +933,6 @@ mod tests {
     );
   }
 
-  /// The analysis the user acted on can be stale: a mod may have taken the
-  /// file since.
   #[test]
   fn quarantine_refuses_files_a_mod_owns() {
     let (_temp, base) = profile();
@@ -1026,8 +985,6 @@ mod tests {
     }
   }
 
-  /// A link named like a leftover would otherwise move the file it points
-  /// to, which may be one a mod owns.
   #[cfg(unix)]
   #[test]
   fn quarantine_refuses_a_linked_file() {
@@ -1194,8 +1151,6 @@ mod tests {
     }
   }
 
-  /// Switching writes the folder into gameinfo.gi, which only accepts ASCII
-  /// names. A folder that fails that check can never be switched to.
   #[test]
   fn profile_folders_are_valid_gameinfo_search_paths() {
     for name in [
@@ -1214,8 +1169,6 @@ mod tests {
     }
   }
 
-  /// The frontend reads the profile id back from the folder name; a trailing
-  /// separator makes it treat the whole folder as a new id.
   #[test]
   fn a_name_with_nothing_to_keep_leaves_just_the_profile_id() {
     assert_eq!(profile_folder_name("profile_1_abc", "!!!"), "profile_1_abc");

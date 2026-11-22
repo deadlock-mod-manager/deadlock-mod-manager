@@ -17,12 +17,6 @@ const FixList = ({ fixes, hidden }: { fixes: string[]; hidden?: boolean }) => (
   </ul>
 );
 
-/**
- * The V2 release notes' fixes, scrolling past on a loop. The list is
- * rendered twice so the -50% keyframe wraps without a jump; the copy is
- * hidden from screen readers. Hovering pauses it, and with reduced motion
- * it's a plain scrollable list.
- */
 export const FixTicker = ({ fixes }: { fixes: string[] }) => (
   <div className='h-[360px] overflow-hidden [mask-image:linear-gradient(transparent,black_15%,black_85%,transparent)] motion-reduce:overflow-y-auto'>
     <div className='animate-ticker-up hover:[animation-play-state:paused]'>

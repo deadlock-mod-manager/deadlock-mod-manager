@@ -1,15 +1,12 @@
 import * as THREE from "three";
 import { z } from "zod";
 
-/** `material.userData.outline`, written by our GLB exporter's material extras. */
 const outlineExtras = z.object({
   tint: z.tuple([z.number(), z.number(), z.number()]).nullable(),
 });
 
 const OUTLINE_PIXELS = 1.6;
-/** Solid outline tints are read as a shaded edge, not a bright halo. */
 const OUTLINE_TINT_SHADE = 0.35;
-/** How much of the surface colour an untinted outline keeps. */
 const UNTINTED_SHADE = 0.22;
 
 const outlineOf = (material: THREE.Material) => {
@@ -17,11 +14,6 @@ const outlineOf = (material: THREE.Material) => {
   return parsed.success ? parsed.data : null;
 };
 
-/**
- * Deadlock's toon silhouette: a back-face shell around each NPR material,
- * pushed out along the skinned normal by a fixed number of screen pixels so it
- * keeps its weight at any zoom and follows every animated pose.
- */
 export const attachNprOutlines = (root: THREE.Object3D) => {
   const width = { value: 0 };
   const shells: THREE.SkinnedMesh<
@@ -98,15 +90,12 @@ export const attachNprOutlines = (root: THREE.Object3D) => {
     shell.userData.previewOutline = true;
     shell.bind(mesh.skeleton, mesh.bindMatrix);
     shell.frustumCulled = false;
-    // The silhouette cannot paint over pixels already occupied by the model.
     shell.renderOrder = 1;
     mesh.add(shell);
     shells.push(shell);
   }
   return {
-    /** Keep the outline a constant pixel width as the viewport resizes. */
     setViewportHeight(height: number) {
-      // Clip space spans 2 units across the viewport's CSS height.
       width.value = (OUTLINE_PIXELS * 2) / Math.max(height, 1);
     },
     setVisible(visible: boolean) {
@@ -121,7 +110,6 @@ export const attachNprOutlines = (root: THREE.Object3D) => {
       }
       for (const shell of shells) {
         shell.removeFromParent();
-        // The geometry and skeleton belong to the source mesh.
         shell.material.dispose();
       }
     },

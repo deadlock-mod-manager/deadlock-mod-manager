@@ -15,12 +15,8 @@ import type { DeepLinkData, OneClickInstall } from "./use-deep-link";
 
 const PAIR_EVENT = "remote-install-pair-requested";
 const STATUS_KEY = ["remote-install", "status"];
-// Names and avatars rarely change; refresh them about once an hour.
 const STALE_TIME_MEMBER = 60 * 60 * 1000;
 
-// GameBanana marks entries retrieved once returned, so every fetch, including
-// a manual refetch from Settings or the status bar, must install what it gets.
-// The app-wide poller registers the installer before its first fetch.
 let installLink: OneClickInstall | null = null;
 
 const queueQuery = queryOptions({
@@ -50,7 +46,6 @@ export const useGameBananaMember = (memberId: number | null) =>
     retry: false,
   });
 
-/** Shares the poller's queue state without fetching on its own. */
 const useRemoteInstallQueueState = () =>
   useQuery({ ...queueQuery, enabled: false });
 
@@ -95,8 +90,6 @@ export const useRemoteInstallPairing = () => {
   return { pair, unpair };
 };
 
-// GameBanana's Pair button opens the app with the member's key. Any page can
-// fire that link, so Rust holds the key until the user confirms the member.
 export const useRemoteInstallPairRequest = () => {
   const [memberId, setMemberId] = useState<number | null>(null);
 

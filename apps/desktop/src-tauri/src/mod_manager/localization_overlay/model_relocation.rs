@@ -1,4 +1,3 @@
-//! Follow recorded hero model bindings to the current registry, preserving authored assets.
 use super::{
   CompiledDataSource, HEROES_VDATA_PATH,
   animation_model_evidence::AnimationInputs,
@@ -33,9 +32,6 @@ fn observed_binding(history: VdataHistory<'_>, row: &str, model: &str) -> bool {
       })
 }
 
-/// Mod model paths that once held the primary model of a current hero, which
-/// relocation can move to that hero's current model. A mod that already ships
-/// the current model is loaded from there, so its old copy is never moved.
 pub(super) fn historical_hero_models<'a>(
   resources: &ResourceSnapshot,
   history: VdataHistory<'_>,
@@ -82,9 +78,6 @@ pub(super) fn historical_hero_models<'a>(
   )
 }
 
-/// Warned models that are neither a hero's current model nor an old one that
-/// relocation would move there, such as the model a particle shows. Hero
-/// camera and animation interfaces do not apply to them.
 pub(super) fn prop_models(
   resources: &ResourceSnapshot,
   history: VdataHistory<'_>,
@@ -329,7 +322,6 @@ pub(super) fn prepare(
         .iter()
         .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
         .collect();
-      // These leave the relocated model usable; report them instead.
       let (advisories, unverified): (Vec<_>, Vec<_>) = unverified
         .into_iter()
         .chain(asset_compatibility::analyze(

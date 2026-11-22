@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-/** The content width of the element `ref` is attached to, kept in sync on resize. */
 export const useElementWidth = () => {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);

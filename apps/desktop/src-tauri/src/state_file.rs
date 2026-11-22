@@ -23,10 +23,6 @@ fn backup_path(path: &Path) -> PathBuf {
   path.with_extension(format!("unreadable-{timestamp}.json"))
 }
 
-// tauri-plugin-store ignores load errors: an unreadable state file opens as an
-// empty store, and the plugin saves that empty store over the file on exit.
-// Moving the file aside first keeps the user's data and lets the app say what
-// happened instead of silently starting over.
 fn quarantine_unreadable(path: &Path) -> Option<StateFileRecovery> {
   let reason = match std::fs::read(path) {
     Ok(bytes) => match serde_json::from_slice::<HashMap<String, Value>>(&bytes) {

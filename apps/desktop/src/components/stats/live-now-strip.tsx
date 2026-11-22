@@ -22,7 +22,6 @@ import type { Team } from "@/types/generated/Team";
 interface LiveNowStripProps {
   you: ResolvedPlayer;
   clock: string | null;
-  /** The match has ended and this is its last report. */
   isOver: boolean;
   minutes: number | null;
   team: Team;
@@ -55,7 +54,6 @@ const Stat = ({
   </div>
 );
 
-/** You, right now: your hero, your numbers, and one grade for the match so far. */
 export const LiveNowStrip = ({
   you,
   clock,

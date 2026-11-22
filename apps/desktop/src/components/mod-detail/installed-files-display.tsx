@@ -51,8 +51,6 @@ export const InstalledFilesDisplay = ({
   }, {});
 
   const archiveNames = Object.keys(filesByArchive);
-  // Headers only help when an archive holds several files; one file per
-  // archive reads better as a flat list that names the archive per row.
   const showArchiveHeaders =
     archiveNames.length > 1 &&
     archiveNames.some((name) => filesByArchive[name].length > 1);

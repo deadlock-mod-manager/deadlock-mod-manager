@@ -10,11 +10,8 @@ export const localModContentsOptions = (filePaths: string[]) =>
     queryFn: () =>
       invoke<LocalPartContents[]>("inspect_local_mod_files", { filePaths }),
     enabled: filePaths.length > 0,
-    // A local read: React Query's default would pause it while offline.
     networkMode: "always",
     staleTime: Infinity,
-    // Drops are staged under their own name, so the same path can hold a
-    // different file next time.
     gcTime: 0,
     retry: false,
     meta: { skipGlobalErrorHandler: true },
@@ -33,11 +30,6 @@ const sum = (
   count: (part: LocalPartContents) => number,
 ) => parts.reduce((total, part) => total + count(part), 0);
 
-/**
- * The category the files point to, or null when they could be several. Maps
- * and skins win over the sounds a skin often ships with. Models that name no
- * hero (items, particles, weapons) fit too many categories to guess.
- */
 export const suggestCategory = (
   parts: LocalPartContents[],
 ): ModCategory | null => {

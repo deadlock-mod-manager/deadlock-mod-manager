@@ -11,14 +11,6 @@ const MIN_RECENT_BEFORE_FALLBACK = 4;
 
 export type TrendingByCategory = Record<string, ModDto[]>;
 
-/**
- * Groups mods into per-category "trending" lists. Trending = updated within
- * the last 30 days, sorted by lifetime download count. Falls back to all-time
- * top mods in the category if there aren't enough recent ones.
- *
- * NOTE: client-side heuristic. A backend `/trending` endpoint with real
- * time-windowed download counts would be more accurate.
- */
 export const useTrendingByCategory = (
   mods: ModDto[] | undefined,
   options?: { now?: Date; limit?: number },

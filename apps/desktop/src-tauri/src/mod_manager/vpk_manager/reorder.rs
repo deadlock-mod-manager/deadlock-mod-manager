@@ -2,10 +2,6 @@ use super::*;
 use std::collections::HashSet;
 
 impl VpkManager {
-  /// Reorder enabled VPKs across shard directories.
-  ///
-  /// Mods are packed sequentially into shards, never splitting a mod across
-  /// shards, so the global load order remains stable.
   pub fn reorder_vpks_sharded(
     &self,
     ordered_mods: &[ShardAssignment],
@@ -85,7 +81,6 @@ impl VpkManager {
       .filter(|vpk| !owned_vpks.contains(*vpk))
       .cloned()
       .collect();
-    // The name breaks ties such as `pak1` and `pak01`, which share a number.
     orphan_sources.sort_by_key(|(shard_index, filename)| {
       (
         *shard_index,
@@ -117,10 +112,6 @@ impl VpkManager {
     }
   }
 
-  /// Give every enabled VPK its slot (grouped by mod, orphans last), then move
-  /// only the files whose slot changes. Each move is journaled and flushed to
-  /// disk, so leaving files that keep their slot alone is what keeps a small
-  /// change to a long load order cheap.
   fn reorder_sharded_inner(
     ordered_mods: &[ShardAssignment],
     orphan_sources: Vec<(ShardIndex, String)>,
@@ -136,9 +127,6 @@ impl VpkManager {
       let (shard_used, names) = slots.next_group(assignment.vpks.len() as u32)?;
       for (vpk, name) in assignment.vpks.iter().zip(&names) {
         let filename = Self::vpk_filename(vpk);
-        // A case-insensitive disk resolves `PAK01_DIR.VPK` as `pak01_dir.vpk`,
-        // but slot allocation reads names case-sensitively, so a file stays
-        // only when its directory entry already has the exact slot name.
         let stays = (assignment.shard, &filename) == (shard_used, name)
           && on_disk.contains(&(shard_used, filename.clone()));
         if !stays {
@@ -168,9 +156,6 @@ impl VpkManager {
       orphan_renames.insert((shard_index, filename), (shard_used, new_name));
     }
 
-    // Park every mover before placing any, so a destination another mover
-    // still occupies is free by the time it is filled. A file that keeps its
-    // slot is never a destination, because no two files share a slot.
     let mut staged = Vec::with_capacity(moves.len());
     for (source, _) in &moves {
       staged.push(staging.stage(base, source)?);
@@ -185,8 +170,6 @@ impl VpkManager {
     })
   }
 
-  /// Every enabled-named VPK file in the profile's shards, spelled exactly as
-  /// its directory entry is.
   fn enabled_vpks_on_disk(base: &ProfileBase) -> Result<HashSet<(ShardIndex, String)>, Error> {
     let mut vpks = HashSet::new();
     for (shard_index, dir) in base.existing_shards() {
@@ -273,9 +256,6 @@ impl VpkManager {
   }
 }
 
-/// Hands out `pak##_dir.vpk` slots in load order, opening the next shard when a
-/// group would overflow `SHARD_CAPACITY`. A group always lands in one shard so a
-/// mod's VPKs stay together.
 struct SlotCursor {
   shard: u32,
   used: u32,

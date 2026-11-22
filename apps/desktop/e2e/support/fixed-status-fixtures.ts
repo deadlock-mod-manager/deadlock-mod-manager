@@ -4,9 +4,6 @@ import { prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
-// Worlds for checking that a fixed mod keeps "Fixed for this patch" and its
-// repair package across library, game and app changes.
-
 export const STATUS = {
   id: "profile_410_status",
   folder: "profile_410_status_status",
@@ -19,24 +16,16 @@ const OTHER_STATUS = {
   name: "E2E Other",
 };
 
-/** Fixable: its copy of a game text file lacks a game token. */
 export const FIXED_MOD = "local-status-text";
-/** Edits the same token as FIXED_MOD differently, so fixing both needs review. */
 export const RIVAL_MOD = "local-status-rival";
-/** A second fixable mod with its own text file. */
 const SECOND_MOD = "local-status-second";
-/** A plain skin to toggle, standing in for any library change. */
 export const PLAIN_MOD = "local-status-plain";
-/** A mod in the other profile that ships a copy of a game data table. */
 const OTHER_DATA_MOD = "local-status-other-data";
-/** Imported during a run: ships a copy of a game data table. */
 export const DATA_MOD_FILE = "local-status-data.vpk";
 
 export const GAME_BUILD = 7000;
 const DATA_TABLE = "scripts/e2e_status.vdata_c";
 
-// A compiled KV3 table (four rows of `{ value: i }`), from the app's own test
-// encoder (`compiled_resource` in localization_overlay.rs).
 const DATA_TABLE_HEX =
   "eb0000000c0000000800000001000000444154410c000000cb000000000000000433564b000000000000000000000000000000000000000000000000000000000e0000000200000037000000000000008300000083000000000000000000000000000000000000000500000004000000000000000100000001000000020000000100000001000000030000000100000001000000040000000100000001000000020000000000000003000000000000006532655f726f775f300076616c7565006532655f726f775f31006532655f726f775f32006532655f726f775f330009090f09100903090300ddeeff";
 const dataTableBytes = (): Buffer => Buffer.from(DATA_TABLE_HEX, "hex");
@@ -95,11 +84,6 @@ const payload = (modId: string): Buffer => {
   return build();
 };
 
-/**
- * The game has a build number, a loose text file the text mods copy, and a
- * packed data table. `modIds` go into the active profile; `otherModIds` into a
- * second profile.
- */
 export const prepareFixedStatusWorld = async (
   world: CreatedWorld,
   modIds: readonly string[],

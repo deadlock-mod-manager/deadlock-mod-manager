@@ -6,7 +6,6 @@ import { ART } from "./art";
 import { pick, random } from "./effect-canvas";
 import { addLuckyCoins } from "./progress";
 
-/** Lucky amounts; repeats make the small ones common and 888 rare. */
 const AMOUNTS = [6, 6, 8, 8, 8, 18, 18, 66, 66, 88, 168, 888];
 const BLESSINGS = ["fu", "shou", "cai", "xi", "an", "chun"] as const;
 

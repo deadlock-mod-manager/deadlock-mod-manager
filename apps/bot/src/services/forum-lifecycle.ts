@@ -32,7 +32,6 @@ export async function setThreadStatus(
   await thread.setAppliedTags(withStatus(config, thread.appliedTags, status));
 }
 
-/** Posts `note`, sets the status tag and archives. Archiving last keeps the note from reopening the thread. */
 export async function closeThread(
   thread: AnyThreadChannel,
   config: ForumLifecycleConfig,

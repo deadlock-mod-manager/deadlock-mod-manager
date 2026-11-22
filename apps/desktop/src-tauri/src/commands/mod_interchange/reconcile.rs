@@ -4,8 +4,6 @@ use crate::mod_manager::{ModManager, shard::ProfileBase, vpk_manifest::ProfileVp
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-/// Repair ownership after another manager moves already imported VPKs. Only
-/// claimed slots and DMM's cached bytes participate; foreign files stay intact.
 pub(super) fn reconcile_imported_files(
   base: &ProfileBase,
   store: &Path,

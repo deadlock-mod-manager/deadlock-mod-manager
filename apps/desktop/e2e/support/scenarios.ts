@@ -186,8 +186,6 @@ export type Definition = {
   spec: string;
   phases: readonly string[];
   nativeInput: boolean;
-  // Native picker and legacy ordering cases require FlaUI; group dragging also
-  // supports X11. Some filesystem faults require Windows sharing semantics.
   platforms: readonly NodeJS.Platform[];
   coverage: "ui" | "ipc-recovery";
   routes: (id: string) => Promise<(origin: string) => readonly FixtureRoute[]>;
@@ -233,10 +231,7 @@ const local: Definition = {
     );
   },
 };
-// Mods close to a gigabyte exist; importing one used to crash from 100 MB.
 const LARGE_MOD_BYTES = 1024 * 1024 * 1024;
-// Picked and path-only dropped files come from the world's fixtures. A dropped
-// File is read by the page, which may only read app data.
 const localLarge = (
   fixtureDirectory: (world: CreatedWorld) => string,
 ): Definition => ({
@@ -338,7 +333,6 @@ const downloads: Definition = {
     prepareDownloadWorld(world, origin, world.configuration.caseId),
   verifyNetwork: assertDownloadNetwork,
 };
-// Pausing the first of two downloads lets the second one start.
 const pauseQueue: Definition = {
   ...downloads,
   spec: "download-pause-queue",
@@ -539,8 +533,6 @@ export const scenarios = {
     routes: rescanAfterResetRoutes,
     prepare: prepareRescanAfterResetWorld,
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
-      // Only the hand-placed pak04 and the local import's pak03 may be looked
-      // up: the catalog mods' files are already accounted for by the manifest.
       const lookups = hashRequests(requests).length;
       if (lookups !== 2)
         throw new Error(
@@ -1013,7 +1005,6 @@ export const scenarios = {
         STATUS_PLAIN_MOD,
       ]),
   },
-  // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,
     family: "fixed-status",
@@ -1094,7 +1085,6 @@ export const scenarios = {
     family: "fixed-status",
     spec: "fixed-status-shared-file",
     phases: ["share"],
-    // The case opens the fixed mod's page, which asks for its report counts.
     routes: async () => {
       const routes = await profileRoutes();
       return () => [
@@ -1258,9 +1248,6 @@ export const scenarios = {
     ...catalog,
     spec: "mod-files-error",
     phases: ["files-error"],
-    // GameBanana's transport retries a 5xx three times, so the page's first
-    // load and its first Retry each see four failures. The second Retry gets
-    // the real file list, late enough for the spec to see the retry in flight.
     routes: async () => {
       const routes = await createCatalogRoutes("gamebanana-single");
       const outage = {
@@ -1435,7 +1422,6 @@ export const scenarios = {
   },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
-// Protect recovery and valid workflows that stricter error handling can break.
 export const criticalScenarios: readonly ScenarioId[] = [
   "gamebanana-file-toggle",
   "gamebanana-reinstall-readonly",

@@ -20,7 +20,6 @@ import { type LocalMod } from "@/types/mods";
 type CheckUpdatesData = Awaited<ReturnType<typeof checkModUpdates>>;
 type ModToCheck = Parameters<typeof checkModUpdates>[0][number];
 
-// Reuse entries per mod object so the shallow selector stays stable until a mod changes.
 const modsToCheckCache = new WeakMap<LocalMod, ModToCheck>();
 
 const toModToCheck = (mod: LocalMod): ModToCheck => {
@@ -46,11 +45,8 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
   return entry;
 };
 
-// Every mod card subscribes, so derive once per localMods change.
 let lastLocalMods: LocalMod[] | undefined;
 let lastModsToCheck: ModToCheck[] = [];
-// Stands in for the list in the query key. Every card observes this query, and React Query
-// hashes the key on each observer render, so keying on the whole list cost O(n) per card.
 let modsToCheckRevision = 0;
 
 const selectModsToCheck = (state: State) => {
@@ -67,7 +63,6 @@ const selectModsToCheck = (state: State) => {
 
 type ModUpdate = CheckUpdatesData["updates"][number];
 
-// Grouped once per result so each card looks its mod up instead of scanning every update.
 const updatesByRemoteId = new WeakMap<
   CheckUpdatesData,
   Map<string, ModUpdate[]>

@@ -1,6 +1,3 @@
-//! `storage`: a JSON key/value namespace per plugin. The namespace
-//! comes from the host-established identity; keys never name paths.
-
 use crate::Error;
 use serde_json::{Map, Value};
 use std::fs;
@@ -36,7 +33,6 @@ impl PluginStorage {
     }
   }
 
-  /// Bytes on disk, 0 when nothing was stored yet.
   pub fn size(&self) -> u64 {
     fs::metadata(&self.path).map_or(0, |meta| meta.len())
   }
@@ -55,7 +51,6 @@ impl PluginStorage {
     Ok(self.load()?.remove(key).unwrap_or(Value::Null))
   }
 
-  /// Stores `value` under `key`; `null` deletes it.
   pub fn set(&self, key: &str, value: Value) -> Result<(), StorageError> {
     let mut map = self.load()?;
     if value.is_null() {

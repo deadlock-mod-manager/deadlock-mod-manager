@@ -14,19 +14,11 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 const logger = createLogger("reinstall-action");
 
-/**
- * Download statuses are left out: they outlive a download that never reported
- * back, so whether one is running is asked of the download queue on click.
- */
 const BUSY_STATUSES = new Set<ModStatus>([
   ModStatus.Installing,
   ModStatus.Removing,
 ]);
 
-/**
- * Confirmation, progress and result reporting around {@link useReinstallMod},
- * so the card button and the context menu entry behave identically.
- */
 export const useReinstallAction = (mod: LocalMod) => {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -35,8 +27,6 @@ export const useReinstallAction = (mod: LocalMod) => {
 
   const isReinstalling = step !== null;
   const isBusy = isReinstalling || BUSY_STATUSES.has(mod.status);
-  // A local mod has no source to download from, so a reinstall would only
-  // delete it.
   const canReinstall = !isLocalMod(mod) && !isNativeSourceMod(mod.remoteId);
 
   const reinstall = useCallback(async () => {
@@ -69,10 +59,6 @@ export const useReinstallAction = (mod: LocalMod) => {
             hasDownloadStatus &&
             !downloadManager.isQueued(mod.remoteId)
           ) {
-            // A download status with no download behind it is stale and blocks
-            // the move back to Downloading. It's cleared here rather than up
-            // front because the purge can fail, or wait on a prompt while a
-            // download starts.
             usePersistedStore
               .getState()
               .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
@@ -101,8 +87,6 @@ export const useReinstallAction = (mod: LocalMod) => {
           break;
       }
     } catch (error) {
-      // The old files couldn't be removed, usually because the game guard
-      // blocked it or a file is read-only. The mod is left as it was.
       logger.withError(error).warn("Reinstall aborted");
       toast.error(
         t("reinstall.failedWithReason", {

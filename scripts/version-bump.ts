@@ -1,15 +1,5 @@
 #!/usr/bin/env bun
 
-/**
- * Version Bump Script
- *
- * This script is run after `pnpm changeset version` to:
- * 1. Sync the desktop package.json version to Cargo.toml
- * 2. Generate/update the "What's New" translations for the new version
- *
- * Usage: bun scripts/version-bump.ts [--generate-whats-new]
- */
-
 import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -51,17 +41,11 @@ interface TranslationFile {
   [key: string]: unknown;
 }
 
-/**
- * Get the current version from package.json
- */
 function getPackageVersion(): string {
   const packageJson = JSON.parse(readFileSync(DESKTOP_PACKAGE_JSON, "utf-8"));
   return packageJson.version;
 }
 
-/**
- * Get the current version from Cargo.toml
- */
 function getCargoVersion(): string {
   const cargoToml = readFileSync(CARGO_TOML, "utf-8");
   const match = cargoToml.match(/^version = "([^"]+)"/m);
@@ -71,9 +55,6 @@ function getCargoVersion(): string {
   return match[1];
 }
 
-/**
- * Update Cargo.toml with the new version
- */
 function updateCargoVersion(newVersion: string): void {
   const cargoToml = readFileSync(CARGO_TOML, "utf-8");
   const updatedCargoToml = cargoToml.replace(
@@ -84,9 +65,6 @@ function updateCargoVersion(newVersion: string): void {
   console.log(`Updated Cargo.toml version to ${newVersion}`);
 }
 
-/**
- * Parse the CHANGELOG.md to extract features for a specific version
- */
 function parseChangelogForVersion(version: string): WhatsNewVersion | null {
   if (!existsSync(CHANGELOG_PATH)) {
     console.warn("CHANGELOG.md not found");
@@ -102,12 +80,10 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
   let currentSection = "";
 
   for (const line of lines) {
-    // Check for version header (## X.X.X)
     if (line.match(/^## \d+\.\d+\.\d+/)) {
       const versionMatch = line.match(/^## (\d+\.\d+\.\d+)/);
       if (versionMatch) {
         if (inTargetVersion) {
-          // We've reached the next version, stop parsing
           break;
         }
         if (versionMatch[1] === version) {
@@ -119,17 +95,14 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
 
     if (!inTargetVersion) continue;
 
-    // Check for section headers (### Minor Changes, ### Patch Changes)
     if (line.startsWith("### ")) {
       currentSection = line.replace("### ", "").trim();
       continue;
     }
 
-    // Parse list items
     if (line.startsWith("- ") && currentSection) {
       let feature = line.substring(2).trim();
 
-      // Skip dependency update lines
       if (
         feature.startsWith("Updated dependencies") ||
         feature.startsWith("@deadlock-mods/")
@@ -137,10 +110,8 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
         continue;
       }
 
-      // Remove commit hashes (e.g., "f48352c: ")
       feature = feature.replace(/^[a-f0-9]+: /, "");
 
-      // Skip empty features
       if (feature.length > 0) {
         features.push(feature);
       }
@@ -151,17 +122,12 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
     return null;
   }
 
-  // Generate a title from the first feature or use a default
   title = generateTitle(features, version);
 
   return { title, features: formatFeaturesForWhatsNew(features) };
 }
 
-/**
- * Generate a title from the features
- */
 function generateTitle(features: string[], version: string): string {
-  // Try to extract key themes from features
   const themes: string[] = [];
 
   for (const feature of features) {
@@ -186,7 +152,6 @@ function generateTitle(features: string[], version: string): string {
       themes.push("Improvements");
   }
 
-  // Deduplicate themes
   const uniqueThemes = [...new Set(themes)];
 
   if (uniqueThemes.length === 0) {
@@ -200,19 +165,14 @@ function generateTitle(features: string[], version: string): string {
   return `${uniqueThemes.slice(0, 2).join(", ")} & More`;
 }
 
-/**
- * Format features for the What's New dialog with emojis
- */
 function formatFeaturesForWhatsNew(features: string[]): string[] {
   return features.map((feature) => {
-    // Already has emoji
     if (/^[\u{1F300}-\u{1F9FF}]/u.test(feature)) {
       return feature;
     }
 
     const lowerFeature = feature.toLowerCase();
 
-    // Add appropriate emoji based on content
     if (lowerFeature.includes("fix")) return `🔧 ${feature}`;
     if (lowerFeature.includes("auth")) return `🔒 ${feature}`;
     if (lowerFeature.includes("crosshair")) return `🎯 ${feature}`;
@@ -236,9 +196,6 @@ function formatFeaturesForWhatsNew(features: string[]): string[] {
   });
 }
 
-/**
- * Update the English translation file with the new version's What's New content
- */
 function updateWhatsNewTranslation(
   version: string,
   content: WhatsNewVersion,
@@ -252,7 +209,6 @@ function updateWhatsNewTranslation(
     readFileSync(EN_TRANSLATION_PATH, "utf-8"),
   );
 
-  // Check if version already exists
   if (translation.whatsNew?.versions?.[version]) {
     console.log(
       `What's New for version ${version} already exists, skipping...`,
@@ -260,7 +216,6 @@ function updateWhatsNewTranslation(
     return;
   }
 
-  // Ensure the structure exists
   if (!translation.whatsNew) {
     translation.whatsNew = { versions: {} } as TranslationFile["whatsNew"];
   }
@@ -268,7 +223,6 @@ function updateWhatsNewTranslation(
     translation.whatsNew.versions = {};
   }
 
-  // Add the new version at the top by recreating the versions object
   const existingVersions = translation.whatsNew.versions;
   translation.whatsNew.versions = {
     [version]: content,
@@ -282,9 +236,6 @@ function updateWhatsNewTranslation(
   console.log(`Updated What's New for version ${version}`);
 }
 
-/**
- * Propagate What's New content from English to all other locale files
- */
 function propagateWhatsNewToLocales(version: string): void {
   const enTranslation: TranslationFile = JSON.parse(
     readFileSync(EN_TRANSLATION_PATH, "utf-8"),
@@ -333,9 +284,6 @@ function propagateWhatsNewToLocales(version: string): void {
   }
 }
 
-/**
- * Get recent git commits since last tag
- */
 function getRecentCommits(): string[] {
   try {
     const lastTag = execSync(
@@ -360,9 +308,6 @@ function getRecentCommits(): string[] {
   }
 }
 
-/**
- * Main function
- */
 function main(): void {
   const args = new Set(process.argv.slice(2));
   const generateWhatsNew = args.has("--generate-whats-new");
@@ -370,14 +315,12 @@ function main(): void {
 
   console.log("=== Version Bump Script ===\n");
 
-  // Step 1: Get versions
   const packageVersion = getPackageVersion();
   const cargoVersion = getCargoVersion();
 
   console.log(`Package.json version: ${packageVersion}`);
   console.log(`Cargo.toml version: ${cargoVersion}`);
 
-  // Step 2: Sync Cargo.toml if needed
   if (packageVersion !== cargoVersion) {
     console.log(`\nVersion mismatch detected!`);
     if (dryRun) {
@@ -389,7 +332,6 @@ function main(): void {
     console.log(`\nVersions are in sync.`);
   }
 
-  // Step 3: Generate What's New content
   if (generateWhatsNew) {
     console.log(`\n=== Generating What's New Content ===\n`);
 
@@ -420,7 +362,6 @@ function main(): void {
           title: `Version ${packageVersion}`,
           features: formatFeaturesForWhatsNew(
             commits.slice(0, 8).map((c) => {
-              // Clean up conventional commit format
               return c.replace(
                 /^(feat|fix|chore|docs|refactor|perf|test)\(.*?\): /,
                 "",

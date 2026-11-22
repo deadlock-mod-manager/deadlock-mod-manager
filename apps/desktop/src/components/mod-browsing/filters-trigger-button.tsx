@@ -4,7 +4,6 @@ import { type ComponentPropsWithoutRef, forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-// Idle toolbar pickers stay muted so only the active ones draw the eye.
 export const toolbarTriggerClass = (active: boolean) =>
   active
     ? "border-primary/40 bg-primary/10 hover:bg-primary/15"
@@ -14,11 +13,6 @@ type FiltersTriggerButtonProps = ComponentPropsWithoutRef<typeof Button> & {
   count: number;
 };
 
-/**
- * Labeled trigger for a filters menu. Muted when idle; gold tint plus a count
- * pill when the menu holds active filters, matching the toolbar's pickers.
- * Forwards its ref and props so it works under a Radix `asChild` trigger.
- */
 export const FiltersTriggerButton = forwardRef<
   HTMLButtonElement,
   FiltersTriggerButtonProps

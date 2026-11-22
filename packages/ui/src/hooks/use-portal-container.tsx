@@ -5,11 +5,6 @@ const subscribe = (onChange: () => void) => {
   return () => document.removeEventListener("fullscreenchange", onChange);
 };
 
-/**
- * Only the fullscreen element's subtree is painted in fullscreen, so floating
- * content portaled to <body> would stay invisible. Re-renders on
- * fullscreenchange because content wrappers don't re-render when they open.
- */
 export const usePortalContainer = () =>
   useSyncExternalStore(
     subscribe,

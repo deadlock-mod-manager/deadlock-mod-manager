@@ -1,5 +1,3 @@
-//! Resolving a mod-manager mod id to the VPK on disk the Foundry should open.
-
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -8,8 +6,6 @@ use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 
 use crate::commands::state::MANAGER;
 
-/// Recursively collect `.vpk` files under `dir` (bounded depth), skipping the
-/// multi-part companion archives (`*_NNN.vpk`) so only dir/standalone VPKs match.
 fn collect_vpks(dir: &std::path::Path, depth: usize, out: &mut Vec<PathBuf>) {
   if depth > 6 {
     return;
@@ -23,7 +19,6 @@ fn collect_vpks(dir: &std::path::Path, depth: usize, out: &mut Vec<PathBuf>) {
       collect_vpks(&path, depth + 1, out);
     } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
       let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-      // Skip `<base>_003.vpk` numbered archives; keep `_dir.vpk` and plain names.
       let is_numbered_archive = stem
         .rsplit_once('_')
         .map(|(_, tail)| tail.len() == 3 && tail.chars().all(|c| c.is_ascii_digit()))
@@ -83,11 +78,6 @@ fn sort_store_candidates(candidates: &mut [PathBuf]) {
   });
 }
 
-/// Resolve the absolute path to a mod's primary VPK from the DMM mod store
-/// (`<app_local_data>/mods/<mod_id>/`). Downloaded mods keep their VPK under
-/// `verified-vpk/`, local mods under `files/`, so the whole mod folder is
-/// scanned. Installed mods may no longer have a cached VPK, so the active
-/// profile's addons folder is used as a fallback.
 #[tauri::command]
 pub fn foundry_resolve_mod_vpk(
   mod_id: String,

@@ -16,7 +16,6 @@ const formatPlacement = (metric: PlacementMetric, value: number) =>
       ? String(value)
       : formatCompact(value);
 
-/** The player's finish on each metric, with the whole lobby as a strip of slots. */
 export const LobbyPlacements = ({
   placements,
 }: {
@@ -65,8 +64,6 @@ export const LobbyPlacements = ({
                     style={
                       slot.isMe
                         ? {
-                            // Foreground, not primary: a theme's primary can sit
-                            // too close to a team colour to stand out.
                             backgroundColor: "hsl(var(--foreground))",
                             boxShadow:
                               "0 0 6px color-mix(in srgb, hsl(var(--foreground)) 55%, transparent)",

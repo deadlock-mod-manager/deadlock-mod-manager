@@ -7,9 +7,6 @@ const MAJOR_CELL = "112px";
 const MINOR_LINE = "rgba(148, 163, 184, 0.035)";
 const MAJOR_LINE = "rgba(148, 163, 184, 0.07)";
 
-// Layers top to bottom: accent and cyan glows in opposite corners, a vignette that
-// fades the grid out towards the edges, then a graph-paper grid on slate with a
-// brighter line every fourth cell.
 const BACKDROP_STYLE = {
   background: `
     radial-gradient(ellipse 45% 40% at 92% 0%, hsl(var(--coding-accent, 158 64% 52%) / 0.13) 0%, transparent 70%),

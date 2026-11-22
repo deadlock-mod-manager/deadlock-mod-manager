@@ -13,7 +13,6 @@ import { disposeObject } from "./viewer-model-resources";
 import { createViewerScene } from "./viewer-scene";
 import type { FoundryModel } from "@/types/foundry";
 
-/** One small still using the viewer's lighting, camera and cropped hero capture. */
 export async function renderModelThumbnail(
   model: FoundryModel,
   signal: AbortSignal,

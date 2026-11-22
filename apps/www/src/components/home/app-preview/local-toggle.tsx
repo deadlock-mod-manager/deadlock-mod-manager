@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ToggleRow } from "./toggle-row";
 
-/** A toggle with local state, for settings that only matter inside the app. */
 export const LocalToggle = (props: {
   label: string;
   description: string;

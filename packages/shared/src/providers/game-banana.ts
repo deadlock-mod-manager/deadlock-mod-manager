@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Common shared types
 type BaseUser = {
   _idRow: number;
   _sName: string;
@@ -48,7 +47,6 @@ export interface GameBananaDonationMethod {
   _sIconClasses: string;
 }
 
-// Base submission interface for shared properties
 type BaseSubmission = {
   _idRow: number;
   _sModelName: string;
@@ -139,9 +137,7 @@ export type GameBananaModFile = {
 };
 
 export type GameBananaModProfile = BaseSubmission & {
-  /** Each row is one requirement */
   _aRequirements?: string[][] | null;
-  /** True when the mod has any requirements */
   _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;
   _bIsPrivate: boolean;
@@ -166,8 +162,8 @@ export type GameBananaModProfile = BaseSubmission & {
   _bCreatedBySubmitter: boolean;
   _bIsPorted: boolean;
   _nThanksCount: number;
-  _aContentRatings?: Record<string, string>; // CRITICAL: NSFW content ratings
-  _sInitialVisibility?: string; // CRITICAL: Visibility hint for NSFW
+  _aContentRatings?: Record<string, string>;
+  _sInitialVisibility?: string;
   _sDownloadUrl: string;
   _nDownloadCount: number;
   _aFiles: GameBananaFile[];
@@ -197,9 +193,9 @@ export type GameBananaModProfile = BaseSubmission & {
     ask: string[];
     no: string[];
   };
-  _sDescription?: string; // CRITICAL: Description text for keyword detection
+  _sDescription?: string;
   _bGenerateTableOfContents: boolean;
-  _sText: string; // CRITICAL: Main text content for keyword detection
+  _sText: string;
   _bIsObsolete?: boolean;
   _nLikeCount?: number;
   _nViewCount?: number;
@@ -210,7 +206,6 @@ export type GameBananaModProfile = BaseSubmission & {
     _sEmbeddableImageBaseUrl: string;
     _aVariants: string[];
   };
-  /** Video page links (YouTube, Vimeo) shown on the submission page */
   _aEmbeddedMedia?: string[];
   _bFollowLinks?: boolean;
   _aSubmitter: BaseUser & {
@@ -273,9 +268,7 @@ export type GameBananaModProfile = BaseSubmission & {
 };
 
 export type GameBananaSoundProfile = BaseSubmission & {
-  /** Each row is one requirement */
   _aRequirements?: string[][] | null;
-  /** True when the mod has any requirements */
   _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;
   _bIsPrivate: boolean;
@@ -334,7 +327,6 @@ export type GameBananaSoundProfile = BaseSubmission & {
     _sEmbeddableImageBaseUrl: string;
     _aVariants: string[];
   };
-  /** Video page links (YouTube, Vimeo) shown on the submission page */
   _aEmbeddedMedia?: string[];
   _aSubmitter: BaseUser & {
     _sUserTitle: string;

@@ -1,10 +1,5 @@
 name: Publish APT Repository
 
-# Rebuilds the APT repository at https://apt.deadlockmods.app from the .deb
-# assets of the latest stable GitHub releases, signs it, and syncs it to R2.
-# The repository is regenerated from scratch on every run, so re-running this
-# workflow is always safe.
-
 on:
   workflow_call:
   workflow_dispatch:
@@ -24,9 +19,6 @@ concurrency:
 env:
   APT_BUCKET: deadlock-apt
   APT_SUITE: stable
-  # main: regular (system webview) build. cef: Chromium Embedded Framework build.
-  # Both ship the deadlock-mod-manager package so the in-app updater keeps
-  # working; users enable one component.
   APT_COMPONENTS: main cef
   APT_ARCH: amd64
 
@@ -57,7 +49,6 @@ jobs:
             exit 1
           fi
 
-          # Slice in jq rather than piping to head, which would SIGPIPE gh under pipefail.
           TAGS=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 \
             --exclude-drafts --exclude-pre-releases --json tagName \
             --jq "[.[].tagName | select(test(\"nightly\") | not)][:$KEEP_RELEASES][]")
@@ -69,7 +60,6 @@ jobs:
 
           for TAG in $TAGS; do
             echo "Downloading .deb packages from $TAG"
-            # Regular builds end in _amd64.deb, CEF builds in _amd64-cef.deb.
             gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
               --pattern '*_amd64.deb' --pattern '*_amd64-cef.deb' --dir "downloads/$TAG" \
               || echo "::warning::No .deb asset in $TAG, skipping"
@@ -80,8 +70,6 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
 
-          # Dependencies each build must declare, from the current bundle configs.
-          # tauri.cef.conf.json replaces the base depends array when merged.
           CONF=apps/desktop/src-tauri
           REQUIRED_main=$(jq -r '.bundle.linux.deb.depends // [] | .[]' "$CONF/tauri.conf.json")
           REQUIRED_cef=$(jq -r '.bundle.linux.deb.depends // [] | .[]' "$CONF/tauri.cef.conf.json")
@@ -100,16 +88,10 @@ jobs:
               NEW_VER="$VER"
               NEW_DEPENDS="$DEPENDS"
 
-              # Older CEF builds in stable releases were stamped with a nightly
-              # version (e.g. 1.2.0-nightly.* in the v1.1.0 release), which apt
-              # would rank above the next stable release. Publish them under the
-              # release version instead.
               if [[ "$COMPONENT" == cef && "$VER" != "${TAG#v}" ]]; then
                 NEW_VER="${TAG#v}"
               fi
 
-              # Packages built before a dependency was added to the bundle config
-              # (e.g. CEF builds without libnss3) install but fail to start.
               REQUIRED_VAR="REQUIRED_$COMPONENT"
               while IFS= read -r DEP; do
                 [[ -z "$DEP" ]] && continue
@@ -127,7 +109,6 @@ jobs:
                 dpkg-deb -R "$DEB" "$WORK/pkg"
                 sed -i -e "s/^Version: .*/Version: $NEW_VER/" \
                   -e "s/^Depends: .*/Depends: $NEW_DEPENDS/" "$WORK/pkg/DEBIAN/control"
-                # Pin timestamps so every run produces a byte-identical package.
                 EPOCH=$(stat -c %Y "$WORK/pkg/usr")
                 touch -h -d "@$EPOCH" "$WORK/pkg/DEBIAN" "$WORK/pkg/DEBIAN"/*
                 SOURCE_DATE_EPOCH="$EPOCH" dpkg-deb --root-owner-group -Zxz \
@@ -137,8 +118,6 @@ jobs:
                 OUT="$DEB"
               fi
 
-              # Pool files are cached as immutable, so name them by content: a
-              # repacked package never reuses the URL of an earlier version of it.
               HASH=$(sha256sum "$OUT" | cut -c1-12)
               cp "$OUT" "$POOL/${PKG}_${VER}_${ARCH}_${HASH}.deb"
               if [[ "$OUT" != "$DEB" ]]; then rm -rf "$(dirname "$OUT")"; fi
@@ -155,8 +134,6 @@ jobs:
           for COMPONENT in $APT_COMPONENTS; do
             BINARY_DIR="dists/$APT_SUITE/$COMPONENT/binary-$APT_ARCH"
             mkdir -p "$BINARY_DIR"
-            # An empty index is still valid, so a component without packages yet
-            # doesn't break apt update for users who enabled it.
             if [[ -d "pool/$COMPONENT" ]]; then
               apt-ftparchive packages "pool/$COMPONENT" > "$BINARY_DIR/Packages"
             else
@@ -174,7 +151,6 @@ jobs:
             -o APT::FTPArchive::Release::Components="$APT_COMPONENTS" \
             -o APT::FTPArchive::Release::Description="Deadlock Mod Manager APT repository" \
             release "dists/$APT_SUITE" > Release.tmp
-          # Written outside dists/ so apt-ftparchive doesn't hash a partial Release.
           mv Release.tmp "dists/$APT_SUITE/Release"
 
       - name: Sign repository
@@ -203,9 +179,6 @@ jobs:
       - name: Verify repository with apt
         run: |
           set -euo pipefail
-          # Point a throwaway apt configuration at the local repository to make
-          # sure the signature and indexes are valid before uploading.
-          # Each component is checked on its own, the way users enable it.
           for COMPONENT in $APT_COMPONENTS; do
             echo "::group::Verify $COMPONENT"
             ROOT="$(mktemp -d)"
@@ -241,9 +214,6 @@ jobs:
           S3="aws s3 --endpoint-url $R2_ENDPOINT"
           DEST="s3://$APT_BUCKET"
 
-          # Upload new packages before the indexes that reference them, and only
-          # prune old packages once the new indexes are live, so clients never
-          # see an index pointing at a missing file.
           $S3 sync repo/pool "$DEST/pool" --no-progress \
             --content-type application/vnd.debian.binary-package \
             --cache-control "public, max-age=31536000, immutable"
@@ -253,7 +223,6 @@ jobs:
           $S3 cp repo/key.asc "$DEST/key.asc" --cache-control "public, max-age=3600" \
             --content-type application/pgp-keys
 
-          # Indexes first, then the signed Release files that reference them.
           $S3 sync repo/dists "$DEST/dists" --no-progress --delete \
             --exclude "*/Release" --exclude "*/Release.gpg" --exclude "*/InRelease" \
             --cache-control "no-cache"

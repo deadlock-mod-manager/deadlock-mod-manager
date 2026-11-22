@@ -1,20 +1,8 @@
-//! Source 2 RERL identifiers for canonical, uncompiled resource names.
-//!
-//! Uses Austin Appleby's public-domain MurmurHash64B, not MurmurHash64A:
-//! <https://github.com/aappleby/smhasher/blob/master/src/MurmurHash2.cpp>.
-//! The seed and variant were checked against Deadlock's resourcesystem.dll and
-//! 276 distinct RERL references from installed resources, including every tail length.
-
 use crate::{Result, VpkManagerError};
 
 const MULTIPLIER: u32 = 0x5bd1_e995;
 const SEED: u32 = 0xedab_cdef;
 
-/// Compute the ID for the exact name to be serialized in a RERL entry.
-///
-/// Accepts lowercase ASCII game-relative paths with `/` separators and a source
-/// extension (`.vmat`, not `.vmat_c`). Does not silently normalize names: callers
-/// must use the same canonical path for hashing, bindings and RERL serialization.
 pub fn resource_id(path: &str) -> Result<u64> {
     let invalid =
         || VpkManagerError::Invalid("expected a canonical uncompiled resource path".into());
@@ -79,7 +67,6 @@ mod tests {
 
     #[test]
     fn matches_reference_hashes_for_every_tail_length() {
-        // Independent vectors from Austin Appleby's implementation, seed EDABCDEF.
         let vectors = [
             ("a.vmat", 0xe2c9_38c2_debb_d292),
             ("ab.vmat", 0xa856_0f3a_6ee5_e6ef),

@@ -24,10 +24,6 @@ export interface PreviewPlayback {
   seek: { time: number; revision: number };
 }
 
-/**
- * The model's playable moves. `abilityNames` (the hero's ability names) find
- * abilities whose clips are not prefixed `ability_`, like Bebop's Hyper Beam.
- */
 export const listPreviewAnimations = (
   source: PreviewSource,
   abilityNames: string[],
@@ -37,7 +33,6 @@ export const listPreviewAnimations = (
     entryPath: source.entryPath,
     abilityNames,
   });
-/** Decodes `clipPaths` back to back into one looping timeline. */
 export const decodePreviewAnimation = (
   source: PreviewSource,
   clipPaths: string[],
@@ -48,14 +43,12 @@ export const decodePreviewAnimation = (
     clipPaths,
   });
 
-/** The model's cloth setup, or null when nothing on it is simulated. */
 export const decodePreviewCloth = (source: PreviewSource) =>
   invoke<PreviewCloth | null>("foundry_decode_cloth", {
     filePath: source.filePath,
     entryPath: source.entryPath,
   });
 
-/** The particle effects the model shows in previews, with their attachments and textures. */
 export const decodePreviewParticles = (source: PreviewSource) =>
   invoke<PreviewParticles>("foundry_decode_particles", {
     filePath: source.filePath,
@@ -79,7 +72,6 @@ export const decodePreviewEffect = (
 ) =>
   invoke<PreviewParticles>("foundry_decode_effect", { ...source, effectPath });
 
-/** The particle effects an ability plays on its caster, bound to this model. */
 export const decodePreviewAbilityParticles = (
   source: PreviewSource,
   abilityClass: string,

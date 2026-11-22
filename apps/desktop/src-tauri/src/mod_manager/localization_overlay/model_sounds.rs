@@ -1,6 +1,3 @@
-//! Restore the tagged-sound binding that plays a model's footstep and movement
-//! sounds. Models compiled before the game renamed the block keep their own
-//! bindings under the old name, which the game no longer reads.
 use super::asset_compatibility::{AssetRepair, RepairKind};
 use super::model_text::{array_items, assigned_value, field, resource_name, root_fields};
 use super::{
@@ -15,8 +12,6 @@ const SETTINGS: &str = "TaggedSoundSettings_t";
 const LEGACY_SETTINGS: &str = "CitadelTaggedSoundSettings_t";
 const TABLES: &str = "scripts/tagged_sounds/";
 
-/// Repairs effective models in place. Paths in `excluded` are owned by another
-/// repair that already writes the current game's model.
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
@@ -52,8 +47,6 @@ pub(super) fn prepare(
   Ok(())
 }
 
-/// The current game model binds tagged sounds and this model has no binding
-/// the game reads.
 pub(super) fn missing(model: &Kv3Value, current: &Kv3Value) -> bool {
   let Some((_, current)) = model_text(current).and_then(root_fields) else {
     return false;
@@ -100,11 +93,9 @@ pub(super) fn repair(
   let Some((closing, fields)) = root_fields(text) else {
     return Ok(None);
   };
-  // An authored binding, even an empty one, may silence these sounds on purpose.
   if field(&fields, SETTINGS).is_some() {
     return Ok(None);
   }
-  // Renaming keeps the mod's own tables, including custom sounds.
   let (updated, tables) = if let Some(legacy) = field(&fields, LEGACY_SETTINGS) {
     let Some(tables) = tables(&text[legacy.clone()]) else {
       return Ok(None);
@@ -185,8 +176,6 @@ fn rebuild(
   .then_some(rebuilt)
 }
 
-/// Table paths of a `{ m_taggedSounds = [ resource:"…", … ] }` binding.
-/// Any other field or reference form is an unknown schema.
 fn tables(assignment: &str) -> Option<Vec<String>> {
   let object = assigned_value(assignment)?;
   let (_, fields) = root_fields(object)?;
@@ -199,8 +188,6 @@ fn tables(assignment: &str) -> Option<Vec<String>> {
   let mut tables = Vec::new();
   for item in array_items(assigned_value(&object[range.clone()])?)? {
     let table = resource_name(item)?;
-    // Null resource slots are retained in the authored text, but have no
-    // dependency to resolve or add to RERL.
     if table.is_empty() {
       continue;
     }

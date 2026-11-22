@@ -29,8 +29,6 @@ pub(super) fn missing_samples(old: &Kv3Value, skeleton: &Kv3Value) -> Option<Vec
   Some(missing.into_iter().collect())
 }
 
-/// Append only absent NM samples that are identity leaves directly under a root.
-/// Existing model indices and every mesh/remapping byte remain unchanged.
 pub(super) fn prepare(
   old: &Kv3Value,
   old_encoding: &kv3::Encoding,

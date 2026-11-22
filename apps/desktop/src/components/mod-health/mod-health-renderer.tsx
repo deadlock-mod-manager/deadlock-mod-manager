@@ -22,14 +22,6 @@ import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import type { RepairPlanProgress } from "@/types/generated/RepairPlanProgress";
 import { ModStatus } from "@/types/mods";
 
-/**
- * Keeps the mod health report current: checks once per profile after start,
- * rechecks every mod after a game update, and after any library change or game
- * exit checks the mods whose files changed. It rebuilds the fixed mods' repair
- * package after any library change, when a profile becomes active, and whenever
- * the game exits, since each of those can leave the saved package stale.
- * Mounted once in app.tsx.
- */
 export const ModHealthRenderer = () => {
   const queryClient = useQueryClient();
   const profileFolder = useActiveProfileFolder();
@@ -89,8 +81,6 @@ export const ModHealthRenderer = () => {
     };
   }, [queryClient, refreshQueue]);
 
-  // Rebuilds skipped while the game ran are applied once it exits; the backend
-  // returns early when the package is already current.
   useEffect(() => {
     const previous = previousGameRunning.current;
     previousGameRunning.current = gameRunning;
@@ -108,8 +98,6 @@ export const ModHealthRenderer = () => {
     check({ profileFolder, force });
   }, [report.data, profileFolder, check]);
 
-  // The game or app may have changed while DMM was closed or this profile was
-  // inactive. A current package costs only a stamp comparison.
   const hasReport = report.data !== undefined;
   useEffect(() => {
     if (gamePath && hasReport) refreshQueue.schedule(profileFolder);

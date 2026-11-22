@@ -9,15 +9,12 @@ use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use tokio_util::sync::CancellationToken;
 
 const API_BASE: &str = "https://gamebanana.com/apiv11/";
-// `Core/Item/Data` multicall only exists on the legacy API host, not under apiv11.
 const LEGACY_API_BASE: &str = "https://api.gamebanana.com/";
 pub(crate) const DEADLOCK_GAME_ID: u64 = 20_948;
-// Assigned to us by GameBanana when Remote Install was enabled for the manager.
 const REMOTE_INSTALL_MANAGER_ALIAS: &str = "DeadlockModManager";
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
-// Each item repeats the full field list; 50 hydration items exceed the URL limit (GameBanana answers 414).
 pub(crate) const MAX_HYDRATION_ITEMS: usize = 40;
 const MAX_BULK_URL_BYTES: usize = 7_000;
 const POSTS_PAGE_SIZE: u32 = 15;
@@ -138,8 +135,6 @@ impl GameBananaClient {
     self.transport.get_json("member profile", url, cancel).await
   }
 
-  /// Returns the member's pending `{mmdl url},{type},{id}` entries.
-  /// GameBanana marks them retrieved once this succeeds.
   pub async fn remote_install_queue(
     &self,
     member_id: u32,
@@ -157,7 +152,6 @@ impl GameBananaClient {
       .await
   }
 
-  /// Lists Deadlock's categories for this submission type, or a category's children.
   pub async fn categories(
     &self,
     submission_type: SubmissionType,
@@ -218,7 +212,6 @@ impl GameBananaClient {
       .await
   }
 
-  /// One page of a collection's items; GameBanana always serves 15 per page.
   pub async fn collection_items(
     &self,
     collection_id: u64,
@@ -312,8 +305,6 @@ fn index_url(
       .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
       .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
       .append_pair("_nPage", &page.to_string());
-    // The default order is unstable near the tail, so full crawls page oldest-first,
-    // where new uploads only append to the end.
     query.append_pair(
       "_sSort",
       if latest_modified {
@@ -362,7 +353,6 @@ fn collection_index_url(api_base: &str, page: u32) -> Result<reqwest::Url, Error
     .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
     .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
     .append_pair("_nPage", &page.to_string())
-    // Without an explicit sort, pages repeat and skip collections.
     .append_pair("_sSort", "Generic_Oldest");
   Ok(url)
 }
@@ -411,8 +401,6 @@ fn collection_description_url(
   Ok(url)
 }
 
-/// `Core/Item/Data` pairs `itemtype[i]`, `itemid[i]`, and `fields[i]` by index,
-/// so every item needs its own comma-separated field list.
 fn item_data_url(
   legacy_api_base: &str,
   submissions: &[SubmissionRef],

@@ -1,8 +1,3 @@
-//! The background pass's friend step: the newest history page of the Steam friends who
-//! most likely played since deadlock-api last saw them, then the salts of their new
-//! matches. Best-effort throughout: a failure means fewer (or no) friends looked up, never
-//! a failed pass, and never a backoff for the account.
-
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::{LoopControl, Outcome, RunState, SyncEngine, best_effort};
@@ -19,8 +14,6 @@ use crate::model::{
 use crate::quota::QuotaWindow;
 use crate::sync::SyncPersistence;
 
-// One friend's history lookup: the matches it turned up, and how long the friend is left
-// alone once those are dealt with.
 struct FriendLookup {
   account_id: u32,
   cooldown_secs: i64,
@@ -36,7 +29,6 @@ where
   P: SyncPersistence,
   R: GameRunningCheck,
 {
-  // Friends' likely-new matches, within `budget` salt fetches.
   pub(super) async fn backfill_friends(
     &self,
     ctx: &AuthContext,
@@ -50,8 +42,6 @@ where
       .await
   }
 
-  // Steam rate-limited this account's match history requests: no friend lookups until the
-  // 24h window frees up.
   pub(super) fn exhaust_history_quota(&self, quota: &mut QuotaWindow) {
     quota.exhaust(self.persistence.now());
     if let Err(e) = self.persistence.save_quota(QuotaKind::FriendHistory, quota) {
@@ -99,14 +89,11 @@ where
             self.exhaust_history_quota(&mut history_quota);
             break;
           }
-          // No answer (connection lost, timed out): stop instead of reconnecting for every
-          // remaining friend. Not charged, since the quota stays far below Steam's limit.
           Err(e) => {
             log::warn!("match-sync: friend history lookups stopped: {e}");
             break;
           }
         };
-      // The GC answered, so Steam counted the request.
       let _ = history_quota.try_consume(self.persistence.now());
       lookups.push(FriendLookup {
         account_id: friend.account_id,
@@ -124,8 +111,6 @@ where
     Ok(lookups)
   }
 
-  // Up to `budget` friends, most likely first, who played since deadlock-api last saw
-  // them.
   async fn friends_to_look_up(
     &self,
     ctx: &AuthContext,
@@ -149,7 +134,6 @@ where
     let Some(active) = active.filter(|active| !active.is_empty()) else {
       return Ok(Vec::new());
     };
-    // Only the few active friends are worth Steam's persona round-trip.
     let ids: Vec<u32> = active.iter().map(|f| f.account_id).collect();
     let personas = self
       .gc_call(async { Ok(self.gc.personas(ctx, &ids).await) })
@@ -171,9 +155,6 @@ where
     Ok(picks)
   }
 
-  // Fetches the friends' matches deadlock-api has no salts for, then cools the friends
-  // down. One whose matches the budget, a quota or an error cut off only gets a short
-  // cooldown, so the rest turn up again soon.
   async fn backfill_friend_matches(
     &self,
     ctx: &AuthContext,
@@ -197,7 +178,6 @@ where
       .extend(stored.into_iter().map(|id| (id, Outcome::Done)));
     let result = self.process_ids(ctx, missing, true, Some(cancel), st).await;
 
-    // Dealt with means fetched or settled; a fetch that failed or never ran is not.
     let now = self.persistence.now();
     let cooldowns: Vec<(u32, i64)> = lookups
       .iter()

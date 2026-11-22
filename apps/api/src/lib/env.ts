@@ -13,14 +13,17 @@ export const envSchema = z.object({
       "https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200",
     ),
   POD_NAME: z.string().optional(),
-  CORS_ORIGIN: z.array(z.string()).optional().default([
-    "https://deadlockmods.com",
-    "https://deadlockmods.app",
-    "https://api.deadlockmods.app",
-    "http://tauri.localhost", // Tauri production build
-    "http://localhost:1420", // Tauri dev server
-    "http://localhost:3003", // Local web server
-  ]),
+  CORS_ORIGIN: z
+    .array(z.string())
+    .optional()
+    .default([
+      "https://deadlockmods.com",
+      "https://deadlockmods.app",
+      "https://api.deadlockmods.app",
+      "http://tauri.localhost",
+      "http://localhost:1420",
+      "http://localhost:3003",
+    ]),
   REDIS_URL: z.string(),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().optional(),
@@ -45,7 +48,6 @@ export const envSchema = z.object({
     .string()
     .url("DEADWORKS_REGISTRY_URL must be a valid URL")
     .default("https://api.deadworks.net"),
-  /** The origin clients reach this API on; hosted sources declare it. */
   API_PUBLIC_URL: z
     .string()
     .url("API_PUBLIC_URL must be a valid URL")

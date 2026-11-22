@@ -4,10 +4,6 @@ import { WIN_COLOR } from "@/components/stats/chart-fx";
 import { useLiveBoard } from "@/hooks/use-live-match";
 import { cn } from "@/lib/utils";
 
-/**
- * The Live tab's icon in the tab row: a pulsing dot while the player is in a
- * match, the plain radio icon like every other tab otherwise.
- */
 export const LiveTabIcon = ({ className }: { className?: string }) => {
   const { phase, board } = useLiveBoard();
   if (!board || (phase !== "pregame" && phase !== "inProgress")) {
@@ -22,10 +18,6 @@ export const LiveTabIcon = ({ className }: { className?: string }) => {
   );
 };
 
-/**
- * The Live tab's side of the Stats page's tab row: where the board comes from,
- * how fresh it is, and which match it is. The page's filters don't apply here.
- */
 export const LiveToolbar = () => {
   const { t } = useTranslation();
   const { phase, board, matchId } = useLiveBoard();

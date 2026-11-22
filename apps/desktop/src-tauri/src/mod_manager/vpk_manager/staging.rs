@@ -30,17 +30,11 @@ enum JournalEvent {
 }
 
 pub enum RecoveryMode {
-  /// Fail if a staged file's original slot is occupied. Used where the caller
-  /// knows nothing else can have taken it.
   Strict,
-  /// Give a staged file the next free `pak##_dir.vpk` slot when its own is
-  /// taken. A reorder interrupted mid-placement leaves exactly that state.
   AvoidEnabledCollisions,
-  /// The manifest already committed the removal; validate before cleanup.
   Discard,
 }
 
-/// Put the files of an interrupted operation back where they came from.
 pub fn recover_staging_directory(
   base: &ProfileBase,
   staging_dir: &Path,
@@ -302,15 +296,9 @@ struct StagedFile {
   original_locator: String,
   original: PathBuf,
   current: PathBuf,
-  /// Where this file sits while parked in the staging directory. Always a
-  /// `StagedName`, so a crash mid-rollback leaves a directory that
-  /// [`recover_staging_directory`] can still put back.
   parked: PathBuf,
 }
 
-/// Moves VPKs aside into a staging directory and puts them back unless
-/// committed, including on an unwind. Files parked here survive a crash: the
-/// next manifest load recovers them via [`recover_staging_directory`].
 pub struct VpkStaging {
   base: ProfileBase,
   dir: PathBuf,
@@ -473,9 +461,6 @@ impl VpkStaging {
 
   fn restore_and_clean_up(&mut self) -> Vec<String> {
     let mut failures = self.restore_files();
-    // Keep the journal and parked payloads when restoration is incomplete.
-    // A completed rollback must discard its journal before the next mutation
-    // can mistake the old placements for an interrupted transaction.
     if failures.is_empty() {
       if let Err(error) = fs::remove_file(self.dir.join(JOURNAL_FILENAME)) {
         failures.push(format!("failed to remove rolled-back journal: {error}"));
@@ -490,9 +475,6 @@ impl VpkStaging {
 
   fn restore_files(&mut self) -> Vec<String> {
     let mut failures = Vec::new();
-    // Park every file back in the staging directory first. Restoring in place
-    // could otherwise fail on a file whose original path is still occupied by
-    // another file this transaction has yet to move.
     for file in self.files.iter_mut() {
       if file.current == file.parked || !file.current.exists() {
         continue;
@@ -547,9 +529,6 @@ impl VpkStaging {
   }
 }
 
-/// Copies files aside before they are overwritten and restores them unless
-/// committed. Used where an operation rewrites content in place rather than
-/// renaming it, so there is nothing to move back.
 pub struct VpkSnapshot {
   temp: tempfile::TempDir,
   originals: Vec<(PathBuf, PathBuf)>,
@@ -562,8 +541,6 @@ enum PendingGuard {
   Snapshot(VpkSnapshot),
 }
 
-/// A completed filesystem mutation that remains reversible until its metadata
-/// commit succeeds.
 pub struct PendingVpkOperation<T> {
   value: T,
   guard: PendingGuard,
@@ -621,7 +598,6 @@ impl<T> PendingVpkOperation<T> {
       return Err(self.rollback(error));
     }
     let checkpoint_result = checkpoint();
-    // The manifest is durable. A returning checkpoint error must not undo its files.
     let value = self.commit();
     checkpoint_result?;
     Ok(value)
@@ -635,10 +611,6 @@ impl<T> PendingVpkOperation<T> {
   }
 }
 
-/// Tracks ordinary path renames and reverses them unless explicitly committed.
-///
-/// This covers enable/disable operations that do not need a persistent staging
-/// directory but still must undo earlier renames when a later step fails.
 pub struct RenameTransaction {
   renamed: Vec<(PathBuf, PathBuf)>,
   finalized: bool,
@@ -705,9 +677,6 @@ impl VpkSnapshot {
     })
   }
 
-  /// Take a copy of `path` if it exists, and mark it for removal on rollback
-  /// either way â€” so a path that is about to be created is restored by deleting
-  /// it, and one that is about to be overwritten is restored from the copy.
   pub fn capture(&mut self, path: &Path) -> Result<(), Error> {
     if !self.touched.insert(path.to_path_buf()) || !path.is_file() {
       return Ok(());
@@ -721,7 +690,6 @@ impl VpkSnapshot {
     Ok(())
   }
 
-  /// Mark a path this operation will create, without reading it first.
   pub fn track(&mut self, path: impl Into<PathBuf>) {
     self.touched.insert(path.into());
   }
@@ -745,9 +713,6 @@ impl VpkSnapshot {
 
   fn restore(&self) -> Vec<String> {
     let mut failures = Vec::new();
-    // Only paths without a backup were created by this operation and have to be
-    // deleted. Anything backed up is put back by overwriting it below, so
-    // removing it first would open a window where the file does not exist.
     let backed_up: BTreeSet<&PathBuf> = self
       .originals
       .iter()
@@ -1043,10 +1008,6 @@ mod tests {
     assert_eq!(fs::read(original.join("blocker")).unwrap(), b"protected");
   }
 
-  /// A reorder routinely gives file A the slot file B came from. Rolling that
-  /// back has to park both files before restoring either, or the second rename
-  /// lands on an occupied path. The parked name stays a valid `StagedName` so a
-  /// crash between the two phases is still recoverable.
   #[test]
   fn rollback_restores_files_that_swapped_slots() {
     let temp = tempfile::tempdir().unwrap();
@@ -1171,8 +1132,6 @@ mod tests {
     assert!(!created.exists());
   }
 
-  /// Capturing a path that does not exist yet still has to register it, so a
-  /// rollback deletes the file the operation went on to create.
   #[test]
   fn snapshot_removes_files_captured_before_they_existed() {
     let temp = tempfile::tempdir().unwrap();

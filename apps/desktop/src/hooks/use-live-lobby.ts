@@ -28,12 +28,6 @@ import {
 } from "@/lib/stats/live-lobby";
 import { statsScopeQuery, type StatsScope } from "@/lib/stats/scope";
 
-/**
- * What the Live tab knows about a lobby beyond the top bar. Records for the
- * whole lobby are one request; ranks and recent form are one per player, so
- * they are cached per account and shared with the player cards. Who you met
- * before and how your hero fares against theirs come from your own account.
- */
 export const useLiveLobby = ({
   accountIds,
   yourAccountId,
@@ -52,7 +46,6 @@ export const useLiveLobby = ({
     },
     () => getPlayerHeroStats(ids),
   );
-  // A stable `combine` keeps these maps from rebuilding on every live poll.
   const ranks = useQueries({
     queries: ids.map((id) =>
       playerQueryOptions(
@@ -141,19 +134,9 @@ export const useLiveLobby = ({
 
 const DAY_S = 24 * 60 * 60;
 const LIVE_CURVE_DAYS = 7;
-/** The local hero can flicker while the bridge resolves it; each flicker is a heavy request. */
 const HERO_SETTLE_MS = 2000;
 const LIVE_CURVE_RETRY_MS = 30_000;
 
-/**
- * How players on one hero in the player's rank bracket stand over a match, for
- * grading a match while it runs. One request per hero and bracket.
- *
- * A hero filter keeps deadlock-api off its pre-aggregated rollup, so the curve
- * scans every match of that hero in the window: 30 days ran into its 20 s
- * timeout. The window is the last week from a UTC midnight, which keeps the URL,
- * and so the API's cache, the same for every player on that hero all day.
- */
 export const useLiveHeroBenchmark = (
   heroId: number | null,
   badge: number | undefined,

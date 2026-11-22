@@ -19,14 +19,12 @@ export type NukePhase =
   | "idle"
   | "snapshot"
   | "backingUp"
-  /** The safety backup failed, so the run stopped before deleting anything. */
   | "backupFailed"
   | "purging"
   | "clearingCache"
   | "clearingState"
   | "reinstalling"
   | "done"
-  /** Aborted by an unexpected error - the state is left half-rebuilt. */
   | "failed";
 
 export type NukeModOutcome =
@@ -38,7 +36,6 @@ export type NukeModOutcome =
 export type NukeModEntry = {
   remoteId: string;
   name: string;
-  /** Was it installed into the game folder, or only downloaded? */
   wasInstalled: boolean;
   outcome: NukeModOutcome;
   error?: string;
@@ -46,11 +43,9 @@ export type NukeModEntry = {
 
 export type NukeState = {
   phase: NukePhase;
-  /** 0-100 across the whole operation. */
   progress: number;
   currentMod: string | null;
   mods: NukeModEntry[];
-  /** Set when the run itself broke down, not just a single mod. */
   error?: string;
   isRunning: boolean;
   cancelRequested: boolean;
@@ -65,21 +60,10 @@ const INITIAL_STATE: NukeState = {
   cancelRequested: false,
 };
 
-/**
- * The mod manager's state and the game folder drift apart over time: mods get
- * deleted by hand, installs half-fail, the VPK ledger stops matching reality.
- * This takes the mods the manager *thinks* it has, wipes cache, state and the
- * files on disk, and rebuilds that list from scratch.
- *
- * Missing files are accepted by purge_mod. A rejected purge stops the run
- * before clearing the download cache or persisted state.
- */
 export const useNukeReinstall = () => {
   const [state, setState] = useState<NukeState>(INITIAL_STATE);
   const cancelRef = useRef(false);
-  /** The pre-nuke records, kept so failed mods can be retried after the run. */
   const targetsRef = useRef<LocalMod[]>([]);
-  /** Each mod's fix choice and load-order place, from its purge. */
   const keptChoicesRef = useRef(new Map<string, KeptChoices>());
   const { reinstallMod } = useReinstallMod();
 
@@ -107,10 +91,6 @@ export const useNukeReinstall = () => {
     setState(INITIAL_STATE);
   }, []);
 
-  /**
-   * Downloads and installs each target in order. Progress runs from
-   * `startUnits` to `totalUnits`, two units (download, install) per mod.
-   */
   const reinstallTargets = useCallback(
     async (targets: LocalMod[], startUnits: number, totalUnits: number) => {
       const setProgress = (units: number, fraction = 0) => {
@@ -132,7 +112,6 @@ export const useNukeReinstall = () => {
         const modUnits = startUnits + index * 2;
 
         const result = await reinstallMod(mod, {
-          // Files were wiped by the purge phase, or never landed on a retry.
           skipPurge: true,
           keptChoices: keptChoicesRef.current.get(mod.remoteId),
           onStep: (step) => {
@@ -140,13 +119,11 @@ export const useNukeReinstall = () => {
               return;
             }
             patchMod(mod.remoteId, { outcome: step });
-            // The download unit is done once installing starts.
             setProgress(modUnits + (step === "installing" ? 1 : 0));
           },
           onDownloadProgress: (fraction) => setProgress(modUnits, fraction),
         });
 
-        // Both units are settled for this mod, however it turned out.
         setProgress(modUnits + 2);
         patchMod(mod.remoteId, {
           outcome: result.outcome,
@@ -164,12 +141,8 @@ export const useNukeReinstall = () => {
       const store = usePersistedStore.getState();
       const profileFolder = store.getActiveProfile()?.folderName ?? null;
 
-      // Snapshot first: everything below deletes the state we are reading here.
       const snapshot = [...store.localMods];
       const localMods = snapshot.filter(isLocalMod);
-      // Restoring in the original install order makes the backend hand out the
-      // same pak numbers again, so load order survives the nuke without a
-      // separate reorder pass.
       const targets = snapshot
         .filter((mod) => !isLocalMod(mod))
         .sort((a, b) => (a.installOrder ?? 0) - (b.installOrder ?? 0));
@@ -198,7 +171,6 @@ export const useNukeReinstall = () => {
         })
         .info("Starting nuke & reinstall");
 
-      // backup + purge + 2 cleanup steps + (download + install) per mod
       const totalUnits = targets.length * 3 + 3;
       let completedUnits = 0;
       const setProgress = (fraction = 0) => {
@@ -211,7 +183,6 @@ export const useNukeReinstall = () => {
         }));
       };
 
-      // Everything after this deletes files, so a failed backup ends the run here.
       setState((current) => ({ ...current, phase: "backingUp" }));
       try {
         await invoke("create_addons_backup", {
@@ -240,8 +211,6 @@ export const useNukeReinstall = () => {
           });
           if (kept) keptChoicesRef.current.set(mod.remoteId, kept);
         } catch (error) {
-          // Mods purged before this one are already gone; Retry failed must
-          // be able to bring them back. The rest are untouched.
           for (const purged of targets.slice(0, index)) {
             patchMod(purged.remoteId, {
               outcome: "failed",
@@ -257,8 +226,6 @@ export const useNukeReinstall = () => {
 
       setState((current) => ({ ...current, phase: "clearingCache" }));
       try {
-        // Deliberately not clear_all_mods_data: that would also delete local mods,
-        // which we cannot download again.
         await invoke<number>("clear_download_cache");
       } catch (error) {
         logger
@@ -286,7 +253,6 @@ export const useNukeReinstall = () => {
         error: getErrorMessage(error),
       }));
     } finally {
-      // Whatever went wrong, the dialog must never stay stuck on "running".
       setState((current) => ({
         ...current,
         phase:

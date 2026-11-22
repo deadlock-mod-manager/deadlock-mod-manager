@@ -22,11 +22,8 @@ const useUninstall = () => {
     (state) => state.setModEnabledInCurrentProfile,
   );
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
-  // Don't call useVpkScan here: this hook mounts in every mod card, and each
-  // subscription would scan the addons folder on mount.
   const queryClient = useQueryClient();
 
-  /** Toasts its own errors; resolves false if cancelled or failed. */
   const uninstall = async (
     mod: LocalMod,
     remove: boolean,
@@ -104,8 +101,6 @@ const useUninstall = () => {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
       );
-      // Tauri rejects with a plain {kind, message} object, which `errorOnly`
-      // renders as an empty line.
       logger
         .withMetadata({ modId: mod.remoteId, remove, error })
         .error("Failed to uninstall mod");

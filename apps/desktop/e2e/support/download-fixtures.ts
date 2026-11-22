@@ -20,15 +20,12 @@ export const DOWNLOAD_FILE = "selected.vpk";
 export const QUEUED_MOD = "local-00000000-0000-4000-8000-000000000005";
 export const QUEUED_NAME = "E2E Queued Download";
 export const QUEUED_FILE = "queued.vpk";
-/** Cases that pause the first download while a second one waits behind it. */
 const pausesQueue = (scenario: string) =>
   scenario.startsWith("downloads-pause-queue");
-/** Cases whose second mod waits behind a running download and never starts. */
 export const queuesBehindRunning = (scenario: string) =>
   scenario === "downloads-cancel-queued" ||
   scenario === "downloads-reload-queued" ||
   scenario === "downloads-delete-queued";
-/** Cases whose world holds a second failed mod that can wait in the queue. */
 const hasQueuedMod = (scenario: string) =>
   queuesBehindRunning(scenario) || pausesQueue(scenario);
 export const downloadPayload = (variant = "selected") =>
@@ -39,17 +36,13 @@ export const downloadPayload = (variant = "selected") =>
     },
   ]);
 
-/** Cases that run with "Faster downloads"; `-off` is the same transfer without it. */
 export const isSegmentedCase = (scenario: string): boolean =>
   scenario.startsWith("downloads-segmented");
 const segmentedEnabled = (scenario: string): boolean =>
   isSegmentedCase(scenario) && scenario !== "downloads-segmented-off";
-/** Three files of one mod, to watch the connection budget. */
 const BUDGET_FILES = [DOWNLOAD_FILE, "second.vpk", "third.vpk"];
 export const downloadFiles = (scenario: string): string[] =>
   scenario === "downloads-segmented-budget" ? BUDGET_FILES : [DOWNLOAD_FILE];
-// Past the downloader's 8 MiB threshold, with no repeating pattern, so bytes
-// from the wrong offset never match by accident.
 let segmentedPayloadCache: Buffer | undefined;
 const segmentedPayload = (): Buffer => {
   if (segmentedPayloadCache) return segmentedPayloadCache;
@@ -68,13 +61,10 @@ const segmentedPayload = (): Buffer => {
 };
 export const payloadFor = (scenario: string): Buffer =>
   isSegmentedCase(scenario) ? segmentedPayload() : downloadPayload();
-// Every response gets 64 KiB per 40 ms (1.6 MB/s), like a server limiting each
-// connection, so one stream can't beat this floor and four can.
 const SEGMENTED_CHUNK = 64 * 1024;
 const SEGMENTED_DELAY_MS = 40;
 const singleStreamFloorMs = (size: number): number =>
   (Math.ceil(size / SEGMENTED_CHUNK) - 1) * SEGMENTED_DELAY_MS;
-/** The downloader's four spans, as `bytes=a-b` headers. */
 export const segmentRanges = (size: number): string[] =>
   [0, 1, 2, 3].map(
     (index) =>
@@ -99,11 +89,9 @@ const segmentedRoutes = (scenario: string): FixtureRoute[] => {
       sequence = [{ ...good, range: false }];
       break;
     case "downloads-segmented-range-error":
-      // Fails the first segment's request but serves an ordinary one.
       sequence = [{ status: 400, body: "Bad Request" }, good];
       break;
     case "downloads-segmented-wrong-range":
-      // The third segment comes back one byte later than it says it starts.
       sequence = [{ ...good, rangeFrom: { at: third, serveFrom: third + 1 } }];
       break;
     case "downloads-segmented-corrupt": {
@@ -115,7 +103,6 @@ const segmentedRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-segmented-pause":
     case "downloads-segmented-cancel":
     case "downloads-segmented-restart":
-      // About 8 s for the file: time to pause, cancel or stop the app mid-transfer.
       sequence = [{ ...good, chunkDelayMs: 120 }];
       break;
     default:
@@ -134,8 +121,6 @@ const segmentedRoutes = (scenario: string): FixtureRoute[] => {
 export const QUEUE_MOD = "local-00000000-0000-4000-8000-000000000005";
 export const QUEUE_NAME = "E2E Queue Blocker";
 const QUEUE_FILE = "blocker.vpk";
-// About 200 KB/s for minutes, so this transfer holds the backend's
-// one-at-a-time queue while a retried download waits behind it.
 const queuePayload = () =>
   Buffer.alloc(40 * 1024 * 1024, "e2e-queue-payload\n");
 const queueRoute = (): FixtureRoute => ({
@@ -148,7 +133,6 @@ const queueRoute = (): FixtureRoute => ({
   chunkBytes: 20 * 1024,
   chunkDelayMs: 100,
 });
-/** Cases whose world holds a second mod that blocks the queue. */
 const hasQueueBlocker = (scenario: string) =>
   scenario === "downloads-queued-retry" ||
   scenario === "downloads-queued-waiting";
@@ -172,7 +156,6 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
       sequence = [{ status: 401, body: "Authentication required" }, good];
       break;
     case "downloads-queued-waiting":
-      // About 24 s, so it is still running when it is paused; the resume is quick.
       sequence = [{ ...good, chunkBytes: 32768, chunkDelayMs: 1500 }, good];
       break;
     case "downloads-redirect":
@@ -189,11 +172,9 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
       sequence = [{ ...good, body: corrupt }, good];
       break;
     case "downloads-cancel-connecting":
-      // Accepts the request and holds the headers past the downloader's timeouts.
       sequence = [{ ...good, headerDelayMs: 120_000 }, good];
       break;
     case "downloads-wrong-range":
-      // The resume comes back from byte 0 while claiming to be the resume.
       sequence = [
         {
           ...good,
@@ -201,7 +182,6 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
           chunkBytes: 32768,
           chunkDelayMs: 150,
         },
-        // Wherever the client resumes: what reached it before the cut varies.
         { ...good, rangeFrom: { serveFrom: 0 } },
       ];
       break;
@@ -220,8 +200,6 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
       sequence = [{ ...slow, chunkDelayMs: 1_000 }];
       break;
     case "downloads-cancel-late-error":
-      // The retry is slow too, so the backend still holds it when the window
-      // gets the cancelled transfer's error.
       sequence = [slow, slow];
       break;
     default:
@@ -231,11 +209,9 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
   if (hasQueueBlocker(scenario)) routes.push(queueRoute());
-  // Served so a cancel that fails to drop the queued mod shows as a download.
   if (queuesBehindRunning(scenario))
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
   if (pausesQueue(scenario)) {
-    // About 24 s, so it is still running when the paused one is resumed.
     const queued = { ...good, chunkBytes: 32768, chunkDelayMs: 1500 };
     routes.push({
       method: "GET",
@@ -357,7 +333,6 @@ export const prepareDownloadWorld = async (
   }
   const state = {
     ...persisted.state,
-    // `downloads-segmented` turns it on through Settings instead.
     segmentedDownloads:
       segmentedEnabled(scenario) && scenario !== "downloads-segmented",
     activeProfileId: missingActiveProfile ? "profile_deleted" : "default",
@@ -388,7 +363,6 @@ const millis = (stamp: string | undefined): number => {
   return Date.parse(stamp);
 };
 
-/** Most download responses being sent at the same moment. */
 const peakConcurrency = (requests: readonly FixtureRequest[]): number =>
   Math.max(
     0,
@@ -471,8 +445,6 @@ const assertSegmentedNetwork = (
       );
       return;
     case "downloads-segmented-wrong-range": {
-      // The misanswered third segment stops the others, so one that hadn't
-      // sent its request yet never does.
       const sent = rangesOf(ranged);
       assert.ok(
         sent.every((range) => planned.includes(range)),
@@ -567,8 +539,6 @@ export const assertDownloadNetwork = (
       assert.deepEqual(statuses(QUEUE_FILE), [200]);
       return;
     }
-    // Nothing is requested while it waits, paused or not; paused after it
-    // started, it continues with a Range request. The blocker runs twice.
     assert.deepEqual(statuses(DOWNLOAD_FILE), [200, 206]);
     assert.deepEqual(statuses(QUEUE_FILE), [200, 200]);
     return;
@@ -579,12 +549,10 @@ export const assertDownloadNetwork = (
     const [first, ...again] = sent(DOWNLOAD_FILE);
     assert.equal(first.headers.range, undefined);
     if (scenario === "downloads-pause-queue") {
-      // Resume continues from the partial file the pause kept.
       assert.equal(again.length, 1);
       assert.match(String(again[0].headers.range), /^bytes=[1-9]\d*-$/);
       assert.equal(again[0].responseStatus, 206);
     } else {
-      // Cancelled, or failed by a restart or reload: a UI retry starts over.
       assert.equal(
         again.length,
         scenario === "downloads-pause-queue-cancel" ? 0 : 1,
@@ -609,7 +577,6 @@ export const assertDownloadNetwork = (
     assert.equal(requests[1].headers.range, "bytes=65536-");
     assert.equal(requests[1].responseStatus, 206);
   } else if (scenario === "downloads-pause") {
-    // A pause ends the request; Resume continues from the partial file.
     assert.equal(requests.length, 2);
     assert.equal(requests[0].headers.range, undefined);
     assert.match(String(requests[1].headers.range), /^bytes=[1-9]\d*-$/);

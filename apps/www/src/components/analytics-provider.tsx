@@ -20,7 +20,6 @@ interface AnalyticsProviderProps {
 export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   const analytics = useAnalytics();
 
-  // Track initial page view when analytics is ready
   useEffect(() => {
     if (analytics.isEnabled) {
       const currentPath = window.location.pathname;
@@ -33,7 +32,6 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
     }
   }, [analytics]);
 
-  // Set up error boundary tracking
   useEffect(() => {
     if (!analytics.isEnabled) return;
 

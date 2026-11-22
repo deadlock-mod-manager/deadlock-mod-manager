@@ -15,11 +15,9 @@ import { useCommissionAuthor } from "@/hooks/use-commission-author";
 interface CommissionAuthorButtonProps {
   author: ModAuthorDto | null | undefined;
   variant?: ButtonProps["variant"];
-  /** Adds a handwritten note pointing at the button. */
   nudge?: boolean;
 }
 
-/** Shown only for verified commissions authors who are taking requests. */
 export const CommissionAuthorButton = ({
   author,
   variant = "outline",

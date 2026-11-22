@@ -27,14 +27,12 @@ import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 type EntryControlProps = {
   meta: ConvarMeta | null;
   value: string;
-  /** The config's own value, whose style (true/false vs 1/0) edits keep. */
   styleOf: string | null;
   disabled: boolean;
   label: string;
   onCommit: (value: string) => void;
 };
 
-/** Local text that follows `value` whenever it changes from outside. */
 const useEditableText = (value: string): [string, (text: string) => void] => {
   const [text, setText] = useState(value);
   const [source, setSource] = useState(value);
@@ -167,7 +165,6 @@ const EnumControl = ({
   const selected = meta.enumValues.find((option) =>
     sameValue(option.value, value, "int"),
   );
-  // Radix Select can't hold an empty-string item, so an empty value shows as unselected.
   const unlisted = !selected && value !== "";
   return (
     <Select
@@ -221,7 +218,6 @@ const TextControl = ({
   );
 };
 
-/** The input that fits the convar: switch, slider + number, number, select or text. */
 export const EntryControl = (props: EntryControlProps) => {
   const { meta, value } = props;
   const kind = controlKind(meta, value);

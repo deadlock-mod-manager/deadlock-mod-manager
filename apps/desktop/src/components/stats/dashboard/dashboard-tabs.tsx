@@ -74,7 +74,6 @@ const ICONS = {
   coins: Coins,
 } satisfies Record<TabIcon, ComponentType<{ className?: string }>>;
 
-// Quiet tabs: only the active one gets a surface, a hairline and a primary icon.
 const TAB_TRIGGER_CLASS =
   "h-[34px] gap-2 rounded-lg border border-transparent px-[13px] font-semibold text-[13.5px] text-muted-foreground data-[state=active]:border-primary/15 data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-none [&[data-state=active]>svg:first-child]:text-primary";
 
@@ -104,9 +103,6 @@ const TabSettings = ({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(tabTitle(tab));
 
-  // However the dialog closes - Done, Enter, Escape or a click outside - the
-  // typed name is kept. An untouched name is left alone, so a built-in tab
-  // keeps following the app language.
   const changeOpen = (next: boolean) => {
     if (next) {
       setTitle(tabTitle(tab));
@@ -211,9 +207,7 @@ interface DashboardTabsProps {
   tabs: DashboardTab[];
   activeTabId: string;
   editing: boolean;
-  /** Tab ids holding at least one broken widget. */
   brokenTabIds: ReadonlySet<string>;
-  /** A count shown after a tab's name, such as heroes played; `null` holds its slot while it loads. */
   counts?: Partial<Record<string, number | null>>;
   onSelect: (tabId: string) => void;
   onAddTab: (templateId: string | null) => void;
@@ -281,8 +275,6 @@ export const DashboardTabs = ({
   };
 
   return (
-    // Many tabs outgrow a narrow window before anything else in the header
-    // does; scrolling them keeps every tab reachable instead of clipped.
     <div className='flex max-w-full items-center gap-2'>
       <Tabs
         className='min-w-0 flex-1 overflow-x-auto'
@@ -330,9 +322,6 @@ export const DashboardTabs = ({
           })}
         </TabsList>
       </Tabs>
-      {/* Outside the tab list on purpose: its roving focus would otherwise
-          reach into the portalled popover, take the name field's keys and
-          close the popover by moving focus onto a tab. */}
       {editing && activeTab && (
         <TabSettings
           canDelete={tabs.length > 1}

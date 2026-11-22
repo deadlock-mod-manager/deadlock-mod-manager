@@ -20,12 +20,6 @@ const isRefreshRaceLoss = async (response: Response): Promise<boolean> => {
   );
 };
 
-/**
- * Desktop builds send several refreshes with the same token at once. The
- * oauth provider rotates the token before it stores the replay response, so
- * requests landing in between are rejected and the client signs the user out.
- * Retrying after the winner has stored its replay returns the same tokens.
- */
 export const handleAuthRequest = async (
   request: Request,
 ): Promise<Response> => {

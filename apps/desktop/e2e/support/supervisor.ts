@@ -66,8 +66,6 @@ const describeRequests = (requests: readonly FixtureRequest[]): string[] =>
       : `${request.method} ${request.url}`,
   );
 
-// A CI run recorded an fs error whose stack had no message, so the path of
-// the missing file never reached result.json.
 const describeError = (error: Error) =>
   error.stack?.includes(error.message)
     ? error.stack
@@ -115,9 +113,7 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"version":1,"revision":0,"generatedAt":"1970-01-01T00:00:00Z","rules":[]}',
   },
-  // A failed refresh keeps the bundled performance catalog.
   { method: "GET", path: "/api/v2/perf-catalog", status: 404, body: "" },
-  // Every full catalog sync walks the category tree first; an empty root ends the walk.
   ...["Mod", "Sound", "Wip"].map(
     (model): FixtureRoute => ({
       method: "GET",
@@ -150,7 +146,6 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"_aMetadata":{"_nRecordCount":0,"_nPerpage":50,"_bIsComplete":true},"_aRecords":[]}',
   },
-  // Catalog sync also fetches each submission type's category tree.
   {
     method: "GET",
     path: "/apiv11/Mod/Categories",
@@ -307,7 +302,6 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       )
         break;
     }
-    // A leak stops later phases, so the scenario's request counts would mislead.
     if (
       wdioResult.exitCode === 0 &&
       fixtureServer.unmatchedRequests().length === 0

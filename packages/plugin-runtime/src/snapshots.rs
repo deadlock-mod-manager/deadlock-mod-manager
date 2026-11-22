@@ -1,8 +1,3 @@
-//! `files.snapshot`: wait until a granted file settles, then stage a
-//! verified, content-addressed copy under a host quota. VPKs are validated
-//! down to every resource CRC; other files only need to hold still. Which
-//! snapshots a plugin keeps in its history is its own business.
-
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -51,7 +46,6 @@ fn invalid(message: impl Into<String>) -> SnapshotError {
 pub struct Snapshot {
   pub hash: String,
   pub size: u64,
-  /// VPK resource count; absent for other files.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub resources: Option<usize>,
   pub staged_at: String,
@@ -75,7 +69,6 @@ pub enum Inspection {
   },
   Ready {
     snapshot: Snapshot,
-    /// This inspection staged a build the store did not hold yet.
     #[serde(skip)]
     staged: bool,
   },
@@ -118,8 +111,6 @@ pub fn hash(path: &Path) -> Result<String, SnapshotError> {
   Ok(format!("{:x}", digest.finalize()))
 }
 
-/// Checks the VPK header, directory tree and every resource CRC, so a file
-/// that is still being written or was truncated never gets staged.
 pub fn validate_vpk(path: &Path) -> Result<usize, SnapshotError> {
   let mut file = fs::File::open(path)?;
   let size = file.metadata()?.len();
@@ -214,8 +205,6 @@ impl SnapshotStore {
     is_hash(hash).then(|| self.dir.join(hash).join(SNAPSHOT_FILE))
   }
 
-  /// Staged artifacts, newest first. Entries whose file vanished are dropped
-  /// and directories the index does not list are removed.
   pub fn list(&self) -> Result<Vec<Snapshot>, SnapshotError> {
     let mut index: Vec<Snapshot> = match fs::read(self.index_path()) {
       Ok(bytes) => serde_json::from_slice(&bytes).map_err(|error| invalid(error.to_string()))?,
@@ -257,9 +246,6 @@ impl SnapshotStore {
     Ok(())
   }
 
-  /// Copies `source`, validates and hashes the copy, then confirms the source
-  /// did not change underneath it before keeping the copy under its hash.
-  /// The flag is false when the store already held that build.
   pub fn stage(
     &self,
     source: &Path,
@@ -322,8 +308,6 @@ impl SnapshotStore {
     result
   }
 
-  /// One step of watching the granted output. Called on every `tick`, so it
-  /// only does real work once the file has held still for [`STABLE_FOR`].
   pub fn inspect(
     &self,
     observation: &mut Observation,

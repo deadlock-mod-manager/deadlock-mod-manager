@@ -1,8 +1,3 @@
-//! `http.fetch` policy. The runtime checks every request against the
-//! plugin's approved hosts and the host's request rules; the adapter performs
-//! it and enforces the transport rules (no redirects, no private addresses,
-//! timeout, response cap).
-
 use super::adapter::{HttpRequest, HttpResponse};
 use super::files::{Encoding, encode_base64};
 use super::manifest::is_network_host;
@@ -15,7 +10,6 @@ const MAX_URL_BYTES: usize = 2048;
 const MAX_HEADERS: usize = 32;
 const MAX_HEADER_VALUE_BYTES: usize = 8192;
 const METHODS: [&str; 5] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
-/// Ambient credentials, routing and hop-by-hop headers stay with the host.
 const FORBIDDEN_HEADERS: [&str; 13] = [
   "connection",
   "content-length",
@@ -31,7 +25,6 @@ const FORBIDDEN_HEADERS: [&str; 13] = [
   "upgrade",
   "cookie2",
 ];
-/// Response headers plugins never see.
 const HIDDEN_RESPONSE_HEADERS: [&str; 2] = ["set-cookie", "set-cookie2"];
 
 #[derive(Debug, Deserialize)]
@@ -49,7 +42,6 @@ pub struct FetchParams {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refusal {
-  /// A well-formed URL whose host the grant does not list.
   HostNotAllowed(String),
   Invalid(String),
 }
@@ -58,8 +50,6 @@ fn invalid(message: impl Into<String>) -> Refusal {
   Refusal::Invalid(message.into())
 }
 
-/// The authority of an `https://` URL, which must be a bare host name: no
-/// credentials, no port.
 fn url_host(url: &str) -> Result<&str, Refusal> {
   let rest = url
     .strip_prefix("https://")
@@ -80,7 +70,6 @@ fn is_token(name: &str) -> bool {
       .all(|byte| byte.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&byte))
 }
 
-/// Checks a plugin's request against `hosts` and the request rules.
 pub fn check(params: FetchParams, hosts: &[String]) -> Result<HttpRequest, Refusal> {
   if params.url.len() > MAX_URL_BYTES
     || params
@@ -146,9 +135,6 @@ pub struct FetchResult {
   pub body_encoding: Encoding,
 }
 
-/// Shapes a response for the plugin: lowercase header names with repeated
-/// headers joined, cookies removed, and the body as UTF-8 text when it is
-/// text, base64 otherwise.
 pub fn result(response: HttpResponse) -> Result<FetchResult, String> {
   if response.body.len() > MAX_RESPONSE_BODY_BYTES {
     return Err("The response exceeds 4 MiB".into());

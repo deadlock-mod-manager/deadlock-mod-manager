@@ -1,10 +1,3 @@
-//! A minimal VPK v2 writer.
-//!
-//! Everything is written into the directory file's inline data section
-//! (archive index `0x7fff`) rather than split across `_NNN.vpk` companions: an
-//! edited hero skin is a handful of megabytes, and a single self-contained file
-//! is what an addon folder wants.
-
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write;

@@ -43,7 +43,6 @@ function PrivacyComponent() {
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto max-w-6xl py-12'>
-        {/* Header */}
         <div className='mb-12 text-center'>
           <h1 className='mb-4 font-bold font-primary text-5xl tracking-tight'>
             Privacy Policy
@@ -531,7 +530,6 @@ function PrivacyComponent() {
           </main>
         </div>
 
-        {/* Back to Top Button */}
         {showBackToTop && (
           <button
             onClick={scrollToTop}

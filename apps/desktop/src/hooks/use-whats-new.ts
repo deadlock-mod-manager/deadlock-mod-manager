@@ -30,9 +30,6 @@ export const useWhatsNew = () => {
     const currentVersion = data.version;
     const lastSeenVersion = localStorage.getItem(LAST_SEEN_VERSION_KEY);
 
-    // Show "What's New" if:
-    // 1. No version has been seen before (first time user)
-    // 2. Current release is different from the last seen release
     if (
       !lastSeenVersion ||
       getReleaseVersion(lastSeenVersion) !== getReleaseVersion(currentVersion)

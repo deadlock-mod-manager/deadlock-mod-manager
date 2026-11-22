@@ -9,7 +9,6 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
-/** Goes back to the state before the newest History entry, when History allows it. */
 const useUndoLastChange = (currentConfigId: string | null) => {
   const history = usePersistedStore((state) => state.perfHistory);
   const userConfigs = usePersistedStore((state) => state.perfUserConfigs);
@@ -42,7 +41,6 @@ export const UndoButton = ({
   compact = false,
 }: {
   currentConfigId: string | null;
-  /** "Undo" instead of "Undo last change", for rows that already hold other actions. */
   compact?: boolean;
 }) => {
   const { t } = useTranslation();

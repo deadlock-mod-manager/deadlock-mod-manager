@@ -6,7 +6,6 @@ const hashString = (value: string): number => {
   return hash;
 };
 
-/** Same seed always lands on the same entry. An empty list picks nothing. */
 export const pickStable = <T>(
   items: readonly T[],
   seed: string,

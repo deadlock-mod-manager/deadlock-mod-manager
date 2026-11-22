@@ -6,18 +6,8 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 
-/// Windows refuses longer paths unless they are written in verbatim form,
-/// counting the folder an archive is extracted into, so a listing leaves
-/// anything near that to an extraction.
 const MAX_LISTED_PATH_BYTES: usize = 512;
 
-/// The files an archive would extract and their sizes, read from its index
-/// without writing anything. Refuses what extraction refuses: unsafe names,
-/// and declared sizes past the extraction budget.
-///
-/// `None` means only an extraction can tell which files land on disk: RAR,
-/// whose links `unrar` can't tell apart from files, and names a filesystem
-/// may merge or rewrite (see `is_plain_listing`).
 pub fn list_files(archive_path: &Path) -> Result<Option<Vec<(PathBuf, u64)>>, Error> {
   let entries = match archive_path.extension().and_then(|e| e.to_str()) {
     Some("zip") => list_zip(archive_path)?,
@@ -53,7 +43,6 @@ pub fn list_files(archive_path: &Path) -> Result<Option<Vec<(PathBuf, u64)>>, Er
   Ok(Some(files))
 }
 
-/// An entry as an archive's index declares it.
 struct ListedEntry {
   name: String,
   is_dir: bool,
@@ -79,10 +68,6 @@ fn list_7z(archive_path: &Path) -> Result<Option<Vec<ListedEntry>>, Error> {
     .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
   let archive = reader.archive();
 
-  // `sevenz_rust2` walks a solid block by counting its streams, so an entry
-  // without data stored inside a block changes which entries it writes. This
-  // depends on the reader's walk, not a documented contract: recheck it when
-  // upgrading the crate.
   let has_empty_entry_in_block = archive
     .files
     .iter()
@@ -92,8 +77,6 @@ fn list_7z(archive_path: &Path) -> Result<Option<Vec<ListedEntry>>, Error> {
     return Ok(None);
   }
 
-  // A readable index can still front encrypted data, which extraction has no
-  // password for, so the extraction reports that failure as before.
   let is_encrypted = archive
     .blocks
     .iter()
@@ -116,14 +99,7 @@ fn list_7z(archive_path: &Path) -> Result<Option<Vec<ListedEntry>>, Error> {
   ))
 }
 
-/// Whether every listed path lands on disk exactly as named, on Windows and
-/// Linux. NTFS keeps one file for names that differ only in case, and Windows
-/// rewrites trailing dots and spaces, device names and `:` streams. Instead of
-/// reproducing those rules, an archive that could meet one is extracted, so
-/// the disk decides as before.
 fn is_plain_listing(files: &[(PathBuf, u64)], folders: &[PathBuf]) -> bool {
-  // Lowercase path to its first spelling. Names are ASCII by then, so ASCII
-  // lowercasing is all the case folding NTFS can do to them.
   let mut folder_spellings: HashMap<String, &str> = HashMap::new();
   let mut file_keys = HashSet::new();
 
@@ -169,9 +145,6 @@ fn is_plain_listing(files: &[(PathBuf, u64)], folders: &[PathBuf]) -> bool {
     .all(|file| !folder_spellings.contains_key(file))
 }
 
-/// A name Windows and Linux both store as written: ASCII, since NTFS also
-/// folds the case of other letters; at most 255 bytes; and no `~`, because
-/// Windows short names (`PAK01_~1.VPK`) can alias another file.
 fn is_plain_name(name: &str) -> bool {
   if name.len() > 255
     || !name.is_ascii()

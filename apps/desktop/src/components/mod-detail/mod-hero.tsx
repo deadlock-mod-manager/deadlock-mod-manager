@@ -16,9 +16,7 @@ interface ModHeroProps {
   actions?: ReactNode;
   cornerAction?: ReactNode;
   imageFit?: "cover" | "contain";
-  /** Shown beside the category, like a withheld badge. */
   status?: ReactNode;
-  /** Desaturates the banner for mods that can't be installed. */
   muted?: boolean;
 }
 
@@ -38,7 +36,6 @@ export const ModHero = ({
   );
   const hasUpdate = useModHasUpdate(localMod);
 
-  // Audio mod hero
   if (mod.isAudio && mod.audioUrl) {
     return (
       <div className='relative h-64 w-full bg-gradient-to-br from-muted via-secondary to-accent'>
@@ -72,7 +69,6 @@ export const ModHero = ({
     );
   }
 
-  // Image hero
   if (hasImages) {
     return (
       <div className='relative z-10 h-64 w-full'>
@@ -119,6 +115,5 @@ export const ModHero = ({
     );
   }
 
-  // No hero
   return null;
 };

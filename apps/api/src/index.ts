@@ -133,9 +133,6 @@ const main = async () => {
     port: env.PORT,
     fetch: app.fetch,
     maxRequestBodySize: VPK_CONSTANTS.MAX_FILE_SIZE_BYTES,
-    // Handlers that fan out to upstream providers enforce their own deadlines
-    // below this, so a slow upstream returns partial results instead of a
-    // closed connection.
     idleTimeout: 30,
   });
 

@@ -41,7 +41,6 @@ export const damageClosedWorld = async (
     configuration: { roots },
   } = await assertOwnedWorld(world);
   const directory = brokenProfileDirectory(roots.game);
-  // Validate the resolved deletion target even though the world is harness-owned.
   const relative = path.relative(roots.game, directory);
   assert(relative && !relative.startsWith("..") && !path.isAbsolute(relative));
   if (kind === "folder") await rm(directory, { recursive: true });

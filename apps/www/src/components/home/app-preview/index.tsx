@@ -16,7 +16,6 @@ import { BottomBar, PreviewToast, Sidebar, Titlebar } from "./shell";
 import { type ScreenId, usePreviewNavigation } from "./store";
 import { getPreviewTheme, themeStyle } from "./themes";
 
-// The preview is laid out at desktop size and scaled down on narrow screens.
 const BASE_WIDTH = 1232;
 const BASE_HEIGHT = 760;
 
@@ -59,7 +58,6 @@ const PreviewWindow = () => {
   const theme = getPreviewTheme(themeId);
   const launch = useLaunchSequence(screen);
 
-  // Each screen starts at the top, like navigating in the app.
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [screen]);

@@ -1,10 +1,3 @@
-//! Status, preview, apply, remove and re-apply, composed from the other modules.
-//!
-//! Every write: read the file, build the new text, verify it parses and strips
-//! back to the base, then write atomically (temp file + rename) after checking
-//! the file didn't change since it was read. Performance errors remain separate
-//! from the mod search-path configuration errors.
-
 use std::collections::HashSet;
 use std::fs;
 use std::io::ErrorKind;
@@ -29,10 +22,7 @@ pub struct PerfContext<'a> {
   pub game_path: Option<&'a Path>,
   pub app_data_dir: &'a Path,
   pub catalog: &'a Catalog,
-  /// The game's [`client_version`](super::client_version), the build number
-  /// the catalog uses; not Steam's build id.
   pub build_id: Option<String>,
-  /// The video.txt Deadlock reads, when there is one (see [`video::locate`]).
   pub video_path: Option<PathBuf>,
 }
 
@@ -41,14 +31,10 @@ pub enum ReapplyOutcome {
   NothingDesired,
   AlreadyInSync,
   Applied,
-  /// Nothing is chosen but the file carried an overlay (a backup restored
-  /// after an apply, a lost choice), so it was removed.
   RemovedOrphan,
   Failed(String),
 }
 
-/// `in_sync` compares revisions. A config with nothing to write leaves the
-/// file without an overlay, so for it "no overlay" is the synced state.
 pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   let desired = store::load(ctx.app_data_dir);
   let text = match ctx.game_path {
@@ -82,8 +68,6 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   })
 }
 
-/// Changes from stock that neither we nor a marked tool made and that a config
-/// saved from the file would keep, leaving out keys the chosen config sets.
 fn unmanaged_changes(catalog: &Catalog, text: &str, desired: Option<&DesiredOverlay>) -> u32 {
   let Ok(live) = LiveGameinfo::parse(text) else {
     return 0;
@@ -129,7 +113,6 @@ fn unmanaged_changes(catalog: &Catalog, text: &str, desired: Option<&DesiredOver
     .count() as u32
 }
 
-/// What applying `request` would write, without writing it.
 pub fn preview(ctx: &PerfContext, request: &PerfApplyRequest) -> Result<ResolvedConfig, Error> {
   let entries = resolve::entries_for_source(ctx.catalog, &request.source)?;
   let live = live_gameinfo(ctx)?;
@@ -141,10 +124,6 @@ pub fn preview(ctx: &PerfContext, request: &PerfApplyRequest) -> Result<Resolved
   ))
 }
 
-/// Replaces whatever overlay the file carries with `request`'s and remembers
-/// `request` as the desired config. When nothing in the config changes the
-/// live file, the file is left without an overlay but the choice is still
-/// saved, so a later game update that makes it relevant re-applies it.
 pub fn apply(
   ctx: &PerfContext,
   request: PerfApplyRequest,
@@ -153,8 +132,6 @@ pub fn apply(
   apply_with(ctx, request, remove_foreign, HandEdits::Overwrite)
 }
 
-/// [`apply`], keeping video.txt values changed in game since we wrote them
-/// when `hand_edits` says so.
 fn apply_with(
   ctx: &PerfContext,
   request: PerfApplyRequest,
@@ -200,8 +177,6 @@ fn apply_with(
     applied_at: chrono::Utc::now().to_rfc3339(),
     counts: resolved.counts.clone(),
   };
-  // Both halves or neither: a video.txt that can't be written puts
-  // gameinfo.gi back, so the two files never describe different configs.
   let video = save_choice_then(ctx.app_data_dir, &desired, || {
     if updated != original {
       write_gameinfo(&path, &original, &updated)?;
@@ -229,11 +204,6 @@ fn apply_with(
   })
 }
 
-/// Removes our overlay from the file and forgets the desired config.
-///
-/// Without a game folder this fails and keeps the choice: forgetting it would
-/// leave its overlay in a file we can't reach, with nothing left that says
-/// what wrote it.
 pub fn remove(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   let path = gameinfo_path(game_folder(ctx)?);
   if let Some(original) = read_if_exists(&path)? {
@@ -244,9 +214,6 @@ pub fn remove(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   status(ctx)
 }
 
-/// Puts the player's own video.txt back exactly as it was before the mod
-/// manager first wrote it, and stops writing video settings for the chosen
-/// config so a launch doesn't write them again.
 pub fn restore_video_backup(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   video::restore_backup(ctx.app_data_dir)?;
   stop_writing_video(ctx)?;
@@ -263,28 +230,22 @@ fn stop_writing_video(ctx: &PerfContext) -> Result<(), Error> {
   Ok(())
 }
 
-/// Makes the current video.txt the player's own, and stops writing video
-/// settings for the chosen config so its values stay as the file holds them.
 pub fn adopt_video(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   video::adopt(ctx.app_data_dir, ctx.video_path.as_deref())?;
   stop_writing_video(ctx)?;
   status(ctx)
 }
 
-/// Writes the config's value back for video.txt settings changed in game.
 pub fn use_config_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
   video::use_written(ctx.app_data_dir, keys)?;
   status(ctx)
 }
 
-/// Keeps the player's in-game value for video.txt settings changed in game.
 pub fn keep_player_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
   video::keep_current(ctx.app_data_dir, keys)?;
   status(ctx)
 }
 
-/// The video.txt settings `request` writes: the chosen variant of a preset's,
-/// or an imported config's own.
 fn video_settings_for(catalog: &Catalog, request: &PerfApplyRequest) -> Vec<VideoSetting> {
   if !request.write_video {
     return Vec::new();
@@ -312,22 +273,12 @@ fn video_settings_for(catalog: &Catalog, request: &PerfApplyRequest) -> Vec<Vide
   }
 }
 
-/// What a re-apply does with lines edited by hand since the overlay was written.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HandEdits {
-  /// Leave the file alone while the config itself is unchanged (launches).
   Keep,
-  /// Always write the overlay again (the user's "Re-apply now").
   Overwrite,
 }
 
-/// Writes the desired overlay again if the file lost it, or removes an
-/// overlay when nothing is desired. Used on launch, so it never fails the
-/// launch: problems come back as `Failed`.
-///
-/// The desired request is resolved against the file as it is now and compared
-/// with the revision the file's marker carries, so a game update that changed
-/// stock values or a catalog update that blocked a convar also re-applies.
 pub fn reapply_desired(ctx: &PerfContext, hand_edits: HandEdits) -> ReapplyOutcome {
   let reapply = || -> Result<ReapplyOutcome, Error> {
     let Some(desired) = store::load(ctx.app_data_dir) else {
@@ -368,8 +319,6 @@ pub fn reapply_desired(ctx: &PerfContext, hand_edits: HandEdits) -> ReapplyOutco
       None => resolved.counts.written() == 0,
     };
     if in_sync && hand_edits == HandEdits::Keep {
-      // gameinfo.gi is fine, but the game may have moved to the Steam
-      // account's video.txt, or created one only now.
       let settings = video_settings_for(ctx.catalog, &desired.request);
       if settings.is_empty() || !video::out_of_place(ctx.app_data_dir, ctx.video_path.as_deref()) {
         return Ok(ReapplyOutcome::AlreadyInSync);
@@ -404,9 +353,6 @@ fn remove_orphan(ctx: &PerfContext) -> Result<ReapplyOutcome, Error> {
   Ok(ReapplyOutcome::RemovedOrphan)
 }
 
-/// The catalog with preset counts computed against the live file (or the
-/// catalog's latest stock when the game isn't set up). Scale positions are
-/// always measured against stock.
 pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
   let catalog = ctx.catalog;
   let live = live_gameinfo(ctx).unwrap_or_else(|error| {
@@ -508,7 +454,6 @@ fn existing_gameinfo(ctx: &PerfContext) -> Result<PathBuf, Error> {
   Ok(path)
 }
 
-/// The live file, or the catalog's newest stock file when there is none.
 fn live_gameinfo(ctx: &PerfContext) -> Result<LiveGameinfo, Error> {
   if let Some(game_path) = ctx.game_path
     && let Some(text) = read_if_exists(&gameinfo_path(game_path))?
@@ -541,9 +486,6 @@ fn credits(catalog: &Catalog, source: &PerfConfigSource) -> Vec<String> {
   credits
 }
 
-/// Saves `desired`, then runs `write`, putting the previous choice back if
-/// `write` fails. Saving first means that if the app dies in between, the next
-/// launch re-applies the new choice instead of reverting to the old one.
 fn save_choice_then<T>(
   app_data_dir: &Path,
   desired: &DesiredOverlay,
@@ -567,8 +509,6 @@ fn save_choice_then<T>(
   Err(error)
 }
 
-/// Writes `original` without our overlay, once the result parses and kept
-/// every brace.
 fn write_stripped(path: &Path, original: &str) -> Result<(), Error> {
   let (stripped, _) = patch::strip_overlay(original);
   if stripped == original {
@@ -578,9 +518,6 @@ fn write_stripped(path: &Path, original: &str) -> Result<(), Error> {
   write_gameinfo(path, original, &stripped)
 }
 
-/// Writes `updated` through a temp file in the same folder, after checking the
-/// file still holds `expected`: Steam, the user or another tool may have
-/// written it since we read it.
 fn write_gameinfo(path: &Path, expected: &str, updated: &str) -> Result<(), Error> {
   gameinfo::commit(path, Some(expected.as_bytes()), updated.as_bytes()).map_err(|error| match error
   {

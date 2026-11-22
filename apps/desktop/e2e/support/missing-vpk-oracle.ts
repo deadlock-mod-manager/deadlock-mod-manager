@@ -87,19 +87,11 @@ const ids = (mods: readonly { remoteId: string }[]) =>
   mods.map((mod) => mod.remoteId).toSorted();
 
 export type MissingVpkExpectation = {
-  /** Alpha mods the library and manifest must still hold. */
   alpha: readonly string[];
-  /** Beta mods the library and manifest must still hold. */
   beta: readonly string[];
-  /** Alpha mods flagged as broken, with the original VPK names they lost. */
   broken: Readonly<Record<string, readonly string[]>>;
 };
 
-/**
- * A mod that lost only some of its files, or that DMM can restore, stays in
- * the library but is flagged with what it lost so the user can reinstall or
- * remove it. Names are the original VPK names the user would recognise.
- */
 export const BROKEN: MissingVpkExpectation["broken"] = {
   [MISSING.pair]: [`${PAIR_SECOND_PAYLOAD}.vpk`],
   [MISSING.stored]: [STORED_SOURCE],
@@ -111,7 +103,6 @@ export const EVERY_MOD: MissingVpkExpectation = {
   broken: {},
 };
 
-/** A canonical, comparable rendering of which mods are broken and why. */
 const brokenSummary = (
   entries: readonly (readonly [string, readonly string[]])[],
 ): string =>
@@ -128,10 +119,6 @@ const brokenIn = (mods: readonly z.infer<typeof modSchema>[]) =>
 const expectedBroken = (expected: MissingVpkExpectation) =>
   brokenSummary(Object.entries(expected.broken));
 
-/**
- * Both copies of the active library, and Beta's, hold exactly these mods,
- * flagged exactly as expected.
- */
 export const holdsLibrary =
   (expected: MissingVpkExpectation) =>
   (state: MissingVpkState): boolean =>
@@ -145,7 +132,6 @@ export const holdsLibrary =
       JSON.stringify(expected.beta.toSorted()) &&
     brokenIn(state.beta.mods) === brokenSummary([]);
 
-/** Payload recipe of every VPK a user can delete in these scenarios. */
 const PAYLOAD_OF = new Map<string, readonly string[]>([
   [MISSING.enabled, [MISSING.enabled]],
   [MISSING.parked, [MISSING.parked]],
@@ -154,12 +140,6 @@ const PAYLOAD_OF = new Map<string, readonly string[]>([
   [MISSING.betaEnabled, [MISSING.betaEnabled]],
 ]);
 
-/**
- * DMM may rename VPKs between slots and rewrites `.dmm.json`, so the disk is
- * compared by payload: what remains is exactly the seeded payloads minus the
- * ones the test deleted. Removing a mod from the library must never delete or
- * add a file on the user's behalf.
- */
 const payloadsOf = (inventory: Record<string, string>): string[] =>
   Object.entries(inventory)
     .filter(([file]) => !path.posix.basename(file).startsWith(".dmm"))
@@ -211,8 +191,6 @@ export const assertMissingVpkOutcome = async (
   assert.deepEqual(ids(state.localMods), alpha, `${step}: active library`);
   assert.deepEqual(ids(state.alpha.mods), alpha, `${step}: Alpha library`);
   assert.deepEqual(ids(state.beta.mods), beta, `${step}: Beta library`);
-  // Dropping only the store entry is not enough: startup restores any mod the
-  // manifest still lists, so a removed mod would come back on the next launch.
   assert.deepEqual(
     Object.keys(manifests.alpha.mods).toSorted(),
     alpha,
@@ -250,7 +228,6 @@ export const assertMissingVpkOutcome = async (
     `${step}: Beta broken mods`,
   );
 
-  // The untouched mod is unaffected by its neighbours disappearing.
   const intact = state.alpha.mods.find(
     (mod) => mod.remoteId === MISSING.intact,
   );
@@ -289,7 +266,6 @@ export const assertMissingVpkOutcome = async (
     payloadsAfter(initial.beta, deleted.beta),
     `${step}: Beta payloads`,
   );
-  // The stored import is how its mod can be enabled again; it must survive.
   assert.deepEqual(
     inventories.modsStore,
     initial.modsStore,

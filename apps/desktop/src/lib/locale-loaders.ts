@@ -1,14 +1,5 @@
 import type { ResourceKey } from "i18next";
 
-/**
- * Every language except English, each built as its own chunk and loaded only
- * when it's the detected or chosen language. Adding a language here also makes
- * i18next accept it.
- *
- * These imports live outside i18n.ts on purpose: Vite rewrites a module's
- * dynamic imports and drops the `with { type: "json" }` on that module's
- * static en.json import, which makes Rollup warn about mismatched attributes.
- */
 export const localeLoaders = new Map<
   string,
   () => Promise<{ default: ResourceKey }>

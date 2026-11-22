@@ -1,6 +1,5 @@
 import { useHeroCatalog } from "@/hooks/use-player-stats";
 
-/** The catalog's large hero art: the bust portrait and the splash backdrop. */
 export const useHeroArt = (hero: string) => {
   const { heroByName } = useHeroCatalog();
   const images = heroByName(hero)?.images;

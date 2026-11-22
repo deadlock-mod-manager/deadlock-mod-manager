@@ -1,6 +1,5 @@
 use super::super::*;
 
-/// Source-space uniform TRS. No viewer coordinate conversion is involved.
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Transform {
   pub position: [f64; 3],
@@ -35,8 +34,6 @@ pub(super) fn replace_numbers(value: &mut Kv3Value, numbers: &[f64]) -> Option<(
   Some(())
 }
 
-// Source 2 transform fields are floats. Quantize edits before exact roundtrip
-// comparisons, while performing the frame calculations themselves in f64.
 pub(super) fn source_float(number: f64) -> Option<Kv3Value> {
   let number = number as f32;
   number
@@ -113,7 +110,6 @@ impl Transform {
     inverse
   }
 
-  /// Render skeleton matrices are row-major affine 3x4, unlike glTF matrices.
   pub fn matrix(self) -> [f64; 12] {
     let axes = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]].map(|v| self.vector(v));
     std::array::from_fn(|i| {
@@ -127,7 +123,7 @@ impl Transform {
 }
 
 pub(super) fn worlds(model: &Kv3Value) -> Option<Vec<Transform>> {
-  ModelRig::parse(model)?; // validates dimensions, unique names, finite poses and acyclic parents
+  ModelRig::parse(model)?;
   let rig = model.get("m_modelSkeleton")?;
   let parents = rig.get("m_nParent")?.as_array()?;
   let locals: Vec<_> = (0..parents.len())

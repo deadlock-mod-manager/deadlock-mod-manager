@@ -24,7 +24,6 @@ fn plan<'a>(entries: &'a [ResolvedEntry], rev: &'a str) -> OverlayPlan<'a> {
   }
 }
 
-/// The entries `resolve` would hand the patcher for `config` on `base`.
 fn applied_entries(catalog: &Catalog, base: &str, config: &[ConfigEntry]) -> Vec<ResolvedEntry> {
   let live = LiveGameinfo::parse(base).expect("parse base");
   let options = ResolveOptions {
@@ -405,8 +404,6 @@ fn read_overlay_reports_what_the_file_alone_shows() {
   assert_eq!(read_overlay(&current_stock("\n")), None);
 }
 
-/// Without END there is no telling where our keys stop, so the keys we
-/// injected stay and only our own comment lines go.
 #[test]
 fn a_missing_end_marker_only_loses_our_comment_lines() {
   let (base, patched) = synthetic_on_current("\n");
@@ -420,8 +417,6 @@ fn a_missing_end_marker_only_loses_our_comment_lines() {
   assert!(stripped == insert_after_convars_line(&base, &injected, "\n"));
 }
 
-/// Text after our tags, a second `was` and Grimoire's markers stacked on our
-/// lines must not leave anything that blocks the next apply.
 #[test]
 fn stacked_markers_still_strip() {
   let catalog = test_catalog();
@@ -620,9 +615,6 @@ fn write_gameinfo(game: &Path, text: &str) {
   std::fs::write(game.join("game").join("citadel").join("gameinfo.gi"), text).expect("write");
 }
 
-/// The SearchPaths code and the overlay edit the same file without touching
-/// each other's lines: a twin game folder without the overlay goes through the
-/// same SearchPaths changes, and stripping the overlay must give its file.
 #[test]
 fn search_paths_and_overlay_leave_each_other_alone() {
   let catalog = test_catalog();
@@ -680,8 +672,6 @@ fn search_paths_and_overlay_leave_each_other_alone() {
   }
 }
 
-/// Every stock file GameTracking has, under every config and line ending.
-/// Needs `temp/perf-configs` from the research checkout.
 #[test]
 #[ignore]
 fn exhaustive_round_trip_over_all_stock_versions() {

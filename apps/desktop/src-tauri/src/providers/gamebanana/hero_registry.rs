@@ -2,7 +2,6 @@ use super::generated_hero_registry::{HERO_ALIASES, HERO_FUZZY_TOKENS, HERO_PHRAS
 
 pub const SKINS_CATEGORY: &str = "Skins";
 
-/// A submission's GameBanana category names, from the top level down.
 #[derive(Default)]
 pub struct CategoryPath<'a> {
   pub root: Option<&'a str>,
@@ -14,9 +13,6 @@ pub fn resolve_from_skin_category(path: CategoryPath<'_>, submission_name: &str)
   hero_from_category_path(&path).or_else(|| guess(submission_name))
 }
 
-// Skins nest as Skins > hero > style (e.g. Faithful/Vanilla+), so the hero is
-// the category or its parent. Profiles omit the root; no other root has
-// hero-named children, so a parent naming a hero is enough on its own.
 fn hero_from_category_path(path: &CategoryPath<'_>) -> Option<String> {
   let root = path.root.filter(|root| !root.is_empty());
   if root.is_some_and(|root| root != SKINS_CATEGORY) {

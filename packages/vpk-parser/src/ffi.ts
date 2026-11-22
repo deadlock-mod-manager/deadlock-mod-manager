@@ -16,7 +16,6 @@ const suffix =
       ? "dylib"
       : "so";
 
-// Resolve library path relative to this package directory
 const packageRoot = join(import.meta.dir, "..");
 const libPath =
   suffix === "dll"
@@ -90,7 +89,7 @@ function encodeParseOptions(options: VpkParseOptionsInput): Buffer {
     includeMerkle: options.includeMerkle || false,
     filePath: options.filePath || "",
     lastModified: options.lastModified?.toISOString() || null,
-    includeEntries: options.includeEntries !== false, // Default to true for backward compatibility
+    includeEntries: options.includeEntries !== false,
   });
   return Buffer.from(`${optionsJson}\0`, "utf8");
 }

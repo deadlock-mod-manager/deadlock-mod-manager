@@ -31,7 +31,6 @@ export const parseReleaseAsset = (
   const name = filename.toLowerCase();
   const runtime = getRuntime(name);
 
-  // The Microsoft Store installer is only linked from the Store listing.
   if (/-store\.exe(?:\.sig)?$/.test(name)) {
     return null;
   }

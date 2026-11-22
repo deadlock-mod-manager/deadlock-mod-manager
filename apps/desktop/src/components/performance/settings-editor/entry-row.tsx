@@ -47,7 +47,6 @@ type EntryRowProps = {
   entryKey: string;
   override: EntryOverride | undefined;
   showKey: boolean;
-  /** The draft includes engine-section edits (may run ahead of `entry.status`). */
   engineIncluded: boolean;
   highlighted: boolean;
   onAction: (action: DraftAction) => void;
@@ -330,10 +329,6 @@ const EntryRowComponent = ({
   );
 };
 
-/**
- * The row's "⋯" menu. A config shows hundreds of rows, so the menu itself is
- * only mounted the first time the button is used.
- */
 const RowMenu = ({
   label,
   children,

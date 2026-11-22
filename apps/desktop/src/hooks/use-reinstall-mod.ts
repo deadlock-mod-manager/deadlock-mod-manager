@@ -25,11 +25,8 @@ const logger = createLogger("reinstall-mod");
 export type ReinstallStep = "purging" | "downloading" | "installing";
 
 export type ReinstallOutcome =
-  /** Was installed before and is installed again. */
   | "restored"
-  /** Was only downloaded before, so downloaded is where it belongs again. */
   | "downloadedOnly"
-  /** Multi-file mod whose previous file selection could not be recovered. */
   | "manual"
   | "failed";
 
@@ -41,20 +38,10 @@ export type ReinstallResult = {
 export type ReinstallOptions = {
   onStep?: (step: ReinstallStep) => void;
   onDownloadProgress?: (fraction: number) => void;
-  /** Set when the caller already wiped the files itself (nuke & reinstall). */
   skipPurge?: boolean;
-  /** What the caller's own purge returned, with `skipPurge`. */
   keptChoices?: KeptChoices | null;
 };
 
-/**
- * Rebuilds a single mod from scratch: throws away its files, downloads it again
- * with fresh URLs and puts it back into the state it was in before.
- *
- * A purge that finds nothing is not a failure - that is precisely the drift
- * this is meant to repair. A purge that fails stops the reinstall before the
- * state is touched.
- */
 export const useReinstallMod = () => {
   const { install } = useInstallWithCollection();
 
@@ -65,8 +52,6 @@ export const useReinstallMod = () => {
     ): Promise<ReinstallResult> => {
       const profileFolder =
         usePersistedStore.getState().getActiveProfile()?.folderName ?? null;
-      // Reconciliation demotes a mod with deleted VPKs to downloaded, but its
-      // manifest entry still claims them, so it was installed before the drift.
       const wasInstalled =
         target.status === ModStatus.Installed ||
         (target.missingVpks?.length ?? 0) > 0;
@@ -78,9 +63,6 @@ export const useReinstallMod = () => {
       let keptChoices = options.keptChoices ?? null;
       if (!options.skipPurge) {
         options.onStep?.("purging");
-        // Removes both the installed VPKs and the cached download, so the mod
-        // really is fetched again instead of restored from cache. Missing files
-        // are not an error here, so a rejection means cleanup did not finish.
         keptChoices = await invokeGuarded<KeptChoices | null>("purge_mod", {
           modId: target.remoteId,
           vpks: target.installedVpks ?? [],
@@ -112,8 +94,6 @@ export const useReinstallMod = () => {
       }
 
       if (!wasInstalled) {
-        // A disabled mod's manifest entry, and the choices in it, outlived
-        // disabling it; give them back for when it is enabled again.
         if (keptChoices) {
           try {
             await invoke("keep_disabled_mod_choices", {
@@ -141,10 +121,6 @@ export const useReinstallMod = () => {
   return { reinstallMod };
 };
 
-/**
- * Prefers freshly fetched URLs (the stored ones expire) but keeps the user's
- * original file selection by matching on file name.
- */
 const resolveDownloadFiles = async (mod: LocalMod) => {
   let available: ModDownloadItem[] = mod.downloads ?? [];
 
@@ -194,8 +170,6 @@ const redownload = (
       ...modData
     } = mod;
 
-    // A single-mod reinstall keeps its card in place, so the entry is still
-    // there and only needs fresh download data. After a nuke it is gone.
     if (store.localMods.some((m) => m.remoteId === mod.remoteId)) {
       store.setModDownloads(mod.remoteId, available);
       store.setSelectedDownloads(mod.remoteId, files);
@@ -240,11 +214,6 @@ const redownload = (
     });
   });
 
-/**
- * Installs without ever opening the file selector - a restore has to run
- * unattended. Multi-file mods whose previous selection cannot be recovered are
- * left downloaded and reported, rather than guessing which variant to install.
- */
 const restore = async (
   snapshot: LocalMod,
   install: ReturnType<typeof useInstallWithCollection>["install"],
@@ -274,8 +243,6 @@ const restore = async (
   }
 
   if (fileTree) {
-    // Manage files keeps deselected archives in selectedDownloads, so the
-    // saved selection applies even when each download holds one VPK.
     const selection = restoreSelection(fileTree, snapshot);
     if (selection) {
       fileTree = selection;
@@ -284,8 +251,6 @@ const restore = async (
     }
   }
 
-  // Defaults to "manual": if install decides it needs a file selection it just
-  // returns without firing a callback, and nobody renders that dialog here.
   let result: ReinstallResult = { outcome: "manual" };
 
   await install(
@@ -328,11 +293,6 @@ const restore = async (
   return result;
 };
 
-/**
- * Rebuilds the previous file selection from the snapshot's file tree. Install
- * renames VPKs to pak##_dir.vpk, so `installedVpks` is useless here - the
- * `is_selected` flags on the stored tree are the only reliable record.
- */
 const restoreSelection = (
   fileTree: ModFileTree,
   snapshot: LocalMod,
@@ -346,8 +306,6 @@ const restoreSelection = (
     return null;
   }
 
-  // Trees saved before variant names were made unique use plain names, so a
-  // file is found by its archive and path first.
   const files = fileTree.files.map((file) => {
     const listed = saved.find(
       (entry) =>

@@ -24,12 +24,6 @@ const persistedOrder = (state: Awaited<ReturnType<typeof readProfileState>>) =>
 export const pairKey = (a: string, b: string): string =>
   a <= b ? `${a}::${b}` : `${b}::${a}`;
 
-/**
- * Checks that the profile holds exactly `order` (first loads first) with each
- * mod's own bytes in its pak slot, and that the persisted ignores match.
- * `ignoredPairs: null` means no ignore file was ever written; `ignoredFiles`
- * holds the files ignored for one pair only, keyed by {@link pairKey}.
- */
 export const assertConflictDisk = async (
   world: string,
   step: string,
@@ -76,7 +70,6 @@ export const assertConflictDisk = async (
       JSON.parse(await readFile(path.join(directory, ".dmm.json"), "utf8")),
     );
   const expected = order.map((modId, index) => [modId, [slots[index]]]);
-  // The store persists asynchronously, after the UI already shows the order.
   const state = await observeUntil(
     `${step}: persisted load order`,
     () => readProfileState(world),

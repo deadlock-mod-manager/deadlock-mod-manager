@@ -11,9 +11,6 @@ enum Trap {
   AfterDeploy,
 }
 
-/// In-memory stand-in for the host broker, answering with the runtime's
-/// hostcall shapes: grants, a snapshot store fed by `files.snapshot`, installs
-/// to the picked profile, and plugin storage.
 struct FakeHost {
   file_granted: bool,
   profile_granted: bool,

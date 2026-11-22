@@ -79,7 +79,6 @@ const waitForInstalled = (world: string, vpks: string[], timeoutMs = 30_000) =>
     ),
   );
 
-// Sonner removes a toast after a few seconds, so sample them while they last.
 const collectToasts = async (durationMs: number): Promise<string[]> => {
   const seen = new Set<string>();
   const deadline = Date.now() + durationMs;
@@ -115,7 +114,6 @@ describe("GameBanana 1-click links", () => {
       ),
     );
     await waitForInstalled(world, ["base.vpk", "effects.vpk"], 20_000);
-    // Both files keep the author's order, as an install from the store would.
     assert.deepEqual(
       (await readManifest(world)).mods[CATALOG_MOD_ID]?.originalVpkNames,
       ["base.vpk", "effects.vpk"],
@@ -123,8 +121,6 @@ describe("GameBanana 1-click links", () => {
     await browser.saveScreenshot(
       path.join(world, "artifacts", "deep-link-second-file-added.png"),
     );
-    // A file the mod already has stays a no-op; the network check sees no
-    // second download of it.
     await sendDeepLink(CATALOG_MOD_ID, 910001);
     const repeated = await collectToasts(3_000);
     assert(

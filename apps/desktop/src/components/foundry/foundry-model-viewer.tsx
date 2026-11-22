@@ -82,8 +82,6 @@ interface ViewerComparison {
   visible: boolean;
 }
 
-/** A live paint preview: the color maps it covers and the exact paint. */
-/** Color maps whose files changed; a new `revision` asks for another swap. */
 export interface FoundryTextureRefresh {
   paths: readonly string[];
   revision: number;
@@ -102,68 +100,43 @@ interface FoundryModelViewerProps {
   onComparisonReady?: (ready: boolean) => void;
   onComparisonFailure?: (failed: boolean) => void;
   label: string;
-  /** Paints the matching materials on the GPU, without touching any file, so
-   *  the paint tab shows a color the instant it is picked. */
-  /** Pending colors, later layers over earlier ones; null when not previewing. */
   tint?: readonly FoundryPreviewTint[] | null;
-  /** Color maps of the selected sections, drawn with a faint glow. */
   highlightTextures?: readonly string[];
-  /** Color maps the user hid to reach what is behind them; not drawn or picked. */
   hiddenTextures?: readonly string[];
-  /** The hero the loading embers build while the model decodes. */
   hero?: string;
-  /** The hero whose shape the loading embers should learn from this model. */
   silhouetteHero?: string;
-  /** Sections to label on the model, with a leader line to each. */
   callouts?: readonly ViewerCallout[];
-  /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
   onPickPart?: (texture: string, additive: boolean) => void;
-  /** The section name shown while the pointer is over it. */
   partLabel?: (texture: string) => string | undefined;
   playback?: PreviewPlayback;
-  /** Simulations attached to the loaded model; rebuilt when the array changes, so memoize it. */
   effects?: ViewerEffectFactory[];
   fullscreenTarget: RefObject<HTMLDivElement | null>;
-  /** Extra View menu switches for overlays the caller draws in `children`. */
   overlays?: ViewerOverlayToggle[];
-  /** Receives the playback clock every frame, for timelines that must not re-render React. */
   timeRef?: RefObject<number>;
-  /** Drawn over the render, inside the viewport. */
   children?: ReactNode;
-  /** Edited color maps to swap into the loaded model without a rebuild. */
   textureRefresh?: FoundryTextureRefresh;
-  /** Reads a color map's current image as a data URL. */
   readTexture?: (path: string, opaque: boolean) => Promise<string>;
-  /** Told whether a model is on screen, for overlays that sit over the stage. */
   onReadyChange?: (ready: boolean) => void;
-  /** Receives a still of the hero cropped to its outline, or null once gone. */
   onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
 
 interface MaterialSnapshot {
-  /** The paint shader's uniforms for this material. */
   uniforms: PaintUniforms;
-  /** The material's color map (lowercase), or null when it has none. */
   texture: string | null;
   material: PaintableMaterial;
 }
 
-/** A mesh with its flat ID material for the GPU pick pass. */
 interface PickTarget {
   mesh: THREE.Mesh;
   texture: string | null;
   pickMaterial: THREE.MeshBasicMaterial;
 }
 
-/** Hovered parts glow brighter than selected ones, so the pointer reads. */
 const HOVER_GLOW = 0.32;
 const SELECTED_GLOW = 0.14;
 
-/** A pointer that moved more than this between press and release orbited. */
 const CLICK_SLOP_PX = 4;
 
-/** How often a still pointer is re-picked while the model or camera moves.
- *  Each pick is a synchronous pixel read, so not every frame. */
 const REPICK_INTERVAL_MS = 100;
 
 const isTintable = (material: THREE.Material): material is PaintableMaterial =>
@@ -173,7 +146,6 @@ const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshPhongMaterial ||
   material instanceof THREE.MeshLambertMaterial;
 
-/** Clone every material so tinting one model never bleeds into another. */
 const cloneSceneMaterials = (root: THREE.Object3D) => {
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
@@ -183,7 +155,6 @@ const cloneSceneMaterials = (root: THREE.Object3D) => {
   });
 };
 
-/** Hook the paint shader into every paintable material and record its uniforms. */
 const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
   const snapshots: MaterialSnapshot[] = [];
   root.traverse((child) => {
@@ -203,11 +174,6 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
   return snapshots;
 };
 
-/**
- * One flat-colored stand-in material per mesh for the pick pass. The IDs start
- * at 1 so a cleared pixel (0) means "nothing under the pointer". Built before
- * the outline shells are attached, so those never become pick targets.
- */
 const buildPickTargets = (root: THREE.Object3D): PickTarget[] => {
   const targets: PickTarget[] = [];
   root.traverse((child) => {
@@ -226,7 +192,6 @@ const buildPickTargets = (root: THREE.Object3D): PickTarget[] => {
   return targets;
 };
 
-/** Glow the hovered part and, more faintly, the selected ones. */
 const applyHighlight = (
   snapshots: MaterialSnapshot[],
   selected: ReadonlySet<string>,
@@ -245,14 +210,6 @@ const applyHighlight = (
   }
 };
 
-/**
- * Point the paint shader at each layer's textures, or switch it off when the
- * tint is null. A texture in several layers wears the last.
- *
- * This only writes uniforms, so it costs nothing per change: the scene already
- * redraws every frame and the transform runs on the GPU. Dragging the picker is
- * therefore free, and what it shows is the same HSV transform an Apply bakes.
- */
 const applyPreviewTint = (
   snapshots: MaterialSnapshot[],
   tint: readonly FoundryPreviewTint[] | null | undefined,
@@ -274,11 +231,6 @@ const applyPreviewTint = (
   }
 };
 
-/**
- * Hide the meshes drawn with one of `hidden`'s color maps, outline shells
- * included. Materials rather than meshes, because mesh visibility already
- * belongs to the model's body groups.
- */
 const applyHiddenParts = (
   root: THREE.Object3D,
   hidden: ReadonlySet<string>,
@@ -297,7 +249,6 @@ const applyHiddenParts = (
   });
 };
 
-// DMM-themed gizmo palette (dark surface, gold primary accent).
 const GIZMO_AXES: {
   dir: [number, number, number];
   label: string;
@@ -311,8 +262,6 @@ const GIZMO_AXES: {
   { dir: [0, 0, -1], label: "", color: "#8fb0c9" },
 ];
 
-/** A round handle sprite (filled + labelled for the positive axis, faint ring
- * for the negative one) drawn on a small canvas so it always faces the camera. */
 const makeHandleTexture = (
   color: string,
   label: string,
@@ -378,8 +327,6 @@ export const FoundryModelViewer = ({
   const snapshotsRef = useRef<MaterialSnapshot[]>([]);
   const hiddenRef = useRef<ReadonlySet<string>>(new Set());
   const [hovered, setHovered] = useState<string | null>(null);
-  // The frame loop and pick handler read the latest props through refs, so a
-  // changed callback never rebuilds the scene.
   const onPickRef = useRef(onPickPart);
   onPickRef.current = onPickPart;
   const pickable = Boolean(onPickPart);
@@ -559,8 +506,6 @@ export const FoundryModelViewer = ({
     comparisonRef.current?.setLook(look);
   }, [background, look]);
 
-  // Keep the live controls in sync with the auto-rotate toggle without
-  // rebuilding the scene.
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.autoRotate = autoRotate;
@@ -653,8 +598,6 @@ export const FoundryModelViewer = ({
       );
     };
 
-    // --- Orientation gizmo (isolated renderer so it can never affect the
-    // model view): click an axis handle to snap the camera to that side. ---
     const gizmoSize = 84;
     const gizmoRenderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -715,9 +658,6 @@ export const FoundryModelViewer = ({
     let picks: PickTarget[] = [];
     let frame = 0;
 
-    // GPU picking: the model is drawn into a 1x1 target under the pointer with
-    // one flat color per mesh, and the pixel read back names the section. A CPU
-    // raycast would have to skin every vertex of a 100k-triangle hero per move.
     const pickTarget = new THREE.WebGLRenderTarget(1, 1);
     const pickCamera = new THREE.PerspectiveCamera();
     const pickPixel = new Uint8Array(4);
@@ -753,7 +693,6 @@ export const FoundryModelViewer = ({
         );
         target.mesh.material = target.pickMaterial;
       }
-      // The outline shells keep their own material and would read as an ID.
       outlines?.setVisible(false);
       const previousTarget = renderer.getRenderTarget();
       const previousClear = renderer.getClearColor(new THREE.Color());
@@ -786,8 +725,6 @@ export const FoundryModelViewer = ({
     };
     const onPointerDown = (event: PointerEvent) => {
       pointerDown = { x: event.clientX, y: event.clientY };
-      // Shift-click adds to the pick, but the browser would also extend the
-      // page's text selection up to the click.
       if (event.shiftKey || event.ctrlKey) event.preventDefault();
     };
     const onPointerUp = (event: PointerEvent) => {
@@ -881,7 +818,6 @@ export const FoundryModelViewer = ({
       })
       .finally(releaseAsset);
 
-    // Snap the camera to the clicked axis (instant, keeps the current distance).
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const snapToDir = (dir: THREE.Vector3) => {
@@ -944,8 +880,6 @@ export const FoundryModelViewer = ({
       comparisonRef.current?.prepare(clock.time);
       for (const effect of activeEffectsRef.current) effect.prepare?.();
       const preparationEnd = performance.now();
-      // Re-pick when the pointer moved, and now and then while the camera or
-      // the pose moves under a still pointer.
       const moving =
         controls.autoRotate ||
         (mixerRef.current !== null && (playback?.playing ?? true));
@@ -971,7 +905,6 @@ export const FoundryModelViewer = ({
         frameElapsed * 1000,
       );
 
-      // Mirror the main camera's orientation so the gizmo turns with the model.
       gizmoRoot.quaternion.copy(camera.quaternion).invert();
       gizmoRenderer.render(gizmoScene, gizmoCamera);
     };
@@ -1020,9 +953,6 @@ export const FoundryModelViewer = ({
       environmentMap.dispose();
       pmremGenerator.dispose();
       environment.dispose();
-      // `dispose()` frees three.js resources but leaves the WebGL context
-      // alive; browsers cap how many a page may hold, and this canvas is
-      // mounted and unmounted on every repaint, so release it explicitly.
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();
@@ -1054,9 +984,6 @@ export const FoundryModelViewer = ({
     return () => onHeroCapture(null);
   }, [loading, failed, onHeroCapture]);
 
-  // A repaint rewrites color maps on disk. Swapping just those images into the
-  // loaded materials keeps the hero, its pose and the camera on screen, where
-  // reloading the model would rebuild the whole scene.
   const refreshRevision = textureRefresh?.revision;
   const readTextureRef = useRef(readTexture);
   readTextureRef.current = readTexture;
@@ -1117,8 +1044,6 @@ export const FoundryModelViewer = ({
                       snapshot.material.alphaTest === 0) !== opaque
                   )
                     continue;
-                  // GLTF preview maps may be smaller than the edited texture. Free
-                  // their immutable GPU allocation before uploading the new image.
                   map.dispose();
                   map.image = image;
                   map.needsUpdate = true;
@@ -1156,8 +1081,6 @@ export const FoundryModelViewer = ({
     };
   }, [refreshRevision, loading, model, refreshTextures]);
 
-  // Once posed by the first frames of its animation, the model teaches the
-  // loading embers this hero's shape for next time.
   useEffect(() => {
     if (loading || !silhouetteHero || hasCapturedSilhouette(silhouetteHero)) {
       return;
@@ -1181,8 +1104,6 @@ export const FoundryModelViewer = ({
   }, [hiddenTextures, loading, model]);
 
   useEffect(() => {
-    // The selection glow would shift the color being previewed, so it gives
-    // way to the tint; the hover glow stays so the pointer still reads.
     applyHighlight(
       snapshotsRef.current,
       new Set(
@@ -1316,8 +1237,6 @@ export const FoundryModelViewer = ({
             !loading && "opacity-0",
           )}
           onTransitionEnd={() => !loading && setScanGone(true)}>
-          {/* Only the Foundry teaches silhouettes, and only it has opening
-              steps to show. */}
           <ModelLoadingStage
             hero={hero ?? silhouetteHero ?? null}
             status={t("foundry.preview.loading")}

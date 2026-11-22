@@ -57,7 +57,6 @@ export class SentryTransport extends LoggerlessTransport implements Disposable {
       return;
     }
 
-    // Clean up resources
     this.sentryClient?.close();
     this.isDisposed = true;
   }

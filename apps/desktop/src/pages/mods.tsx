@@ -16,8 +16,6 @@ import type { ContentType } from "@/lib/store/slices/ui";
 import { GetModsData } from "@/components/mod-browsing/catalog/get-mods-data";
 import { ModsPageSkeleton } from "@/components/mod-browsing/catalog/mods-page-skeleton";
 
-// Without the custom-maps feature there is no Maps tab, so a stored "map"
-// falls back to Mods (where maps stay mixed in).
 const resolveContentType = (
   stored: ContentType | undefined,
   isCustomMapsEnabled: boolean,
@@ -26,7 +24,6 @@ const resolveContentType = (
 
 const GetMods = () => {
   const { t } = useTranslation();
-  // In the URL so a source link can open the Store on the source it added.
   const [searchParams, setSearchParams] = useSearchParams();
   const sourceKey = searchParams.get("source") ?? "gamebanana";
   const setSourceKey = useCallback(
@@ -59,8 +56,6 @@ const GetMods = () => {
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col px-4'>
-      {/* Sections are scope, not filters: they sit with the title and share
-          one hairline with it, leaving a single toolbar row below. */}
       <div className='mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-border/60 border-b'>
         <PageTitle
           className='pb-3'

@@ -143,9 +143,6 @@ impl Catalog {
       .await
   }
 
-  /// Facets for the query's scope (submission type, audio/map flags, author and
-  /// policy exclusions). Search and the user's other filters are ignored so
-  /// selecting one option never hides the rest.
   pub async fn facets(&self, query: CatalogQuery) -> Result<Vec<CatalogFacet>, Error> {
     let scope = CatalogQuery {
       author_remote_id: query.author_remote_id,
@@ -188,9 +185,6 @@ impl Catalog {
       .await
   }
 
-  /// Authors whose name matches the search, most downloaded first. Like facets,
-  /// only the query's scope applies, plus the NSFW toggle so a hidden mod
-  /// cannot surface its author.
   pub async fn authors(&self, query: CatalogQuery) -> Result<Vec<CatalogAuthor>, Error> {
     let Some(search) = fts_query(&query.search).map(|terms| format!("author : ({terms})")) else {
       return Ok(Vec::new());
@@ -209,8 +203,6 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        // Match on any name, then total every submission of those authors, so
-        // a rename does not drop the submissions stored under the old name.
         let matching = filtered_query(&scope, Some(&search)).select(submission::author_remote_id);
         let rows = filtered_query(&scope, None)
           .filter(submission::author_remote_id.eq_any(matching))
@@ -265,9 +257,6 @@ fn filtered_query<'a>(
     }
     None => {}
   }
-  // The FTS table is not keyed by rowid, so a subquery correlated on the
-  // submission key reruns the MATCH for every catalog row (seconds per search).
-  // Keeping the MATCH uncorrelated evaluates it once.
   if let Some(search) = search {
     statement = statement.filter(
       sql::<Bool>(
@@ -372,8 +361,6 @@ fn filter_heroes<'a>(
   statement
 }
 
-/// Groups `(author id, name, downloads, updated at)` rows by author. The name
-/// comes from the latest update, since members can rename themselves.
 fn rank_authors(rows: Vec<(String, String, i64, i64)>) -> Vec<CatalogAuthor> {
   let mut authors: HashMap<String, (CatalogAuthor, i64)> = HashMap::new();
   for (author_remote_id, name, downloads, updated_at) in rows {
@@ -437,9 +424,6 @@ fn ordered_query(
   }
 }
 
-/// Relevance-ordered search. Driving the join from the FTS MATCH computes each
-/// row's bm25 score once; the browse filters apply through an uncorrelated slug
-/// subquery so they stay shared with `filtered_query`.
 fn load_ranked_search(
   connection: &mut SqliteConnection,
   query: &CatalogQuery,
@@ -500,8 +484,6 @@ fn filter_categories<'a>(
   if includes_other {
     matches = Box::new(matches.or(submission::category.ne_all(PREDEFINED)));
   }
-  // Every ancestor is stored in the path, so selecting a parent matches its
-  // descendants without loading them before counting and pagination.
   for key in category_keys {
     matches = Box::new(
       matches.or(
@@ -549,7 +531,6 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       profile_url: row.profile_url,
       category: row.category,
       category_path: decode_category_path(&row.category_path)?,
-      // A rollback may encounter video providers written by a newer version.
       videos: row
         .videos
         .and_then(|videos| serde_json::from_str(&videos).ok()),

@@ -1,6 +1,3 @@
-//! Material migrations are reviewed correspondences, not filename guesses.
-//! Resolve the current definition, then validate draw calls, mesh scope and
-//! shader interfaces before publishing any assets from a recipe.
 use super::{
   asset_compatibility::{AssetRepair, AssetWarning, RepairKind, WarningKind},
   resources::ResourceSnapshot,
@@ -114,8 +111,6 @@ pub(super) fn prepare(
   }
 }
 
-/// Dependency validation also covers materials without a migration recipe.
-/// Parsing and dependency presence do not establish runtime shader correctness.
 fn inspect_materials(
   resources: &ResourceSnapshot,
   scope: &super::repair_scope::RepairScope,
@@ -204,7 +199,6 @@ fn invalid(error: impl std::fmt::Display) -> Error {
   Error::ModInvalid(error.to_string())
 }
 
-/// A recipe cannot replace assets supplied by another mod, including textures.
 fn baseline(resources: &ResourceSnapshot, path: &str) -> Result<Arc<Vec<u8>>, Error> {
   let current = resources
     .game_bytes(path)?
@@ -226,7 +220,6 @@ fn same_texture_runtime(left: &[u8], right: &[u8]) -> bool {
   use vpkmanager::source2::{inspect, resource::Resource};
   let payload = |bytes: &[u8]| -> Option<(Vec<u8>, Vec<u8>, bool)> {
     let resource = Resource::parse(bytes).ok()?;
-    // Only compiler provenance may differ; do not ignore unknown runtime blocks.
     if resource
       .blocks()
       .iter()

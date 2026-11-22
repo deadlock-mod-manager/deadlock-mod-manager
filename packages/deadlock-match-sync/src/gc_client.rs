@@ -1,8 +1,3 @@
-//! The Steam Game Coordinator boundary: recover per-match salts and history
-//! client-side through the user's own account (`steam-vent` + `CMsgClientToGc*`),
-//! plus the account's friends and their Steam persona state. The subsystem never uses
-//! deadlock-api's own server-side endpoints.
-
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::{Arc, PoisonError};
@@ -37,10 +32,8 @@ use super::friends::Persona;
 use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
 use crate::steam_id::{account_id_of, is_individual};
 
-// A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
 const STOP_PLAYING_TIMEOUT: Duration = Duration::from_secs(2);
-// Covers the gap until the game process appears and the game-running checks take over.
 const LAUNCH_HOLD: Duration = Duration::from_secs(3 * 60);
 
 static LAUNCH_REQUESTED_AT: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
@@ -66,9 +59,6 @@ fn launch_hold_active() -> bool {
     .is_some_and(|at| at.elapsed() < LAUNCH_HOLD)
 }
 
-// Steam pushes the friends list and the playing state right after logon, so they have
-// normally arrived by the time they're needed; this only bounds the wait when they never
-// come. Persona states arrive as a burst.
 const FRIENDS_WAIT: Duration = Duration::from_secs(5);
 const PLAYING_STATE_WAIT: Duration = Duration::from_secs(5);
 const FRIEND_RELATIONSHIP_FRIEND: u32 = 3;
@@ -97,7 +87,6 @@ async fn until_launch<T>(
   }
 }
 
-// What a history response's non-success `result` says.
 fn history_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_history_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
@@ -108,7 +97,6 @@ fn history_error(result: Option<i32>) -> Option<MatchSyncError> {
   })
 }
 
-// What a salts response's non-success `result` says.
 fn salts_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_meta_data_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
@@ -121,7 +109,6 @@ fn salts_error(result: Option<i32>) -> Option<MatchSyncError> {
   })
 }
 
-// SteamID64s of the confirmed individual friends (not groups or pending invites).
 fn individual_friends(list: CMsgClientFriendsList) -> Vec<u64> {
   list
     .friends
@@ -132,10 +119,7 @@ fn individual_friends(list: CMsgClientFriendsList) -> Vec<u64> {
     .collect()
 }
 
-// `impl Future + Send` keeps impls spawnable. No internal retries: a failed salt
-// fetch must cost at most one quota unit (caller rate-limits + quota-gates).
 pub trait GcMatchClient: Send + Sync {
-  // `account_id` is whose history to read: the session's own, or one of its friends'.
   fn fetch_match_history(
     &self,
     ctx: &AuthContext,
@@ -149,14 +133,11 @@ pub trait GcMatchClient: Send + Sync {
     match_id: u64,
   ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send;
 
-  // Account ids of the account's Steam friends, as Steam sent them at logon.
   fn friend_ids(
     &self,
     ctx: &AuthContext,
   ) -> impl Future<Output = Result<Vec<u32>, MatchSyncError>> + Send;
 
-  // The persona state of each of `account_ids` (who must be friends) that Steam answers
-  // for in time.
   fn personas(
     &self,
     ctx: &AuthContext,
@@ -164,15 +145,10 @@ pub trait GcMatchClient: Send + Sync {
   ) -> impl Future<Output = HashMap<u32, Persona>> + Send;
 }
 
-// The first friends list Steam sends after logon, which is the full one.
 type FriendsList = BoxFuture<'static, Result<CMsgClientFriendsList, NetworkError>>;
 type LoggedOff = BoxFuture<'static, Result<CMsgClientLoggedOff, NetworkError>>;
-// Steam pushes one right after logon and another whenever a session of the account starts
-// or stops a game.
 type PlayingStates = BoxStream<'static, Result<CMsgClientPlayingSessionState, NetworkError>>;
 
-// Listened for before logging in: Steam pushes these right after logon, and steam-vent
-// keeps only the last 32 messages nobody listens for, which the logon burst can overflow.
 struct LogonListeners {
   friends_list: FriendsList,
   playing_states: PlayingStates,
@@ -189,8 +165,6 @@ impl LogonListeners {
   }
 }
 
-// Whether another session of the account is already playing a game, on this PC or
-// another. Starting Deadlock then gets this session logged off.
 async fn playing_elsewhere(listeners: &mut LogonListeners) -> Result<bool, MatchSyncError> {
   let state = with_timeout(PLAYING_STATE_WAIT, "playing state", async {
     let next = listeners.playing_states.next().await;
@@ -198,7 +172,6 @@ async fn playing_elsewhere(listeners: &mut LogonListeners) -> Result<bool, Match
   });
   match state.await {
     Ok(state) => Ok(state.playing_blocked()),
-    // Without the state, a logoff during the handshake still tells.
     Err(e) => {
       log::debug!("match-sync: {e}");
       Ok(false)
@@ -206,8 +179,6 @@ async fn playing_elsewhere(listeners: &mut LogonListeners) -> Result<bool, Match
   }
 }
 
-// A request that failed because another session of the account started a game, which
-// gets this one logged off, is not a GC outage.
 fn logged_off_or(logged_off: &mut LoggedOff, error: MatchSyncError) -> MatchSyncError {
   if error.ends_pass() {
     return error;
@@ -220,15 +191,10 @@ fn logged_off_or(logged_off: &mut LoggedOff, error: MatchSyncError) -> MatchSync
   }
 }
 
-// A logged-on CM session. It only reports the account as playing Deadlock during a GC
-// request (`gc_job`): Steam counts every minute it does as playtime.
 struct GcSession {
   steam_id64: u64,
   conn: Connection,
-  // Read into `friends` the first time they are needed.
   friends_list: Option<FriendsList>,
-  // SteamID64s of confirmed individual friends, once `friends_list` is read; empty if
-  // Steam sent no usable list.
   friends: Vec<u64>,
   logged_off: LoggedOff,
   playing_states: PlayingStates,
@@ -236,19 +202,15 @@ struct GcSession {
 }
 
 impl GcSession {
-  // Waits for the friends list on first use only, so a session that never looks at
-  // friends never waits for it.
   async fn friends(&mut self, cancel: &mut watch::Receiver<()>) -> Result<&[u64], MatchSyncError> {
     if let Some(list) = &mut self.friends_list {
       let list = until_launch(cancel, with_timeout(FRIENDS_WAIT, "friends list", list)).await;
       self.friends = match list {
         Ok(list) if !list.bincremental() => individual_friends(list),
-        // An incremental list only carries the friends that changed.
         Ok(_) => {
           log::warn!("match-sync: Steam sent an incremental friends list first");
           Vec::new()
         }
-        // A launch only cancels the wait: the list stays pending.
         Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
         Err(e) => {
           log::warn!("match-sync: {e}");
@@ -260,7 +222,6 @@ impl GcSession {
     Ok(&self.friends)
   }
 
-  // Whether another session of the account has started a game since the last check.
   fn playing_blocked(&mut self) -> bool {
     while let Some(Some(state)) = self.playing_states.next().now_or_never() {
       if let Ok(state) = state {
@@ -270,9 +231,6 @@ impl GcSession {
     self.playing_blocked
   }
 
-  // The GC only serves a session that reports the account as playing Deadlock, which Steam
-  // counts as playtime and shows to friends. So the handshake starts playing right before
-  // the request and stops right after it, rather than for the whole sync pass.
   async fn gc_job(
     &mut self,
     cancel: &mut watch::Receiver<()>,
@@ -298,16 +256,12 @@ impl GcSession {
       .await
     })
     .await;
-    // A failed request drops the session, which stops playing too.
     if result.is_ok() {
       Self::clear_playing(&self.conn).await;
     }
     result.map_err(|e| logged_off_or(&mut self.logged_off, e))
   }
 
-  // Launching the game while this session plays Deadlock prompts to disconnect it. Clear
-  // that instead of logging off: the session shares the Steam client's login, and logging
-  // off signs the client out too.
   async fn stop_playing(self) {
     Self::clear_playing(&self.conn).await;
   }
@@ -328,8 +282,6 @@ impl GcSession {
   }
 }
 
-// Cheap to clone: clones share one session, so the per-account resource registry in
-// `mod.rs` hands every engine it builds the same client.
 #[derive(Clone)]
 pub struct SteamGcClient {
   shared: Arc<Shared>,
@@ -356,8 +308,6 @@ impl SteamGcClient {
     }
   }
 
-  // steam-vent's login needs a lot of stack in debug builds, and a sync pass calls this
-  // already deep in a worker's stack, so it runs as its own task from a fresh stack.
   async fn connect(
     ctx: &AuthContext,
     cancel: &mut watch::Receiver<()>,
@@ -415,7 +365,6 @@ impl SteamGcClient {
     Self::poison(&mut guard).await;
   }
 
-  /// Waits for the cancelled request to clear its playing status before launch.
   pub async fn release(&self) {
     self.shared.launch_cancel.send_replace(());
     self.disconnect().await;
@@ -445,7 +394,6 @@ impl SteamGcClient {
     Ok(())
   }
 
-  // The connected session's friends, connecting first if needed.
   async fn connected_friends<'g>(
     &self,
     guard: &'g mut Option<GcSession>,
@@ -460,8 +408,6 @@ impl SteamGcClient {
       .await
   }
 
-  // A failed or cancelled request may have left the connection broken, so it drops the
-  // session, still under the session lock so a launch cannot overtake the cleanup.
   async fn poison_on_error<T>(
     guard: &mut Option<GcSession>,
     result: Result<T, MatchSyncError>,
@@ -519,8 +465,6 @@ impl GcMatchClient for SteamGcClient {
     }
 
     Ok(MatchHistoryPage {
-      // An entry without a match id is not addressable at all, so it is dropped
-      // rather than defaulted to 0.
       matches: resp
         .matches
         .iter()
@@ -599,7 +543,6 @@ impl GcMatchClient for SteamGcClient {
     }
     let mut guard = self.shared.session.lock().await;
     let mut cancel = self.shared.launch_cancel.subscribe();
-    // Only friends can be asked about, so only they are waited for.
     let (friends, requested): (Vec<u64>, HashSet<u32>) =
       match self.connected_friends(&mut guard, ctx, &mut cancel).await {
         Ok(friends) => friends
@@ -624,7 +567,6 @@ impl GcMatchClient for SteamGcClient {
         EClientPersonaStateFlag::k_EClientPersonaStateFlagStatus,
         EClientPersonaStateFlag::k_EClientPersonaStateFlagPresence,
         EClientPersonaStateFlag::k_EClientPersonaStateFlagLastSeen,
-        // Carries the app a friend is playing, which marks them as in Deadlock.
         EClientPersonaStateFlag::k_EClientPersonaStateGameExtraInfo,
       ]
       .into_iter()
@@ -632,7 +574,6 @@ impl GcMatchClient for SteamGcClient {
       .sum(),
     );
     req.friends = friends;
-    // Personas only sharpen the ranking; without them friends still rank by cadence.
     let sent = until_launch(
       &mut cancel,
       with_timeout(GC_CALL_TIMEOUT, "persona request", session.conn.send(req)),
@@ -647,7 +588,6 @@ impl GcMatchClient for SteamGcClient {
 
     let deadline = tokio::time::Instant::now() + FRIENDS_WAIT;
     while personas.len() < requested.len() {
-      // A launch must not wait out the deadline for the session lock.
       let next = tokio::select! {
         biased;
         _ = cancel.changed() => break,
@@ -664,8 +604,6 @@ impl GcMatchClient for SteamGcClient {
   }
 }
 
-// Folds one persona state update into `personas`, for the `requested` friends only: Steam
-// also pushes updates nobody asked for (e.g. about ourselves).
 fn merge_personas(
   personas: &mut HashMap<u32, Persona>,
   msg: CMsgClientPersonaState,
@@ -684,7 +622,6 @@ fn merge_personas(
       .filter(|&t| t != 0)
       .max()
       .map(i64::from);
-    // A later, partial update must not erase what an earlier one told us.
     let persona = personas.entry(id).or_default();
     persona.in_deadlock |= f.game_played_app_id == Some(DEADLOCK_APP_ID);
     persona.online |= f.persona_state.is_some_and(|s| s != 0);

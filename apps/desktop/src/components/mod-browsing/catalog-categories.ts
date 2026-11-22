@@ -39,7 +39,6 @@ export const toggleCatalogCategory = (
   const root = path?.[0];
   const broadCategory = rootCategoryName(key, paths);
   if (broadCategory) {
-    // Broad roots also include submissions whose detailed taxonomy is still syncing.
     const selected = categories.includes(broadCategory) || keys.includes(key);
     return {
       categories: selected
@@ -91,7 +90,6 @@ export const categoryPathForKey = (key: string, paths: CatalogCategory[][]) =>
       : longest;
   }, undefined);
 
-/** Other/Misc is a broad catch-all in SQL, so its taxonomy root uses its scoped key. */
 export const rootCategoryName = (key: string, paths: CatalogCategory[][]) => {
   const path = categoryPathForKey(key, paths);
   if (path?.length === 1 && path[0].name !== ModCategory.OTHER_MISC)
@@ -114,7 +112,6 @@ const isCategoryAncestor = (
     );
   });
 
-/** Repair overlapping saved selections by keeping their most specific filters. */
 export const normalizeCategorySelection = (
   categories: string[],
   keys: string[],
@@ -217,7 +214,6 @@ export const selectedCategoryPathLabel = (
   return path.map((category) => catalogCategoryLabel(category, t)).join(" / ");
 };
 
-/** Scoped keys keep identities separate across submission types. */
 export const buildCategoryTree = (paths: CatalogCategory[][]) => {
   const ancestry = new Map<
     string,
@@ -226,8 +222,6 @@ export const buildCategoryTree = (paths: CatalogCategory[][]) => {
   for (const path of paths) {
     let parent: CategoryTreeNode | null = null;
     for (const [depth, category] of path.entries()) {
-      // A partial sync can contain both root/leaf and fully resolved paths.
-      // Keep each identity once, under its richest known ancestry.
       let entry = ancestry.get(category.key);
       if (!entry) {
         entry = { node: { category, children: [] }, parent, depth };

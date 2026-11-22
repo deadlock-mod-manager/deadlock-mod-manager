@@ -1,5 +1,3 @@
-//! cfg and autoexec files: `name value` lines, with binds, aliases and execs reported.
-
 use super::kv::MAX_REPORTED_ERRORS;
 use super::{ParsedConfig, ParsedLeaf, clean, truncate};
 use crate::mod_manager::perf_config::types::{IgnoredKind, IgnoredPart, ImportFormat};
@@ -41,9 +39,6 @@ const CONSOLE_COMMANDS: &[&str] = &[
   "cl_showfps_toggle",
 ];
 
-/// `name value` lines become ConVars entries; binds, aliases, execs and
-/// commands are reported, never imported. Whether a name is a convar or a
-/// concommand is the catalog's call, made when the entries are resolved.
 pub(super) fn parse_cfg(text: &str) -> ParsedConfig {
   let text = clean(text);
   let mut leaves = Vec::new();
@@ -105,8 +100,6 @@ pub(super) fn parse_cfg(text: &str) -> ParsedConfig {
   }
 }
 
-/// A console line starts with a command or convar name, or `+`/`-` for a
-/// button command. Anything else (`\\\\ BANNER ////`) is decoration.
 fn is_command_like(command: &str) -> bool {
   command
     .strip_prefix(['+', '-'])
@@ -125,8 +118,6 @@ pub(super) fn strip_cfg_comment(line: &str) -> &str {
   line
 }
 
-/// Tokens of each `;`-separated statement. Quotes group words (and keep `;`
-/// inside an alias body) and are dropped.
 pub(super) fn cfg_statements(code: &str) -> Vec<Vec<String>> {
   let mut statements = Vec::new();
   let mut statement: Vec<String> = Vec::new();

@@ -7,7 +7,6 @@ const highlightsSchema = z
   .array(z.object({ image: z.string(), caption: z.string() }))
   .catch([]);
 
-/** Nightly builds (2.4.0-nightly.20261110.e02703ce) show the notes of the release they lead up to. */
 export const getReleaseVersion = (version: string): string =>
   version.split("-")[0];
 
@@ -44,7 +43,6 @@ const versionEntries: Record<
 export const getWhatsNewVideoId = (version: string): string =>
   versionEntries[getReleaseVersion(version)]?.videoId ?? "";
 
-/** Releases with notes between two versions, newest first, both ends excluded. */
 export const getSkippedWhatsNewVersions = (
   from: string,
   to: string,

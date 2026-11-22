@@ -8,7 +8,6 @@ type RowButtonProps = ComponentPropsWithoutRef<"button"> & {
   variant?: "outline" | "primary";
 };
 
-/** The compact 13px action buttons used in plugin rows and cards. */
 export const RowButton = forwardRef<HTMLButtonElement, RowButtonProps>(
   (
     { icon: ButtonIcon, variant = "outline", className, children, ...props },

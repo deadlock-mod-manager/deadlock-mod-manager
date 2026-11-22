@@ -30,7 +30,6 @@ describe("recentForm", () => {
 
 describe("averageBadge", () => {
   it("steps over the gap between a tier's sixth subrank and the next tier", () => {
-    // Ritualist 6 (106) and Emissary 1 (111) are neighbours, not five apart.
     expect(averageBadge([106, 111])).toBe(111);
     expect(averageBadge([106, 106, 111])).toBe(106);
   });

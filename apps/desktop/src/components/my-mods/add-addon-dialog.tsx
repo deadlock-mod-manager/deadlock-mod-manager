@@ -50,10 +50,8 @@ export const AddAddonDialog = ({
     Partial<ModMetadata> | undefined
   >(undefined);
   const metaRef = useRef<ModMetadataFormHandle>(null);
-  // A second click lands before isProcessing re-renders the button disabled.
   const submitting = useRef(false);
 
-  // Reset form when addon changes
   useEffect(() => {
     if (addon) {
       const baseName = addon.fileName.replace(/\.(vpk|zip|rar|7z)$/i, "");
@@ -81,7 +79,6 @@ export const AddAddonDialog = ({
       }
 
       setIsProcessing(true);
-      // Use a custom processMod for already-installed local addons
       await processLocalAddon(metadata, category, addon);
       toast.success(t("addons.addToLibrarySuccess", { name: metadata.name }));
       onOpenChange(false);

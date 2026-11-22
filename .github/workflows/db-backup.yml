@@ -44,7 +44,6 @@ jobs:
 
           echo "$KUBECONFIG_SECRET" | base64 -d > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
-          # Verify kubectl connection without exposing sensitive config
           kubectl cluster-info --request-timeout=5s >/dev/null 2>&1 || echo "::warning::Could not verify cluster connection"
 
       - name: Discover PostgreSQL service
@@ -81,8 +80,6 @@ jobs:
         env:
           KUBECONFIG: kubeconfig.yaml
         run: |
-          # CloudNativePG keeps the app user's current credentials in this
-          # secret, so a rotated password can't leave a stale copy behind.
           NAMESPACE="${{ steps.discover-postgres.outputs.namespace }}"
           read_secret() {
             kubectl get secret deadlock-mod-manager-app -n "$NAMESPACE" -o "jsonpath={.data.$1}" | base64 -d
@@ -147,7 +144,6 @@ jobs:
           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
           LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
 
-          # Read the password in this step so it never lands in step outputs
           DB_PASS=$(kubectl get secret deadlock-mod-manager-app -n "${{ steps.discover-postgres.outputs.namespace }}" -o "jsonpath={.data.password}" | base64 -d)
           echo "::add-mask::${DB_PASS}"
 
@@ -207,8 +203,6 @@ jobs:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
         run: |
-          # Prune before uploading so the new dump fits on the RustFS volume;
-          # keeping 3 leaves 4 backups once the upload completes.
           S3_BUCKET="${{ secrets.S3_BUCKET }}"
           S3_PREFIX="backups/backup-"
 
@@ -268,7 +262,6 @@ jobs:
             exit 1
           fi
 
-          # Single PUTs over about 1 GB are rejected with 413, so upload in parts
           aws configure set default.s3.multipart_threshold 64MB
           aws configure set default.s3.multipart_chunksize 64MB
           export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED

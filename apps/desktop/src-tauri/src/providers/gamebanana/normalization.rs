@@ -8,8 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-// Sexual and suggestive ratings. Crude language, gore, and other ratings stay visible on
-// GameBanana, so they are not NSFW here either.
 const NSFW_CONTENT_RATINGS: &[&str] = &["st", "sa", "sc", "ft", "lp", "pn", "nu"];
 const NEGATIVE_STATE_CODES: &[&str] = &["2", "4", "6", "8", "10"];
 const NEGATIVE_STATE_LABELS: &[&str] = &["uninstalled", "absent", "disabled", "off", "false"];
@@ -19,14 +17,11 @@ static GAMEBANANA_MOD_URL: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r"(?i)^https?://(?:www\.)?gamebanana\.com/mods/(\d+)")
     .expect("GameBanana mod URL regex must be valid")
 });
-// Block tags end a line, so "<br>map queue<br>" reads as a command on its own line while
-// "<br>Map has lots of jumps" stays prose.
 static BLOCK_TAG: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r"(?i)</?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>").expect("block tag regex must be valid")
 });
 static INLINE_TAG: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r"<[^>]*>").expect("inline tag regex must be valid"));
-// "map_" also matches, because authors write "map_dl_bearpit" for "map dl_bearpit".
 static MAP_COMMAND: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r"(?i)\bmap([^\S\n]+|_)([a-z][a-z0-9_]{2,})\b")
     .expect("map command regex must be valid")
@@ -247,8 +242,6 @@ pub fn classify_nsfw(profile: &Profile) -> bool {
       .any(|rating| NSFW_CONTENT_RATINGS.contains(&rating.as_str()))
 }
 
-/// GameBanana hides or warns exactly for sexual and suggestive ratings, and Index pages
-/// carry the visibility but not the ratings, so this is the catalog-wide NSFW signal.
 pub fn is_nsfw_visibility(initial_visibility: &str) -> bool {
   matches!(initial_visibility, "hide" | "warn")
 }
@@ -266,11 +259,6 @@ fn description_to_text(description: &str) -> String {
     .replace("&amp;", "&")
 }
 
-/// Finds the console map name in a GameBanana description. Every "map <name>" is a
-/// candidate. A candidate written as a command (quoted, after "type" or "command", or alone
-/// on its line) wins over one that only looks like a map identifier (has an underscore or
-/// digit). Prose such as "this map features" is neither, so it never matches. Keep in sync
-/// with `extractMapName` in the API; both run the shared `map-names.json` fixture.
 pub fn extract_map_name(description: &str) -> Option<String> {
   let text = description_to_text(description);
   let mut identifier = None;
@@ -339,7 +327,6 @@ fn category(profile: &Profile) -> String {
       .map(|category| category.name.trim())
       .filter(|name| !name.is_empty())
   }
-  // Skin subcategories make the hero the parent; the submission is still a skin.
   let parent = name(profile.super_category.as_ref()).map(|parent| {
     if hero_registry::normalize(parent).is_some() {
       hero_registry::SKINS_CATEGORY

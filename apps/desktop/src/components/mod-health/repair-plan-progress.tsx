@@ -14,10 +14,6 @@ const STAGES: readonly RepairPlanStage[] = [
   "writingPackage",
 ];
 
-/**
- * Shows how far the repair plan build has got. Before the first stage arrives
- * it renders nothing, or a preparing note with `showPreparing`.
- */
 export const RepairPlanProgressStatus = ({
   className,
   showPreparing = false,
@@ -36,7 +32,6 @@ export const RepairPlanProgressStatus = ({
       </p>
     ) : null;
   }
-  // Each stage fills an equal share; reading mods fills its share mod by mod.
   const withinStage =
     progress.stage === "checkingMods" && progress.total > 0
       ? progress.checked / progress.total

@@ -1,5 +1,3 @@
-//! Fixtures and builders shared by the performance-config tests.
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
@@ -13,8 +11,6 @@ use crate::mod_manager::perf_config::types::{
   GameplayClass, PerfTier, PresetSourceInfo, ResolvedEntry,
 };
 
-/// Stock files from old to current. `stock-api-crlf.gi` is the API's copy of
-/// the current build, with Valve's CRLF line endings.
 pub const STOCK_FIXTURES: [&str; 5] = [
   "stock-2024-08-10.gi",
   "stock-2025-05-09.gi",
@@ -42,7 +38,6 @@ pub fn path(joined: &str) -> Vec<String> {
   joined.split('/').map(str::to_string).collect()
 }
 
-/// `text` with every line ending replaced by `eol`.
 pub fn with_eol(text: &str, eol: &str) -> String {
   let lf = text.replace("\r\n", "\n");
   if eol == "\n" {
@@ -59,7 +54,6 @@ pub fn entry(joined: &str, value: Option<&str>) -> ConfigEntry {
   }
 }
 
-/// A resolved entry that will be written, for driving the patcher directly.
 pub fn applies(joined: &str, value: Option<&str>) -> ResolvedEntry {
   ResolvedEntry {
     path: path(joined),
@@ -76,9 +70,6 @@ pub fn applies(joined: &str, value: Option<&str>) -> ResolvedEntry {
   }
 }
 
-/// Edits of every shape the patcher handles, written against the current
-/// stock file: values with trailing comments, a duplicated key, an object
-/// leaf edit and insert, comment-outs, new ConVars and engine-section edits.
 pub fn synthetic_config() -> Vec<ConfigEntry> {
   vec![
     entry("ConVars/fps_max", Some("0")),
@@ -98,8 +89,6 @@ pub fn synthetic_config() -> Vec<ConfigEntry> {
   ]
 }
 
-/// Every scalar of an upstream file that differs from `base` or that `base`
-/// lacks: the file read as a config, phantom edits included.
 pub fn config_from_file(file: &str, base: &str) -> Vec<ConfigEntry> {
   let base = scalar_values(&parse_sites(base).expect("parse base"));
   let sites = parse_sites(file).expect("parse config file");
@@ -149,7 +138,6 @@ fn meta(name: &str, kind: ConvarKind, category: &str) -> ConvarMeta {
   }
 }
 
-/// Convars with curated facts the resolve tests rely on.
 fn curated_convars() -> Vec<ConvarMeta> {
   vec![
     ConvarMeta {
@@ -292,9 +280,6 @@ fn preset(id: &str, entries: Vec<ConfigEntry>) -> CatalogPreset {
   }
 }
 
-/// A catalog that knows every ConVars key in the fixtures (as plain strings in
-/// "other") plus the curated cases, with presets `synthetic`, `sqooky` and
-/// `noop` (stock values only) and the current stock file as its latest build.
 pub fn test_catalog() -> Catalog {
   let stock_text = fixture(CURRENT_STOCK);
   let mut convars: BTreeMap<String, ConvarMeta> = BTreeMap::new();

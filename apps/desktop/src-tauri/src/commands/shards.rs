@@ -1,5 +1,3 @@
-//! Developer-mode diagnostics for addon VPK sharding.
-
 use super::state::MANAGER;
 use crate::errors::Error;
 use crate::mod_manager::shard_report::{self, ShardReport, ShardReportInput};
@@ -28,8 +26,6 @@ pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<Sha
   }))
 }
 
-/// Force the shard layout and gameinfo.gi search paths back into agreement with
-/// the manifest, without waiting for a profile switch.
 #[tauri::command]
 pub async fn resync_profile_shards(
   profile_folder: Option<String>,

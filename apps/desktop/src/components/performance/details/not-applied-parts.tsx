@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { EntryKey, entryKey } from "./details-parts";
 
-/** Building blocks shared by the cards in the "Left out or ignored" section. */
 export const NotAppliedCard = ({
   icon,
   title,

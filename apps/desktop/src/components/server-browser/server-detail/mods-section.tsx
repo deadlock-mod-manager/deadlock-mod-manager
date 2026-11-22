@@ -4,7 +4,6 @@ import type {
 } from "@deadlock-mods/shared";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 
-/** Heartbeat `mods[]` uses `name`; relay-style entries use `id` + `url`. */
 type ServerDetailModListItem =
   | ServerBrowserEntry["mods"][number]
   | ServerRequiredMod;

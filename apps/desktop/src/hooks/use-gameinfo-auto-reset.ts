@@ -17,10 +17,6 @@ import {
   removeModSearchPaths,
 } from "@/lib/tauri-commands";
 
-/**
- * Removes DMM's mounts when Deadlock closes. Other tools' mounts and custom
- * game configuration remain in place. Opt-in through settings.
- */
 export const useGameinfoAutoReset = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -34,8 +30,6 @@ export const useGameinfoAutoReset = () => {
   const previousRunning = useRef<boolean | undefined>(undefined);
   const lastPauseCount = useRef(gameinfoAutoResetPauseCount());
 
-  // useHeroDetection already polls this key every 5s; a second interval here
-  // would drift out of phase and double the process scans.
   const { data: gameRunning } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
@@ -55,8 +49,6 @@ export const useGameinfoAutoReset = () => {
       )
         return;
       if (!(await removeModSearchPaths(revision))) return;
-      // Same as a vanilla launch: the missing mod paths are on purpose, so the
-      // "mods detached" banner stays quiet until the next modded launch.
       await refreshGameinfoState(queryClient, setLastLaunchVanilla);
       logger.info("Removed DMM search paths after the game closed");
       toast.info(t("settings.dmmPathsRemovedOnExit"));

@@ -18,8 +18,6 @@ import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 import { usePersistedStore } from "@/lib/store";
 import type { TcpAutoTuningLevel } from "@/types/generated/TcpAutoTuningLevel";
 
-// Cloudflare's trace endpoint is tiny and answers on both a bare IP and a
-// hostname, which lets a DNS failure be told apart from no connectivity at all.
 const INTERNET_ORIGIN = "https://1.1.1.1";
 const DNS_ORIGIN = "https://www.cloudflare.com";
 const GAMEBANANA_ORIGIN = "https://gamebanana.com";

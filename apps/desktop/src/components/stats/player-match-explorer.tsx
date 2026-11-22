@@ -21,7 +21,6 @@ interface PlayerMatchExplorerProps {
   accountId: number;
   matches: MatchHistoryEntry[];
   selectedMatchId: number | null;
-  /** Narrows the list to one hero; null shows every match. */
   heroFilter: number | null;
   heroesById: Map<number, DeadlockHero>;
   onSelectMatch: (matchId: number) => void;
@@ -48,8 +47,6 @@ export const PlayerMatchExplorer = ({
         .slice(0, MATCH_LIST_COUNT),
     [matches, heroFilter],
   );
-  // How the filtered run actually went, so the list has a headline rather than
-  // leaving the reader to add up thirty rows.
   const summary = useMemo(() => summarize(recent), [recent]);
   const filteredHero =
     heroFilter === null ? undefined : heroesById.get(heroFilter);

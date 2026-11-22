@@ -1,4 +1,3 @@
-/* Monochrome dark palette: true black, neutral grays, blue focus, red errors. */
 :root.gridline-theme-active {
   color-scheme: dark;
   --background: 0 0% 0%;
@@ -35,7 +34,6 @@
   --sidebar-accent-foreground: 0 0% 93%;
   --sidebar-border: 0 0% 15%;
   --sidebar-ring: 212 100% 48%;
-  /* Accent sweep: blue -> violet -> pink-red. */
   --gridline-gradient: linear-gradient(
     120deg,
     #0096ff 0%,
@@ -44,7 +42,6 @@
   );
 }
 
-/* Gradient hairline border painted over the card's own 1px border. */
 .gridline-gradient-frame {
   position: relative;
   isolation: isolate;
@@ -73,7 +70,6 @@
   opacity: 0.55;
 }
 
-/* Soft glow behind the card, only visible on hover. */
 .gridline-gradient-frame::after {
   z-index: -1;
   filter: blur(18px);
@@ -96,7 +92,6 @@
   opacity: 0.18;
 }
 
-/* The headline dashboard number gets the accent sweep. */
 .gridline-theme-active [data-stat-highlight] {
   background: var(--gridline-gradient);
   background-clip: text;
@@ -115,7 +110,6 @@
   }
 }
 
-/* Let the grid backdrop show through the sidebar, like Lovelock and Bloodmoon. */
 .gridline-theme-active
   :is(
     [data-sidebar="sidebar"],
@@ -129,7 +123,6 @@
   background-color: transparent;
 }
 
-/* Geist everywhere, with tight display tracking on headings. */
 .gridline-theme-active .font-primary {
   font-family: "Geist Variable", sans-serif;
   font-weight: 600;

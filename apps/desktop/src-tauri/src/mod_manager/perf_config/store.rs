@@ -1,5 +1,3 @@
-//! The desired overlay, persisted as `<app data>/performance/active.json`.
-
 use std::fs;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -14,8 +12,6 @@ fn file_path(app_data_dir: &Path) -> PathBuf {
   cache_dir(app_data_dir).join(FILE)
 }
 
-/// The saved choice. A file we can't read or parse counts as no choice: the
-/// user picks again rather than every launch failing on it.
 pub fn load(app_data_dir: &Path) -> Option<DesiredOverlay> {
   let path = file_path(app_data_dir);
   let json = match fs::read_to_string(&path) {

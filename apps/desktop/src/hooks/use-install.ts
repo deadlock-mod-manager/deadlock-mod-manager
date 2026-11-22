@@ -45,8 +45,6 @@ const useInstall = () => {
           return null;
         }
         await syncInstalledVpksFromManifest(profileFolder);
-        // The files went into this profile's folder, so it counts the mod as
-        // enabled even if the user has switched profiles since.
         if (activeProfile) {
           setModEnabledInProfile(activeProfile.id, mod.remoteId, true);
         }

@@ -19,16 +19,12 @@ import type { ExternalPluginPermissionId } from "@/types/generated/ExternalPlugi
 export type FilesRequest = Extract<ExternalPluginPermission, { id: "files" }>;
 export type ModsRequest = Extract<ExternalPluginPermission, { id: "mods" }>;
 
-/** What the user picks while granting a request. */
 export type PermissionResource = "file" | "folder" | "profile";
 
 export type PermissionCopy = {
   icon: Icon;
-  /** "Read one file you choose" */
   title: string;
-  /** Why it is safe to allow, under the title. */
   detail: string;
-  /** The limit, next to the granted value. */
   note: string;
   needs: PermissionResource | null;
 };
@@ -43,7 +39,6 @@ const CATALOG_ORDER: ExternalPluginPermissionId[] = [
   "notifications",
 ];
 
-/** Requests in catalog order, so every plugin lists its access the same way. */
 export const sortPermissions = (permissions: ExternalPluginPermission[]) =>
   [...permissions].sort(
     (a, b) => CATALOG_ORDER.indexOf(a.id) - CATALOG_ORDER.indexOf(b.id),
@@ -75,14 +70,12 @@ export const permissionNeeds = (
   }
 };
 
-/** Reading may target the default profile; installing never does. */
 export const allowsDefaultProfile = (request: ModsRequest) =>
   !request.access.includes("install");
 
 const sameSet = (a: string[], b: string[]) =>
   a.length === b.length && a.every((item) => b.includes(item));
 
-/** Whether two requests ask for exactly the same scope. */
 const samePermission = (
   a: ExternalPluginPermission,
   b: ExternalPluginPermission,
@@ -112,7 +105,6 @@ const samePermission = (
   }
 };
 
-/** Approved as asked, with the resource it needs picked. */
 export const isPermissionGranted = (
   grant: ExternalPluginGrant | null,
   permission: ExternalPluginPermission,
@@ -144,7 +136,6 @@ const formatList = (
   type: Intl.ListFormatType,
 ) => new Intl.ListFormat(language, { style: "long", type }).format(items);
 
-/** "vpk" → ".vpk"; several → ".vpk or .vtex_c". */
 const extensionList = (language: string, extensions: string[]) =>
   formatList(
     language,
@@ -152,7 +143,6 @@ const extensionList = (language: string, extensions: string[]) =>
     "disjunction",
   );
 
-/** The host's wording for one request, scope included. */
 const describePermission = (
   t: TFunction,
   language: string,
@@ -238,7 +228,6 @@ export const usePermissionCopy = () => {
     describePermission(t, i18n.language, permission);
 };
 
-/** Lowercase phrase that completes "Can …", e.g. "read one .vpk file you choose". */
 const permissionPhrase = (
   t: TFunction,
   language: string,
@@ -267,7 +256,6 @@ const permissionPhrase = (
   }
 };
 
-/** One sentence for everything a plugin asks for, as shown before installing. */
 export const describeAccess = (
   t: TFunction,
   language: string,
@@ -286,7 +274,6 @@ export const describeAccess = (
     : t("plugins.permissions.summary.offline", { list });
 };
 
-/** The request as the manifest states it: `files  read  file  .vpk`. */
 export const permissionTokens = (permission: ExternalPluginPermission) => {
   switch (permission.id) {
     case "files":
@@ -309,7 +296,6 @@ export const permissionTokens = (permission: ExternalPluginPermission) => {
   }
 };
 
-/** Opens the system picker for a files request, filtered to its extensions. */
 export const chooseGrantedPath = (
   t: TFunction,
   request: FilesRequest,
@@ -353,7 +339,6 @@ const blockedProfiles = (mods: ModsRequest | undefined): BlockedScope[] => {
   return mods.profiles === "picked" ? ["otherProfiles"] : [];
 };
 
-/** What no grant can unlock for a plugin asking for `permissions`. */
 export const blockedScopes = (
   permissions: ExternalPluginPermission[],
 ): BlockedScope[] => [

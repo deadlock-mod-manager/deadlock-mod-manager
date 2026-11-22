@@ -49,7 +49,6 @@ pub struct CatalogRecord {
   pub tags: Vec<String>,
   pub development_state: Option<String>,
   pub completion_percentage: Option<u8>,
-  /// None means videos were not fetched; Some(empty) clears previously cached videos.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub videos: Option<Vec<EmbeddedVideo>>,
 }
@@ -153,8 +152,6 @@ impl Catalog {
           {
             return Ok(());
           }
-          // An older snapshot may have completed a submission kind before full
-          // category paths existed. Restart once, then resume committed pages.
           diesel::update(sync_cursor::table)
             .set((
               sync_cursor::next_page.eq(1_i64),
@@ -207,7 +204,6 @@ impl Catalog {
                 continue;
               };
               let updated_is_map = submission_type == SubmissionType::Mod && root.name == "Maps";
-              // A fresh taxonomy also repairs the broad category after reparenting.
               if expanded != original || category != root.name || is_map != updated_is_map {
                 let encoded = serde_json::to_string(expanded)
                   .map_err(|error| Error::Catalog(error.to_string()))?;
@@ -427,7 +423,6 @@ impl Catalog {
       .await
   }
 
-  /// Hides a submission GameBanana no longer serves publicly until a crawl sees it again.
   pub async fn tombstone(&self, submission: SubmissionRef) -> Result<(), Error> {
     self
       .pool
@@ -458,10 +453,6 @@ impl Catalog {
       .await
   }
 
-  /// Before sounds had their own `snd-` slug, a sound was saved under its bare
-  /// GameBanana id, which looks like a mod id. Returns the ids the catalog
-  /// knows only as sounds, or `None` until a full crawl has completed, since a
-  /// mod missing from a partial catalog may just not be synced yet.
   pub async fn legacy_sound_ids(&self, ids: Vec<String>) -> Result<Option<Vec<String>>, Error> {
     self
       .pool
@@ -622,7 +613,6 @@ impl Catalog {
       .pool
       .run(|connection| {
         connection.immediate_transaction::<_, Error, _>(|connection| {
-          // Empty the index first: the delete trigger scans it once per submission.
           diesel::delete(super::schema::submission_fts::table).execute(connection)?;
           diesel::delete(submission::table).execute(connection)?;
           diesel::delete(super::schema::collection::table).execute(connection)?;
@@ -793,7 +783,6 @@ impl SubmissionRow {
       },
       development_state: incoming.development_state,
       completion_percentage: incoming.completion_percentage,
-      // Kept alongside `images`, which also survives updates without media.
       thumbnail_url: if keeps_media {
         self.thumbnail_url
       } else {
@@ -1520,10 +1509,8 @@ mod tests {
       .upsert_records(vec![entry.clone(), record("2", "Blue Haze", "snapshot-a")])
       .await
       .unwrap();
-    // Rewriting an index entry deletes it and inserts it again under a new rowid.
     let indexed = fts_rowid(&catalog, "1").await;
 
-    // Every sync upserts the index page again: unhydrated, with no description.
     let mut listed = entry.clone();
     listed.is_hydrated = false;
     listed.description = String::new();

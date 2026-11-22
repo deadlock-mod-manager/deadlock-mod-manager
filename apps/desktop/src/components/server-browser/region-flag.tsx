@@ -1,7 +1,6 @@
 import { GlobeIcon, HouseIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
-// Region id -> ISO 3166-1 alpha-2 for `flag-icons`; multi-country regions pick an anchor.
 const REGION_TO_ISO: Record<string, string> = {
   eu: "eu",
   "eu-west": "eu",
@@ -137,8 +136,6 @@ export const FlagGlyph = ({ region, className }: FlagGlyphProps) => {
     );
   }
 
-  // flag-icons' `.fi.fis { width: 1em }` outranks a single utility class, so
-  // sizes here and in callers need `!` or the circle squashes to the font size.
   return (
     <span
       aria-hidden

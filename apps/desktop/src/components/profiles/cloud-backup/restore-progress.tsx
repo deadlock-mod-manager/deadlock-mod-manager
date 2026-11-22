@@ -13,7 +13,6 @@ export interface RestoreProgressMod {
 
 interface RestoreProgressProps {
   progress: ImportProgress | null;
-  // In the order the import processes them.
   mods: RestoreProgressMod[];
 }
 
@@ -24,8 +23,6 @@ type TileState =
   | "installing"
   | "installed";
 
-// Progress events name the mod being worked on, so everything before it in the
-// current phase is finished.
 const tileState = (
   index: number,
   activeIndex: number,
@@ -55,7 +52,6 @@ export const RestoreProgress = ({ progress, mods }: RestoreProgressProps) => {
         .slice(0, Math.max(activeIndex, 0))
         .reduce((sum, { bytes }) => sum + bytes, 0);
 
-  // Downloads fill the first half of the bar and installs the second.
   const phaseShare =
     progress && progress.totalMods > 0
       ? (progress.completedMods / progress.totalMods) * 50

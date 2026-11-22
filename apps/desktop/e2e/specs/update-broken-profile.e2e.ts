@@ -25,7 +25,6 @@ const waitStatus = (world: string, id: string, status: string) =>
       state.localMods.find((mod) => mod.remoteId === id)?.status === status,
   );
 
-// The store saves after the UI updates, so a toast can beat the write.
 const waitFilesRecorded = (world: string, version: "v1" | "v2") =>
   observeUntil(
     `${version} files recorded`,

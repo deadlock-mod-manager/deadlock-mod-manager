@@ -15,7 +15,6 @@ use std::path::Path;
 pub struct DmpParser;
 
 impl DmpParser {
-    /// Reads the process id, timestamps, exception code and comment stream.
     pub fn summarize_file<P: AsRef<Path>>(path: P) -> Result<DmpSummary> {
         let path = path.as_ref();
         if !path.exists() {
@@ -215,8 +214,6 @@ impl DmpParser {
         path.rsplit(['/', '\\']).next().unwrap_or(path)
     }
 
-    /// Windows stores the access kind and target address in the first two
-    /// parameters of an access violation.
     fn access_violation(record: &MINIDUMP_EXCEPTION) -> Option<String> {
         if record.exception_code != 0xC0000005 || record.number_parameters < 2 {
             return None;
@@ -233,8 +230,6 @@ impl DmpParser {
         ))
     }
 
-    /// The header timestamp is when the dump was written. MiscInfo's process
-    /// create time is when the game started, which is a different moment.
     fn extract_crash_time<'a, T: std::ops::Deref<Target = [u8]> + 'a>(
         dump: &Minidump<'a, T>,
     ) -> Option<DateTime<Utc>> {
@@ -371,8 +366,6 @@ mod tests {
     const DUMP_TIME: u32 = 1_776_714_968;
     const PID: u32 = 50_460;
 
-    /// A minidump with only a MiscInfo stream (PID and create time) and a
-    /// comment stream, laid out the way Windows writes them.
     fn synthetic_dump(comment: &str) -> Vec<u8> {
         let directory_rva = 32u32;
         let misc_rva = directory_rva + 2 * 12;
@@ -425,8 +418,6 @@ mod tests {
         assert_eq!(comment.addons, Some(Vec::new()));
     }
 
-    /// A minidump with a two-module list and an access violation that read
-    /// `0x10` from inside the second module.
     fn access_violation_dump() -> Vec<u8> {
         let directory_rva = 32u32;
         let modules_rva = directory_rva + 2 * 12;
@@ -475,7 +466,6 @@ mod tests {
             for value in [0x0020_0000u32, 0, 0, name_rva] {
                 bytes.extend_from_slice(&value.to_le_bytes());
             }
-            // Version info, CodeView and misc records, reserved fields.
             bytes.extend_from_slice(&[0; 52 + 8 + 8 + 16]);
         }
 

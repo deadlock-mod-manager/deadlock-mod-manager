@@ -11,12 +11,6 @@ declare global {
   }
 }
 
-/**
- * Holds back the reply to the next `command` call for `modId` until
- * `releaseCommandReply`. Tauri sends each command as a request to its `ipc:`
- * protocol, so the call still reaches the backend at once and the reply the
- * app finally gets is the backend's own; only its delivery waits.
- */
 export const holdCommandReply = (command: string, modId: string) =>
   browser.execute(
     (target: string, mod: string) => {
@@ -31,9 +25,6 @@ export const holdCommandReply = (command: string, modId: string) =>
           input instanceof Request ? input.url : String(input),
           location.href,
         );
-        // Tauri posts commands to ipc://localhost/<command>, or to
-        // http(s)://ipc.localhost/<command> on Windows, with the arguments
-        // as JSON text.
         return (
           (protocol === "ipc:" || hostname === "ipc.localhost") &&
           pathname === `/${target}` &&
@@ -56,11 +47,9 @@ export const holdCommandReply = (command: string, modId: string) =>
     modId,
   );
 
-/** Whether the held call has been made yet. */
 export const commandReplyHeld = () =>
   browser.execute(() => window.e2eCommandHold?.captured === true);
 
-/** Delivers the held reply, settled the way the backend settled it. */
 export const releaseCommandReply = () =>
   browser.execute(() => {
     window.e2eCommandHold?.release?.();

@@ -33,9 +33,7 @@ export type WidgetHealth = "ok" | "broken";
 
 interface WidgetContentProps {
   widget: DashboardWidget;
-  /** Reports whether the widget can currently show its data. */
   onHealth?: (widgetId: string, health: WidgetHealth) => void;
-  /** Rendered in the card header, right of the title (edit controls). */
   actions?: ReactNode;
 }
 
@@ -133,7 +131,6 @@ const DataStateView = ({
     case "broken":
       return <BrokenNotice state={state} />;
     case "ready":
-      // A stored widget may come without a view; draw what the data suggests.
       return (
         <WidgetChart
           dataset={state.dataset}
@@ -191,10 +188,6 @@ const DataWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
   );
 };
 
-/**
- * A built-in panel. It brings its own cards, so it is not framed again - the
- * default tabs look exactly like they did before the dashboard became editable.
- */
 const PanelWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
   const { t } = useTranslation();
   const data = useDashboardData();

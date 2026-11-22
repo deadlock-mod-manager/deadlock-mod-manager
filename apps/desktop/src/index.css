@@ -175,7 +175,6 @@
   }
 }
 
-/* Font Face Declarations */
 @font-face {
   font-family: "Forevs Demo";
   src: url("./assets/fonts/primary/forevsdemo-medium.otf") format("opentype");
@@ -221,9 +220,7 @@
     --popover-foreground: 38 65% 97%;
     --primary: 42 60% 84%;
     --primary-foreground: 20 9% 6%;
-    /* Healthy status icons keep the stock accent; themes must not override this. */
     --status-ok: 42 60% 84%;
-    /* Relay ping scale, also used for blocked/open relay state. */
     --signal-good: 152 55% 58%;
     --signal-fair: 40 85% 60%;
     --signal-poor: 355 75% 66%;
@@ -367,8 +364,6 @@
       color 0.3s ease;
   }
 
-  /* SVG internals are excluded: every icon path ran its own transition on hover, which made the
-     sidebar repaint on every frame. */
   :where(*:not(svg, svg *)) {
     transition:
       background-color 0.3s ease,
@@ -388,7 +383,6 @@
   }
 }
 
-/* Onboarding Step Transitions */
 @keyframes onboarding-step-enter {
   from {
     opacity: 0;
@@ -415,7 +409,6 @@
   animation: onboarding-step-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Onboarding Connection Pulse */
 @keyframes onboarding-pulse-ring {
   0% {
     transform: scale(0.8);
@@ -449,7 +442,6 @@
   }
 }
 
-/* Feature hints: the pulse on the highlighted control and the drawn arrow */
 @keyframes feature-hint-pulse {
   0% {
     box-shadow: 0 0 0 0 hsl(var(--primary) / 0.55);
@@ -475,7 +467,6 @@
 }
 
 .feature-hint-arrow {
-  /* Keeps the stroke readable where it crosses text or artwork. */
   filter: drop-shadow(0 0 2px hsl(var(--background)))
     drop-shadow(0 0 1px hsl(var(--background)));
 }
@@ -500,7 +491,6 @@
   }
 }
 
-/* Performance configs: the tier glyph and check trace in when a config is applied */
 @keyframes perf-draw-fill {
   to {
     opacity: 1;
@@ -518,7 +508,6 @@
   animation: perf-draw-fill 160ms ease-out 320ms forwards;
 }
 
-/* The potato tier blinks at whoever hovers it */
 @keyframes perf-blink {
   45%,
   55% {
@@ -544,7 +533,6 @@
   }
 }
 
-/* Performance settings editor: the category picked in the rail glows, then fades */
 @keyframes perf-group-flash {
   from {
     box-shadow: inset 0 0 0 2px hsl(var(--primary) / 0.7);
@@ -560,7 +548,6 @@
   animation: perf-group-flash 1400ms cubic-bezier(0.25, 1, 0.5, 1) 200ms both;
 }
 
-/* Verified author: the seal stamps in once, then a ring ripples out */
 @keyframes verified-seal-stamp {
   from {
     transform: scale(1.8) rotate(-20deg);
@@ -631,7 +618,6 @@
   }
 }
 
-/* Party planner: a winrate change floats up beside the number, then fades */
 @keyframes party-shift {
   0% {
     opacity: 0;
@@ -652,7 +638,6 @@
   animation: party-shift 1800ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* Party planner: a hero placed by a suggested swap glows once where it landed */
 @keyframes party-chip-land {
   from {
     box-shadow:
@@ -671,7 +656,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The change still has to be read, so it only fades instead of moving. */
   @keyframes party-shift {
     0%,
     70% {
@@ -686,7 +670,6 @@
   }
 }
 
-/* Announcements Ticker */
 @keyframes ticker-scroll {
   from {
     transform: translateX(0);
@@ -711,7 +694,6 @@
   }
 }
 
-/* Featured Mods Carousel autoplay progress */
 @keyframes featured-progress {
   from {
     transform: scaleX(0);
@@ -768,7 +750,6 @@
   }
 }
 
-/* Downloads Progress Shimmer */
 @keyframes downloads-shimmer {
   0% {
     background-position: -200% 0;
@@ -795,7 +776,6 @@
   }
 }
 
-/* Hero Conflict Swap */
 @keyframes hero-swap-left {
   0% {
     transform: translateX(0) scale(1);
@@ -837,7 +817,6 @@
   }
 }
 
-/* Set by AppBackground when the background image covers the sidebar too. */
 .app-background-sidebar [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -881,7 +860,6 @@
   border-color: transparent;
 }
 
-/* Set by ThemeBackdrop: the theme paints behind the app, so clear the shell to let it show through. */
 .theme-backdrop-active
   :is(
     main,
@@ -893,7 +871,6 @@
   background-color: transparent;
 }
 
-/* Tea Theme Styles */
 .tea-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -974,7 +951,6 @@
   background-color: rgba(40, 18, 58, 0.32);
 }
 
-/* Nightshift Theme Styles */
 .nightshift-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -1018,13 +994,10 @@
 }
 
 .nightshift-theme-active {
-  /* Only lines / boxes */
   --border: 42 40% 45%;
   --sidebar-border: 42 40% 45%;
 }
 
-/* Nightshift borders are applied via scoped .ns-frame class at runtime */
-/* Nightshift corner accents for dashboard cards (non-intrusive) */
 .nightshift-theme-active .ns-corners {
   position: relative;
 }
@@ -1075,7 +1048,6 @@
   border-radius: 3px;
 }
 
-/* Bloodmoon Theme Styles */
 .bloodmoon-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -1119,13 +1091,10 @@
 }
 
 .bloodmoon-theme-active {
-  /* Red-black gradient lines */
   --border: 0 84% 60%;
   --sidebar-border: 0 84% 60%;
 }
 
-/* Bloodmoon borders are applied via scoped .bm-frame class at runtime */
-/* Bloodmoon corner accents for dashboard cards (non-intrusive) */
 .bloodmoon-theme-active .bm-corners {
   position: relative;
 }
@@ -1176,7 +1145,6 @@
   border-radius: 3px;
 }
 
-/* Arcane Theme Styles */
 .arcane-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -1250,7 +1218,6 @@
   background-color: hsl(var(--background));
 }
 
-/* Custom Theme Styles -- sidebar children use transparent bg so the container's alpha shows through */
 .custom-theme-active [data-sidebar="content"],
 .custom-theme-active [data-sidebar="header"],
 .custom-theme-active [data-sidebar="footer"],
@@ -1261,7 +1228,6 @@
   background-color: transparent;
 }
 
-/* Deadlock API Theme Styles */
 .deadlock-api-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
@@ -1312,7 +1278,6 @@
   background-color: transparent;
 }
 
-/* Electric border effect for cards */
 .deadlock-api-theme-active .dl-electric-border {
   position: relative;
   border-radius: 12px;
@@ -1360,7 +1325,6 @@
   }
 }
 
-/* Electric bolt flickering animation for icons */
 @keyframes dl-electric-bolt {
   0%,
   100% {
@@ -1409,19 +1373,16 @@
   }
 }
 
-/* Glow effect for primary elements */
 .deadlock-api-theme-active .dl-glow {
   filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
     drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
 }
 
-/* Card hover glow effect */
 .deadlock-api-theme-active .card:hover {
   border-color: rgba(250, 68, 84, 0.4);
   box-shadow: 0 0 20px rgba(250, 68, 84, 0.1);
 }
 
-/* Primary button gradient */
 .deadlock-api-theme-active button[data-variant="default"],
 .deadlock-api-theme-active .btn-primary {
   background: linear-gradient(to right, #fa4454, #ff6b7a);
@@ -1432,7 +1393,6 @@
   background: linear-gradient(to right, #e83d4c, #f05a68);
 }
 
-/* ElectricBorder component styles */
 .deadlock-api-theme-active .eb-root {
   position: relative;
   border-radius: inherit;
@@ -1498,7 +1458,6 @@
   background: linear-gradient(-30deg, #fa4454, transparent, #fa4454);
 }
 
-/* Enhanced glow for featured elements */
 .deadlock-api-theme-active .dl-featured {
   position: relative;
 }
@@ -1523,14 +1482,12 @@
   opacity: 1;
 }
 
-/* Sidebar glow accent */
 .deadlock-api-theme-active [data-sidebar="menu-button"][data-active="true"] {
   box-shadow:
     0 0 12px rgba(250, 68, 84, 0.3),
     inset 0 0 8px rgba(250, 68, 84, 0.1);
 }
 
-/* Border glow on focus */
 .deadlock-api-theme-active *:focus-visible {
   outline: none;
   box-shadow:
@@ -1538,7 +1495,6 @@
     0 0 8px rgba(250, 68, 84, 0.3);
 }
 
-/* default logo colors in Deadlock API theme */
 .deadlock-api-theme-active
   [data-tauri-drag-region]
   svg
@@ -1558,7 +1514,6 @@
   fill: hsl(15 10% 16%) !important;
 }
 
-/* Scrollbar styling for Deadlock API theme */
 .deadlock-api-theme-active *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -1578,7 +1533,6 @@
   background: rgba(250, 68, 84, 0.6);
 }
 
-/* Lovelock Theme Styles */
 .lovelock-theme-active {
   --background: 300 19% 11%;
   --foreground: 330 40% 95%;
@@ -1621,14 +1575,12 @@
   background-color: transparent;
 }
 
-/* Sidebar glow accent */
 .lovelock-theme-active [data-sidebar="menu-button"][data-active="true"] {
   box-shadow:
     inset 0 0 0 1px hsl(var(--primary) / 0.7),
     0 0 14px hsl(var(--primary) / 0.25);
 }
 
-/* Toggles glow when on */
 .lovelock-theme-active button[role="switch"][data-state="checked"] {
   box-shadow: 0 0 10px hsl(var(--primary) / 0.45);
 }
@@ -1644,7 +1596,6 @@
   background: hsl(var(--primary) / 0.35);
 }
 
-/* What's New Dialog Animations */
 @keyframes wn-dialog-enter {
   from {
     opacity: 0;
@@ -1703,7 +1654,6 @@
   animation: wn-feature-enter 0.3s ease both;
 }
 
-/* The badge strikes out the version you upgraded from, then shows the new one */
 @keyframes wn-version-strike {
   from {
     transform: scaleX(0);
@@ -1753,43 +1703,25 @@
   }
 }
 
-/*
- * Chart palette for the Stats page. Its own --viz-* namespace so the app's
- * themes keep their --chart-* vars: these steps are picked per surface (not
- * flipped) and validated for colour-vision deficiency against the dark
- * (#100f0e) and light (#ffffff) chart surfaces - worst adjacent pair CVD
- * deltaE 19.2, normal vision 29.0. Dark is the default, matching :root in the
- * UI package.
- *
- * Defined on the root rather than a page wrapper: dialogs and tooltips render
- * through a portal on document.body, and a scoped class does not reach them.
- */
 :root {
   --viz-series-1: #3987e5;
   --viz-series-2: #d95926;
   --viz-positive: #3987e5;
   --viz-negative: #e66767;
   --viz-neutral: #383835;
-  /* Match results. Never the only cue: rows carry a W/L letter, beads a height. */
   --viz-win: #6fcf97;
   --viz-loss: #ec6a5e;
-  /*
-   * Status accents for the Live tab's banners and tags. One set for both
-   * themes: they sit on tinted fills of themselves, not on the bare surface.
-   */
   --viz-danger: #f2766b;
   --viz-caution: #f28a4b;
   --viz-warn: #fbbf24;
   --viz-pending: #f59e0b;
   --viz-info: #60a5fa;
   --viz-muted: #a3a3a3;
-  /* Live pace grades, worst to best. */
   --viz-grade-d: var(--viz-danger);
   --viz-grade-c: var(--viz-caution);
   --viz-grade-b: #7dd3a0;
   --viz-grade-a: #e0a84e;
   --viz-grade-s: var(--viz-info);
-  /* Deadlock's own identity colours: the two teams and the three item slots. */
   --team-0: #e0a84e;
   --team-1: #7095e8;
   --slot-weapon: #c8792e;
@@ -1807,11 +1739,6 @@
   --viz-loss: #d64535;
 }
 
-/*
- * Stats panels sit one small step above the page, the way the design layers
- * them. Based on the page colour, not --card: some themes already lift
- * --card, and stacking both made the panels read grey.
- */
 .stats-surface {
   background-color: color-mix(
     in srgb,
@@ -1820,16 +1747,10 @@
   );
 }
 
-/*
- * The shared chart container mutes every reference line. Stats charts use
- * them as signal (baselines, medians, zero), so they set their own colour
- * through --ref-stroke; the line's stroke-opacity attribute still applies.
- */
 .stats-chart .recharts-reference-line .recharts-reference-line-line {
   stroke: var(--ref-stroke, hsl(var(--primary)));
 }
 
-/* Stats plots sit on a faint dot grid instead of gridlines. */
 .stats-dot-grid {
   background-image: radial-gradient(
     circle,
@@ -1840,9 +1761,6 @@
   background-position: 7px 7px;
 }
 
-/* Mod Foundry: an indeterminate sweep for work whose duration is unknown
-   (parsing a pak, decoding a model). It deliberately shows no real progress —
-   the backend cannot report any — it only shows that something is happening. */
 @keyframes foundry-sweep {
   0% {
     transform: translateX(-120%);

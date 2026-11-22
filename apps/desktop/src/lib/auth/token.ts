@@ -54,8 +54,6 @@ export function isTokenExpired(): boolean {
   return Date.now() >= tokenExpiresAt - 60000;
 }
 
-// Callers that find the token expired together share one refresh. The server
-// rotates refresh tokens, so parallel refreshes with the same token race.
 let inflightRefresh: Promise<string | null> | null = null;
 
 export async function ensureValidToken(): Promise<string | null> {
@@ -79,10 +77,6 @@ async function refreshAccessToken(token: string): Promise<string | null> {
     await setTokens(tokenResponse);
     return accessToken;
   } catch (error) {
-    // Only clear tokens when the server explicitly rejects them (4xx).
-    // Network errors, 5xx, and other transient failures should preserve
-    // tokens so the user isn't signed out just because they're offline
-    // or the server is temporarily down.
     if (error instanceof TokenRefreshError && !error.isServerError) {
       await clearTokens();
     }
@@ -113,9 +107,6 @@ export async function loadStoredTokens(): Promise<boolean> {
 
     if (isTokenExpired() && refreshToken) {
       const token = await ensureValidToken();
-      // Even if refresh failed due to a server error, we still have
-      // a valid refresh token stored — report tokens as available so
-      // the session query can retry later.
       return !!token || !!refreshToken;
     }
 

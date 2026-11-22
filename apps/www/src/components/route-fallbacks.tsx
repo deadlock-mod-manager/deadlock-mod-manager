@@ -12,24 +12,17 @@ import { GITHUB_REPO } from "@/lib/constants";
 const CHUNK_RELOAD_KEY = "dmm:chunk-reload-at";
 const CHUNK_RELOAD_COOLDOWN_MS = 30_000;
 
-/**
- * A deploy replaces the hashed JS chunks, so a tab (or a crawler) holding the
- * previous HTML can no longer load the code for the next route.
- */
 const isChunkLoadError = (error: Error) =>
   /dynamically imported module|importing a module script failed|unable to preload css|loading (css )?chunk .* failed|is not a valid javascript mime type/i.test(
     error.message,
   );
 
-/** Reloads once to pick up the current build; returns false if it already tried. */
 const reloadForNewBuild = () => {
   try {
     const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
     if (Date.now() - last < CHUNK_RELOAD_COOLDOWN_MS) return false;
     sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
-  } catch {
-    // Storage can be unavailable (privacy modes, some crawlers); reload anyway.
-  }
+  } catch {}
   window.location.reload();
   return true;
 };

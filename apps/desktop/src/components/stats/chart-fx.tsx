@@ -1,8 +1,3 @@
-/**
- * Shared pieces for the Stats charts. SVG ids come from `useId` at the call
- * site because they are document-global.
- */
-
 import type { MatchStatus } from "@/lib/stats/derive";
 
 export const VerticalFade = ({
@@ -29,7 +24,6 @@ export const PENDING_COLOR = "var(--viz-pending)";
 export const INFO_COLOR = "var(--viz-info)";
 export const MUTED_COLOR = "var(--viz-muted)";
 
-/** An abandon takes the loss colour whatever the team's result was. */
 export const OUTCOME_COLORS = {
   win: WIN_COLOR,
   loss: LOSS_COLOR,
@@ -37,19 +31,12 @@ export const OUTCOME_COLORS = {
   notScored: MUTED_COLOR,
 } satisfies Record<MatchStatus, string>;
 
-/** A win rate's colour: even or better reads as winning. */
 export const winrateColor = (winrate: number) =>
   winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR;
 
-/** A colour at reduced strength; works with any CSS colour, unlike Tailwind's `/opacity`. */
 export const tint = (color: string, percent: number) =>
   `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
-/**
- * A chart caption on a small card-coloured pill, so it stays readable where it
- * crosses the data. Pass it as a recharts `label`; recharts injects `viewBox`
- * (the reference line's box, or the reference dot's bounding box).
- */
 export const PillLabel = ({
   text,
   color = "hsl(var(--muted-foreground))",
@@ -58,7 +45,6 @@ export const PillLabel = ({
 }: {
   text: string;
   color?: string;
-  /** `line` sits above a line's left end; the others sit beside a dot. */
   placement?: "line" | "above" | "below" | "left";
   viewBox?: { x?: number; y?: number; width?: number; height?: number };
 }) => {
@@ -98,10 +84,8 @@ export const PillLabel = ({
   );
 };
 
-/** A one-line takeaway under a chart, inset on the page colour like the design. */
 export const NOTE_CLASS =
   "flex items-center gap-2 rounded-lg bg-background px-3 py-2.5 font-medium text-foreground/85 text-xs";
 
-/** A hero portrait framed as a tile: the art sits on the page colour behind a hairline. */
 export const HERO_TILE_CLASS =
   "rounded-lg border border-foreground/10 bg-background";

@@ -1,5 +1,3 @@
-//! Read-only inspection of authored ability effects and loose hero particles.
-
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::OnceLock;
 
@@ -158,7 +156,6 @@ fn choices_for(
   terms: &[String],
 ) -> Vec<PreviewEffectChoice> {
   let mut choices = BTreeMap::new();
-  // Authored ability associations take priority over the loose namespace fallback.
   for class in classes {
     if let Some(effects) = index
       .get(class)

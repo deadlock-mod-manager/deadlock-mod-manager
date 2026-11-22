@@ -74,7 +74,6 @@ describe("libraryIdForEntry", () => {
     expect(libraryIdForEntry(entry({ origin: { provider: "local" } }))).toBe(
       null,
     );
-    // A local mod DMM already has carries its DMM id.
     expect(
       libraryIdForEntry(
         entry({
@@ -253,7 +252,6 @@ describe("profiles, crosshairs and references", () => {
       kind: "existing",
       profileId: "p1" as ProfileId,
     });
-    // The profile it went into was deleted since: the one with its name.
     expect(target({ [key]: "gone" }, existing)).toEqual({
       kind: "existing",
       profileId: "default" as ProfileId,
@@ -280,7 +278,6 @@ describe("profiles, crosshairs and references", () => {
       ledger,
       existing,
     );
-    // The ledger claims "ranked" for c, so the name match is taken.
     expect(targets.get("c")).toEqual({
       kind: "existing",
       profileId: "ranked" as ProfileId,

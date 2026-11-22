@@ -1,20 +1,12 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { z } from "zod";
 
-/**
- * Client for the community-run Deadlock assets API. Everything the randomizer
- * renders - heroes, portraits, shop items, ability icons - comes from here, so
- * the responses are parsed rather than cast: they are external JSON that the
- * roll then does arithmetic on.
- */
-
 const ASSETS_BASE_URL = "https://api.deadlock-api.com/v1/assets";
 
 export const ITEM_CATEGORIES = ["weapon", "vitality", "spirit"] as const;
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
-/** The ultimate always sits in the fourth signature slot. */
 export const ULTIMATE_SLOT = 4;
 
 const heroImagesSchema = z
@@ -29,7 +21,6 @@ const heroImagesSchema = z
     background_image_webp: z.string().optional(),
     top_bar_vertical_image: z.string().optional(),
     top_bar_vertical_image_webp: z.string().optional(),
-    /** The hero's wordmark, as an SVG. */
     name_image: z.string().optional(),
   })
   .default({});
@@ -38,21 +29,11 @@ const slotInfoSchema = z.object({
   max_purchases_for_tier: z.array(z.number()).default([]),
 });
 
-/**
- * Valve's own per-hero verdict on every draftable item: which pool it is in,
- * and how strongly it fits. The randomizer treats a hero's bucketing map as
- * that hero's shop - an item missing from it is one this hero does not draft.
- */
 const draftBucketSchema = z.object({
   bucket: z.string().default("Normal"),
   weight: z.number().default(1),
 });
 
-/**
- * One step of the hero's level table. Each level hands out either an ability
- * unlock or an ability point, and the order they come in decides which
- * abilities can take points first.
- */
 const levelSchema = z.object({
   required_gold: z.number().default(0),
   bonus_currencies: z.array(z.string()).default([]),
@@ -98,10 +79,6 @@ export const heroSchema = z.object({
     .nullish(),
 });
 
-/**
- * One stat an item can show in its tooltip. Prefix and postfix are the shop's
- * own formatting - `{s:sign}` asks for an explicit plus on positive values.
- */
 const itemPropertySchema = z
   .object({
     value: z.union([z.string(), z.number()]).nullish(),
@@ -111,11 +88,6 @@ const itemPropertySchema = z
   })
   .catch({});
 
-/**
- * How the shop lays out an item's tooltip: an innate block of stats, then a
- * passive or active block with its text and the stats that belong to it. Many
- * items have no `description` at all and only exist here.
- */
 const tooltipSectionSchema = z
   .object({
     section_type: z.string().nullish(),
@@ -155,11 +127,6 @@ export const upgradeSchema = z.object({
     .default({}),
 });
 
-/**
- * Property values arrive as strings or numbers depending on the property. An
- * entry that does not fit is dropped instead of failing the whole ability, so
- * a new property shape never costs the page its ability icons.
- */
 const propertyValueSchema = z
   .object({ value: z.union([z.string(), z.number()]).nullish() })
   .catch({});
@@ -193,7 +160,6 @@ export type DeadlockHero = z.infer<typeof heroSchema>;
 export type DeadlockUpgrade = z.infer<typeof upgradeSchema>;
 export type DeadlockAbility = z.infer<typeof abilitySchema>;
 
-/** On the app's shared error hierarchy, so it carries a stable error code. */
 class DeadlockAssetsError extends ProviderError {
   constructor(
     readonly endpoint: string,
@@ -203,14 +169,6 @@ class DeadlockAssetsError extends ProviderError {
   }
 }
 
-/**
- * A single hero or item that no longer matches its schema is dropped instead of
- * failing the request - the assets API ships new fields every patch, and one
- * unparsable entry should not empty the whole roster. A response that yields
- * nothing usable throws rather than returning an empty list, because the page
- * cannot tell an empty roster from a roster it is still waiting for and would
- * sit on its loading state forever.
- */
 const parseList = <T>(
   schema: z.ZodType<T>,
   data: unknown,
@@ -233,11 +191,6 @@ const parseList = <T>(
   return parsed;
 };
 
-/**
- * A response that parsed fine but filtered down to nothing means the API
- * changed shape under us: a build with no heroes or no items is worse than an
- * error, so it is reported as one. A genuinely empty response stays valid.
- */
 const requireSome = <T>(parsed: T[], kept: T[], endpoint: string): T[] => {
   if (parsed.length > 0 && kept.length === 0) {
     throw new ProviderError(
@@ -258,19 +211,12 @@ const request = async (endpoint: string): Promise<unknown> => {
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const endpoint = "/heroes?only_active=true";
   const heroes = parseList(heroSchema, await request(endpoint), endpoint);
-  // `in_development` lingers on heroes Valve has already released (Baba), so
-  // only `player_selectable` and `disabled` decide whether a hero is playable.
   const selectable = heroes.filter(
     (hero) => hero.player_selectable && !hero.disabled,
   );
   return requireSome(heroes, selectable, endpoint);
 };
 
-/**
- * Items the game has data for but no real price yet all carry the same
- * placeholder cost. They are not buyable in a match, so the randomizer must
- * never put one in a build.
- */
 const UNPRICED_ITEM_COST = 9999;
 
 const isBuyable = (upgrade: DeadlockUpgrade): boolean =>
@@ -286,12 +232,6 @@ export const getUpgrades = async (): Promise<DeadlockUpgrade[]> => {
   return requireSome(upgrades, upgrades.filter(isBuyable), endpoint);
 };
 
-/**
- * Every upgradable ability in the game, keyed by class name so a hero's four
- * slots resolve without a request of their own. Fetching per hero instead
- * would put a round trip between every reroll and its icons, and a player
- * rerolling quickly would outrun the API.
- */
 export const getAbilities = async (): Promise<Map<string, DeadlockAbility>> => {
   const endpoint = "/items/by-type/ability";
   const abilities = parseList(abilitySchema, await request(endpoint), endpoint);
@@ -306,11 +246,6 @@ export const getAbilities = async (): Promise<Map<string, DeadlockAbility>> => {
   );
 };
 
-/**
- * Whether an ability runs on charges, either from the start or once one of its
- * own upgrades adds them. Items like Extra Charge only ever touch abilities
- * like these, so a hero without one gets nothing out of them.
- */
 export const isChargedAbility = (ability: DeadlockAbility): boolean =>
   Number(ability.properties.AbilityCharges?.value ?? 0) > 0 ||
   ability.upgrades.some((upgrade) =>
@@ -320,7 +255,6 @@ export const isChargedAbility = (ability: DeadlockAbility): boolean =>
     ),
   );
 
-/** A readable, stable URL key for a hero - `mo-krill`, `the-doorman`. */
 export const heroSlug = (hero: DeadlockHero): string =>
   hero.name
     .toLowerCase()
@@ -356,14 +290,11 @@ interface TooltipStat {
 }
 
 export interface TooltipSection {
-  /** `innate`, `passive` or `active`, as the shop names them. */
   kind?: string;
-  /** Still carries the shop's markup; strip it before rendering. */
   text?: string;
   stats: TooltipStat[];
 }
 
-/** A stat as the shop prints it, or nothing when it has no real value. */
 const formatStat = (
   property: DeadlockUpgrade["properties"][string] | undefined,
 ): TooltipStat | undefined => {
@@ -383,7 +314,6 @@ const formatStat = (
   };
 };
 
-/** The item's tooltip, section by section, the way the shop shows it. */
 export const itemTooltip = (item: DeadlockUpgrade): TooltipSection[] =>
   item.tooltip_sections
     .flatMap((section) =>
@@ -408,7 +338,6 @@ export const itemImage = (item: DeadlockUpgrade): string | undefined =>
 export const abilityImage = (ability: DeadlockAbility): string | undefined =>
   ability.image_webp ?? ability.image ?? undefined;
 
-/** The hero's UI colour as an `R G B` triplet, ready for `rgb(var(--hero))`. */
 export const heroAccent = (hero: DeadlockHero): string => {
   const [r, g, b] = hero.colors.ui ?? [];
   if (r === undefined || g === undefined || b === undefined) {

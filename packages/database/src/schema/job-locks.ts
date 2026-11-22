@@ -7,7 +7,7 @@ export const jobLocks = pgTable("job_lock", {
     .primaryKey()
     .$defaultFn(() => generateId("job_lock").toString()),
   jobName: text("job_name").notNull().unique(),
-  lockedBy: text("locked_by").notNull(), // pod/instance identifier
+  lockedBy: text("locked_by").notNull(),
   lockedAt: timestamp("locked_at", { mode: "date" })
     .notNull()
     .$defaultFn(() => new Date()),

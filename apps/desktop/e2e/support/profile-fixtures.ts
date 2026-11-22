@@ -180,7 +180,6 @@ export const prepareInstalledProfiles = async (
       }),
     }),
   );
-  // An active default profile leaves gameinfo.gi as a fresh world has it.
   if (!active) return;
   const gameinfo = path.join(
     world.configuration.roots.game,

@@ -9,7 +9,6 @@ import type { FoundryEntry } from "@/types/foundry";
 import { useFoundry } from "./foundry-context";
 import { FoundryDropZone } from "./foundry-drop-zone";
 
-/** Image formats the backend can re-encode into a `.vtex_c` container. */
 const IMAGE_EXTENSIONS = [
   "png",
   "jpg",
@@ -22,7 +21,6 @@ const IMAGE_EXTENSIONS = [
   "qoi",
 ];
 
-/** Audio the backend can mint into a `.vsnd_c`, plus the compiled form itself. */
 const SOUND_EXTENSIONS = ["mp3", "wav", "ogg", "flac", "vsnd_c"];
 
 const isTexture = (entry: FoundryEntry): boolean => entry.ext === "vtex_c";
@@ -45,7 +43,6 @@ const InspectorSection = ({
   </section>
 );
 
-/** Replace a file by dropping or picking one, and undo that again. */
 const FoundryReplaceControls = ({ entry }: { entry: FoundryEntry }) => {
   const { t } = useTranslation();
   const {
@@ -126,14 +123,6 @@ const FoundryReplaceControls = ({ entry }: { entry: FoundryEntry }) => {
   );
 };
 
-/**
- * The per-entry actions: mark a model as the skin's primary one, and swap a
- * file in or undo that swap.
- *
- * Recoloring deliberately does not live here. Colour is a property of a *part*
- * of the hero, not of one file, so it belongs to the paint tab, which repaints
- * every texture of a part at once.
- */
 export const FoundryEditorControls = ({ entry }: { entry: FoundryEntry }) => {
   const { t } = useTranslation();
   const { primaryModelPath, setPrimaryModelPath } = useFoundry();

@@ -20,7 +20,6 @@ function createAuthenticatedClient(token: string): AppRouterClient {
   return createORPCClient(link);
 }
 
-// Analytics
 export const getAnalytics = createServerFn({ method: "GET" })
   .inputValidator((data: { timeRange: string }) => data)
   .handler(async ({ data }) => {
@@ -31,7 +30,6 @@ export const getAnalytics = createServerFn({ method: "GET" })
     });
   });
 
-// Announcements
 export const listAllAnnouncements = createServerFn({ method: "GET" }).handler(
   async () => {
     const token = await ensureValidToken();

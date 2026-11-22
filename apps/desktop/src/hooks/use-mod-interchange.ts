@@ -37,12 +37,8 @@ export type InterchangeSource =
   | { kind: "bundle"; path: string };
 
 export type ImportSelection = {
-  /** Library mods to import into the active profile. */
   modKeys: string[];
-  /** Source profiles to import: into the DMM profile an earlier import or
-   *  the same name points at, else into a new one. */
   profileKeys: string[];
-  /** Crosshair entries to add to the crosshair history. */
   crosshairKeys: string[];
 };
 
@@ -59,7 +55,6 @@ export type ImportStageProgress = {
 type ImportedProfile = {
   name: string;
   profileId: string | null;
-  /** Imported into a profile DMM already had. */
   existing: boolean;
   report: InterchangeImportReport | null;
   error: string | null;
@@ -84,8 +79,6 @@ const CATALOG_LOOKUP_CONCURRENCY = 4;
 const IMPORT_PROGRESS_EVENT = "interchange-import-progress";
 const EXPORT_PROGRESS_EVENT = "interchange-export-progress";
 
-/** Catalog metadata for GameBanana imports; missing entries keep the
- *  document's own data (offline, removed submission, rate limit). */
 const fetchCatalogMods = async (
   modIds: string[],
 ): Promise<Map<string, ModDto>> => {
@@ -160,8 +153,6 @@ const readInterchangeSource = (source: InterchangeSource) =>
 export const useReadInterchangeSource = () =>
   useMutation({ mutationFn: readInterchangeSource });
 
-/** Import `keys` of `document` into one profile and register the results in
- *  the library store. */
 const importIntoProfile = async (
   document: InterchangeDocument,
   keys: string[],
@@ -203,8 +194,6 @@ const importIntoProfile = async (
   const entriesByKey = new Map(document.mods.map((mod) => [mod.key, mod]));
   const { addLocalMod, setModEnabledInProfile, profiles } =
     usePersistedStore.getState();
-  // A mod another profile already has keeps that record (a local mod has no
-  // catalog entry); only mods new to the library are looked up.
   const known = new Map<string, ModDto>();
   for (const mod of Object.values(profiles).flatMap((p) => p.mods)) {
     if (!known.has(mod.remoteId)) {
@@ -259,8 +248,6 @@ export const useRunInterchangeImport = () =>
       const crosshairs = document.crosshairs.filter((crosshair) =>
         selection.crosshairKeys.includes(crosshair.key),
       );
-      // Targets are fixed before anything is created, so two source profiles
-      // with one name become two DMM profiles instead of merging.
       const profileLedger =
         profiles.length > 0
           ? await invoke<Record<string, string>>(
@@ -372,8 +359,6 @@ export const useRunInterchangeImport = () =>
             stageIndex++;
             continue;
           }
-          // Remembered before the mods go in: an import that fails halfway is
-          // retried into this profile instead of creating another one.
           await invoke("record_interchange_profile", {
             key: profileLedgerKey(document, profile),
             profileId,
@@ -411,8 +396,6 @@ export const useRunInterchangeImport = () =>
         }
 
         if (crosshairs.length > 0) {
-          // The source's active crosshair is applied last, so it ends up
-          // selected; the rest land in the history.
           const ordered = [...crosshairs].sort(
             (a, b) => Number(a.active) - Number(b.active),
           );
@@ -495,8 +478,6 @@ const replaceIdentity = (
   return { ...base, id: to, remoteId: to };
 };
 
-/** Link an imported local mod to its GameBanana submission everywhere: disk
- *  (every profile and the mod store) first, then every library record. */
 export const isRemoteIdInLibrary = (remoteId: string) =>
   Object.values(usePersistedStore.getState().profiles).some((profile) =>
     profile.mods.some((mod) => mod.remoteId === remoteId),
@@ -505,7 +486,6 @@ export const isRemoteIdInLibrary = (remoteId: string) =>
 export const useLinkMod = () =>
   useMutation({
     mutationFn: async ({ from, to }: { from: string; to: string }) => {
-      // The wizard checks this first to show a translated message.
       if (isRemoteIdInLibrary(to)) {
         throw new ValidationError(
           `GameBanana mod ${to} is already in your library`,

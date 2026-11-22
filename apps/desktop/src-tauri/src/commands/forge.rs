@@ -14,15 +14,10 @@ pub async fn stop_forge_bridge() -> Result<(), Error> {
   Ok(())
 }
 
-/// Cleanup only, and deliberately unguarded: it touches the staged payload in
-/// app data, never the game install. Blocking it while Deadlock runs would
-/// leave the in-flight slot held and the bridge refusing every later install.
 #[tauri::command]
 pub async fn finish_forge_install(path: String) -> Result<(), Error> {
   let staged = staged_files::take(Stager::Forge, &path)?;
 
-  // Freed before the delete: a file still held open would otherwise leave the
-  // bridge refusing every later install, with nothing left to retry.
   forge_bridge::release_in_flight();
 
   if let Err(error) = tokio::fs::remove_file(&staged).await

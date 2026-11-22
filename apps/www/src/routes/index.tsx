@@ -18,7 +18,6 @@ import { homeStructuredData } from "@/utils/structured-data";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
-  // Server-render the stats instead of placeholders that fill in after load.
   loader: async ({ context: { queryClient } }) => {
     const versionQuery = orpc.getVersion.queryOptions();
     await Promise.all([
@@ -26,7 +25,6 @@ export const Route = createFileRoute("/")({
       prefetchWithin(queryClient, versionQuery),
     ]);
     const version = queryClient.getQueryData(versionQuery.queryKey)?.version;
-    // Handed to head() so the release number lands in the indexed metadata.
     return { version: version && version !== "unknown" ? version : undefined };
   },
   head: ({ match, loaderData }) => {

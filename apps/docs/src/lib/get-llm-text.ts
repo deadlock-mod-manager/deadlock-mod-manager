@@ -4,7 +4,6 @@ import type { source } from "@/lib/source";
 
 export async function getLLMText(page: InferPageType<typeof source>) {
   const processed = await page.data.getText("processed");
-  // Processed MDX retains custom components without evaluating their props.
   const markdown = processed.replace(
     /<CopyAgentPrompt\b[^>]*\/>/g,
     () =>

@@ -24,7 +24,6 @@ pub struct RuntimeBootstrap {
   pub features: BuildFeatures,
 }
 
-// Optional parts of the app this build was compiled with.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildFeatures {
@@ -156,8 +155,6 @@ pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Err
   };
   drop(mod_manager);
 
-  // A running Deadlock holds these files open without write sharing. That
-  // lock clears when the game exits, so it is not a permission problem.
   let addons_path = game_path.join("game").join("citadel").join("addons");
   let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 

@@ -13,19 +13,10 @@ export interface DiskSpaceInfo {
 }
 
 export interface DiskSpaceConfig {
-  /**
-   * Warning threshold percentage (default: 85%)
-   */
   warningThreshold: number;
 
-  /**
-   * Critical threshold percentage (default: 95%)
-   */
   criticalThreshold: number;
 
-  /**
-   * Minimum free space in bytes (default: 1GB)
-   */
   minFreeBytes: number;
 }
 
@@ -49,7 +40,7 @@ export class DiskSpaceMonitor {
       const defaultConfig: DiskSpaceConfig = {
         warningThreshold: 85,
         criticalThreshold: 98,
-        minFreeBytes: 1024 * 1024 * 1024, // 1GB
+        minFreeBytes: 1024 * 1024 * 1024,
         ...config,
       };
       DiskSpaceMonitor.instance = new DiskSpaceMonitor(logger, defaultConfig);
@@ -57,15 +48,11 @@ export class DiskSpaceMonitor {
     return DiskSpaceMonitor.instance;
   }
 
-  /**
-   * Check disk space for the temp directory
-   */
   async checkDiskSpace(): Promise<DiskSpaceInfo> {
     try {
       const tempDir = await getTempDir();
       this.logger.debug(`Checking disk space for: ${tempDir}`);
 
-      // Get filesystem stats using statvfs equivalent
       const fsStats = await this.getFilesystemStats(tempDir);
 
       const usagePercentage = (fsStats.usedBytes / fsStats.totalBytes) * 100;
@@ -100,13 +87,9 @@ export class DiskSpaceMonitor {
     }
   }
 
-  /**
-   * Check if there's enough space for a file of given size
-   */
   async hasSpaceForFile(fileSizeBytes: number): Promise<boolean> {
     const diskInfo = await this.checkDiskSpace();
 
-    // Require at least 2x the file size as free space for safety
     const requiredSpace = fileSizeBytes * 2;
 
     return diskInfo.freeBytes >= requiredSpace && !diskInfo.isLowSpace;

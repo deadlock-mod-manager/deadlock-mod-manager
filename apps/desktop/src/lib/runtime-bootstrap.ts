@@ -56,8 +56,6 @@ export const getRuntimeBootstrap = (): Promise<RuntimeBootstrap> => {
 export const initializeRuntimeBootstrap = async (): Promise<RuntimeBootstrap> =>
   await getRuntimeBootstrap();
 
-// Whether this build was compiled with match sync. Builds without it have none of its
-// commands, so nothing may call them.
 export const isMatchSyncBuilt = (): boolean =>
   runtimeBootstrap?.features.matchSync ?? false;
 

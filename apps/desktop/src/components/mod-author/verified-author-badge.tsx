@@ -37,7 +37,6 @@ export const VerifiedAuthorBadge = ({
   );
 };
 
-/** Inline seal for places that are already a button, so no tooltip. */
 export const VerifiedSeal = () => {
   const { t } = useTranslation();
   return (

@@ -22,8 +22,6 @@ import {
 import { observeUntil } from "../support/observations";
 import { navigate } from "../support/ui";
 
-// Both mods end fixed with their repairs packaged and mounted. The first is
-// sampled long enough for a library change's rebuild to settle.
 const expectReviewedFixes = async (world: string, name: string) => {
   await expectStillFixed(world, STATUS.folder, FIXED_MOD, name, 15_000);
   await expectStillFixed(world, STATUS.folder, RIVAL_MOD, `${name}-rival`, 0);
@@ -38,8 +36,6 @@ const setPlainEnabled = async (world: string, enabled: boolean) => {
   );
 };
 
-// Two fixed mods that set the same game text need a review. Once the player
-// applied it, a library change to another mod must not undo their fixes.
 describe("fixed status after a compatibility review", () => {
   it("keeps reviewed fixes", async () => {
     const runtime = await startApplication();

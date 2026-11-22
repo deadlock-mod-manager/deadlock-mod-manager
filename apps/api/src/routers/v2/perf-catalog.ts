@@ -4,8 +4,6 @@ import { z } from "zod";
 import { publicProcedure } from "@/lib/orpc";
 import { perfCatalogResponse } from "@/services/perf-catalog";
 
-// The catalog is validated once at load; skip re-parsing ~2.5 MB per response
-// but still document its shape in the OpenAPI spec.
 const catalogBody = z.unknown().nonoptional();
 JSON_SCHEMA_REGISTRY.add(
   catalogBody,

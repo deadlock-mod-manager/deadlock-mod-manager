@@ -38,7 +38,6 @@ export const GROUP_ORDER: SlotGroupId[] = [
   "other",
 ];
 
-/** How tall each slot is drawn; widths follow the card's own proportions. */
 export const SLOT_HEIGHT = new Map<string, number>([
   ["background", 104],
   ["weapon", 72],
@@ -59,10 +58,6 @@ export const ABILITY_SLOT_HEIGHT = 64;
 export const cardKey = (card: FoundryCardPreview) =>
   `${card.source}:${card.path}`;
 
-/**
- * One slot per card the hero has: the skin's own art where it ships some,
- * the base game's otherwise.
- */
 export const slotCards = (
   modCards: FoundryCardPreview[],
   defaultCards: FoundryCardPreview[],
@@ -73,7 +68,6 @@ export const slotCards = (
   return [...byPath.values()];
 };
 
-/** "pork_bun" to "Pork bun", for the variants the game names after the art. */
 const humanize = (name: string) => {
   const words = name.replaceAll("_", " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);

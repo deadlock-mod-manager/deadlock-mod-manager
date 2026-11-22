@@ -77,7 +77,6 @@ const tagView = (tag: ScoutingTag, t: TFunction) => {
   }
 };
 
-/** Recent results as beads, oldest on the left so the latest reads last. */
 const FormBeads = ({ form }: { form: boolean[] | undefined }) => (
   <span className='flex w-[98px] shrink-0 items-center gap-0.5'>
     {Array.from({ length: FORM_LENGTH }, (_, slot) => {
@@ -185,7 +184,6 @@ const ScoutingRow = ({
   );
 };
 
-/** One team in the scouting report: rank, record on the locked hero, and form. */
 export const ScoutingTeam = ({
   players,
   team,

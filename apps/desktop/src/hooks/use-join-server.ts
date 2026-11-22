@@ -21,14 +21,12 @@ import { getAdditionalArgs } from "@/lib/launch-options";
 const GAME_EXIT_POLL_MS = 500;
 const GAME_EXIT_TIMEOUT_MS = 20_000;
 
-/** The user declined the restart the join needed, so nothing happened. */
 type JoinResult = JoinOutcome | { kind: "cancelled" };
 
 interface JoinVariables {
   password: string;
   keepActiveProfile: boolean;
   requirements: ResolvedRequirementStatus[];
-  /** Server content or required mods have to be staged before launching. */
   needsMods: boolean;
 }
 
@@ -41,10 +39,6 @@ const waitForGameExit = async (): Promise<boolean> => {
   return false;
 };
 
-/**
- * Runs the whole join: restore or stage gameinfo.gi, restart the game if that
- * changed anything, then hand off to `joinServer`.
- */
 export const useJoinServer = (
   server: ServerBrowserEntry | null,
   stager: ReturnType<typeof useServerStage>,
@@ -56,7 +50,6 @@ export const useJoinServer = (
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
   const consoleLog = usePersistedStore((s) => s.gamePresenceEnabled);
 
-  /** gameinfo.gi is only read at startup, so our changes need a restart. */
   const ensureGameClosed = async (): Promise<boolean> => {
     const shouldRestart = await confirm({
       title: t("servers.join.gameRunning.title"),
@@ -121,7 +114,6 @@ export const useJoinServer = (
 
   return useMutation({
     meta: { skipGlobalErrorHandler: true },
-    // A restart here is ours, so it must not trigger the vanilla auto-reset.
     onMutate: () => pauseGameinfoAutoReset(),
     mutationFn: async ({
       password,
@@ -133,7 +125,6 @@ export const useJoinServer = (
 
       const additionalArgs = await getAdditionalArgs();
 
-      // The gateway path just opens a URL; nothing touches the game install.
       if (server.gateway_url) {
         return await joinServer({
           server,
@@ -144,8 +135,6 @@ export const useJoinServer = (
         });
       }
 
-      // Staging always rewrites gameinfo.gi. Without mods we only need a
-      // restart if a previous join actually left something behind.
       let needsRestart = needsMods;
       if (!needsMods) {
         const restored = await restoreProfileGameinfo(

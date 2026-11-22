@@ -11,7 +11,6 @@ type StateAreaProps = {
   children: ReactNode;
 };
 
-/** A centred notice that stands in for the plugin's own page. */
 export const StateArea = ({
   icon: StateIcon,
   color,

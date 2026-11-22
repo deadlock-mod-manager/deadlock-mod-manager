@@ -32,7 +32,6 @@ interface FoundryEntryListProps {
   selectedPath: string | null;
   onSelect: (entry: FoundryEntry) => void;
   editedPaths?: ReadonlySet<string>;
-  /** The model marked as the skin's primary one, badged in the list. */
   primaryPath?: string | null;
 }
 
@@ -131,10 +130,6 @@ const EntryChunk = memo(function EntryChunk({
   );
 });
 
-/**
- * A selectable list of VPK entries. Selecting an entry drives the center
- * preview.
- */
 export const FoundryEntryList = ({
   entries,
   selectedPath,

@@ -42,8 +42,6 @@ export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
           value: toStandardCronPattern(ModsSyncProcessor.cronPattern),
         },
         checkinMargin: 5,
-        // A run walks ~190 index pages and syncs only changed mods plus a
-        // refresh batch, a few minutes at GameBanana's rate limits
         maxRuntime: 12,
         timezone: SERVER_TIMEZONE,
       },
@@ -66,9 +64,6 @@ export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
           return this.handleJobSuccess(jobData, checkInId);
         }
 
-        // The schedule leaves a wide margin over a normal run, so a lock still
-        // held by the previous run means it overran or wedged. Report it to
-        // Sentry, but succeed the job: retrying would only hit the same lock.
         wide.emit("error");
         this.reportCheckIn(checkInId, "error");
 

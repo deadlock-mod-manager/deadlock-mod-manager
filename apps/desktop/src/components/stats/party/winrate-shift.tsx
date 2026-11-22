@@ -3,13 +3,8 @@ import { useTranslation } from "react-i18next";
 import { LOSS_COLOR, WIN_COLOR } from "@/components/stats/chart-fx";
 import { formatDecimal } from "@/lib/stats/format";
 
-/** Changes smaller than this round to "0.0 pts" and say nothing. */
 const MIN_SHIFT = 0.0005;
 
-/**
- * How far the last pick moved the expected winrate, floated up beside the
- * number and faded, so each change to the party shows what it did.
- */
 export const WinrateShift = ({ expected }: { expected: number | null }) => {
   const { t } = useTranslation();
   const [previous, setPrevious] = useState(expected);
@@ -17,8 +12,6 @@ export const WinrateShift = ({ expected }: { expected: number | null }) => {
     null,
   );
 
-  // Compared during render rather than in an effect, so the chip shows in the
-  // same frame as the new number.
   if (expected !== previous) {
     setPrevious(expected);
     const delta =
@@ -35,7 +28,6 @@ export const WinrateShift = ({ expected }: { expected: number | null }) => {
     <span
       aria-live='polite'
       className='party-shift font-mono font-semibold text-[13px]'
-      // A new key restarts the animation when the next change comes quickly.
       key={shift.key}
       style={{ color: shift.delta > 0 ? WIN_COLOR : LOSS_COLOR }}>
       {t("stats.party.odds.shift", {

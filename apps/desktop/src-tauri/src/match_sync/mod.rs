@@ -39,8 +39,6 @@ impl From<MatchSyncError> for crate::errors::Error {
   }
 }
 
-// One GC request every 2 minutes: GetMatchMetaData is rate-limited per-account by
-// Steam's GC, and a fast throttle (the old 2s value) reliably tripped that limit.
 const GC_MIN_INTERVAL: Duration = Duration::from_secs(2 * 60);
 const BACKGROUND_PASS_INTERVAL_SECS: u64 = 15 * 60;
 const PROGRESS_EVENT: &str = "match-sync-progress";
@@ -60,21 +58,14 @@ fn emit_error(app: &AppHandle, err: &MatchSyncError) {
   );
 }
 
-// One serializer for every run so concurrent syncs can't race a per-account persisted
-// quota (a lost update there would let the hard cap be exceeded). Holding it also means
-// no pass is writing friends' data, which the worker relies on to clear it.
 static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
-// Outlives the per-pass API clients; cleared in `forget_friends`.
 static STORED_HISTORIES: LazyLock<Arc<StoredHistories>> = LazyLock::new(Default::default);
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_RUNNING: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_CANCEL: AtomicBool = AtomicBool::new(false);
-// Aggregate across all accounts: session_fetches is a simple per-session total.
 static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> = LazyLock::new(|| Arc::new(AtomicU64::new(0)));
 
-// Each account gets its own independent throttle (2-min GC spacing) and its own GC
-// session, keyed by steam_id64. Never hold this lock across an `.await`.
 struct AccountResources {
   throttle: Arc<Throttle>,
   gc_client: SteamGcClient,
@@ -104,14 +95,9 @@ struct AppPersistence {
   account_name: String,
   account_index: u32,
   account_total: u32,
-  // Set when the engine swallows a GC failure for this account (see
-  // `SyncPersistence::record_gc_error`). The run still returns Ok, so this shared flag
-  // is the orchestrator's only view into "this account's GC connection is broken".
   gc_error_seen: Arc<AtomicBool>,
 }
 
-// Wraps the engine's per-account `SyncProgress` with which account (of how many) it
-// belongs to, so the UI can show "account X of N" during a long sequential batch.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct MatchSyncProgressEvent<'a> {
@@ -172,8 +158,6 @@ impl SyncPersistence for AppPersistence {
     );
   }
   fn record_gc_error(&self, err: &MatchSyncError) {
-    // The engine reports every GC failure it swallows; only a broken connection backs the
-    // account off.
     if err.backs_off_gc() {
       self.gc_error_seen.store(true, Ordering::Relaxed);
     }
@@ -189,7 +173,6 @@ type ProdEngine = SyncEngine<
   SysGameRunningCheck,
 >;
 
-// deadlock-api requests go through the app's proxy settings.
 fn api_client() -> ApiClient {
   let http: HttpClientFactory = Arc::new(|timeout| {
     crate::proxy::build_http_client(|b| b.timeout(timeout)).map_err(|e| e.to_string())
@@ -197,8 +180,6 @@ fn api_client() -> ApiClient {
   ApiClient::new(http, Arc::clone(&STORED_HISTORIES))
 }
 
-// Every account remembered in `loginusers.vdf` as (SteamID64, lowercase account name),
-// with Steam's install directory, where their saved sessions live.
 fn remembered_accounts() -> Result<(PathBuf, Vec<(u64, String)>), MatchSyncError> {
   let steam = steamlocate::SteamDir::locate()
     .map_err(|e| MatchSyncError::AuthUnavailable(format!("Steam not found: {e}")))?;
@@ -215,8 +196,6 @@ fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
   auth::list_available_accounts(&steam_dir, accounts)
 }
 
-// Sessions of every account the user hasn't turned off. Excluded accounts are dropped
-// before their saved session is decrypted.
 fn recover_included(app: &AppHandle) -> Result<Vec<AuthContext>, MatchSyncError> {
   let (steam_dir, mut accounts) = remembered_accounts()?;
   let excluded = settings::load_excluded_accounts(app)?;
@@ -251,10 +230,6 @@ fn build_engine(
   )
 }
 
-// The batch-level decision for one account's engine result: `GameRunning` is a
-// machine-wide wall (every remaining account would hit it immediately), so it aborts
-// the whole batch; every other outcome — Ok (finished / quota-reached / rate-limited)
-// or a per-account Err — is local, so the batch moves on to the next account.
 enum BatchControl {
   Continue,
   Abort,
@@ -267,20 +242,12 @@ fn batch_control<T>(result: &Result<T, MatchSyncError>) -> BatchControl {
   }
 }
 
-// An account whose GC handshake is known-broken (e.g. it doesn't own the game) fails
-// identically every pass; back it off for a day so the loops skip it instead of
-// re-paying the connect/timeout cost each tick.
 const GC_BACKOFF_SECS: i64 = 24 * 60 * 60;
 
 fn gc_backoff_active(backoff_until: Option<i64>, now: i64) -> bool {
   backoff_until.is_some_and(|until| now < until)
 }
 
-// The backoff a run's GC-error flag implies: `Some(deadline)` when the account saw a
-// swallowed GC failure this run, `None` to clear (a once-broken account that starts
-// working again must not stay skipped). GC failures never reach the run's outer
-// `Result` (the engine swallows them best-effort), so this is driven by the shared flag
-// the engine sets via `record_gc_error`, not by inspecting the returned result.
 fn gc_backoff_from_flag(gc_error_seen: bool, now: i64) -> Option<i64> {
   gc_error_seen.then_some(now + GC_BACKOFF_SECS)
 }
@@ -324,14 +291,11 @@ pub struct MatchSyncStatusDto {
   pub accounts: Vec<AccountStatus>,
 }
 
-/// Discover accounts only after opt-in, pruning resources only from a successful inventory.
 fn discover_accounts(
   config: &model::MatchSyncConfig,
   discover: impl FnOnce() -> Result<Vec<(u64, String)>, MatchSyncError>,
   prune: impl FnOnce(&[u64]),
 ) -> Vec<(u64, String)> {
-  // Suppressed or failed discovery is not an empty inventory: keep the existing
-  // per-account throttle so toggling sync cannot reset GC request spacing.
   if !config.is_active() {
     return Vec::new();
   }
@@ -346,7 +310,6 @@ fn discover_accounts(
 pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let config = settings::load_config(app)?;
   let now = settings::now_secs();
-  // Opt-out must also prevent reads of Steam's saved-session configuration.
   let available = discover_accounts(&config, list_available_accounts, prune_resources);
   let excluded = settings::load_excluded_accounts(app).unwrap_or_else(|e| {
     log::warn!("match-sync: excluded accounts load failed: {e}");
@@ -384,22 +347,6 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   })
 }
 
-/// The most recent matches straight from Valve's Game Coordinator, for one
-/// specific account.
-///
-/// deadlock-api ingests matches with a delay of up to a day, so today's games are
-/// missing from its history. The GC already knows them, and the app already holds
-/// a Steam session for match sync - this reuses both to fill that gap.
-///
-/// `account_id` is the Steam3 id the Stats page is showing. Asking for it makes
-/// the answer unambiguous: matches only ever come back for the account they will
-/// be merged into, never for whichever remembered session happened to answer
-/// first.
-///
-/// Returns an empty list rather than an error whenever it cannot run: match sync
-/// may be turned off (this touches the Steam session, so it stays behind that setting),
-/// the GC refuses while Deadlock is running because Steam routes its traffic to
-/// the game, and the requested account may simply not have a usable session.
 pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<LocalMatch> {
   match settings::load_config(app) {
     Ok(config) if config.is_active() => {}
@@ -424,8 +371,6 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
   };
 
   let resources = resources_for(ctx.steam_id64);
-  // The same 2-minute spacing the sync engine uses; a stats page refresh must
-  // not hammer the GC.
   if !resources.throttle.try_acquire().await {
     return Vec::new();
   }
@@ -471,20 +416,14 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
   Ok(())
 }
 
-/// Back to a fresh install's config: off, no consent.
 #[cfg(debug_assertions)]
 pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
   cancel_background_work();
   settings::reset_config(app)
 }
 
-// Drops persisted per-account state (quota/fetched/completion) and in-memory resources
-// for accounts no longer remembered in loginusers.vdf AT ALL. Runs at startup and when
-// sync is enabled, and is a no-op while sync is inactive. Temporarily non-decryptable
-// accounts stay remembered, so they are never pruned here.
 pub fn prune_forgotten_accounts(app: &AppHandle) {
   if !should_monitor(app) {
-    // No worker runs while sync is inactive, so nothing can write them back.
     forget_friends(app);
     return;
   }
@@ -500,8 +439,6 @@ pub fn prune_forgotten_accounts(app: &AppHandle) {
   }
 }
 
-// Friends' account ids are kept for match sync only, so they go once it is inactive. Only
-// background passes write them: call this when none can be running.
 fn forget_friends(app: &AppHandle) {
   STORED_HISTORIES.clear();
   if let Err(e) = settings::clear_friend_cooldowns(app) {
@@ -509,8 +446,6 @@ fn forget_friends(app: &AppHandle) {
   }
 }
 
-// Stops both the one-time full sync and any in-flight background pass immediately,
-// so opt-out takes effect right away rather than after the current pass finishes.
 fn cancel_background_work() {
   FULL_SYNC_CANCEL.store(true, Ordering::Relaxed);
   BACKGROUND_CANCEL.store(true, Ordering::Relaxed);
@@ -544,11 +479,6 @@ pub fn spawn_full_sync(app: AppHandle) -> Result<(), MatchSyncError> {
   Ok(())
 }
 
-// Shared per-account loop for both the one-time full sync and the recurring background
-// pass: check cancel, skip accounts under GC backoff (and any pass-specific skip),
-// build an engine, run it, log/report the result, then update GC backoff. Cancellation
-// is checked between accounts (a quota-exhausted run and a cancelled run both return
-// Ok, so the flag is the only reliable signal here).
 async fn run_account_batch<F, Fut>(
   app: &AppHandle,
   contexts: &[AuthContext],
@@ -615,8 +545,6 @@ async fn run_account_batch<F, Fut>(
   }
 }
 
-// Sequentially full-syncs every currently-decryptable account, each with its own quota
-// bucket and throttle.
 async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
   let contexts = match recover_included(app) {
     Ok(c) => c,
@@ -643,7 +571,6 @@ async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
   .await;
 }
 
-// Called by the game-presence watcher on the "game closed" transition.
 pub fn on_game_exit(app: AppHandle) {
   gc_client::end_launch_hold();
   tokio::spawn(async move {
@@ -651,7 +578,6 @@ pub fn on_game_exit(app: AppHandle) {
   });
 }
 
-/// Closes every match-sync session and keeps new ones closed while the game starts.
 pub async fn release_for_game_launch() {
   gc_client::hold_for_launch();
   let clients: Vec<_> = ACCOUNT_RESOURCES
@@ -669,9 +595,6 @@ pub fn should_monitor(app: &AppHandle) -> bool {
     .unwrap_or(false)
 }
 
-// One sequential pass over every currently-decryptable account. Each account's spent
-// quota is checked before connecting (independent buckets), so an exhausted account is
-// skipped without blocking the others.
 async fn background_pass(app: &AppHandle) {
   let config = match settings::load_config(app) {
     Ok(c) if c.is_active() => c,
@@ -710,9 +633,6 @@ pub fn start_background_worker(app: AppHandle) {
   if !should_monitor(&app) {
     return;
   }
-  // Sync is on, so lift a cancel from an opt-out that came before. A worker still running
-  // from before a quick disable/re-enable keeps going, and would otherwise abort every
-  // pass from then on.
   BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   if BACKGROUND_RUNNING
     .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
@@ -729,15 +649,11 @@ pub fn start_background_worker(app: AppHandle) {
         slept += 5;
       }
     }
-    // Under the sync lock, so a pass started elsewhere (on game exit) has finished writing
-    // them; and before a restarted worker can run one that writes them again.
     {
       let _guard = SYNC_LOCK.lock().await;
       forget_friends(&app);
     }
     BACKGROUND_RUNNING.store(false, Ordering::Relaxed);
-    // A quick disable/re-enable while this task was still shutting down could have
-    // seen BACKGROUND_RUNNING as true and returned early; make sure that isn't lost.
     if should_monitor(&app) {
       start_background_worker(app);
     }
@@ -839,10 +755,6 @@ mod discovery_tests {
 mod batch_tests {
   use super::*;
 
-  // Mirrors the real per-account loop's control flow (check-cancel-then-attempt, then
-  // decide abort/continue from the engine's result) using the REAL `batch_control`, so
-  // the stop/continue/abort decision is exercised directly against hand-crafted result
-  // sequences without wiring full engine/GC/auth spies end to end.
   fn drive_batch<T>(
     results: &[Result<T, MatchSyncError>],
     mut cancelled_before: impl FnMut(usize) -> bool,
@@ -862,8 +774,6 @@ mod batch_tests {
 
   #[test]
   fn quota_reached_first_account_still_runs_the_second() {
-    // Both are Ok: a quota-reached run is indistinguishable from a finished one at this
-    // level, and neither is a reason to stop the batch.
     let results: Vec<Result<(), MatchSyncError>> = vec![Ok(()), Ok(())];
     assert_eq!(drive_batch(&results, |_| false), vec![0, 1]);
   }
@@ -877,7 +787,6 @@ mod batch_tests {
   #[test]
   fn cancel_before_second_account_skips_it() {
     let results: Vec<Result<(), MatchSyncError>> = vec![Ok(()), Ok(())];
-    // Cancel flips true only once the first account has completed.
     assert_eq!(drive_batch(&results, |i| i >= 1), vec![0]);
   }
 

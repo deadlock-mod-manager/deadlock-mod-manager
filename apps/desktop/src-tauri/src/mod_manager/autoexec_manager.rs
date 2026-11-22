@@ -112,7 +112,6 @@ fn upsert_managed_section(content: &mut String, section: ManagedSection, section
   append_section(content, section_content);
 }
 
-/// The user's own part of autoexec.cfg, without the sections the app writes.
 pub fn without_managed_sections(content: &str) -> String {
   let mut content = content.to_string();
   for section in MANAGED_SECTIONS {
@@ -316,8 +315,6 @@ impl AutoexecManager {
     steam_userdata: Option<&Path>,
   ) -> Result<(), Error> {
     let mut edits = crosshair_settings::prepare(game_path, Some(config), steam_userdata)?;
-    // Older versions also wrote the crosshair to autoexec.cfg. The hero
-    // settings already set it, so drop that copy.
     let path = self.get_autoexec_path(game_path);
     if let Some(mut content) = crosshair_settings::read_optional(&path)? {
       remove_managed_section(&mut content, CROSSHAIR_SECTION);

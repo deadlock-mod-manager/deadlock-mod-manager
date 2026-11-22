@@ -240,7 +240,6 @@ const SettingCard = ({
         </div>
       </div>
 
-      {/* dialog for custom settings */}
       <Dialog onOpenChange={setEditOpen} open={editOpen}>
         <DialogContent>
           <DialogHeader>

@@ -50,7 +50,6 @@ describe("matchAcceptLanguage", () => {
 
 const localesDir = join(__dirname, "..", "..", "locales");
 
-/** Locale files are nested objects whose leaves are strings. */
 interface LocaleTree {
   [key: string]: string | LocaleTree;
 }

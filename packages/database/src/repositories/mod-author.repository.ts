@@ -59,8 +59,6 @@ export class ModAuthorRepository {
     return result;
   }
 
-  // Mod sync only knows the submitter summary, so contacts are left alone here
-  // and kept fresh by updateContacts.
   async upsert(author: NewModAuthor): Promise<ModAuthor> {
     const [result] = await this.db
       .insert(modAuthors)

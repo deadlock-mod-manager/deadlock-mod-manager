@@ -14,10 +14,6 @@ export const getDisplaySemver = (version: string): string => {
   return version;
 };
 
-/**
- * Where to read what changed: the website changelog, anchored to a release
- * as #v<version>. Nightlies are only published on GitHub.
- */
 export const getReleaseNotesUrl = (version?: string): string => {
   if (!version) {
     return `${WEB_URL}/changelog`;

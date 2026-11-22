@@ -14,8 +14,6 @@ import {
   tabulate,
 } from "./kit";
 
-/** Presets about the selected account. */
-
 const playerHeroSchema = z.object({
   hero_id: z.number(),
   matches_played: z.number(),
@@ -99,7 +97,6 @@ export const itemWinsSchema = itemStatsSchema.extend({
 type GameStats = z.infer<typeof gameStatsSchema>;
 
 const GOLD_PREFIX = "avg_gold_";
-// Souls lost on death and souls denied to the enemy are not income.
 const NOT_INCOME = new Set(["death_loss", "denied"]);
 
 const AVERAGE_COLUMNS: Column<GameStats>[] = [
@@ -124,7 +121,6 @@ const AVERAGE_COLUMNS: Column<GameStats>[] = [
   ["permanentBuffs", "decimal", pick("avg_permanent_buffs")],
 ];
 
-/** Persona names for a batch of accounts, falling back to the id. */
 const personaNames = async (accountIds: number[]) => {
   const names = new Map(
     (await getSteamProfiles(accountIds)).map((profile) => [

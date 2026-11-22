@@ -18,10 +18,8 @@ rustPlatform.buildRustPackage {
 
   buildInputs = [ ];
 
-  # Skip tests that may require test data
   doCheck = false;
 
-  # Install the shared library
   installPhase = ''
     runHook preInstall
 

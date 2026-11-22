@@ -2,7 +2,6 @@ import { ConfigurationError } from "@deadlock-mods/common";
 import * as dotenv from "dotenv";
 import type { Config } from "drizzle-kit";
 
-// Load environment variables from root .env file
 dotenv.config({ path: "../../.env" });
 
 const databaseUrl = process.env.DATABASE_URL;

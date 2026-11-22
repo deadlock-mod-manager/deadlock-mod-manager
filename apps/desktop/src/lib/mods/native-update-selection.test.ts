@@ -127,8 +127,6 @@ describe("native update decisions", () => {
 });
 
 describe("website install links", () => {
-  // One archive per component, as sources that publish each variant as its
-  // own file do.
   const perFile: NativeSourceInstallation = {
     ...installation,
     components: ["base", "red", "blue"].map((id) => ({
@@ -145,7 +143,6 @@ describe("website install links", () => {
   test("an unnamed or ambiguous variant is left to the user", () => {
     expect(linkedComponentIds(perFile, null)).toBeNull();
     expect(linkedComponentIds(perFile, "missing")).toBeNull();
-    // Every component lives in the same archive, so the file names no variant.
     expect(linkedComponentIds(installation, "pack")).toBeNull();
   });
 

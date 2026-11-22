@@ -1,12 +1,3 @@
-//! 1-click installs from allowlisted mod sites other than GameBanana.
-//!
-//! A site links `deadlock-mod-manager://install?source=<id>&mod=<id>&release=<id>`.
-//! The link carries IDs, never URLs: the manifest address comes from the
-//! source's entry below, and the file may only come from that source's
-//! download hosts. The file downloaded is the one in the manifest the user
-//! confirmed, its size and SHA-256 are checked before anything is installed,
-//! and the mod is added as a local mod.
-
 use crate::deep_link::parse_query_params;
 use crate::download_manager::downloader::{PauseHandle, download_file_resumable};
 use crate::errors::Error;
@@ -24,10 +15,8 @@ pub const PATH_INSTALL: &str = "//install";
 const MANIFEST_FORMAT: &str = "dmm-one-click";
 const MANIFEST_VERSION: u32 = 1;
 
-/// A manifest is a few hundred bytes; anything near this is not one.
 const MAX_MANIFEST_BYTES: usize = 64 * 1024;
 
-/// Same ceiling as staged GameBanana archives.
 const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 const MAX_ID_LEN: usize = 64;
@@ -39,15 +28,10 @@ const INSTALLABLE_EXTENSIONS: &[&str] = &["zip", "7z", "rar", "vpk"];
 struct InstallSource {
   id: &'static str,
   name: &'static str,
-  /// `{mod}` and `{release}` become the link's IDs, which are URL-safe.
   manifest_url: &'static str,
-  /// JSON pointer to the manifest within the response; empty for the root.
   manifest_pointer: &'static str,
-  /// Exact hosts, never subdomains, for the mod page link.
   site_hosts: &'static [&'static str],
-  /// Hosts for the cover image.
   media_hosts: &'static [&'static str],
-  /// Hosts for the mod file itself.
   download_hosts: &'static [&'static str],
 }
 
@@ -113,12 +97,8 @@ pub struct SourceInstall {
   sha256: String,
 }
 
-/// Links waiting for the window. A link that starts the app arrives before the
-/// window listens, so links wait here and the event only says to look.
 static PENDING: Mutex<Vec<InstallLink>> = Mutex::new(Vec::new());
 
-/// Manifests shown to the user, newest last, so the download uses the one
-/// they confirmed instead of fetching it again.
 static RESOLVED: Mutex<Vec<(InstallLink, SourceInstall)>> = Mutex::new(Vec::new());
 
 fn find_source(id: &str) -> Option<&'static InstallSource> {
@@ -132,7 +112,6 @@ fn is_valid_id(id: &str) -> bool {
       .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
 }
 
-/// Applies the same checks to IDs from the renderer as to IDs from a link.
 pub fn install_link(source: &str, mod_id: &str, release_id: &str) -> Option<InstallLink> {
   let source = find_source(source)?;
   (is_valid_id(mod_id) && is_valid_id(release_id)).then(|| InstallLink {
@@ -143,8 +122,6 @@ pub fn install_link(source: &str, mod_id: &str, release_id: &str) -> Option<Inst
   })
 }
 
-/// Parses the part after the scheme. Windows may add a slash before the query
-/// or after it.
 pub fn parse_install_link(data_part: &str) -> Option<InstallLink> {
   let rest = data_part.strip_prefix(PATH_INSTALL)?;
   let query = rest
@@ -161,8 +138,6 @@ pub fn parse_install_link(data_part: &str) -> Option<InstallLink> {
   )
 }
 
-/// Queues a link for the window, returning false when it was dropped as a
-/// repeat of a waiting link or because the queue is full.
 pub fn queue_pending(link: InstallLink) -> bool {
   let Ok(mut pending) = PENDING.lock() else {
     return false;
@@ -188,7 +163,6 @@ fn manifest_url(source: &InstallSource, link: &InstallLink) -> String {
     .replace("{release}", &link.release_id)
 }
 
-/// Plain HTTPS on one of `hosts`: no credentials and no custom port.
 fn is_https_url_on(raw: &str, hosts: &[&str]) -> bool {
   let Ok(url) = reqwest::Url::parse(raw) else {
     return false;
@@ -211,7 +185,6 @@ fn has_installable_extension(file_name: &str) -> bool {
     })
 }
 
-/// Drops control characters and caps the length; `None` when nothing is left.
 fn clean_text(raw: &str) -> Option<String> {
   let cleaned: String = raw.chars().filter(|c| !c.is_control()).collect();
   let trimmed = cleaned.trim();
@@ -233,7 +206,6 @@ fn validate_manifest(
   if manifest.format != MANIFEST_FORMAT || manifest.version != MANIFEST_VERSION {
     return Err(invalid("unsupported format"));
   }
-  // A manifest for another mod would install something the user never chose.
   if manifest.mod_id != link.mod_id || manifest.release_id != link.release_id {
     return Err(invalid("it describes a different mod"));
   }
@@ -263,7 +235,6 @@ fn validate_manifest(
     name,
     author: manifest.author.as_deref().and_then(clean_text),
     page_url: manifest.page_url,
-    // The image is decoration: one hosted elsewhere is dropped, not fatal.
     image_url: manifest
       .image_url
       .filter(|url| is_https_url_on(url, source.media_hosts)),
@@ -357,8 +328,6 @@ pub async fn resolve(link: &InstallLink) -> Result<SourceInstall, Error> {
   Ok(install)
 }
 
-/// Replaces an earlier resolve of the same link. A declined link is never
-/// taken, so the oldest give way past the cap.
 fn remember_resolved(link: &InstallLink, install: &SourceInstall) {
   if let Ok(mut resolved) = RESOLVED.lock() {
     resolved.retain(|(known, _)| known != link);
@@ -369,7 +338,6 @@ fn remember_resolved(link: &InstallLink, install: &SourceInstall) {
   }
 }
 
-/// The manifest the user was shown for `link`, consumed.
 pub fn take_resolved(link: &InstallLink) -> Result<SourceInstall, Error> {
   let mut resolved = RESOLVED
     .lock()
@@ -405,8 +373,6 @@ async fn verify_file(path: &Path, size: u64, sha256: &str) -> Result<(), Error> 
   .map_err(|e| Error::InvalidInput(format!("Could not check the downloaded file: {e}")))?
 }
 
-/// Downloads into a fresh temporary folder and verifies size and hash. Only a
-/// verified file is listed as staged; anything else is deleted.
 pub async fn download<F>(install: &SourceInstall, on_progress: F) -> Result<PathBuf, Error>
 where
   F: Fn(u64, Option<u64>) + Send + 'static,
@@ -427,8 +393,6 @@ where
       PauseHandle::new(),
       Some(install.size),
       None,
-      // The URL was checked against the source's hosts. With this off the
-      // downloader refuses redirects, so it cannot leave them.
       false,
     )
     .await?;
@@ -481,7 +445,6 @@ mod tests {
 
   #[test]
   fn parses_the_link_a_site_sends() {
-    // Sites hardcode this shape, so a change here breaks their buttons.
     let url = "deadlock-mod-manager://install?source=divineskins&mod=123&release=456";
     let parsed = parse_install_link(strip_scheme(url).expect("scheme should be recognised"));
     assert_eq!(parsed, Some(link()));

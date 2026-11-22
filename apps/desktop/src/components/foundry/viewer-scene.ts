@@ -2,7 +2,6 @@ import * as THREE from "three";
 import type { ViewerLook } from "./viewer-tool-types";
 
 const LOOK = {
-  /** Top and bottom of the backdrop gradient. */
   backdrop: ["#16171b", "#0a0b0d"],
   sky: 0xe9eef9,
   ground: 0x242022,
@@ -94,7 +93,6 @@ export const createViewerScene = (scene: THREE.Scene) => {
     cropBackground();
   };
 
-  /** Put the floor glow under a model framed at the origin. */
   const placeFloor = (box: THREE.Box3) => {
     const size = box.getSize(new THREE.Vector3());
     floor.position.set(0, -size.y / 2, 0);

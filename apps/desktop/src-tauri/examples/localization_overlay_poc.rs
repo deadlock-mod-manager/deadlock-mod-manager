@@ -1,11 +1,3 @@
-//! Throwaway localization-overlay proof of concept.
-//!
-//! This example reads localization files from mod VPKs in load-order priority,
-//! diffs them against the loose base-game files, resolves conflicts, and packs
-//! the winning strings into one overlay VPK. It deliberately refuses to write
-//! into `game/citadel/addons`; production integration must update `.dmm.json`
-//! atomically when it installs or removes a generated VPK there.
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::error::Error;
@@ -1456,8 +1448,6 @@ fn absolute_path(path: &Path) -> PocResult<PathBuf> {
   }
 }
 
-/// Resolve the deepest existing ancestor so the comparison with the
-/// canonical game path sees through `..`, symlinks and Windows `\\?\` prefixes.
 fn resolve_existing_prefix(path: &Path) -> PathBuf {
   let mut existing = path;
   let mut rest = Vec::new();

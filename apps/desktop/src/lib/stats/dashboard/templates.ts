@@ -9,12 +9,6 @@ import {
   type WidgetView,
 } from "./layout";
 
-/**
- * Ready-made tabs for the "new tab" menu: the five built-in ones (to restore one
- * that was deleted) and a few compositions of presets nobody has to assemble
- * by hand.
- */
-
 const fromPreset = (
   presetId: string,
   size?: { w: number; h: number },
@@ -101,10 +95,6 @@ export const TAB_TEMPLATE_IDS = [
   ...EXTRA_TEMPLATES.map((template) => template.id),
 ];
 
-/**
- * A fresh tab from a template. Built-in tabs keep their id while it is free, so
- * links like `?tab=heroes` and the translated name keep working once restored.
- */
 export const tabFromTemplate = (
   templateId: string,
   layout: DashboardLayout,

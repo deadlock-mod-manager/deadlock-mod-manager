@@ -24,7 +24,6 @@ fn ignored_details(ignored: &[IgnoredPart], kind: IgnoredKind) -> Vec<&str> {
     .collect()
 }
 
-/// Normalized values by path key for the scope base matching compares.
 fn compared_values(catalog: &Catalog, entries: &[ConfigEntry]) -> HashMap<String, String> {
   entries
     .iter()
@@ -65,7 +64,6 @@ fn game_folder(gameinfo: &str) -> tempfile::TempDir {
   game
 }
 
-/// The newest stock build in the bundled catalog, which moves on every refresh.
 fn current_build() -> u32 {
   Catalog::bundled().latest_stock().expect("stock").build
 }
@@ -130,8 +128,6 @@ fn optilock_is_diffed_against_the_build_its_pgiversion_names() {
     .count();
   assert_eq!(convars, 499, "matches the research's count against b6462");
 
-  // Valve changed these between 6462 and 6711 and the file still has 6462's
-  // value: diffing against today's stock would invent an edit for each.
   let parsed = formats::parse(&text, ImportFormat::FullGameinfo);
   let (file_entries, _) = formats::collapse(&parsed.leaves);
   let file = compared_values(&catalog, &file_entries);
@@ -194,7 +190,6 @@ fn files_without_pgiversion_match_the_closest_build() {
   let kaizu = draft(&fixture(KAIZU), "gameinfo.gi");
   let base = kaizu.base.expect("base");
   assert!(!base.exact, "Kaizu comments PGIVersion out");
-  // The PGIVersion Kaizu commented out is 6711's.
   assert_eq!(base.build, 6711);
   assert!(base.distance < 30, "distance {}", base.distance);
   assert!(!ignored_details(&kaizu.ignored, IgnoredKind::RootKey).contains(&"PGIVersion"));

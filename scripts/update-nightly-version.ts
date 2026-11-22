@@ -34,7 +34,6 @@ const isReleased = (version: string): boolean => {
   }
 };
 
-// Bump minor only once released, so nightlies always sort above stable.
 const resolveNightlyBase = (version: string): string => {
   if (!isReleased(version)) {
     return version;

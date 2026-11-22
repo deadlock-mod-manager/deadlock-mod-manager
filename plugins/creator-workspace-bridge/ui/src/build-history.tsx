@@ -6,7 +6,6 @@ import { HistoryRow } from "./history-row";
 
 const HISTORY_LIMIT = 8;
 
-/** Older builds listed before "Show older builds". */
 const HISTORY_PREVIEW = 3;
 
 type BuildHistoryProps = {

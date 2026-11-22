@@ -13,14 +13,11 @@ test("each edit drops the previews of earlier revisions and rejects their late d
       cache.get(KEY, revision),
     ).filter((dataUrl) => dataUrl !== undefined);
   const retained: [entries: number, characters: number][] = [];
-  // Anything still stored after an edit, before its own preview is decoded.
   const leftovers: string[] = [];
   cache.set(KEY, 0, preview(0));
   for (let revision = 1; revision <= 100; revision++) {
     cache.setRevision(revision);
     leftovers.push(...stored(revision));
-    // Decodes started one and several edits back, finishing before and after
-    // the new one.
     cache.set(KEY, revision - 1, "stale");
     leftovers.push(...stored(revision));
     cache.set(KEY, revision, preview(revision));

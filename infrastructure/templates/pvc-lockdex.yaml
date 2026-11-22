@@ -4,7 +4,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Chart.Name }}-lockdex-pvc
   annotations:
-    # Use Hetzner Cloud CSI for better reliability and isolation from node storage
     volume.kubernetes.io/storage-provisioner: csi.hetzner.cloud
 spec:
   accessModes:

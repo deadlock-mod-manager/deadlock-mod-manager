@@ -10,8 +10,6 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
     let mut m = HashMap::new();
 
     let entries: Vec<(&str, &str, &str)> = vec![
-        // heroes_wip
-        //Deadlock internal name => Deadlock enum key => Deadlock display name
         ("abrams", "Abrams", "Abrams"),
         ("artist", "Violet", "Violet"),
         ("baba", "Baba", "Baba"),
@@ -43,7 +41,6 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
         ("werewolf", "Silver", "Silver"),
         ("wraith", "Wraith", "Wraith"),
         ("yamato", "Yamato", "Yamato"),
-        // heroes_staging
         ("archer", "GreyTalon", "Grey Talon"),
         ("archer_v2", "GreyTalon", "Grey Talon"),
         ("astro", "Holliday", "Holliday"),
@@ -99,22 +96,17 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
     m
 });
 
-// Paths to look for heroes in
 pub const HERO_PATH_PREFIXES: [&str; 3] = [
     "models/heroes_wip/",
     "models/heroes_staging/",
     "models/heroes/",
 ];
 
-// Lookup hero by internal name
 pub fn lookup_hero(internal_name: &str) -> Option<&'static HeroMapping> {
     let lower = internal_name.to_lowercase();
     HERO_MAP.get(lower.as_str())
 }
 
-/// Deadlock's sound-path codename per hero. Sound mods organize their payloads
-/// under `sounds/abilities/<sound_codename>/`, and that namespace diverges from
-/// both the panorama namespace and the model folders above.
 const HERO_SOUND_CODENAMES: &[(&str, &str)] = &[
     ("abrams", "Abrams"),
     ("artist", "Violet"),
@@ -167,8 +159,6 @@ const HERO_SOUND_CODENAMES: &[(&str, &str)] = &[
     ("yamato", "Yamato"),
 ];
 
-/// Legacy sound directories that still ship files, folded into the codename
-/// they ship under today (Grey Talon ships under both `orion` and `archer`).
 const LEGACY_SOUND_CODENAMES: [(&str, &str); 3] =
     [("archer", "orion"), ("geist", "ghost"), ("pocket", "synth")];
 
@@ -188,7 +178,6 @@ pub fn sound_codename_for_hero(hero_name: &str) -> Option<&'static str> {
         .map(|(key, _)| *key)
 }
 
-/// The hero display name behind a `sounds/abilities/<codename>/` folder.
 pub fn lookup_sound_hero(codename: &str) -> Option<&'static str> {
     let canonical = canonical_sound_codename(codename);
     HERO_SOUND_CODENAMES
@@ -197,8 +186,6 @@ pub fn lookup_sound_hero(codename: &str) -> Option<&'static str> {
         .map(|(_, name)| *name)
 }
 
-/// The enum key for a display name. Heroes the model table does not know yet
-/// fall back to the display name without spaces or punctuation.
 pub fn enum_key_for_display(display_name: &str) -> String {
     HERO_MAP
         .values()

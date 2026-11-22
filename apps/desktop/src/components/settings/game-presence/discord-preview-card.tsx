@@ -1,4 +1,3 @@
-// Bundled copy of the Discord application's large presence asset.
 const PREVIEW_LARGE_IMAGE_URL = "/brand/discord-presence.png";
 
 interface DiscordPreviewCardProps {

@@ -1,10 +1,3 @@
-//! Fetching the maps and addons a Deadworks server requires.
-//!
-//! The server advertises them in its A2S_RULES reply (see [`super::deadworks_rules`])
-//! and serves them from its own fastdl host. Maps land in `citadel/maps`,
-//! addons in `citadel/deadworks_addons/vpks`, which the `addonroot` line DMM
-//! writes into `gameinfo.gi` lets the server mount.
-
 use std::collections::{BTreeSet, HashMap};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
@@ -24,16 +17,11 @@ use super::deadworks_rules::{
 use super::server_browser::is_public_target;
 use super::state::game_path;
 
-/// Cap on bytes written to disk for one join, compressed plus decompressed.
 const MAX_JOIN_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const PROGRESS_EVENT: &str = "deadworks-content-progress";
 const STATE_FILE: &str = "dmm_content_state.json";
-/// Written by DMM before servers advertised content over A2S; its map keys
-/// tell us which maps DMM installed and may therefore replace.
 const LEGACY_STATE_FILE: &str = "dmm_content_versions.json";
 
-/// The size and mtime a hash was computed at, so a 1 GB stock map is not
-/// re-hashed on every join.
 #[derive(Serialize, Deserialize, Clone)]
 struct HashRecord {
   len: u64,
@@ -43,12 +31,10 @@ struct HashRecord {
 
 #[derive(Serialize, Deserialize, Default)]
 struct ContentState {
-  /// Maps DMM installed. Any other map in `citadel/maps` is never overwritten.
   #[serde(default)]
   owned_maps: BTreeSet<String>,
   #[serde(default)]
   hashes: HashMap<String, HashRecord>,
-  /// The Deadworks UI bootstrap version DMM last saw installed.
   #[serde(default)]
   bootstrap_version: Option<u64>,
 }
@@ -84,9 +70,6 @@ pub struct ContentProgress {
 pub struct ContentResult {
   installed: usize,
   skipped: usize,
-  /// Entries whose host serves a different build than the server runs. They
-  /// were not installed; pass their keys back in `accept_mismatch` to install
-  /// the host's copy anyway.
   mismatched: Vec<MismatchedEntry>,
 }
 
@@ -100,17 +83,12 @@ pub struct MismatchedEntry {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentPreview {
-  /// The server answered with Deadworks content keys.
   advertised: bool,
   total_items: usize,
   pending_items: usize,
-  /// Uncompressed size of the pending items the server gave a size for.
   pending_bytes: u64,
-  /// The server's list did not fit one reply; only what is listed installs.
   truncated: bool,
-  /// Content is pending but the server gave no usable download URL.
   missing_source: bool,
-  /// Maps DMM did not install whose build differs from the server's.
   blocked_maps: Vec<String>,
 }
 
@@ -185,7 +163,6 @@ fn modified_ms(meta: &std::fs::Metadata) -> u64 {
     .map_or(0, |d| d.as_millis() as u64)
 }
 
-/// Whether the installed file matches the advertised size and hash prefix.
 fn is_current(state: &mut ContentState, entry: &ContentEntry, dest: &Path) -> Result<bool, Error> {
   let Ok(meta) = std::fs::metadata(dest) else {
     return Ok(false);
@@ -218,7 +195,6 @@ fn is_current(state: &mut ContentState, entry: &ContentEntry, dest: &Path) -> Re
   Ok(sha16 == entry.hash)
 }
 
-/// A map already on disk that DMM did not put there must never be replaced.
 fn is_blocked_map(state: &ContentState, entry: &ContentEntry, dest: &Path) -> bool {
   entry.kind == ContentKind::Map && dest.exists() && !state.owned_maps.contains(&entry.name)
 }
@@ -238,7 +214,6 @@ async fn resolve_server(address: &str) -> Result<SocketAddr, Error> {
     .ok_or_else(|| Error::Network(format!("{address} did not resolve")))
 }
 
-/// Ask the server what it needs. A silent server advertises nothing.
 async fn read_advertisement(server: SocketAddr) -> Result<Option<Advertisement>, Error> {
   Ok(
     query_rules(server)
@@ -269,7 +244,6 @@ fn content_url(
   .map_err(|e| Error::InvalidInput(format!("Invalid content URL: {e}")))
 }
 
-/// Count what a join would download, without writing any content.
 #[tauri::command]
 pub async fn preview_deadworks_content(address: String) -> Result<ContentPreview, Error> {
   let server = resolve_server(&address).await?;
@@ -320,13 +294,6 @@ pub async fn preview_deadworks_content(address: String) -> Result<ContentPreview
   .map_err(|e| Error::BackgroundTaskFailed(format!("Content check failed: {e}")))?
 }
 
-/// Install everything the Deadworks server at `address` advertises.
-///
-/// The list is re-read from the server rather than taken from the caller.
-/// Files whose host serves a different build are reported, not installed,
-/// unless their key is in `accept_mismatch`; those still pass the size caps
-/// and VPK check but are not recorded as the advertised build, so the next
-/// join checks them again.
 #[tauri::command]
 pub async fn download_deadworks_content(
   app: AppHandle,
@@ -342,7 +309,6 @@ pub async fn download_deadworks_content(
   let cache_dir = paths.cache_dir.clone();
   let mut state = load_state(&cache_dir);
 
-  // Every Deadworks server needs the UI bootstrap, whatever it advertises.
   let bootstrap_progress = |status, bytes_downloaded, total_bytes| ContentProgress {
     status,
     name: "Deadworks UI".to_string(),
@@ -379,7 +345,6 @@ pub async fn download_deadworks_content(
   if ad.truncated {
     log::warn!("{address} advertises more content than fits one reply; installing what is listed");
   }
-  // The game server's own LAN is the one place private hosts are expected.
   let allow_private = !is_public_target(&server);
 
   std::fs::create_dir_all(&paths.maps_dir)?;
@@ -456,7 +421,6 @@ pub async fn download_deadworks_content(
     let compressed_len = std::fs::metadata(&compressed)?.len();
     budget = budget.saturating_sub(compressed_len);
 
-    // The download is complete, so the bar holds full while unpacking.
     emit(
       &app,
       progress(ContentStatus::Decompressing, compressed_len, compressed_len),

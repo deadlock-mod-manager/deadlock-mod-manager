@@ -60,7 +60,6 @@ const ModRow = ({ entry, canChooseFiles, onChooseFiles }: ModRowProps) => {
   const progress = usePersistedStore((store) =>
     store.getModProgress(entry.remoteId),
   );
-  // Files picked from this dialog install the mod after the run settled it.
   const outcome =
     entry.outcome === "manual" && mod?.status === ModStatus.Installed
       ? "restored"

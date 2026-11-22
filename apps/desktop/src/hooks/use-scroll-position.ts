@@ -8,10 +8,8 @@ export const useScrollPosition = (key?: string) => {
   const scrollElementRef = useRef<HTMLElement | null>(null);
   const isRestoringRef = useRef(false);
   const isNavigatingRef = useRef(false);
-  // Bumped in setScrollElement so the scroll-listener effect re-runs when the element changes.
   const [scrollElementVersion, setScrollElementVersion] = useState(0);
 
-  // Stored in a ref to avoid Zustand store writes (and re-renders) on every scroll event.
   const scrollTopRef = useRef(0);
 
   const setScrollPosition = usePersistedStore(
@@ -24,15 +22,12 @@ export const useScrollPosition = (key?: string) => {
     (state) => state.clearScrollPosition,
   );
 
-  // Persist the current ref-tracked scroll position into the store.
-  // Only called on unmount, navigation, or visibility change — never mid-scroll.
   const saveScrollPosition = useCallback(() => {
     if (!isNavigatingRef.current) {
       setScrollPosition(scrollKey, scrollTopRef.current);
     }
   }, [scrollKey, setScrollPosition]);
 
-  // Restore scroll position
   const restoreScrollPosition = useCallback(() => {
     if (scrollElementRef.current && !isRestoringRef.current) {
       const savedPosition = getScrollPosition(scrollKey);
@@ -46,12 +41,10 @@ export const useScrollPosition = (key?: string) => {
     }
   }, [scrollKey, getScrollPosition]);
 
-  // Clear stored scroll position for current key
   const clearScrollPosition = useCallback(() => {
     clearStoreScrollPosition(scrollKey);
   }, [scrollKey, clearStoreScrollPosition]);
 
-  // Set ref for the scrollable element
   const setScrollElement = useCallback(
     (element: HTMLElement | null) => {
       if (scrollElementRef.current && scrollElementRef.current !== element) {
@@ -63,7 +56,6 @@ export const useScrollPosition = (key?: string) => {
     [saveScrollPosition],
   );
 
-  // Persist scroll position on visibility change, beforeunload, and unmount
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -86,7 +78,6 @@ export const useScrollPosition = (key?: string) => {
     };
   }, [saveScrollPosition]);
 
-  // Attaches the scroll listener; re-runs via scrollElementVersion when the element changes.
   useEffect(() => {
     const element = scrollElementRef.current;
     if (!element) {
@@ -106,10 +97,8 @@ export const useScrollPosition = (key?: string) => {
     };
   }, [scrollElementVersion]);
 
-  // Read the initial scroll position from the store once on mount
   const initialScrollY = useRef(getScrollPosition(scrollKey));
 
-  // Reset navigation flag when component mounts (new page load)
   useEffect(() => {
     isNavigatingRef.current = false;
   }, []);

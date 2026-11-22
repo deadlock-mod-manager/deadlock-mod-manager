@@ -65,8 +65,6 @@ export const installCatalog = (
     await $('button[aria-label="Download Mod"]').click();
     const recipe = catalogRecipe(scenario);
     const selected = recipe.filter((archive) => archive.selected);
-    // Choosing among several downloads is remembered: enabling installs every
-    // VPK in the chosen archives. Only a single download asks per VPK.
     const remembered = recipe.length > 1;
     if (remembered)
       await selectDownloads(selected.map((archive) => archive.name));
@@ -135,7 +133,6 @@ export const checkCatalog = async (
         );
       },
     );
-    // The dialog only lists installed files when there is more than one.
     const tree = (await readCatalogState(world)).localMods[0].installedFileTree;
     if ((tree?.files.length ?? 0) > 1) {
       await openCatalogOptions();
@@ -319,7 +316,6 @@ export const reinstallCatalog = async (world: string, enabled: boolean) => {
   await expect(
     $('//*[@data-sonner-toast and contains(., "reinstalled")]'),
   ).toBeDisplayed();
-  // Status and profile enablement reach disk in separate queued snapshots.
   await observeUntil(
     "Persisted catalog reinstall",
     () => readCatalogState(world),

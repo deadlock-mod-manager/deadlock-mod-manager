@@ -9,14 +9,12 @@ export const fileExtension = (filePath: string): string => {
   return lastDot === -1 ? "" : filePath.slice(lastDot).toLowerCase();
 };
 
-/** True when no extensions are given or the path ends in one of them */
 export const matchesExtensions = (
   filePath: string,
   extensions: string[] | undefined,
 ): boolean =>
   !extensions?.length || extensions.includes(fileExtension(filePath));
 
-/** An archive entry path that cannot escape the directory it is joined to */
 export const toSafeRelativePath = (entryPath: string): string =>
   entryPath
     .replace(BACKSLASHES, "/")

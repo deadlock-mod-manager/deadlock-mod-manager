@@ -21,26 +21,14 @@ struct EntryInfo {
     preload: Vec<u8>,
 }
 
-/// Suffix of the sidecar that redirects companion-archive lookups: a file named
-/// `<name>.vpk.origin` beside a VPK holds the absolute directory its `_NNN.vpk`
-/// companions live in.
-///
-/// This exists for staged copies. A `_dir.vpk` can be copied somewhere else and
-/// parsed from there, but copying its companions along is not always viable —
-/// the base game's pak is a 6 MB directory file in front of ~100 companion
-/// archives totalling tens of gigabytes. The sidecar lets the staged directory
-/// file resolve entry payloads read-only from where the companions actually are.
 pub const ORIGIN_SIDECAR_SUFFIX: &str = ".origin";
 
-/// Path of the origin sidecar belonging to `vpk_path`.
 pub fn origin_sidecar_path(vpk_path: &Path) -> PathBuf {
     let mut name = vpk_path.file_name().unwrap_or_default().to_os_string();
     name.push(ORIGIN_SIDECAR_SUFFIX);
     vpk_path.with_file_name(name)
 }
 
-/// Directory to resolve `_NNN.vpk` companions in: the one named by the origin
-/// sidecar when it exists and still points at a directory, else the VPK's own.
 pub fn companion_dir(vpk_path: &Path) -> PathBuf {
     if let Ok(text) = fs::read_to_string(origin_sidecar_path(vpk_path)) {
         let origin = PathBuf::from(text.trim());
@@ -61,10 +49,6 @@ pub struct VpkArchive {
     inline_data_length: Option<u32>,
     entries: Vec<EntryInfo>,
     entry_index: HashMap<String, usize>,
-    /// An unpacked file tree that shadows the archive. When the Foundry has an
-    /// editable workspace open, a file present there is the user's edited
-    /// version of that entry, so previews must read it instead of the packed
-    /// original.
     overlay_dir: Option<PathBuf>,
     fallbacks: Vec<Arc<VpkArchive>>,
     evidence: Option<Mutex<PreviewEvidence>>,
@@ -131,7 +115,6 @@ impl VpkArchive {
         })
     }
 
-    /// Open the archive with an unpacked tree shadowing it (see `overlay_dir`).
     pub fn open_with_overlay(vpk_path: &Path, overlay_dir: Option<&Path>) -> Result<Self> {
         let mut archive = Self::open(vpk_path)?;
         archive.overlay_dir = overlay_dir
@@ -140,22 +123,17 @@ impl VpkArchive {
         Ok(archive)
     }
 
-    /// The overlay's path for an entry, if the overlay holds one. Entry paths
-    /// come from the VPK directory, so they are already relative and separator-
-    /// normalized, but a `..` is rejected rather than trusted.
     fn overlay_path(&self, entry_path: &str) -> Option<PathBuf> {
         let overlay_dir = self.overlay_dir.as_ref()?;
         let path = overlay_dir.join(sanitize_relative(entry_path)?);
         path.is_file().then_some(path)
     }
 
-    /// Read missing resources from lower-priority archives without unpacking them.
     pub fn with_fallbacks(mut self, fallbacks: Vec<Arc<VpkArchive>>) -> Self {
         self.fallbacks = fallbacks;
         self
     }
 
-    /// Enable evidence only for this request; shared cached base archives remain immutable.
     pub fn with_preview_report(mut self) -> Self {
         self.evidence = Some(Mutex::new(PreviewEvidence::default()));
         self
@@ -165,7 +143,6 @@ impl VpkArchive {
         crate::preview_report::snapshot(&self.evidence)
     }
 
-    /// Return the actual byte source without reading it. A present corrupt override still wins.
     pub fn entry_source(&self, entry_path: &str) -> Option<PreviewDependency> {
         let key = entry_path.replace('\\', "/").to_ascii_lowercase();
         let overlay = self.overlay_path(entry_path).is_some();
@@ -250,7 +227,6 @@ impl VpkArchive {
             .map(Arc::as_ref)
     }
 
-    /// Whether an entry stores a prefix in the directory tree. Extraction includes this prefix.
     pub fn has_preload_bytes(&self, entry_path: &str) -> bool {
         let key = entry_path.replace('\\', "/").to_ascii_lowercase();
         self.entry_index
@@ -283,7 +259,6 @@ impl VpkArchive {
         self.read_entry(entry)
     }
 
-    /// Reject oversized preview assets before allocating their archive payload.
     pub fn extract_entry_limited(&self, entry_path: &str, max_bytes: usize) -> Result<Vec<u8>> {
         let result = self.extract_entry_limited_inner(entry_path, max_bytes);
         self.record_read(entry_path, &result);
@@ -323,8 +298,6 @@ impl VpkArchive {
         }
     }
 
-    /// Read the bytes of one already-resolved entry, pulling from inline data or
-    /// the matching `_NNN.vpk` companion archive.
     fn read_entry(&self, entry: &EntryInfo) -> Result<Vec<u8>> {
         let mut bytes = entry.preload.clone();
         if entry.entry_length == 0 {
@@ -372,10 +345,6 @@ impl VpkArchive {
         Ok(bytes)
     }
 
-    /// Unpack every entry to `dest_dir`, preserving the VPK's internal directory
-    /// layout. Returns the number of files written. Entries whose path would
-    /// escape `dest_dir` (contain `..`, absolute/root components) are skipped.
-    /// This only reads the source VPK; nothing is moved or removed.
     pub fn extract_all_to(&self, dest_dir: &Path) -> Result<usize> {
         let mut written = 0usize;
         for entry in &self.entries {
@@ -384,9 +353,6 @@ impl VpkArchive {
         Ok(written)
     }
 
-    /// Unpack only the named entries to `dest_dir` (case-insensitive match),
-    /// preserving their internal directory layout. Used to pull a single hero's
-    /// assets out of the shared base-game pak without unpacking gigabytes.
     pub fn extract_entries_to(&self, dest_dir: &Path, entry_paths: &[String]) -> Result<usize> {
         let mut written = 0usize;
         for entry_path in entry_paths {
@@ -402,8 +368,6 @@ impl VpkArchive {
         Ok(written)
     }
 
-    /// Write one entry's bytes under `dest_dir` at its sanitized relative path.
-    /// Returns 1 if written, 0 if the path was rejected as unsafe.
     fn write_entry(&self, entry: &EntryInfo, dest_dir: &Path) -> Result<usize> {
         let Some(rel) = sanitize_relative(&entry.full_path) else {
             return Ok(0);
@@ -418,8 +382,6 @@ impl VpkArchive {
     }
 }
 
-/// Normalize resource separators, rejecting empty, dot, parent, drive, stream,
-/// control-character, Windows device-name and trailing-dot/space segments on every platform.
 pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
     let normalized = entry_path.replace('\\', "/");
     for segment in normalized.split('/') {
@@ -432,7 +394,6 @@ pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
             || stem.eq_ignore_ascii_case("prn")
             || stem.eq_ignore_ascii_case("aux")
             || stem.eq_ignore_ascii_case("nul")
-            // Windows also reserves the superscript digits ¹ ² ³ after COM and LPT.
             || stem
                 .get(..3)
                 .zip(stem.get(3..))
@@ -463,26 +424,18 @@ fn sanitize_relative(entry_path: &str) -> Option<PathBuf> {
 #[path = "resource_path_tests.rs"]
 mod resource_path_tests;
 
-/// Read the raw bytes of a single entry inside a VPK, resolving inline data and
-/// companion `_NNN.vpk` archives. Mirrors the game's VPK v2 layout.
 pub fn extract_entry(vpk_path: &Path, entry_path: &str) -> Result<Vec<u8>> {
     VpkArchive::open(vpk_path)?.extract_entry(entry_path)
 }
 
-/// List every entry path in a VPK (used to resolve the actual texture path when
-/// the caller only knows a filename).
 pub fn list_entries(vpk_path: &Path) -> Result<Vec<String>> {
     Ok(VpkArchive::open(vpk_path)?.list_entries())
 }
 
-/// Unpack an entire VPK into `dest_dir`, preserving its directory layout.
-/// Read-only with respect to the source VPK. Returns the file count written.
 pub fn extract_all(vpk_path: &Path, dest_dir: &Path) -> Result<usize> {
     VpkArchive::open(vpk_path)?.extract_all_to(dest_dir)
 }
 
-/// Unpack only the named entries from a VPK into `dest_dir`. Read-only with
-/// respect to the source VPK. Returns the file count written.
 pub fn extract_entries(vpk_path: &Path, dest_dir: &Path, entry_paths: &[String]) -> Result<usize> {
     VpkArchive::open(vpk_path)?.extract_entries_to(dest_dir, entry_paths)
 }

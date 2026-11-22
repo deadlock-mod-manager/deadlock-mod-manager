@@ -53,8 +53,6 @@ async fn fetch_bounded(value: &str, allow_local_network: bool) -> Result<(String
   Ok((content_type, bytes))
 }
 
-/// Browser loads cannot inherit native transport's pinned DNS or redirect
-/// policy. Only bounded, verified raster bytes cross the IPC boundary.
 pub(super) async fn raster_data_url(
   value: &str,
   allow_local_network: bool,
@@ -84,8 +82,6 @@ fn data_url(mime: &str, bytes: &[u8]) -> String {
   )
 }
 
-/// Icons only render through `<img>`, where SVG cannot run scripts or load
-/// subresources, so icons may be SVG while listing images stay raster-only.
 async fn icon_data_url(value: &str, allow_local_network: bool) -> Result<String, Error> {
   let (content_type, bytes) = fetch_bounded(value, allow_local_network).await?;
   let icon = if content_type == "image/svg+xml" && is_svg(&bytes) {
@@ -106,7 +102,6 @@ fn is_svg(bytes: &[u8]) -> bool {
 }
 
 pub(super) async fn hydrate_source_icon(source: &mut NativeSourceSummary) {
-  // Media is optional. Its outage must not invalidate an installable source.
   let declared = match source.descriptor.icon_url.take() {
     Some(url) => icon_data_url(&url, source.allow_local_network).await.ok(),
     None => None,
@@ -117,8 +112,6 @@ pub(super) async fn hydrate_source_icon(source: &mut NativeSourceSummary) {
   };
 }
 
-/// Without a usable declared icon, use the site's favicon the way a browser
-/// tab would: `/favicon.ico`, then the page's `<link rel="icon">` entries.
 async fn site_favicon(source: &NativeSourceSummary) -> Option<String> {
   let allow_local_network = source.allow_local_network;
   let page = source

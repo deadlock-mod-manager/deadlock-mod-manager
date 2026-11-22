@@ -17,11 +17,9 @@ type Notice = {
   stopped: boolean;
   title: string;
   body: string;
-  /** Another GameBanana file server is a way out the user can take right now. */
   suggestFileServer: boolean;
 };
 
-/** Re-renders every second while active, since silence sends no progress events. */
 const useNow = (active: boolean) => {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {

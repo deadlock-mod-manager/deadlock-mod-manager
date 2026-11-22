@@ -1,8 +1,6 @@
 use super::*;
 use crate::mod_manager::vdata_history::VdataBaselineMatch;
 
-/// A copied hero inherits current donor data; only its authored deltas are replayed.
-/// The donor must be the unique closest unchanged historical row with the same model and class.
 pub(super) struct HeroRebaser<'a> {
   current_rows: &'a [(String, Kv3Value)],
   current_encodings: &'a [(String, Kv3Encoding)],
@@ -65,7 +63,6 @@ impl<'a> HeroRebaser<'a> {
     let Some((donor_name, patches)) = best else {
       return Ok(None);
     };
-    // Model reuse is common in development heroes. Equal distances remain ambiguous.
     if tied {
       return Ok(None);
     }
@@ -135,7 +132,6 @@ impl<'a> HeroRebaser<'a> {
       else {
         return Ok(());
       };
-      // Shared models are safe only when every matching donor agrees on the field and type.
       if state
         .is_some_and(|(known, known_encoding)| known != value || known_encoding != wire_encoding)
       {

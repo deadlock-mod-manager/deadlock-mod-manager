@@ -1,7 +1,3 @@
-/**
- * Extract a .dmodpkg package
- */
-
 export async function extractCommand(
   _packagePath: string,
   _options?: {
@@ -11,6 +7,5 @@ export async function extractCommand(
     decompress?: boolean;
   },
 ) {
-  // TODO: Implement extract command
   console.log("Extract command implementation pending");
 }

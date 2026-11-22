@@ -32,7 +32,6 @@ export type ModProgress = {
   percentage: number;
   speed?: number;
   source?: DownloadSource;
-  /** Epoch ms since the speed has been below the slow threshold. */
   slowSince?: number;
   failure?: DownloadFailure;
 };
@@ -59,24 +58,14 @@ export type ModsState = {
   modProgress: Record<string, ModProgress>;
   batchUpdateProgress: UpdateProgress | null;
   defaultSort: SortType;
-  /**
-   * Mods the user took off a hero's list on the Hero Skins page. They stay in
-   * the library and can be put back from there, they are just not listed.
-   */
   hiddenHeroMods: Record<string, true>;
-  /** Re-rolls the skin of every hero with a pool on each modded launch. */
   skinRandomizerEnabled: boolean;
-  /** Skins in their hero's randomizer pool, by remoteId. */
   randomizerSkins: Record<string, true>;
-  /** Heroes whose default look is one of the randomizer's outcomes. */
   randomizerDefaultHeroes: Record<string, true>;
   pendingIdentityMigrations: IdentityMigration[];
-  // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
-  /** The profile the analysis result describes, and whether Analyze is still registering what it found. */
   analysisTarget: AnalysisTarget | null;
-  // Hero detection state (ephemeral)
   heroDetection: HeroDetectionProgress;
 
   setDefaultSort: (sortType: SortType) => void;
@@ -104,14 +93,12 @@ export type ModsState = {
   ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   patchModProgress: (remoteId: string, patch: Partial<ModProgress>) => void;
-  /** Records a finished update, so update checks compare against now. */
   markModUpdated: (
     remoteId: string,
     profileId?: ProfileId,
     status?: ModStatus.Installed | ModStatus.Downloaded,
     filesUpdatedAt?: ModDto["filesUpdatedAt"],
   ) => void;
-  /** Restores the previous enablement when an update is interrupted. */
   restoreInterruptedUpdates: (
     remoteIds: ReadonlySet<string>,
     profileId?: ProfileId,
@@ -150,7 +137,6 @@ export type ModsState = {
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisTarget: (target: AnalysisTarget | null) => void;
-  /** Drops a file the user deleted or quarantined from the shown result. */
   removeAnalyzedAddon: (filePath: string) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
@@ -164,7 +150,6 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
-  /** Null records a scan that failed, so the mod is not scanned again. */
   setDetectedHero: (
     remoteId: string,
     detection: HeroDetectionResult | null,
@@ -400,7 +385,6 @@ export const createModsSlice: StateCreator<
           return {
             ...mod,
             status,
-            // A completed disable must not depend on watcher reconciliation.
             installedVpks:
               mod.status === ModStatus.Installed &&
               status === ModStatus.Downloaded
@@ -472,8 +456,6 @@ export const createModsSlice: StateCreator<
       const isActive = profileId === state.activeProfileId;
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
-      // Dropped along with the mod, so re-downloading it does not come back
-      // already hidden from its hero.
       const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
 
       const currentProfile = state.profiles[profileId];
@@ -664,7 +646,6 @@ export const createModsSlice: StateCreator<
                 status: vpks.length > 0 ? ModStatus.Installed : mod.status,
                 installedVpks: vpks,
                 installedFileTree: fileTree,
-                // Freshly installed VPKs replace whatever had gone missing.
                 missingVpks: vpks.length > 0 ? [] : mod.missingVpks,
               },
         ),
@@ -724,7 +705,6 @@ export const createModsSlice: StateCreator<
 
   setAnalysisResult: (result) => set({ analysisResult: result }),
   setAnalysisTarget: (target) => set({ analysisTarget: target }),
-  // Matched by path, not by result: the file is gone whichever analysis shows it.
   removeAnalyzedAddon: (filePath) =>
     set((state) => {
       const result = state.analysisResult;
@@ -786,9 +766,6 @@ export const createModsSlice: StateCreator<
         oldVpks: string[] | undefined;
         newVpks: string[];
       }[] = [];
-      // Callers pass every enabled mod. Keep the objects of mods whose files
-      // kept their names, so their cards don't re-render, and log only the
-      // renamed ones.
       const updateMods = (mods: typeof state.localMods) =>
         mods.map((mod) => {
           const newVpks = vpkMap.get(mod.remoteId);

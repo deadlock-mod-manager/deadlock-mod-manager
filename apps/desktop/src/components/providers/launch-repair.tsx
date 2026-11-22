@@ -85,8 +85,6 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
           throw new ValidationError(t("launchRepair.profileChanged"));
         }
       };
-      // The relaunch can still stop for compatibility review, which the caller
-      // handles by retrying the whole launch.
       let reviewRequired: ErrorKind | undefined;
       try {
         checkProfile();

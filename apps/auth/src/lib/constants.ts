@@ -6,5 +6,5 @@ export const SENTRY_OPTIONS = {
   environment: env.NODE_ENV,
   tracesSampleRate: 0.01,
   release: `auth@${version}`,
-  skipOpenTelemetrySetup: true, // Skip OpenTelemetry setup, we'll use our own.
+  skipOpenTelemetrySetup: true,
 };

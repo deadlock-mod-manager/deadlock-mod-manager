@@ -62,8 +62,6 @@ const win = (overrides: Partial<MatchHistoryEntry> = {}) =>
 const loss = (overrides: Partial<MatchHistoryEntry> = {}) =>
   makeMatch({ player_team: 0, match_result: 1, ...overrides });
 
-// Zeroed baselines, so a test only has to state the fields it actually asserts on
-// without any of them silently arriving as `undefined`.
 const makeHeroStats = (
   overrides: Partial<PlayerHeroStats> = {},
 ): PlayerHeroStats => ({
@@ -168,7 +166,6 @@ describe("summarize", () => {
     expect(summary.winrate).toBe(0.5);
     expect(summary.kills).toBe(5);
     expect(summary.kda).toBe((10 + 4 + 0 + 2) / 10);
-    // 2 x 30 min, 30k souls each.
     expect(summary.soulsPerMin).toBe(1000);
     expect(summary.avgDurationMin).toBe(30);
   });
@@ -208,12 +205,7 @@ describe("rollingWinrate", () => {
 
     const points = rollingWinrate(matches, 3);
 
-    expect(points.map((p) => p.winrate)).toEqual([
-      null,
-      null,
-      2 / 3, // win, loss, win
-      2 / 3, // loss, win, win
-    ]);
+    expect(points.map((p) => p.winrate)).toEqual([null, null, 2 / 3, 2 / 3]);
   });
 });
 
@@ -242,7 +234,6 @@ describe("streaks", () => {
   });
 });
 
-/** A local-time timestamp, so the hour buckets are timezone independent. */
 const at = (hour: number) =>
   Math.floor(new Date(2024, 0, 15, hour, 0, 0).getTime() / 1000);
 
@@ -276,7 +267,6 @@ describe("playSessions", () => {
     const start = 1_700_000_000;
     const sessions = playSessions([
       win({ start_time: start, match_mode: 4, ranked_display_badge: 65 }),
-      // Unranked games in between leave the last known badge alone.
       loss({ start_time: start + 14 * HOUR }),
       win({
         start_time: start + 15 * HOUR,
@@ -320,7 +310,6 @@ describe("sessionCurve", () => {
       win({ start_time: start }),
       loss({ start_time: start + 1 * HOUR }),
       loss({ start_time: start + 2 * HOUR }),
-      // 12h later: a new session, so this is position 1 again.
       win({ start_time: start + 14 * HOUR }),
     ]);
 
@@ -373,7 +362,6 @@ describe("benchmarkDeltas", () => {
     const rows = benchmarkDeltas(mine, global);
     const kills = rows.find((row) => row.metric === "kills");
 
-    // 10 kills/match vs a global 5.
     expect(kills?.mine).toBe(10);
     expect(kills?.global).toBe(5);
     expect(kills?.deltaPct).toBe(1);
@@ -409,7 +397,6 @@ describe("joinMateStats", () => {
         mate_id: 42,
         wins: 3,
         matches_played: 6,
-        // Match 99 is outside our own history and must be ignored.
         matches: [1, 2, 3, 4, 5, 99],
       },
     ];
@@ -528,7 +515,6 @@ describe("mergeHeroStats", () => {
     expect(hero.wins).toBe(6);
     expect(hero.kills).toBe(60);
     expect(hero.last_played).toBe(500);
-    // Rates the API computed are left alone rather than guessed at.
     expect(hero.networth_per_min).toBe(1000);
   });
 
@@ -580,7 +566,6 @@ describe("joinItemStats", () => {
     expect(row.winrate).toBe(0.7);
     expect(row.globalWinrate).toBe(0.5);
     expect(row.winrateDelta).toBeCloseTo(0.2, 10);
-    // Bought five minutes later than everyone else.
     expect(row.buyTimeDeltaS).toBe(300);
   });
 
@@ -605,7 +590,6 @@ describe("generateInsights", () => {
 
   it("flags a losing streak and a trap hero", () => {
     const start = 1_700_000_000;
-    // 20 wins long ago, then 6 straight losses.
     const matches = [
       ...Array.from({ length: 20 }, (_, i) =>
         win({ start_time: start + i * 24 * HOUR }),
@@ -644,7 +628,6 @@ describe("generateInsights", () => {
 
   it("adds always-true fallbacks so the card grid never runs short", () => {
     const start = 1_700_000_000;
-    // A steady account: nothing deviates enough for a threshold insight.
     const matches = Array.from({ length: 40 }, (_, i) =>
       (i % 2 === 0 ? win : loss)({
         start_time: start + i * 24 * HOUR,

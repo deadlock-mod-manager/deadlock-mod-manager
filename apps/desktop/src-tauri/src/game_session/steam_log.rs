@@ -1,24 +1,9 @@
-//! Steam's `logs/gameprocess_log.txt`, which records every tracked game
-//! process and its exit code:
-//!
-//! ```text
-//! [2026-10-04 22:27:59] AppID 1422450 adding PID 52896 as a tracked process "...\deadlock.exe -steam"
-//! [2026-10-04 23:06:13] AppID 1422450 no longer tracking PID 52896, exit code 0
-//! ```
-//!
-//! Timestamps are local time. On Linux Steam tracks the Proton wrapper, not
-//! the PID we see, so exit lookups simply find nothing there; its start line
-//! still says when the game was launched again. Steam also tracks helpers the
-//! game starts (`nvngx_update.exe`, `steamerrorreporter64.exe`) under the same
-//! app id, so only starts that mention `deadlock.exe` count.
-
 use std::path::Path;
 use std::sync::LazyLock;
 
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone, Utc};
 use regex::Regex;
 
-/// The log grows for years; the sessions we look up are near its end.
 const TAIL_BYTES: u64 = 512 * 1024;
 
 static EVENT_LINE: LazyLock<Regex> = LazyLock::new(|| {
@@ -30,7 +15,6 @@ static EVENT_LINE: LazyLock<Regex> = LazyLock::new(|| {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SteamLogEvent {
-  /// The game itself was launched, not one of its helpers.
   Started { pid: u32, at: DateTime<Utc> },
   Exited {
     pid: u32,
@@ -80,7 +64,6 @@ fn parse_events_with(
       let exit_code: i64 = captures.get(5)?.as_str().parse().ok()?;
       Some(SteamLogEvent::Exited {
         pid: captures.get(4)?.as_str().parse().ok()?,
-        // Steam prints NTSTATUS codes as signed numbers.
         exit_code: exit_code as u32,
         at,
       })
@@ -88,8 +71,6 @@ fn parse_events_with(
     .collect()
 }
 
-/// The exit Steam logged for `pid` after `started_at`. Both clocks have
-/// one-second resolution, so allow a second of rounding.
 pub fn find_exit(
   events: &[SteamLogEvent],
   pid: u32,
@@ -106,8 +87,6 @@ pub fn find_exit(
   })
 }
 
-/// When Deadlock was next launched after `after`, not counting `own_pid`. A
-/// later run overwrites console.log and writes its own crash dumps.
 pub fn next_start(
   events: &[SteamLogEvent],
   after: DateTime<Utc>,
@@ -150,7 +129,6 @@ mod tests {
   fn parses_deadlock_starts_and_exits_only() {
     let events = events();
 
-    // The helpers Steam tracks for the game are left out.
     assert_eq!(events.len(), 5);
     assert_eq!(
       events[1],
@@ -192,7 +170,6 @@ mod tests {
       next_start(&events, utc("2026-10-04 22:27:59"), Some(52896)),
       Some(utc("2026-10-04 22:30:00"))
     );
-    // Off Windows our PID isn't Steam's, but our own launch came first.
     assert_eq!(
       next_start(&events, utc("2026-10-04 22:28:01"), None),
       Some(utc("2026-10-04 22:30:00"))

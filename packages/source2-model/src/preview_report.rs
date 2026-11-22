@@ -1,5 +1,3 @@
-//! Bounded, per-decode evidence. A usable GLB is not proof that every dependency rendered.
-
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 

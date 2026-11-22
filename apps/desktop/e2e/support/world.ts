@@ -23,7 +23,6 @@ import {
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = path.resolve(HERE, "../../../..");
 export const WORLDS_ROOT = path.join(REPOSITORY_ROOT, ".e2e", "worlds");
-// The launcher DMM resolves inside the Steam root on this platform.
 export const STEAM_LAUNCHER =
   process.platform === "win32" ? "steam.exe" : "steam.sh";
 
@@ -240,8 +239,6 @@ export const collectFileInventory = async (
             break;
           } catch (error) {
             if (error instanceof Error && isMissingEntry(error)) break;
-            // WebView2 can release its file handles shortly after WDIO exits.
-            // Retry the read, never omit a locked file from the inventory.
             if (
               error instanceof Error &&
               "code" in error &&

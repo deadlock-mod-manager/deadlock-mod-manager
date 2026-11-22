@@ -1,17 +1,11 @@
-// A share code where some mods can't be imported, on top of the share fixtures.
 import type { FixtureRoute } from "./fixture-server";
 import { SHARE_MODS, shareRoutes } from "./profile-share-fixtures";
 
 export const FAILING_SHARE_CODE = "e2esharecode0002";
 const [alpha, , charlie] = SHARE_MODS;
 if (!alpha || !charlie) throw new Error("The share fixtures lost a mod");
-/** Imports normally. */
 export const IMPORTED_MOD = alpha;
-/** Its pick is the base archive, but its file selection names the effects
- *  VPK, which only the effects archive holds: the install can't find it. This
- *  is what re-sharing an imported profile produced before #1217. */
 export const UNINSTALLABLE_MOD = charlie;
-/** Not on GameBanana any more. */
 export const MISSING_MOD_ID = "920099";
 
 const archive = (name: string) => {
@@ -24,7 +18,6 @@ export const importFailureRoutes = async () => {
   const base = await shareRoutes();
   return (origin: string): FixtureRoute[] => {
     const routes = base(origin);
-    // Reuse the base routes' archive sizes so the picks match the catalog.
     const download = (mod: string, name: string, id: number) => {
       const route = routes.find((item) => item.path === `/dl/${id}`);
       if (!route) throw new Error(`No fixture download /dl/${id}`);
@@ -80,8 +73,6 @@ export const importFailureRoutes = async () => {
     if (!alphaRoute) throw new Error("The share fixtures lost Alpha's archive");
     return [
       ...routes.filter((route) => route !== alphaRoute),
-      // Alpha's download answers slowly, so the test can try closing the
-      // dialog while the import runs.
       { ...alphaRoute, headerDelayMs: 3_000 },
       {
         method: "GET",

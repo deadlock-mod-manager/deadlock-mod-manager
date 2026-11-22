@@ -24,7 +24,6 @@ const REPAIRS: { id: RepairId; icon: Icon }[] = [
 
 const FIXING_GUIDE_URL = `${DOCS_URL}/using-mod-manager/fixing-mods-after-updates`;
 
-/** The V2 page's lead feature, laid out wider than the regular rows. */
 export const ModHealthSection = () => {
   const { t } = useTranslation("v2");
   const points = Object.values(

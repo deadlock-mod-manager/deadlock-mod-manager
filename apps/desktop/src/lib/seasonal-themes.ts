@@ -17,7 +17,6 @@ export function isSeasonalThemeId(
   return SEASONAL_THEME_IDS.some((id) => id === value);
 }
 
-/** Local calendar dates; `end` is the last day the theme is shown. */
 export type SeasonalWindow = {
   themeId: SeasonalThemeId;
   start: Date;
@@ -27,7 +26,6 @@ export type SeasonalWindow = {
 
 export type ActiveSeason = {
   themeId: SeasonalThemeId;
-  /** Identifies one occurrence so a user can turn it off until next year. */
   key: string;
   forced: boolean;
   end?: Date;
@@ -52,11 +50,9 @@ const startOfDay = (date: Date) =>
 const daysBetween = (a: Date, b: Date) =>
   Math.round((a.getTime() - b.getTime()) / 86_400_000);
 
-/** Whole days from today to `target`; negative once it has passed. */
 export const daysUntil = (target: Date, now = new Date()) =>
   daysBetween(target, startOfDay(now));
 
-/** Gregorian Easter Sunday (anonymous Gregorian algorithm). */
 export function easterSunday(year: number) {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -75,7 +71,6 @@ export function easterSunday(year: number) {
   return day(year, month, date);
 }
 
-/** Lunar New Year depends on astronomical new moons; outside this table the theme stays off. */
 const LUNAR_NEW_YEAR = new Map<number, [month: number, date: number]>([
   [2025, [1, 29]],
   [2026, [2, 17]],
@@ -121,7 +116,6 @@ export function zodiacAnimal(year: number): ZodiacAnimal {
   return ZODIAC[(((year - 2020) % 12) + 12) % 12];
 }
 
-/** Windows open about a month ahead where the calendar allows it; New Year and Lunar New Year are shorter to avoid colliding with Christmas. */
 function windowsForYear(year: number): SeasonalWindow[] {
   const windows: SeasonalWindow[] = [
     {
@@ -168,7 +162,6 @@ function windowsForYear(year: number): SeasonalWindow[] {
 const windowKey = (window: SeasonalWindow) =>
   `${window.themeId}:${window.peak.getFullYear()}`;
 
-/** The window containing `now`; when two overlap, the one whose festival is closer wins. */
 function findSeasonalWindow(
   now: Date,
   allowed: (id: SeasonalThemeId) => boolean = () => true,
@@ -207,7 +200,6 @@ export function nextSeasonalWindow(
 const flagName = (id: SeasonalThemeId) =>
   `seasonal-theme-${id.slice("seasonal-".length)}`;
 
-/** Fails closed: nothing seasonal happens until the server sends `seasonal-themes: true`. */
 export function readSeasonalControls(
   flags: readonly FeatureFlag[] = [],
 ): SeasonalControls {
@@ -253,7 +245,6 @@ export function resolveSeason(
     : undefined;
 }
 
-/** Seasonal themes only fill in for players who have not picked a theme, like the Remlock release default. */
 export function resolveSeasonalTheme(
   settings: ThemeSettings | undefined,
   season: ActiveSeason | undefined,

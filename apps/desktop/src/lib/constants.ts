@@ -16,9 +16,7 @@ export const COPYRIGHT =
   "Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation.";
 
 export const STORE_NAME = "state.json";
-export const NOOP = () => {
-  // Intentionally empty function
-};
+export const NOOP = () => {};
 
 export enum SortType {
   DEFAULT = "default",
@@ -58,11 +56,6 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.OTHER_MISC,
 ] as const;
 
-/**
- * Translation keys under `modCategories`, for the places that render a category
- * to the user rather than matching on it. Categories the API invents outside
- * this list have no key and fall back to their raw name.
- */
 const MOD_CATEGORY_LABEL_KEYS: Partial<Record<ModCategory, string>> = {
   [ModCategory.MAPS]: "maps",
   [ModCategory.SKINS]: "skins",
@@ -111,21 +104,14 @@ export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");
 export const STALE_MOD_REPORT_THRESHOLD = 5;
 export const STALE_MOD_DAYS = 30;
 
-/** Top-downloaded mods per category each weekly featured pick is drawn from. */
 export const FEATURED_POOL_SIZE = 20;
-/** Trending = updated within this window, ranked by downloads. */
 export const TRENDING_WINDOW_DAYS = 30;
 export const TRENDING_LIMIT = 8;
 
-// Paint the Town update: https://store.steampowered.com/news/app/1422450/view/669505296465396531
-// The patch went live with this post, so mod updates from earlier that day
-// still target the old game.
 export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
   new Date("2026-10-16T21:00:07Z").getTime() / 1_000,
 );
 
-// Client-side toggles for features that are still settling. Stored locally so
-// anyone can opt in from Settings without signing in.
 export const EXPERIMENTAL_FEATURES = [
   "custom-maps",
   "mod-foundry",
@@ -134,9 +120,6 @@ export const EXPERIMENTAL_FEATURES = [
   "plugins",
 ] as const;
 
-// Features outside mod management that users can turn off from Settings to
-// keep the app lean. A feature that also has an experimental flag needs both
-// switches on; see lib/features.ts.
 export const OPTIONAL_FEATURES = [
   "stats",
   "server-browser",
@@ -149,10 +132,6 @@ export const OPTIONAL_FEATURES = [
   "plugins",
 ] as const;
 
-/**
- * Marks the live bridge HUD mod in the library, the way `local://manual` marks
- * hand-added mods. The Live tab needs it, and it needs `-condebug`.
- */
 export const LIVE_BRIDGE_LINK = "local://dmm-live-bridge";
 
 export const isLiveBridge = (mod: { remoteUrl: string }): boolean =>

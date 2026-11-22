@@ -57,19 +57,13 @@ impl Status {
 }
 
 static STATUS: LazyLock<AtomicU8> = LazyLock::new(|| AtomicU8::new(Status::Inactive as u8));
-// Each start gets a fresh stop flag so a mode-switch restart can stop the old loop
-// without racing the new one (they hold different Arcs).
 static CURRENT_RUNNING: LazyLock<Mutex<Option<Arc<AtomicBool>>>> =
   LazyLock::new(|| Mutex::new(None));
-// Desired inputs deciding whether — and in which mode — the single watcher runs.
 static PRESENCE_DESIRED: AtomicBool = AtomicBool::new(false);
 static MONITORING_DESIRED: AtomicBool = AtomicBool::new(false);
 #[cfg(feature = "plugins")]
 static PLUGIN_MONITORING_DESIRED: AtomicBool = AtomicBool::new(false);
-// true = the running watcher has Discord Rich Presence active.
 static CURRENT_PRESENCE_MODE: AtomicBool = AtomicBool::new(false);
-// Serializes ensure_watcher so overlapping start/stop/restart requests (dev
-// StrictMode, the presence + match-sync renderers) can't double-spawn watchers.
 static COORDINATOR_LOCK: Mutex<()> = Mutex::new(());
 static LATEST_PRESENCE_CONFIG: LazyLock<Mutex<Option<PresenceBuildConfig>>> =
   LazyLock::new(|| Mutex::new(None));
@@ -178,8 +172,6 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
     }));
     watcher.run().await;
 
-    // Only clear shared status if we are still the active watcher (not superseded
-    // by a restart), otherwise we'd stomp the newer watcher's state.
     if let Ok(mut current) = CURRENT_RUNNING.lock()
       && current
         .as_ref()
@@ -270,7 +262,6 @@ pub async fn get_game_presence_heroes() -> Result<Vec<GamePresenceHeroDto>, Erro
     .as_deref()
     .unwrap_or_else(|| std::path::Path::new("."));
   let mut hero_store = HeroDataStore::new(cache_path);
-  // E2E worlds are offline; the built-in hero list is enough for the settings picker.
   if !crate::runtime_environment::is_e2e_active() {
     hero_store.load().await;
   }
@@ -306,8 +297,6 @@ pub async fn start_game_presence_watcher(
 #[tauri::command]
 pub async fn stop_game_presence_watcher(app_handle: AppHandle) -> Result<(), Error> {
   PRESENCE_DESIRED.store(false, Ordering::Relaxed);
-  // Stopping presence itself always succeeds; only a fallback restart into
-  // detect-only mode (for match-sync monitoring) could fail here.
   if let Err(e) = ensure_watcher(&app_handle) {
     log::warn!("[GamePresence] Failed to restart in detect-only mode: {e}");
   }

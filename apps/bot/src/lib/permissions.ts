@@ -40,16 +40,10 @@ export function hasReportModerationPermission(
   return hasPermission;
 }
 
-/**
- * Get a formatted list of required roles for error messages
- */
 export function getRequiredRolesDisplay(): string {
   return env.REPORT_MODERATOR_ROLES.map((roleId) => `<@&${roleId}>`).join(", ");
 }
 
-/**
- * Check if a user has blacklist permission (server administrator or blacklist moderator role)
- */
 export function hasBlacklistPermission(
   user: User,
   member: GuildMember | null,
@@ -64,10 +58,8 @@ export function hasBlacklistPermission(
     return false;
   }
 
-  // Check if user is server administrator
   const isAdmin = member.permissions.has("Administrator");
 
-  // Check if user has blacklist moderator role
   const userRoles = member.roles.cache.map((role) => role.id);
   const hasBlacklistRole = env.BLACKLIST_MODERATOR_ROLES.some((roleId) =>
     userRoles.includes(roleId),
@@ -90,9 +82,6 @@ export function hasBlacklistPermission(
   return hasPermission;
 }
 
-/**
- * Get a formatted message for required permissions
- */
 export function getBlacklistRequiredPermissionsDisplay(): string {
   const adminText = "Server Administrator";
   const roleText =

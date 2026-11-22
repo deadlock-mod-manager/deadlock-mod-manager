@@ -23,8 +23,6 @@ export const startFilesystemJournal = (
         path: fileName?.toString().replaceAll("\\", "/") ?? "",
       });
     }).on("error", (error) => {
-      // Linux emulates recursive watching and fails when a directory vanishes
-      // before it is scanned. The journal is evidence; record and continue.
       events.push({
         at: new Date().toISOString(),
         root: name,

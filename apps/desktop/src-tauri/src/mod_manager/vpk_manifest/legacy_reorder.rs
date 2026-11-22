@@ -5,10 +5,6 @@ use crate::mod_manager::shard::ProfileBase;
 use crate::mod_manager::vpk_manager::VpkManager;
 use std::{fs, io::ErrorKind};
 
-/// Pre-V2 reorders parked bare pak names here without a rollback journal.
-/// Restoring their original slots keeps the existing manifest valid. Once a
-/// slot has been reused we cannot infer ownership, so stop before moving any
-/// file or letting reconciliation forget the stranded mods.
 pub(super) fn recover(base: &ProfileBase) -> Result<(), Error> {
   let staging = base.join("temp_reorder");
   let metadata = match fs::symlink_metadata(&staging) {
@@ -67,8 +63,6 @@ pub(super) fn recover(base: &ProfileBase) -> Result<(), Error> {
     })
     .map_err(|error| map_file_lock_error("recover legacy reorder", &label, error))?;
   }
-  // Keep unfinished recovery retryable: successful moves already match the
-  // unchanged manifest, and any remaining payloads retain their original names.
   fs::remove_dir(staging)?;
   Ok(())
 }

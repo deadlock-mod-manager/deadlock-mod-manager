@@ -20,12 +20,6 @@ const logger = mainLogger.child().withContext({
 
 const policyRepository = new PolicyRuleRepository(db);
 
-/**
- * Flags a GameBanana upload that is only a gameinfo.gi performance config, so
- * the desktop app opens it in Performance instead of installing it as a mod.
- * Uploads that also ship VPKs stay installable: the download flow installs the
- * VPKs and offers to import the config.
- */
 export class PerfConfigCommand extends Command {
   constructor(context: Command.LoaderContext, options: Command.Options) {
     super(context, { ...options });

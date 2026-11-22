@@ -1,10 +1,3 @@
-//! Deep links that let a source's website add the source or install one of its
-//! mods: `deadlock-mod-manager://sources/add?url=<descriptor>` and
-//! `deadlock-mod-manager://sources/install?url=<descriptor>&source=<id>&listing=<id>`
-//! with optional `release` and `artifact`. Links carry the descriptor URL and
-//! IDs only; files still come from the accepted source's catalog, and adding a
-//! source always goes through the reviewed enrollment dialog.
-
 use crate::deep_link::parse_query_params;
 use crate::errors::Error;
 use serde::Serialize;
@@ -21,8 +14,6 @@ const PATH_INSTALL: &str = "//sources/install";
 
 const MAX_PENDING: usize = 10;
 
-/// Any web page can fire a link, so only development builds let one reach
-/// local-network sources.
 pub const LINKS_ALLOW_LOCAL_NETWORK: bool = cfg!(debug_assertions);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -60,8 +51,6 @@ pub enum NativeSourceLinkTarget {
   Ready { record: Box<NativeSourceMod> },
 }
 
-/// Applies the same checks to an install request from the renderer as to one
-/// from a link.
 pub fn install_link(
   descriptor_url: &str,
   source_id: &str,
@@ -86,8 +75,6 @@ pub fn install_link(
   })
 }
 
-/// Parses the part after the scheme. Windows may add a slash before the query
-/// or after it.
 pub fn parse_link(data_part: &str, allow_local_network: bool) -> Option<NativeSourceLink> {
   let (is_install, rest) = match data_part.strip_prefix(PATH_INSTALL) {
     Some(rest) => (true, rest),
@@ -118,12 +105,8 @@ pub fn parse_link(data_part: &str, allow_local_network: bool) -> Option<NativeSo
   .ok()
 }
 
-/// Links waiting for the window. A link that starts the app arrives before the
-/// window listens, so links wait here and the event only says to look.
 static PENDING: Mutex<Vec<NativeSourceLink>> = Mutex::new(Vec::new());
 
-/// Returns false when the link was dropped as a repeat of a waiting link or
-/// because the queue is full.
 pub fn queue_pending(link: NativeSourceLink) -> bool {
   let Ok(mut pending) = PENDING.lock() else {
     return false;
@@ -158,7 +141,6 @@ mod tests {
 
   #[test]
   fn parses_the_links_a_site_sends() {
-    // Sites hardcode these shapes, so a change here breaks their buttons.
     assert_eq!(
       parse(
         "deadlock-mod-manager://sources/add?url=https%3A%2F%2Fmods.example.org%2F.well-known%2Fdmm-source.json"

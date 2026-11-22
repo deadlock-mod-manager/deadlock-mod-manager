@@ -36,8 +36,6 @@ export const LocationRow = ({
             : "serverPicker.notMeasuredShort",
         )
       : t("serverPicker.milliseconds", { count: Math.round(ping) });
-  // A pending edit already says what will happen; drift labels only matter
-  // when the firewall disagrees with the saved selection.
   const note = pending
     ? t(blocked ? "serverPicker.willBlock" : "serverPicker.willAllow")
     : observed === true && !blocked

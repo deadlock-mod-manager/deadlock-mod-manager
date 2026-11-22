@@ -41,10 +41,8 @@ pub struct DownloadFileDto {
   pub size: u64,
   #[serde(default, rename = "md5Checksum")]
   pub md5_checksum: Option<String>,
-  /// Set only by Rust source resolution; IPC callers cannot grant network access.
   #[serde(skip)]
   pub native_artifact: Option<crate::providers::native_sources::ResolvedNativeArtifact>,
-  /// Set only by Rust source resolution, like `native_artifact`.
   #[serde(skip)]
   pub late_sources: Option<LateSources>,
 }
@@ -58,9 +56,6 @@ pub struct DownloadTask {
   pub is_profile_import: bool,
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
   pub native_component_plan: bool,
-  /// The window's id for this attempt, echoed on the events that settle it, so
-  /// a late event from an earlier attempt for the same mod isn't taken for this
-  /// one. `None` for downloads the backend queues itself.
   pub attempt_id: Option<String>,
 }
 
@@ -83,7 +78,6 @@ pub struct DownloadProgressEvent {
   pub total: u64,
   pub transfer_speed: f64,
   pub percentage: f64,
-  /// `None` on reports that carry no response, such as a file finishing.
   pub source: Option<DownloadSource>,
 }
 
@@ -146,7 +140,6 @@ pub struct DownloadErrorEvent {
   pub mod_id: String,
   pub attempt_id: Option<String>,
   pub error: String,
-  /// Set when the failure is on the download server's side rather than the app's.
   pub reason: Option<DownloadFailureReason>,
   pub retry_after_secs: Option<u64>,
 }
@@ -154,9 +147,7 @@ pub struct DownloadErrorEvent {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum DownloadFailureReason {
-  /// GameBanana answered with 429 or a 5xx.
   SourceBusy,
-  /// The server stopped sending data and reconnecting did not help.
   Stalled,
 }
 
@@ -208,11 +199,7 @@ struct ActiveDownload {
 #[derive(Clone, Debug)]
 pub struct PreparedDownload {
   pub vpk_paths: Vec<PathBuf>,
-  /// What was actually prepared, so the installed mod stops reporting the
-  /// selection it was updated from.
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
-  /// No saved choice fits an archive with several VPKs, so nothing was
-  /// prepared and `file_tree` is what the user picks from.
   pub selection_required: bool,
   scratch_paths: Vec<PathBuf>,
 }
@@ -248,7 +235,6 @@ struct QueuedDownload {
   task: DownloadTask,
   purpose: DownloadPurpose,
   completion: Option<oneshot::Sender<Result<PreparedDownload, String>>>,
-  /// Paused downloads keep their place in the queue, but the worker skips them.
   paused: bool,
 }
 
@@ -276,8 +262,6 @@ impl DownloadManager {
     Ok(())
   }
 
-  /// Resolves once the files are placed. A download dropped from the queue
-  /// before it started reports as cancelled.
   pub async fn queue_download_and_wait(&self, task: DownloadTask) -> Result<(), Error> {
     self
       .queue_with_completion(task, DownloadPurpose::Install)
@@ -288,7 +272,6 @@ impl DownloadManager {
       .map_err(Error::DownloadFailed)
   }
 
-  /// A download dropped from the queue before it started reports as cancelled.
   pub async fn queue_download_and_prepare(
     &self,
     task: DownloadTask,
@@ -354,8 +337,6 @@ impl DownloadManager {
 
     tokio::spawn(async move {
       loop {
-        // Register the download as active before releasing the queue, so status
-        // checks and profile cancellation never miss a task between the two.
         let task = {
           let mut queue = queue_clone.lock().await;
           match Self::claim_next(&mut queue, &mut *processing_clone.lock().await) {
@@ -401,12 +382,10 @@ impl DownloadManager {
               let Some(queued) = cancelled else {
                 continue;
               };
-              // Cancelled while its files were stopping, which left their partials.
               Self::remove_partials(&queued.task).await;
               (queued, Err(Error::DownloadCancelled))
             } else {
               active_clone.lock().await.remove(&mod_id);
-              // A file that stopped for a pause just before the cancel kept its partial.
               if cancel_token.is_cancelled() {
                 Self::remove_partials(&queued.task).await;
               }
@@ -498,7 +477,6 @@ impl DownloadManager {
 
     for (file_index, file) in task.files.iter().enumerate() {
       let target_path = task.target_dir.join(&file.name);
-      // A resumed download shows the bytes it already holds before its first response.
       let resumed = downloader::partial_download_len(&target_path).await;
       if resumed > 0 {
         aggregator.record(file_index, resumed, None, 0.0, |accepted| {
@@ -556,8 +534,6 @@ impl DownloadManager {
         )
         .await;
 
-        // Unconditional: `finish` is the only thing that zeroes the slot's rate, so a file
-        // that failed mid-transfer would keep donating its last observed speed.
         aggregator_shared.finish(file_index, |accepted| {
           Self::publish_progress(
             accepted,
@@ -612,7 +588,6 @@ impl DownloadManager {
     match purpose {
       DownloadPurpose::Install => {
         if task.native_component_plan {
-          // As on the archive path, profile imports skip the config prompt.
           let config_label = (!task.is_profile_import)
             .then(|| Self::archive_label(&downloaded_files).unwrap_or_else(|| task.mod_id.clone()));
           let (prepared, staged_config) = Self::prepare_downloaded_vpks(
@@ -709,10 +684,6 @@ impl DownloadManager {
     }
   }
 
-  /// The checksum a file can be split by, with its place among the segmented
-  /// downloads that keep the caps on after the setting is turned off. `None`
-  /// for a file that goes in one stream. An existing single-stream partial
-  /// keeps its own format.
   fn opt_in_for_segments<'a>(
     budget: &Arc<budget::TransferBudget>,
     md5_checksum: Option<&'a str>,
@@ -728,7 +699,6 @@ impl DownloadManager {
     Some((md5, budget.opt_in()))
   }
 
-  /// Execute provider-resolved sources with the same limits and transport as queued downloads.
   pub(crate) async fn download_resolved_file<F>(
     file: &DownloadFileDto,
     target_path: &std::path::Path,
@@ -761,9 +731,6 @@ impl DownloadManager {
     .await
   }
 
-  /// In segments when the setting is on and the file qualifies, in one stream
-  /// otherwise. The setting is read once, so turning it off mid-download
-  /// doesn't change how a file that already started is fetched.
   #[allow(clippy::too_many_arguments)]
   async fn download_file<F>(
     urls: &[String],
@@ -798,7 +765,6 @@ impl DownloadManager {
       let pause = pause.clone();
       async move {
         let budget = budget::app_budget();
-        // Held to the end, so a fallback keeps the caps on too.
         let segments = if budget.segmented_enabled() {
           let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
             .await
@@ -846,11 +812,6 @@ impl DownloadManager {
     .await
   }
 
-  /// A server-side failure is surfaced as is, so the UI can tell the user it is
-  /// not the app's fault. Anything else keeps each distinct message once: every
-  /// file of a mod usually fails the same way, and repeating it per file buries it.
-  /// Files that stopped for a pause only count when no other file failed: the mod
-  /// then waits in the queue with its partial files.
   fn combine_file_errors(mut errors: Vec<Error>) -> Option<Error> {
     let paused = errors
       .iter()
@@ -876,8 +837,6 @@ impl DownloadManager {
     Some(Error::DownloadFailed(messages.join("; ")))
   }
 
-  /// With a `config_label`, the first archive holding a performance config
-  /// also has it staged for import, as the archive install path does.
   async fn prepare_downloaded_vpks(
     operation_id: u64,
     task: &DownloadTask,
@@ -935,7 +894,6 @@ impl DownloadManager {
           continue;
         }
 
-        // As in `process_downloaded_files`: a failed import would leave it set.
         if !task.is_profile_import {
           app_handle
             .emit(
@@ -1030,8 +988,6 @@ impl DownloadManager {
           }
         };
 
-        // Each archive's temp dir is gone before the names are known, so
-        // selected files wait under their index in the tree.
         for mut file in extracted_tree.files {
           let source = extracted_dir.path().join(&file.path);
           file.is_selected = selected_paths.contains(&source);
@@ -1063,7 +1019,6 @@ impl DownloadManager {
           &replaced_archives,
           &downloaded_names,
         );
-        // Held files go with the prepared directory; the pick downloads again.
         return Ok(PreparedDownload {
           vpk_paths: Vec::new(),
           file_tree: Some(tree),
@@ -1094,7 +1049,6 @@ impl DownloadManager {
           "No VPKs matched the update selection".to_string(),
         ));
       }
-      // Slots hold indexes into the tree, so it is only reordered now.
       Self::keep_saved_order(
         &mut tree,
         task.file_tree.as_ref(),
@@ -1152,8 +1106,6 @@ impl DownloadManager {
     })
   }
 
-  // The blocking worker owns cleanup until extraction finishes, including when
-  // its async caller times out and drops the receiver.
   fn extract_prepared_archive(
     archive: &std::path::Path,
     target: &std::path::Path,
@@ -1268,10 +1220,6 @@ impl DownloadManager {
             .map(|listed| listed.is_selected)
             .reduce(|selected, next| selected || next)
         };
-        // An entry with this file's own name beats a bare path that fits every
-        // variant. A file the selection doesn't list at all is new, so it stays,
-        // unless the selection lists only installed names and has a sibling
-        // variant: then this one was left out.
         listed(Self::lists_by_name)
           .or_else(|| listed(Self::lists_by_path))
           .unwrap_or_else(|| {
@@ -1283,8 +1231,6 @@ impl DownloadManager {
       })
   }
 
-  /// Trees rebuilt from installed names list no variant they left out, so
-  /// another name from the same source file means this one wasn't picked.
   fn lists_sibling_of(
     listed: &crate::mod_manager::file_tree::ModFile,
     file: &crate::mod_manager::file_tree::ModFile,
@@ -1294,8 +1240,6 @@ impl DownloadManager {
       && crate::mod_manager::file_tree::is_name_from_source_of(&listed.name, file)
   }
 
-  /// Whether a saved tree entry is `file`, by its path in the archive. Saved
-  /// paths may or may not start with the archive's folder.
   fn lists_by_path(
     listed: &crate::mod_manager::file_tree::ModFile,
     file: &crate::mod_manager::file_tree::ModFile,
@@ -1307,8 +1251,6 @@ impl DownloadManager {
         || listed_path == format!("{}/{relative_path}", file.archive_name))
   }
 
-  /// Trees rebuilt from installed names alone carry the name as the path, but
-  /// a qualified name still says which archive and folder it came from.
   fn lists_by_name(
     listed: &crate::mod_manager::file_tree::ModFile,
     file: &crate::mod_manager::file_tree::ModFile,
@@ -1331,9 +1273,6 @@ impl DownloadManager {
     tree: &mut crate::mod_manager::file_tree::ModFileTree,
     names: &crate::mod_manager::file_tree::ModFileTree,
   ) {
-    // An archive-less entry fits that path in every archive, so each entry
-    // names one file at most. The last archive wins: before names were unique,
-    // its copy is the one the sharer ended up with.
     let mut claimed = vec![false; names.files.len()];
     let mut adopted = vec![false; tree.files.len()];
     let mut taken = HashSet::new();
@@ -1345,7 +1284,6 @@ impl DownloadManager {
           .zip(&claimed)
           .position(|(named, claimed)| !claimed && lists(named, &*file))
       };
-      // A name made for this file beats a bare one any archive's file fits.
       if let Some(index) = unclaimed(Self::lists_by_name).or_else(|| unclaimed(Self::lists_by_path))
       {
         claimed[index] = true;
@@ -1357,12 +1295,10 @@ impl DownloadManager {
         .iter()
         .any(|named| Self::lists_by_name(named, file) || Self::lists_by_path(named, file))
       {
-        // Its entry went to another archive's copy, the one the sharer has.
         file.is_selected = false;
       }
     }
 
-    // The install matches the adopted names, so the other files make way.
     for (file, was_adopted) in tree.files.iter_mut().zip(&adopted) {
       if !was_adopted {
         file.name = crate::mod_manager::file_tree::claim_unique_vpk_name(&mut taken, &file.name);
@@ -1370,7 +1306,6 @@ impl DownloadManager {
     }
   }
 
-  // A selection saved from another variant says nothing about this archive.
   fn selection_covers_archive(
     selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
     archive_name: &str,
@@ -1383,13 +1318,6 @@ impl DownloadManager {
     })
   }
 
-  /// A re-upload under a new file name leaves the selection scoped to an
-  /// archive that no longer downloads. Of the saved archives this update
-  /// doesn't download, the one with the most chosen VPKs found here (then the
-  /// most VPK names shared) is taken as its old upload, and its choices carry
-  /// over. Files it didn't choose, new ones included, stay out: they are
-  /// usually other variants. Returns the carried selection and the saved
-  /// archive it came from; `None` leaves the choice to the user.
   fn carry_selection_to_archive<'a>(
     extracted_tree: &crate::mod_manager::file_tree::ModFileTree,
     selection: Option<&'a crate::mod_manager::file_tree::ModFileTree>,
@@ -1424,7 +1352,6 @@ impl DownloadManager {
     replaced.sort_unstable();
     replaced.dedup();
 
-    // A sibling variant can share more names, so chosen ones rank first.
     let mut ranked: Vec<((usize, usize), &str)> = replaced
       .into_iter()
       .map(|archive| {
@@ -1452,8 +1379,6 @@ impl DownloadManager {
       .iter()
       .map(|file| {
         let name = name_of(file);
-        // A name alone only counts when it names one file before and after,
-        // so it can't pick a variant the user turned down.
         let is_selected = chosen.iter().any(|listed| path_of(listed) == path_of(file))
           || (here[&name] == 1
             && before.get(&name) == Some(&1)
@@ -1480,10 +1405,6 @@ impl DownloadManager {
     ))
   }
 
-  /// An update keeps the mod's load order. A file the saved tree lists takes
-  /// its place there, found by its path in the archive it came from (the
-  /// replaced one for a re-upload) or else by its name. A new file goes where
-  /// the author put it: before the first file from a later download.
   fn keep_saved_order(
     tree: &mut crate::mod_manager::file_tree::ModFileTree,
     saved: Option<&crate::mod_manager::file_tree::ModFileTree>,
@@ -1697,9 +1618,6 @@ impl DownloadManager {
         continue;
       }
 
-      // A profile import reports its own progress and stores what it installed
-      // when it ends. This event would mark the mod with the same ID in the
-      // active profile as extracting, and nothing would set it back.
       if !task.is_profile_import {
         app_handle
           .emit(
@@ -1724,7 +1642,6 @@ impl DownloadManager {
       }
       std::fs::create_dir_all(&extracted_dir)?;
 
-      // Run extraction on a blocking thread with a timeout so it never blocks the async runtime
       let archive_path = file_path.clone();
       let extract_target = extracted_dir.clone();
       const EXTRACTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
@@ -1754,8 +1671,6 @@ impl DownloadManager {
         }
       }
 
-      // Scan for font files before processing VPKs and emit an event if any are found.
-      // Fonts may be loose files under panorama/fonts/ OR packed inside a .vpk.
       let found_loose = font_manager.scan_for_fonts(&extracted_dir);
       let found_vpk = font_manager.scan_vpks_for_fonts(&extracted_dir);
       if !found_loose.is_empty() || !found_vpk.is_empty() {
@@ -1772,9 +1687,6 @@ impl DownloadManager {
           }
         }
         if !found_vpk.is_empty() {
-          // Drop any VPK-packed font whose filename was already stashed from a
-          // loose `.ttf` so we never overwrite the loose font's bytes on disk
-          // while keeping its metadata in `found_font_infos`.
           let vpk_to_stash: Vec<(String, Vec<u8>)> = found_vpk
             .into_iter()
             .filter(|(name, _)| !seen_font_files.contains(name))
@@ -1806,11 +1718,7 @@ impl DownloadManager {
             file_tree.has_multiple_files
           );
 
-          // Named after the loop: whether a name needs qualifying depends on
-          // the other archives.
           if task.is_profile_import {
-            // No shared selection to choose from: stop as before, installing
-            // only the earlier archives.
             if file_tree.has_multiple_files && task.file_tree.is_none() {
               break;
             }
@@ -1819,8 +1727,6 @@ impl DownloadManager {
             for mut file in file_tree.files {
               let source = extracted_dir.join(&file.path);
               file.is_selected = selected_paths.contains(&source);
-              // Extractions wait until every archive is named, so files that
-              // won't be placed, and the archive, go now.
               if !file.is_selected
                 && let Err(error) = std::fs::remove_file(&source)
               {
@@ -1859,11 +1765,7 @@ impl DownloadManager {
       }
     }
 
-    // The backend doesn't know the mod's display name; the frontend swaps in
-    // the name it has and keeps the archive name as a fallback.
     let config_label = Self::archive_label(downloaded_files).unwrap_or_else(|| task.mod_id.clone());
-    // Profile imports install someone else's mod list in bulk; asking about a
-    // config for each of those mods would bury the import in prompts.
     let staged_config = if task.is_profile_import {
       None
     } else {
@@ -1874,7 +1776,6 @@ impl DownloadManager {
     if !collected_files.is_empty() {
       let mut aggregated_tree = ModFileTree::from_extracted(collected_files);
       if task.is_profile_import {
-        // The import installs by the shared tree's names, so the copies take them.
         if let Some(shared) = &task.file_tree {
           Self::adopt_names_by_path(&mut aggregated_tree, shared);
         }
@@ -1884,8 +1785,6 @@ impl DownloadManager {
           &task.mod_id,
           &aggregated_tree,
         )?;
-        // Rescanned: the entry is replaced whole, and archives whose analysis
-        // failed were copied separately.
         persist_prefixed_import(
           &destination_path,
           &task.mod_id,
@@ -1944,10 +1843,6 @@ impl DownloadManager {
     Ok(())
   }
 
-  /// Copies performance configs (gameinfo.gi, autoexec, video.txt) out of the
-  /// extracted archives before they are cleaned up, so the user can review and
-  /// import them. The VPK pipeline never installs them, and a failure here
-  /// never fails the download.
   fn stage_bundled_config(
     app_handle: &AppHandle,
     extraction_root: &std::path::Path,
@@ -1973,7 +1868,6 @@ impl DownloadManager {
     }
   }
 
-  /// The first archive's name without its extension.
   fn archive_label(downloaded_files: &[PathBuf]) -> Option<String> {
     let extractor = crate::mod_manager::archive_extractor::ArchiveExtractor::new();
     downloaded_files
@@ -2002,14 +1896,10 @@ impl DownloadManager {
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
     log::info!("Cancelling download for mod: {mod_id}");
 
-    // Both locks are held, queue first: the worker moves a download between the
-    // queue and active while holding both, so it can't slip past the two checks.
     let (dropped, cancelled) = {
       let mut queue = self.queue.lock().await;
       let dropped = Self::cancel_queued(&mut queue, mod_id);
       let cancelled = Self::cancel_active(&mut *self.active_downloads.lock().await, mod_id);
-      // Still holding the queue, so a download of the same mod queued meanwhile
-      // can't start writing partials this removes.
       for queued in &dropped {
         Self::remove_partials(&queued.task).await;
       }
@@ -2022,7 +1912,6 @@ impl DownloadManager {
         &queued.task,
         Err(&Error::DownloadCancelled),
       );
-      // Reported like a cancelled running download, so a paused one settles too.
       self
         .app_handle
         .emit(
@@ -2053,7 +1942,6 @@ impl DownloadManager {
     taken.into()
   }
 
-  /// A paused download keeps its partial files while it waits in the queue.
   async fn remove_partials(task: &DownloadTask) {
     for file in &task.files {
       let target = task.target_dir.join(&file.name);
@@ -2073,8 +1961,6 @@ impl DownloadManager {
     true
   }
 
-  /// Drops queued downloads for a profile folder and cancels the running one,
-  /// so a deleted profile's folder isn't recreated when they finish.
   pub async fn cancel_profile_downloads(&self, profile_folder: &str) {
     let targets = |folder: &Option<String>| folder.as_deref() == Some(profile_folder);
 
@@ -2092,7 +1978,6 @@ impl DownloadManager {
         Self::cancel_active(&mut active, mod_id);
       }
       drop(active);
-      // Still holding the queue, as in `cancel_download`.
       for queued in &dropped {
         Self::remove_partials(&queued.task).await;
       }
@@ -2106,10 +1991,6 @@ impl DownloadManager {
         Err(&Error::DownloadCancelled),
       );
     }
-    // Settles the window's entry, as `cancel_download` does; a paused download
-    // waits here instead of in the cancelled active downloads. Only the window's
-    // own downloads: batch callers hear through their completion channel, and
-    // the window may be downloading the same mod for another profile.
     for queued in dropped.iter().filter(|queued| queued.completion.is_none()) {
       self
         .app_handle
@@ -2129,8 +2010,6 @@ impl DownloadManager {
     }
   }
 
-  /// A running download stops and gives the next queued one the worker; a
-  /// queued one stays where it is but is skipped until resumed.
   pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {
     let mut queue = self.queue.lock().await;
     let mut active = self.active_downloads.lock().await;
@@ -2148,7 +2027,6 @@ impl DownloadManager {
         "No active download found for mod: {mod_id}"
       )));
     }
-    // Emit while holding the lock so the event cannot race with download completion.
     self
       .app_handle
       .emit(
@@ -2171,8 +2049,6 @@ impl DownloadManager {
     Ok(())
   }
 
-  /// A paused download that already gave up the worker runs next, after the
-  /// download running now.
   pub async fn resume_download(&self, mod_id: &str) -> Result<(), Error> {
     {
       let mut queue = self.queue.lock().await;
@@ -2191,7 +2067,6 @@ impl DownloadManager {
           "No paused download found for mod: {mod_id}"
         )));
       }
-      // Emit while holding the lock so the event cannot race with download completion.
       self
         .app_handle
         .emit(
@@ -2216,8 +2091,6 @@ impl DownloadManager {
     Ok(())
   }
 
-  /// Puts a download that stopped for a pause back in the queue, or hands it
-  /// back when it was cancelled while its files were stopping.
   fn park(
     queue: &mut VecDeque<QueuedDownload>,
     active: &mut HashMap<String, ActiveDownload>,
@@ -2226,7 +2099,6 @@ impl DownloadManager {
     let Some(download) = active.remove(&queued.task.mod_id) else {
       return Some(queued);
     };
-    // One resumed while its files were stopping runs again next.
     queue.push_front(QueuedDownload {
       paused: download.pause.is_paused(),
       ..queued
@@ -2234,8 +2106,6 @@ impl DownloadManager {
     None
   }
 
-  /// The worker stops while it still holds the queue, so a download queued or
-  /// resumed right after it found nothing starts a new worker.
   fn claim_next(
     queue: &mut VecDeque<QueuedDownload>,
     processing: &mut bool,
@@ -2247,7 +2117,6 @@ impl DownloadManager {
     next
   }
 
-  /// Paused downloads keep their place but don't hold up the rest of the queue.
   fn next_runnable(queue: &mut VecDeque<QueuedDownload>) -> Option<QueuedDownload> {
     let index = queue.iter().position(|queued| !queued.paused)?;
     queue.remove(index)
@@ -2291,17 +2160,12 @@ impl DownloadManager {
       || !self.active_downloads.lock().await.is_empty()
   }
 
-  /// Lists window-owned queued downloads, paused downloads, and running ones
-  /// for cancellation when a webview reload loses track of them.
   pub async fn get_all_downloads(&self) -> Result<Vec<DownloadStatus>, Error> {
-    // The worker's lock order, so a download moving between the two is in one of them.
     let queue = self.queue.lock().await;
     let active = self.active_downloads.lock().await;
     Ok(Self::list_downloads(&queue, &active))
   }
 
-  /// Queued downloads come first, so cancels sent in list order usually drop
-  /// them before cancelling the running one frees the worker.
   fn list_downloads(
     queue: &VecDeque<QueuedDownload>,
     active: &HashMap<String, ActiveDownload>,
@@ -2320,7 +2184,6 @@ impl DownloadManager {
     queued.chain(running).collect()
   }
 
-  /// Debug-only: run the post-download processing pipeline on an already-copied local file.
   #[cfg(debug_assertions)]
   pub async fn process_local_file(
     task: DownloadTask,
@@ -2475,7 +2338,6 @@ mod tests {
     assert_eq!(dropped.len(), 1);
     assert_eq!(mod_ids(&queue), [("first", false)]);
     drop(dropped);
-    // `queue_download_and_wait` reports a dropped sender as cancelled.
     assert!(matches!(
       waiter.try_recv(),
       Err(oneshot::error::TryRecvError::Closed)
@@ -2512,8 +2374,6 @@ mod tests {
     let mut processing = true;
 
     assert!(DownloadManager::claim_next(&mut queue, &mut processing).is_none());
-    // Resume queues the download once the worker releases the queue, then
-    // calls `process_queue`, which starts a worker only when none is running.
     assert!(DownloadManager::resume_queued(&mut queue, "paused"));
     assert!(
       !processing,
@@ -2541,7 +2401,6 @@ mod tests {
 
     let resumed = DownloadManager::next_runnable(&mut queue).unwrap();
     assert_eq!(resumed.operation_id, 7);
-    // Update All and profile import still hear back from the resumed download.
     assert!(matches!(
       waiter.try_recv(),
       Err(oneshot::error::TryRecvError::Empty)
@@ -2784,12 +2643,10 @@ mod tests {
 
   #[test]
   fn profile_import_copies_take_the_shared_tree_names() {
-    // A tree shared before names were made unique.
     let shared = ModFileTree::from_extracted(vec![
       file("red.zip", "red.zip/pak01_dir.vpk", true),
       file("blue.zip", "pak01_dir.vpk", true),
     ]);
-    // Only one variant downloaded, so on its own it would keep the bare name.
     let mut downloaded =
       ModFileTree::from_extracted(vec![file("red.zip", "red.zip/pak01_dir.vpk", true)]);
 
@@ -2800,7 +2657,6 @@ mod tests {
 
   #[test]
   fn profile_import_gives_an_archiveless_shared_name_to_one_variant() {
-    // Trees rebuilt by install or a variant swap carry no archive names.
     let shared = ModFileTree::from_extracted(vec![file("", "pak01_dir.vpk", true)]);
     let mut downloaded = ModFileTree::from_extracted(vec![
       file("red.zip", "red.zip/pak01_dir.vpk", true),
@@ -2811,7 +2667,6 @@ mod tests {
 
     let names: Vec<&str> = downloaded.files.iter().map(|f| f.name.as_str()).collect();
     assert_eq!(names, ["pak01-red_dir.vpk", "pak01_dir.vpk"]);
-    // The sharer had only blue's copy, so red isn't installed alongside it.
     assert!(!downloaded.files[0].is_selected);
     assert!(downloaded.files[1].is_selected);
   }
@@ -2836,7 +2691,6 @@ mod tests {
 
   #[test]
   fn profile_import_matches_qualified_names_before_bare_ones() {
-    // Rebuilt from installed names: red was staged while the bare name was free.
     let shared = tree(vec![
       file("", "pak01_dir.vpk", true),
       file("", "pak01-blue_dir.vpk", true),
@@ -2854,7 +2708,6 @@ mod tests {
 
   #[test]
   fn update_selection_lets_a_variants_own_name_overrule_a_bare_path() {
-    // Rebuilt from installed names: red holds the bare name, blue is unticked.
     let selection = tree(vec![
       file("", "pak01_dir.vpk", true),
       file("", "pak01-blue_dir.vpk", false),
@@ -2894,7 +2747,6 @@ mod tests {
 
   #[test]
   fn update_selection_skips_variants_left_out_of_trees_listing_only_installed_files() {
-    // Interchange import lists just the bundled VPKs, by installed name.
     let selection = tree(vec![file("", "pak01-red_dir.vpk", true)]);
     let selected_in = |archive: &str, path: &str| {
       !DownloadManager::selected_extracted_vpks(
@@ -3143,7 +2995,6 @@ mod tests {
 
   #[test]
   fn update_selection_asks_about_a_pack_with_nothing_chosen() {
-    // Carrying "nothing" over would leave the update with no VPKs to install.
     let new = "mod_v2.zip";
     let selection = tree(vec![
       file("mod.zip", "mod.zip/one.vpk", false),
@@ -3156,8 +3007,6 @@ mod tests {
 
   #[test]
   fn update_selection_pairs_with_the_archive_whose_choices_are_found() {
-    // Blue wasn't downloaded this time and shares more names, but nothing
-    // in it was chosen.
     let selection = tree(vec![
       file("red.zip", "red.zip/pak01_dir.vpk", true),
       file("blue.zip", "blue.zip/pak01_dir.vpk", false),
@@ -3181,7 +3030,6 @@ mod tests {
       file("mod.zip", "mod.zip/red/pak01_dir.vpk", false),
       file("mod.zip", "mod.zip/blue/pak01_dir.vpk", true),
     ]);
-    // Blue is gone and red moved, so only the name could still match.
     let extracted = tree(vec![
       file(new, "skins/pak01_dir.vpk", true),
       file(new, "other.vpk", true),
@@ -3195,25 +3043,21 @@ mod tests {
     let new = "mod_v2.zip";
     let extracted = tree(vec![file(new, "one.vpk", true), file(new, "two.vpk", true)]);
 
-    // The chosen VPK is gone from the new upload.
     let gone = tree(vec![
       file("mod.zip", "mod.zip/one.vpk", false),
       file("mod.zip", "mod.zip/removed.vpk", true),
     ]);
     assert_eq!(carried_selection(&extracted, &gone, &[new]), None);
 
-    // No replaced archive shares a name with it.
     let unrelated = tree(vec![file("mod.zip", "mod.zip/other.vpk", true)]);
     assert_eq!(carried_selection(&extracted, &unrelated, &[new]), None);
 
-    // The archive it was saved for still downloads, so it was not replaced.
     let current = tree(vec![file("mod.zip", "mod.zip/one.vpk", true)]);
     assert_eq!(
       carried_selection(&extracted, &current, &[new, "mod.zip"]),
       None
     );
 
-    // Two replaced archives fit it equally well.
     let tied = tree(vec![
       file("a.zip", "a.zip/one.vpk", true),
       file("b.zip", "b.zip/two.vpk", true),
@@ -3238,7 +3082,6 @@ mod tests {
 
   #[test]
   fn update_keeps_the_saved_load_order_and_places_new_files_by_download() {
-    // The player moved b.zip's file ahead of a.zip's.
     let saved = tree(vec![
       file("b.zip", "b.zip/two.vpk", true),
       file("a.zip", "a.zip/one.vpk", true),
@@ -3249,7 +3092,6 @@ mod tests {
       file("b.zip", "b.zip/two.vpk", true),
     ];
 
-    // A new file in the first download goes before the first file of a later one.
     assert_eq!(
       saved_order(prepared, &saved, &[], &["a.zip", "b.zip"]),
       ["a.zip/added.vpk", "b.zip/two.vpk", "a.zip/one.vpk"]
@@ -3262,7 +3104,6 @@ mod tests {
       file("pack_1a2b3.zip", "pack_1a2b3.zip/red/pak01_dir.vpk", true),
       file("pack_1a2b3.zip", "pack_1a2b3.zip/blue/pak01_dir.vpk", true),
     ]);
-    // Install names come from the archive, so only the path still matches.
     let mut blue = file("pack_4c5d6.zip", "pack_4c5d6.zip/blue/pak01_dir.vpk", true);
     blue.name = "pak01-blue-new_dir.vpk".to_string();
     let mut red = file("pack_4c5d6.zip", "pack_4c5d6.zip/red/pak01_dir.vpk", true);
@@ -3405,7 +3246,6 @@ mod tests {
     );
   }
 
-  /// Whether a fifth request to one server has to wait.
   async fn caps_on(budget: &Arc<budget::TransferBudget>) -> bool {
     let mut held = Vec::new();
     for _ in 0..=budget::ORIGIN_LIMIT {

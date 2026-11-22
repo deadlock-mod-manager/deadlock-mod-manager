@@ -2,12 +2,6 @@ import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { z } from "zod";
 import { createLogger } from "@/lib/logger";
 
-/**
- * Schemas for everything deadlock-api sends us. The responses are external JSON
- * that the app renders and does arithmetic on, so they get parsed here rather
- * than cast at each call site.
- */
-
 const logger = createLogger("deadlock-api-schema");
 
 export const deadlockHeroSchema = z.object({
@@ -24,7 +18,6 @@ export const deadlockHeroSchema = z.object({
       icon_image_small_webp: z.string().optional(),
       name_image: z.string().optional(),
     })
-    // A hero without artwork is still a hero the id lookup needs.
     .default({}),
 });
 
@@ -41,7 +34,6 @@ export const deadlockItemSchema = z.object({
   shop_image_webp: z.string().optional(),
 });
 
-/** Only the fields the model preview reads to put a hero's abilities on screen. */
 export const heroLoadoutSchema = z.object({
   models: z.object({ hero_select: z.string().optional() }).default({}),
   items: z.record(z.string(), z.string()).default({}),
@@ -57,7 +49,6 @@ export const abilityAssetSchema = z.object({
 export const rankAssetSchema = z.object({
   tier: z.number(),
   name: z.string(),
-  /** The tier's signature colour, e.g. "#EE4F57"; absent from older cached payloads. */
   color: z.string().nullish().catch(null),
   images: z.record(z.string(), z.string()).default({}),
 });
@@ -66,12 +57,6 @@ export type DeadlockHero = z.infer<typeof deadlockHeroSchema>;
 export type DeadlockItem = z.infer<typeof deadlockItemSchema>;
 export type RankAsset = z.infer<typeof rankAssetSchema>;
 
-/**
- * Parses a list response. A payload that is not a list at all is a broken
- * contract and throws like any other failed request; single entries that no
- * longer match are dropped, because one unexpected hero should not empty the
- * whole roster.
- */
 export const parseList = <T>(
   schema: z.ZodType<T>,
   data: unknown,
@@ -92,11 +77,6 @@ export const parseList = <T>(
   return parsed;
 };
 
-/**
- * Parses a single-object response. Unlike a list there is nothing to salvage
- * here - a rank or a match that does not match its shape is the whole answer -
- * so it throws rather than handing the app a half-built object.
- */
 export const parseOne = <T>(
   schema: z.ZodType<T>,
   data: unknown,

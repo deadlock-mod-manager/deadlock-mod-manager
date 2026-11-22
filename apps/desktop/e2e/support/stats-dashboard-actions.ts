@@ -74,7 +74,6 @@ export const readSavedLayout = async (world: string) =>
   savedLayoutSchema.parse(await readPersistedDocument(world)).state
     .statsDashboard ?? null;
 
-/** What a saved widget shows, as one comparable string per widget. */
 export const describeWidgets = (
   layout: SavedLayout | null,
   tabId: string,
@@ -118,8 +117,6 @@ export const selectTab = (title: string) =>
     await reveal(tab);
     await tab.waitForClickable();
     await tab.click();
-    // Radix tabs switch on mousedown, which the WebView driver does not always
-    // deliver with its click; send the event it dropped.
     const switched = await browser
       .waitUntil(async () => (await activeTabTitle()) === title, {
         timeout: 2_000,
@@ -137,10 +134,6 @@ export const selectTab = (title: string) =>
     await expectActiveTab(title);
   });
 
-/**
- * The active tab's title, looked up fresh on every poll: the embedded driver
- * keeps evaluating a node React has replaced instead of reporting it stale.
- */
 const activeTabTitle = async () =>
   (await readTabTitles('[data-tab-id][data-state="active"]'))[0];
 
@@ -149,7 +142,6 @@ export const expectActiveTab = (title: string) =>
     timeoutMsg: `the "${title}" tab never became active`,
   });
 
-/** Sources of the widgets on the visible tab, in grid order. */
 export const widgetSources = async () =>
   Promise.all(
     await $$("[data-widget-source]").map((widget) =>
@@ -157,10 +149,6 @@ export const widgetSources = async () =>
     ),
   );
 
-/**
- * Waits for the visible tab to show exactly these widgets. Read right after a
- * tab switch, the list can still hold the old tab's nodes on their way out.
- */
 export const expectWidgetSources = async (expected: readonly string[]) => {
   let last: Array<string | null> = [];
   await browser
@@ -193,11 +181,6 @@ export const waitForWidgetState = (
     { timeoutMsg: `widget never reached state "${state}"` },
   );
 
-/**
- * The world's WebView detects the host's language, and number formats follow
- * it (3,63 on a German Windows). Pin English, so assertions hold on any host
- * and survive community translations of the dashboard strings.
- */
 const pinEnglish = async () => {
   const language = await browser.execute(() =>
     localStorage.getItem("i18nextLng"),
@@ -254,11 +237,6 @@ export const resetToDefault = () =>
 const menuItem = (label: string) =>
   $(`//*[@role="menuitem" and normalize-space()="${label}"]`);
 
-/**
- * Radix menus open on pointerdown, which a WebDriver click does not deliver
- * reliably; like the ordering menu elsewhere in the suite, focus the trigger
- * and open it from the keyboard.
- */
 export const openMenu = async (trigger: ChainablePromiseElement) => {
   await trigger.waitForClickable();
   await trigger.click();
@@ -269,7 +247,6 @@ export const openMenu = async (trigger: ChainablePromiseElement) => {
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 };
 
-/** Picks a menu entry; an entry with a submenu is opened from the keyboard. */
 const pickMenuItem = async (label: string, opensSubmenu: boolean) => {
   const item = await menuItem(label);
   await item.waitForDisplayed();
@@ -287,7 +264,6 @@ const pickMenuItem = async (label: string, opensSubmenu: boolean) => {
   await expect(item).toHaveAttribute("aria-expanded", "true");
 };
 
-/** Opens a widget's "…" menu and picks an entry, following a submenu if given. */
 export const useWidgetMenu = (
   container: ChainablePromiseElement,
   path: readonly string[],
@@ -300,13 +276,6 @@ export const useWidgetMenu = (
     await expect($('[role="menu"]')).not.toBeExisting();
   });
 
-/**
- * Replaces a field's text through the native value setter plus an input event,
- * which is what React reads from a keystroke. WebDriver's clear blurs the field
- * (closing a Radix popover around it), element send-keys appends, and the
- * embedded driver types named keys such as End as private-use characters.
- * `field` is a lookup, so every check sees the live node.
- */
 export const typeOver = async (
   field: () => ChainablePromiseElement,
   value: string,
@@ -358,7 +327,6 @@ export const choosePreset = (preset: string, search: string) =>
     await expect(option).toHaveAttribute("aria-pressed", "true");
   });
 
-/** Waits for the preview to show data, then switches the chart type. */
 export const chooseChart = (chart: string) =>
   step(`draw it as ${chart}`, async () => {
     const dialog = await editorDialog();
@@ -391,7 +359,6 @@ export const submitEditor = () =>
     await expect(editorDialog()).not.toBeDisplayed();
   });
 
-/** A table widget's header and rows as rendered text. */
 const readTable = async (container: ChainablePromiseElement) => {
   await container.$("table").waitForDisplayed();
   const header = await Promise.all(
@@ -407,10 +374,6 @@ const readTable = async (container: ChainablePromiseElement) => {
   return { header, rows };
 };
 
-/**
- * Hero cells lead with the avatar's fallback initial, so a first cell matches
- * when it ends with the expected label; every other cell must match exactly.
- */
 export const expectTable = async (
   container: ChainablePromiseElement,
   header: readonly string[],

@@ -1,22 +1,3 @@
-# Creates a Redis cluster via Spotahome's Redis Operator and a Service routing
-# to current master instance.
-#
-# If you don't care about HA you can set sentinels and replicas to 1. If you do
-# care about HA sentinels should be 3 and replicas 2 or more.
-#
-# Example values.yaml:
-# resources:
-#   redis:
-#     sentinels: 3
-#     replicas: 2
-#     memory: 100Mi # must use Gi or Mi format
-#     cpu: 250m
-#     disk: 500Mi
-# env:
-#   - { name: REDIS_URL, value: "redis://stream-crush-redis-master.default.svc:6379" }
-#   # NOTE: Redis clients do not support SENTINEL_URL out of the box, you'll have to write your own
-#   # initialization logic. We recommend using it instead of REDIS_URL for 0 downtime failovers.
-#   - { name: SENTINEL_URL, value: "redis-sentinel://rfs-stream-crush:26379/mymaster" }
 
 apiVersion: databases.spotahome.com/v1
 kind: RedisFailover
@@ -42,7 +23,6 @@ spec:
           memory: 100Mi
   redis:
     replicas: {{ .Values.resources.redis.replicas }}
-    # NOTE: We use native Redis maxmemory instead of Kubernetes resource limits to avoid OOM kills
     {{- $maxmemory := .Values.resources.redis.memory }}
     {{- if hasSuffix "Gi" $maxmemory }}
       {{- $maxmemory = trimSuffix "Gi" $maxmemory | mulf 1074 }}

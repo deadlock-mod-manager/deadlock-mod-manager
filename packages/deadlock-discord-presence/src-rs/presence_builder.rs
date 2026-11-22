@@ -175,7 +175,6 @@ fn resolve_template_pair(
         return global_template_pair.clone();
     };
 
-    // Overrides saved before hero keys were class names use model folder names.
     let Some(hero_templates) = hero_overrides.get(hero_key).or_else(|| {
         hero_overrides
             .iter()

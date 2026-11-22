@@ -1,5 +1,3 @@
-// The share fixtures with slow file lookups and slow archives, so the request
-// log shows whether an import downloads one mod while it looks up the next.
 import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import { shareRoutes } from "./profile-share-fixtures";
 
@@ -17,7 +15,6 @@ export const slowShareRoutes = async () => {
     );
 };
 
-/** The first archive was still downloading while a file lookup ran. */
 export const assertDownloadOverlapsLookup = (
   _id: string,
   requests: readonly FixtureRequest[],

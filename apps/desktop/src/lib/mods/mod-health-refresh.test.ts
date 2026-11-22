@@ -14,8 +14,6 @@ describe("mod health refresh queue", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  // An update that keeps the mod's VPK names only produces the backend event,
-  // so that event alone has to recheck health.
   it("checks the profile's health after a backend-only library change", () => {
     const { calls, queue } = setup();
 
@@ -45,8 +43,6 @@ describe("mod health refresh queue", () => {
       ["checkHealth", null],
     ]);
 
-    // A review-required refresh produces no receipt. It must not be invoked
-    // again by a second timer after the coalesced batch has already run.
     jest.advanceTimersByTime(3000);
     expect(calls).toHaveLength(2);
   });

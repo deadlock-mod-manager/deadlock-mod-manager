@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { useLaunchProgress } from "@/lib/launch-progress";
 import Logo from "./logo";
 
-/** Covers the sidebar and content while a launch is being prepared. */
 export const LaunchOverlay = () => {
   const { t } = useTranslation();
   const progress = useLaunchProgress((state) => state.progress);

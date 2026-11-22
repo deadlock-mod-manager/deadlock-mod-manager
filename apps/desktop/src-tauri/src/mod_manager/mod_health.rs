@@ -16,7 +16,6 @@ use std::time::SystemTime;
 use ts_rs::TS;
 
 const CACHE_FILE: &str = "mod-health.json";
-// Increment when status or symptom rules change, so cached verdicts are rechecked.
 const HEALTH_RULES_REVISION: u32 = 10;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
@@ -140,9 +139,6 @@ pub(crate) enum Finding<'a> {
   Localization,
 }
 
-/// Structural model faults the engine can reject outright, and missing
-/// references it may not have a fallback for, are reported as crash risks.
-/// A missing texture only changes how the model looks.
 pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
   use ModHealthSymptom::*;
   match finding {
@@ -206,13 +202,6 @@ fn is_missing_texture(warning: &AssetWarning) -> bool {
     && (target.ends_with(".vtex") || target.ends_with(".vtex_c"))
 }
 
-/// Warnings that stay listed in review but don't mark a mod as needing an
-/// update. Missing textures and shader differences only change
-/// looks. Retired `.vanmgrph` graphs are what animation includes still name
-/// after an update; a primary model that really lost its animations reports
-/// `MissingAnimationInterface` as well. Portrait attachments only frame the HUD
-/// portrait. A skin updated for Paint the Town that plays correctly in game
-/// still reports every one of these.
 fn is_informational(warning: &AssetWarning) -> bool {
   match warning.kind {
     AssetWarningKind::MaterialInterface => true,
@@ -226,8 +215,6 @@ fn is_informational(warning: &AssetWarning) -> bool {
   }
 }
 
-/// A prop model, such as a particle's model, never acts as a hero, so hero
-/// interface warnings do not apply.
 fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -> bool {
   !is_informational(warning)
     && !(analysis.prop_models.contains(&warning.file_path)
@@ -249,11 +236,7 @@ pub(crate) struct ModFindings {
   needs_update: bool,
   fix_symptoms: BTreeSet<ModHealthSymptom>,
   remaining_symptoms: BTreeSet<ModHealthSymptom>,
-  /// Whether the mod has any resource the analysis can check.
   covered: bool,
-  /// Some of the mod's files were skipped because an unfixed mod also ships
-  /// them, so finding nothing doesn't mean it works. Only the combined
-  /// analysis can tell, so older entries read `false` until it runs again.
   #[serde(default)]
   scope_incomplete: bool,
 }
@@ -272,11 +255,6 @@ impl ModFindings {
     }
   }
 
-  /// Uncertain baselines and stale localization snapshots still pause launch
-  /// for review, but they describe how a mod's edits are merged rather than a
-  /// defect, so they do not mark the mod as needing an update. Warnings on
-  /// models the game never loads are left out, and informational warnings
-  /// count as warnings without requiring an update.
   pub(crate) fn from_analysis(
     analysis: &LocalizationOverlayAnalysis,
     mod_id: &str,
@@ -361,8 +339,6 @@ struct FileStamp {
   modified: Option<SystemTime>,
 }
 
-/// Identifies the analysed files without their location: enabling, disabling,
-/// and reordering a mod renames its VPKs but keeps their size and timestamp.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HealthKey {
@@ -444,8 +420,6 @@ impl ProfileHealth {
     }
   }
 
-  /// `installed` lists each mod with its current key and the player's
-  /// compatibility choice in the profile. Stale entries are omitted.
   pub(crate) fn report<'a>(
     &self,
     game_build: Option<u32>,
@@ -539,8 +513,6 @@ pub(crate) fn record(
   })
 }
 
-/// Drops each mod's entry while it is still the one in `seen`, so a result
-/// saved since then stays.
 pub(crate) fn forget(
   app_data: &Path,
   profile: &str,
@@ -1081,7 +1053,6 @@ mod tests {
     );
     record(temp.path(), "profile", Some(100), [("mod".into(), stale)]).unwrap();
     let seen = load(temp.path(), "profile");
-    // A rename keeps the key, so only the whole entry tells a newer result apart.
     let launch = CachedModHealth::new(current, findings(1, false, true), ModHealthSource::Launch);
     record(
       temp.path(),

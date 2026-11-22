@@ -134,7 +134,6 @@ export const prepareModOptionsVariantWorld = async (world: CreatedWorld) => {
 
 export const modOptionsVariantRoutes = async () => {
   const bodies = await archiveBodies();
-  // A valid ZIP with the same VPK name: without checksum verification it installs.
   const wrongChecksum = await createArchive({
     [CHECKSUM_FILE]: payload(CHECKSUM_FILE, "tampered"),
   });
@@ -350,8 +349,6 @@ export const assertModOptionsVariantDisk = async (
     path.join(roots.appData, "mods", OPTIONS_MOD.id),
   );
   assert.deepEqual(sources, { [BASE_FILE]: fingerprint(payload(BASE_FILE)) });
-  // WebView and model-workspace scratch files share this root. Check download
-  // artifacts by name without opening the model workspace's live session lock.
   const temporary = (
     await readdir(roots.temporary, { recursive: true, withFileTypes: true })
   )

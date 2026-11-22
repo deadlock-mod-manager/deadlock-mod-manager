@@ -1,5 +1,3 @@
-// Importing a share code whose mods the active profile already has leaves the
-// active profile's mods installed and toggleable.
 import { $, browser, expect } from "@wdio/globals";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -48,7 +46,6 @@ describe("profile import overlapping the active profile", () => {
     await navigate("my-mods");
     await assertInstalled(world, first.id, "before the second import");
 
-    // The second import downloads and extracts the same mods for a new profile.
     const second = await importShareCode(world, SHARE_CODE);
     await step("the second import installed its own mods", async () => {
       const state = await readShareState(world);
@@ -64,7 +61,6 @@ describe("profile import overlapping the active profile", () => {
     });
     await navigate("my-mods");
     await assertInstalled(world, first.id, "after the second import");
-    // Nothing is running any more, so nothing should change.
     await browser.pause(5_000);
     await assertInstalled(world, first.id, "five seconds later");
     await browser.saveScreenshot(

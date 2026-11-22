@@ -57,8 +57,6 @@ struct Response {
   location: Option<String>,
 }
 
-/// A real HTTP boundary with mutable snapshots and failures; it serves the same
-/// documents authors copy, rather than substituting a mocked catalog manager.
 struct SourceServer {
   origin: String,
   routes: Arc<Mutex<BTreeMap<String, Response>>>,
@@ -327,7 +325,6 @@ async fn release_history_follows_declared_template_and_pagination_on_demand() {
       "listUrl":"./api",
       "releaseHistoryUrlTemplate":"./history/{listingId}"
     });
-    // Comments and dependencies are not implemented and must be ignored.
     descriptor["capabilities"] = json!({"comments":true, "dependencies":true});
   });
   server.set_json("/api", json!({"items":[detail], "nextCursor":null}));

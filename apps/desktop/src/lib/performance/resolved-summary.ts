@@ -3,14 +3,12 @@ import type { EntryStatus } from "@/types/generated/EntryStatus";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { isConvarPath } from "./editor/values";
 
-/** Written, but the game build doesn't read these from gameinfo.gi. */
 export const UNREAD_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "blocked",
   "removed",
   "notConvar",
 ]);
 
-/** We don't write these, for a recorded reason. */
 export const LEFT_OUT_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "denied",
   "excluded",
@@ -37,7 +35,6 @@ type CategoryComparisonRow = {
   id: string;
   label: string;
   config: number;
-  /** `null` when there is no current config to compare with. */
   current: number | null;
 };
 
@@ -50,11 +47,6 @@ const writtenByCategory = (entries: ResolvedEntry[]) => {
   return counts;
 };
 
-/**
- * Settings each config writes, per category, for the "What it changes" bars.
- * Categories neither config touches are left out; the rest are ordered by the
- * config being looked at.
- */
 export const compareCategories = (
   categories: CategoryInfo[],
   configEntries: ResolvedEntry[],
@@ -78,7 +70,6 @@ export const compareCategories = (
     .sort((a, b) => b.config - a.config || (b.current ?? 0) - (a.current ?? 0));
 };
 
-/** Edits outside the ConVars block, whether or not the user included them. */
 export const engineSectionEdits = (entries: ResolvedEntry[]) => {
   const edits = entries.filter(
     (entry) =>
@@ -94,10 +85,6 @@ export const engineSectionEdits = (entries: ResolvedEntry[]) => {
   return { count: edits.length, sections: [...sections.values()], edits };
 };
 
-/**
- * Camera and visibility settings the author changes from the game's values,
- * including ones the user turned off, so each can be switched back on.
- */
 export const authorViewEntries = (entries: ResolvedEntry[]) =>
   entries.filter(
     (entry) =>
@@ -105,7 +92,6 @@ export const authorViewEntries = (entries: ResolvedEntry[]) =>
       (entry.status === "applies" || entry.status === "omitted"),
   );
 
-/** Developer and hideout tools the config sets, including ones the user turned off. */
 export const devtoolEntries = (entries: ResolvedEntry[]) =>
   entries.filter(
     (entry) =>
