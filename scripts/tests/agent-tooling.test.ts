@@ -215,6 +215,10 @@ test.each([
     '// import { initCommand } from "./commands/init";\nexport {};',
   ],
   [
+    "no-commented-out-code",
+    "// ````markdown\n// ```\n// ````\n// export const enabled = false;\nexport {};",
+  ],
+  [
     "no-widen-then-assert",
     'const input: unknown = { name: "mod" }; export const value = input as { name: string };',
   ],

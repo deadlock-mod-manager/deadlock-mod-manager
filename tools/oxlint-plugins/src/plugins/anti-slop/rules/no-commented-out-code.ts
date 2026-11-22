@@ -2,6 +2,8 @@ import { defineRule } from "@oxlint/plugins";
 
 import { isTrailingComment } from "../shared/comments.ts";
 
+const FENCE_PATTERN = /^`{3,}/;
+
 const CODE_PATTERNS = [
   /^import\s.+\sfrom\s+["']/,
   /^(?:export\s+)?(?:const|let|var)\s+[\w$]+\s*(?::[^=]+)?=\s*\S/,
@@ -27,7 +29,7 @@ export const noCommentedOutCodeRule = defineRule({
     const { sourceCode } = context;
     return {
       Program() {
-        let inFencedExample = false;
+        let openFence: string | null = null;
         for (const comment of sourceCode.getAllComments()) {
           if (
             comment.type !== "Line" ||
@@ -36,12 +38,19 @@ export const noCommentedOutCodeRule = defineRule({
             continue;
           }
           const body = comment.value.trim();
-          if (body.startsWith("```")) {
-            inFencedExample = !inFencedExample;
-            continue;
+          const fence = FENCE_PATTERN.exec(body)?.[0];
+          if (fence !== undefined) {
+            if (openFence === null) {
+              openFence = fence;
+              continue;
+            }
+            if (body === fence && fence.length >= openFence.length) {
+              openFence = null;
+              continue;
+            }
           }
           if (
-            !inFencedExample &&
+            openFence === null &&
             CODE_PATTERNS.some((pattern) => pattern.test(body))
           ) {
             context.report({ loc: comment.loc, messageId: "commentedOut" });
