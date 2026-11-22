@@ -39,6 +39,7 @@
     "anti-slop/no-runtime-typeof": "warn",
     "anti-slop/no-unsafe-dictionary-type": "warn",
     "anti-slop/no-shape-in-symbol-names": "warn",
+    "anti-slop/no-step-comment": "error",
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "error",

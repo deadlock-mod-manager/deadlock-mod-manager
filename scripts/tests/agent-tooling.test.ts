@@ -202,6 +202,7 @@ test.each([
     "no-restating-comment",
     "/** Read IPC slots. */\nfunction readIPCSlots() {}\nreadIPCSlots();",
   ],
+  ["no-step-comment", "// Step 1: Get versions\nexport {};"],
   ["no-untracked-todo", "// TODO: drop the legacy slot fallback\nexport {};"],
   [
     "no-commented-out-code",

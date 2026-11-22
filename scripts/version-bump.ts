@@ -353,14 +353,12 @@ function main(): void {
 
   console.log("=== Version Bump Script ===\n");
 
-  // Step 1: Get versions
   const packageVersion = getPackageVersion();
   const cargoVersion = getCargoVersion();
 
   console.log(`Package.json version: ${packageVersion}`);
   console.log(`Cargo.toml version: ${cargoVersion}`);
 
-  // Step 2: Sync Cargo.toml if needed
   if (packageVersion !== cargoVersion) {
     console.log(`\nVersion mismatch detected!`);
     if (dryRun) {
@@ -372,7 +370,6 @@ function main(): void {
     console.log(`\nVersions are in sync.`);
   }
 
-  // Step 3: Generate What's New content
   if (generateWhatsNew) {
     console.log(`\n=== Generating What's New Content ===\n`);
 
