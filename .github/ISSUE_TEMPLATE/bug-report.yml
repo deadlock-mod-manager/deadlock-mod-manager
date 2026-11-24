@@ -1,0 +1,93 @@
+name: Bug report
+description: Report broken behavior, a crash, or a regression.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for broken behavior, crashes, and regressions. Keep the report to one problem.
+        Feature requests go in [Ideas](https://github.com/deadlock-mod-manager/deadlock-mod-manager/discussions/categories/ideas). For help with your setup, ask on [Discord](https://deadlockmods.app/discord).
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I observed this problem myself.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Installing, updating, or removing mods
+        - Enabling, disabling, or ordering mods
+        - Profiles
+        - Browsing and search
+        - Game detection or launching
+        - Crosshairs
+        - Plugins
+        - Servers or stats
+        - Settings
+        - Website
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown under About in the app. Leave empty for a website bug.
+      placeholder: 1.2.3
+
+  - type: input
+    id: platform
+    attributes:
+      label: OS and install method
+      description: For a website bug, give your OS and browser.
+      placeholder: Windows 11, installer / Fedora 42, Flatpak
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Switch profile
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error text if there is one.
+    validations:
+      required: true
+
+  - type: input
+    id: mod
+    attributes:
+      label: Affected mod
+      description: A link to the mod, if the bug involves a specific one.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Settings → Logging opens the log folder. Attach the log from the time of the problem, plus screenshots or a recording.

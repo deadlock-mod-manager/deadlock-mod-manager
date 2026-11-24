@@ -493,20 +493,15 @@ pnpm --filter api test
 pnpm --filter desktop test
 ```
 
-### Writing Tests
-
-- **Unit Tests**: For utilities, hooks, and individual components
-- **Integration Tests**: For API endpoints and complex workflows
-- **E2E Tests**: For critical user journeys
-
 ### Test Guidelines
 
 The required Type Check status includes lint, formatting, type checks, and the critical desktop E2E suite when desktop code, shared dependencies, or build configuration changes. The `e2e-full` label still requests the broader platform suites; it is not needed for critical coverage. Run the critical suite locally with `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite critical` after building the isolated harness as described in [the E2E guide](apps/desktop/e2e/README.md).
 
-- Write tests for new features and bug fixes
-- Follow AAA pattern: Arrange, Act, Assert
-- Use descriptive test names
-- Mock external dependencies appropriately
+What to test, how to prove a bug fix, and what reviewers ask for are in the [testing rules](.agents/context/TESTING.md). In short:
+
+- Test behavior that can break. Skip tests for trivial helpers, copy text, and what types already guarantee.
+- Add a row or an assertion to an existing test before writing a new one, and cover each case at one layer.
+- A presentation-only bug gets before and after screenshots and no test. For a desktop behavior bug a user can reproduce in the app, add or extend one E2E case. Any other logic bug gets a failing test first, then the fix.
 
 ## Submitting Changes
 
@@ -540,50 +535,51 @@ The required Type Check status includes lint, formatting, type checks, and the c
 
 ### Pull Request Guidelines
 
-- **Clear Title**: Use descriptive titles following conventional commit format
-- **Detailed Description**: Explain what changes you made and why
-- **Link Issues**: Reference any related issues with `Closes #123`
-- **Screenshots**: Include screenshots for UI changes
-- **Breaking Changes**: Clearly document any breaking changes
+Reviewing a PR takes longer than writing one. These rules keep each PR quick to review, and the [pull request template](.github/pull_request_template.md) asks for the same things. A small change can answer it in a few sentences without the headings.
 
-### PR Template
-
-Use the repository's [pull request template](.github/pull_request_template.md). Explain the change and its reason, record how you validated it, and disclose significant AI assistance.
+- **One problem per PR.** Include every change that fix or feature needs across the desktop app, API, shared packages, tests, and docs. Cleanup, refactors, and a second fix go in their own PRs.
+- **Show that it works.** Say how you found the problem, how you checked the change, and what you saw. "Tests pass" is not evidence. UI changes need before and after screenshots, and a short recording when the change is about motion or timing. Upload them to the PR instead of committing them.
+- **Discuss a change to intended behavior before you build it**; see [New Features](#new-features). Restoring documented or agreed behavior is a bug fix.
+- **Title and links.** Use a conventional commit title in plain language. For a bug fix, link the issue with `Closes #123`. For a feature, link the approved proposal or discussion.
+- **Breaking changes and changesets.** Call out breaking changes and migrations, and add a changeset (`pnpm changeset`) for a user-visible change.
+- **AI assistance.** Disclose significant use per the [AI Policy](./AI_POLICY.md).
 
 ## Types of Contributions
 
-### 🐛 Bug Fixes
+### Triage
 
-- Use the [bug report template](.github/ISSUE_TEMPLATE/bug-report---.md)
-- Include reproduction steps and environment details
-- Test your fix thoroughly
-- Add regression tests when possible
+The fastest way to help is to help us close things, and none of it needs a PR:
 
-### ✨ New Features
+- **Duplicates.** Comment with a link to the original issue or PR.
+- **Fixed bugs.** If an open issue no longer happens on the latest release, say so and give the version.
+- **Existing PRs.** Search open PRs before you start. If one covers your problem, test it and comment with what you saw instead of opening a second one.
 
-- Use the [feature request template](.github/ISSUE_TEMPLATE/feature-request---.md)
-- Discuss the feature in an issue before implementing
+### Bug Fixes
+
+- Report a bug with the [bug report form](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new?template=bug-report.yml), after reproducing it yourself
+- Link the issue that shows the bug, and open one first if none exists
+- Prove the fix as the [testing rules](.agents/context/TESTING.md#proof-for-a-bug-fix) describe
+
+### New Features
+
+- Propose the feature in [Ideas](https://github.com/deadlock-mod-manager/deadlock-mod-manager/discussions/categories/ideas) or on [Discord](https://deadlockmods.app/discord), and wait for a maintainer to agree before implementing
 - Consider backward compatibility
-- Update documentation and examples
+- Update the user docs for the new behavior
 
-### 📚 Documentation
+### Documentation
 
 - Fix typos and improve clarity
 - Add examples and use cases
-- Update API documentation
 - Improve setup instructions
 
-### 🔧 Code Quality
+### Code Quality
 
-- Refactor complex code
-- Improve performance
-- Add missing tests
-- Update dependencies
+- Fix a measured performance problem, and include the measurement
+- Discuss a refactor or a dependency change with maintainers before opening the PR
 
-### 🌐 Internationalization
+### Internationalization
 
-- Add new language translations
-- Improve existing translations
+- Translate on Crowdin; see [Translation & Localization](#translation--localization)
 - Fix localization bugs
 
 ## Translation & Localization
@@ -626,8 +622,8 @@ Check the [README language table](README.md#currently-supported-languages) for c
 
 ### Communication Channels
 
-- **GitHub Issues**: Bug reports and feature requests
-- **GitHub Discussions**: General questions and ideas
+- **GitHub Issues**: Bug reports
+- **GitHub Discussions**: Feature ideas and general questions
 - **Discord Server**: Real-time chat and community support
 - **Pull Requests**: Code review and collaboration
 

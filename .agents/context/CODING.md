@@ -1,6 +1,6 @@
 # Coding conventions
 
-Read [AGENTS.md](../../AGENTS.md) for mandatory type, import, error, logging, testing, and component ownership rules. Match the surrounding code when modifying a package.
+Read [AGENTS.md](../../AGENTS.md) for mandatory type, import, error, logging, and component ownership rules, and [testing](TESTING.md) before writing or reviewing tests. Match the surrounding code when modifying a package.
 
 ## TypeScript and JavaScript
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature request
+    url: https://github.com/deadlock-mod-manager/deadlock-mod-manager/discussions/categories/ideas
+    about: Suggest an improvement or a new capability in Discussions.
+  - name: Help and support
+    url: https://deadlockmods.app/discord
+    about: Ask setup and usage questions on Discord.

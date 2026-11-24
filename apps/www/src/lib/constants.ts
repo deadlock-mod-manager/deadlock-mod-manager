@@ -4,7 +4,7 @@ export const DISCORD_URL = "https://discord.gg/WbFNt8CCr8";
 export const GITHUB_REPO =
   "https://github.com/deadlock-mod-manager/deadlock-mod-manager";
 export const GITHUB_ISSUES_URL = `${GITHUB_REPO}/issues`;
-export const BUG_REPORT_URL = `${GITHUB_ISSUES_URL}/new?labels=bug&template=bug-report---.md`;
+export const BUG_REPORT_URL = `${GITHUB_ISSUES_URL}/new?template=bug-report.yml`;
 /**
  * Latest GitHub release. Stays an absolute GitHub URL because the /download
  * page itself falls back to it when the releases API is down.

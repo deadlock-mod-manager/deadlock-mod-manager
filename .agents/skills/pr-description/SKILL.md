@@ -28,7 +28,7 @@ Add, at any size: a callstack when the [calldiff](../calldiff/SKILL.md) inclusio
 
 ## How to write it
 
-**Lead with the ticket.** First line, before any heading, with a magic word (`fixes`, `closes`, `refs`) and a link. Name absorbed tickets and filed follow-ups here too. Skip the line only when the repo has no tracker and the change has no issue.
+**Lead with the ticket.** First line, before any heading, with a magic word (`fixes`, `closes`, `refs`) and a link. For a feature approved in a discussion, link the approved proposal or discussion instead. Name absorbed tickets and filed follow-ups here too. Skip the line only when the repo has no tracker and the change has no issue.
 
 **Explain the change, not the diff.** The Files tab already has the diff. For a fix: which real scenario broke, why the old code looked correct, and why the new code is. For a feature: what was impossible before, and what the design commits to. When there are several changes, one sentence naming the shape they share comes before the numbered sections.
 

@@ -1,60 +1,32 @@
-## Description
+<!--
+Read CONTRIBUTING.md and AI_POLICY.md first. Solve one problem per PR.
+Use a conventional commit title in plain language, such as
+"fix(desktop): keep disabled mods disabled after a profile switch".
+A small change can cover the sections below in a few sentences without headings.
 
-Brief description of the changes introduced by this PR.
+First line: "Closes #123" for a bug fix, or a link to the approved proposal or
+discussion for a feature.
+-->
 
-## Type of Change
+## Problem
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Code refactoring (no functional changes)
-- [ ] 🧪 Tests (adding or updating tests)
-- [ ] 🔨 Chore (maintenance, dependency updates, etc.)
+<!-- The problem in a sentence or two, with expected behavior and steps to
+reproduce where relevant. -->
 
-## Related Issues
+## Change
 
-- Closes #
-- Fixes #
-- Related to #
+<!-- How this fixes the problem. If it spans the desktop app, API, or shared
+packages, say why each part is needed for the same fix. Call out breaking
+changes and migrations, and include a changeset for a user-visible change. -->
 
-## AI Disclosure
+## Verification
 
-<!-- If AI tools were used significantly (beyond autocomplete), note the tool and what it helped with -->
+<!-- What you ran or did, and what you saw. State anything you could not check,
+such as a platform you do not have. "Tests pass" alone is not evidence.
 
-- [ ] No significant AI assistance used
-- [ ] AI-assisted — Tool: [name], Used for: [what it helped with]
+UI changes need before and after screenshots; add a short recording when the
+change is about motion or timing. Upload them here instead of committing them. -->
 
-## Testing
+## AI assistance
 
-- [ ] I have tested these changes locally
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] I have tested the changes in both development and production-like environments
-
-## Screenshots (if applicable)
-
-<!-- Include screenshots of UI changes, before/after comparisons, or relevant visual evidence -->
-
-## Checklist
-
-- [ ] I have read the [Contributing Guidelines](./CONTRIBUTING.md) and [AI Policy](./AI_POLICY.md)
-- [ ] My code follows the style guidelines of this project (`pnpm lint` passes)
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings or errors
-- [ ] I have checked my code and corrected any misspellings
-- [ ] I have tested my changes on multiple platforms (if applicable)
-- [ ] I have generated a changeset for my changes (if applicable) - run `pnpm changeset`
-
-## Additional Notes
-
-<!-- Any additional information that reviewers should know about this PR -->
-
-## For Maintainers
-
-- [ ] This PR requires a version bump
-- [ ] This PR requires documentation updates
-- [ ] This PR affects the public API
-- [ ] This PR requires migration instructions
+<!-- "None", or the tool and what it did. See AI_POLICY.md. -->

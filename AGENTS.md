@@ -33,7 +33,7 @@ Key directories:
 
 - Help the human contributor understand code and debug issues
 - Suggest improvements that follow existing patterns in the codebase
-- Write tests for new and existing functionality
+- Write tests that catch a regression nothing else does; follow [testing](.agents/context/TESTING.md) when adding, changing, or reviewing tests
 - Use oxfmt for formatting and oxlint for linting (not ESLint/Prettier/Biome)
 - Follow the existing commit convention: `type(scope): description` (see [.agents/skills/git-conventions/SKILL.md](.agents/skills/git-conventions/SKILL.md)); commit on the current branch unless the user asks to use a feature branch
 - When creating a requested branch, use a descriptive prefix such as `feature/`, `bugfix/`, or `chore/`; never use `codex/`.
@@ -74,7 +74,7 @@ Before the human submits your work, ensure:
 - [ ] PR description explains _what_ and _why_, not just _how_
 - [ ] AI usage is disclosed per the [AI Policy](./AI_POLICY.md)
 
-Test observable behavior and failure cases for functional changes; follow each package's existing test layout and naming. Documentation-only changes do not need new tests. Suggest updates to shared guidance when the task reveals a missing convention.
+Suggest updates to shared guidance when the task reveals a missing convention. When a rule here fights the task in front of you, say so and get the user's sign-off before breaking it.
 
 For changes to cancellation, retries, locks, authorization, or filesystem mutations, and before removing a behavioral guard or regression test, follow [failure and recovery review](.agents/context/FAILURE-RECOVERY.md).
 
@@ -114,10 +114,12 @@ Tauri dependencies and APIs must stay on v2. Before changing desktop dependencie
 - **Frontend state.** UI state is a persisted Zustand store built from slices in `apps/desktop/src/lib/store/`. Changing the persisted shape needs a migration in `migrate.ts`, and `merge.ts` lists the deep-merge keys.
 - **Remote data.** `apps/desktop/src/lib/api-client.ts` calls the API (`VITE_API_URL`, default `https://api.deadlockmods.app`) through React Query. Some GameBanana catalog reads go direct (`gamebanana-catalog`). DTOs shared with the API come from `@deadlock-mods/shared`.
 - For a change that spans layers, trace the DTO, the IPC command, the file operation, and persistence together.
+- **Hit every surface.** For a user-facing change, verify each entry point that triggers the changed action (catalog card, mod page, My Mods, downloads, deep link), the way back for a reversible action (uninstall, disable, reset), and per-profile state across a profile switch and back.
 
 ## Agent workflows
 
 - Parallel tasks may use separate worktrees or share a checkout, following the user's preference. In a shared checkout, assign file or hunk ownership and coordinate overlapping edits; unrelated work continues in parallel.
+- Stop only processes you started, by the PID captured at spawn. The user's dev server, the game, and other agents share this machine, and a kill by name (`taskkill /IM`, `Stop-Process -Name`, `pkill`) takes theirs down too.
 - For commits, integration, conflict resolution, or recovery, follow the [shared-work and recovery safeguards](.agents/skills/git-conventions/SKILL.md#parallel-work-and-recovery). Preserve other tasks' edits and verify the resulting code before declaring work already merged.
 - Skills live in `.agents/skills`. `pnpm install` links them into `.claude/skills`; rerun `pnpm skills:link` after changing the skill set. Existing directories are preserved.
 - For TypeScript, JavaScript, React, or backend code changes, read [coding conventions](.agents/context/CODING.md). When editing errors, also read [error handling](.agents/context/ERROR-HANDLING.md).
@@ -127,7 +129,7 @@ Tauri dependencies and APIs must stay on v2. Before changing desktop dependencie
 - On request, use [simplify](.agents/skills/simplify/SKILL.md) for scoped review and cleanup or [handoff](.agents/skills/handoff/SKILL.md) to resume elsewhere. For instruction edits, read [writing-for-agents](.agents/skills/writing-for-agents/SKILL.md).
 - Run `pnpm check:toolchain` for tooling changes. `pnpm knip` reports unused code/dependencies; review findings before deleting anything, especially generated IPC bindings and external package exports.
 - Anti-slop rules initially report warnings so existing code can be inventoried without a bulk refactor. Resolve findings in new or modified code; promote rules only after reviewing their existing violations.
-- Maintain shared instructions here, detailed reference material in `.agents/context/`, and workflows in `.agents/skills/`. Keep each requirement in one authoritative home and update its callers when moving it. `CLAUDE.md` imports this file.
+- Maintain shared instructions here, detailed reference material in `.agents/context/`, and workflows in `.agents/skills/`. Keep each requirement in one authoritative home and update its callers when moving it. When a documented decision changes, rewrite or remove the old text instead of appending the new behavior beside it. `CLAUDE.md` imports this file.
 
 <!-- BEGIN:turborepo-agent-rules -->
 

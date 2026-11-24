@@ -36,6 +36,8 @@ page.
 - Icon buttons need accessible labels and useful tooltips.
 - Loading and empty states should explain the next useful action, not restate the
   page title.
+- Motion runs once, in response to a change. Reserve looping animation for work
+  in progress.
 
 ## UX Review Checklist
 

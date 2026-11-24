@@ -22,7 +22,7 @@ Isolated runs from an empty data dir exist only in the WebdriverIO E2E harness (
 
 ## Regression coverage
 
-This skill proves a change once, on live data. The E2E suite keeps it proven, but the full suite is slow, so run only the case you are working on and ask before running any other. Each feature in [`features/README.md`](features/README.md) names its E2E case; the scenario ids live in `apps/desktop/e2e/support/scenarios.ts`. A fix for a real bug adds or extends one case. Run it in CI through the `Desktop E2E` workflow (`workflow_dispatch` with a `suites` list), or locally:
+This skill proves a change once, on live data. The E2E suite keeps it proven, but the full suite is slow, so run only the case you are working on and ask before running any other. Each feature in [`features/README.md`](features/README.md) names its E2E case; the scenario ids live in `apps/desktop/e2e/support/scenarios.ts`. A fix for a behavior bug a user can reproduce adds or extends one case; [testing](../../context/TESTING.md#proof-for-a-bug-fix) covers presentation-only fixes. Run it in CI through the `Desktop E2E` workflow (`workflow_dispatch` with a `suites` list), or locally:
 
 ```bash
 pnpm --filter @deadlock-mods/desktop e2e:build   # once per code change; a separate debug binary, no bridge

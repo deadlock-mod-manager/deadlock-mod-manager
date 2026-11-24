@@ -36,9 +36,9 @@
     ·
     <a href="https://docs.deadlockmods.app/">Documentation</a>
     ·
-    <a href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new?template=bug-report.yml">Report Bug</a>
     ·
-    <a href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/discussions/categories/ideas">Request Feature</a>
   </p>
   
 <!-- Distribution & Platforms -->
