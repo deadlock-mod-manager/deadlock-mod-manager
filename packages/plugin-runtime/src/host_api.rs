@@ -179,6 +179,14 @@ struct HashParams {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct UploadParams {
+  #[serde(default)]
+  offset: u64,
+  data: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct StorageGetParams {
   key: String,
 }
@@ -424,6 +432,36 @@ fn dispatch(
         listed.push(json!({ "folder": folder, "mods": mods }));
       }
       Ok(json!({ "profiles": listed }))
+    }
+    "mods.upload" => {
+      require_mods(plugin, ModAccess::Install)?;
+      let UploadParams { offset, data } = params(raw)?;
+      let bytes = Encoding::Base64.decode(&data)?;
+      if bytes.is_empty() || bytes.len() > files::MAX_WRITE_BYTES {
+        return Err(HostError::invalid("data must decode to 1-4194304 bytes"));
+      }
+      let size = host.services(&plugin.id).snapshots.upload(offset, &bytes)?;
+      Ok(json!({ "size": size }))
+    }
+    "mods.stage" => {
+      require_mods(plugin, ModAccess::Install)?;
+      params::<NoParams>(raw)?;
+      let services = host.services(&plugin.id);
+      let pinned = services.deployments.pinned()?;
+      let (snapshot, staged) = services.snapshots.stage_upload(&pinned)?;
+      if staged {
+        host.record_activity(
+          &plugin.id,
+          ExternalPluginActivity {
+            permission: Some(Id::Mods),
+            hash: Some(snapshot.hash.clone()),
+            size: Some(snapshot.size),
+            resources: snapshot.resources.map(|resources| resources as u64),
+            ..ExternalPluginActivity::new(Kind::Staged)
+          },
+        );
+      }
+      Ok(json!({ "snapshot": snapshot }))
     }
     "mods.install" => {
       require_mods(plugin, ModAccess::Install)?;

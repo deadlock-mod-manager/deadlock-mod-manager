@@ -18,6 +18,8 @@ pub mod methods {
   pub const FILES_SNAPSHOT: &str = "files.snapshot";
   pub const FILES_SNAPSHOTS: &str = "files.snapshots";
   pub const MODS_LIST: &str = "mods.list";
+  pub const MODS_UPLOAD: &str = "mods.upload";
+  pub const MODS_STAGE: &str = "mods.stage";
   pub const MODS_INSTALL: &str = "mods.install";
   pub const MODS_INSTALLED: &str = "mods.installed";
   pub const HTTP_FETCH: &str = "http.fetch";
@@ -209,7 +211,8 @@ impl FileChunk {
 }
 
 /// A copy of a granted file that the host has checked for stability,
-/// validated (VPKs down to every resource CRC), hashed and staged.
+/// validated (VPKs down to every resource CRC), hashed and staged, or a VPK
+/// the plugin uploaded and staged with [`mods_stage`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
@@ -418,6 +421,33 @@ pub fn mods_list(host: &mut impl Host) -> Result<Vec<ProfileMods>, PluginError> 
   Ok(profiles)
 }
 
+/// Appends at most 4 MiB to this plugin's pending upload and returns its new
+/// size. `offset` 0 starts a new upload; any other offset must be the size
+/// the previous call returned.
+pub fn mods_upload(host: &mut impl Host, offset: u64, bytes: &[u8]) -> Result<u64, PluginError> {
+  #[derive(Deserialize)]
+  struct Uploaded {
+    size: u64,
+  }
+  let Uploaded { size } = request(
+    host,
+    methods::MODS_UPLOAD,
+    json!({ "offset": offset, "data": encode_base64(bytes) }),
+  )?;
+  Ok(size)
+}
+
+/// Validates the pending upload as a VPK and stages it for [`mods_install`].
+/// The upload is consumed whether or not it is valid.
+pub fn mods_stage(host: &mut impl Host) -> Result<Snapshot, PluginError> {
+  #[derive(Deserialize)]
+  struct Staged {
+    snapshot: Snapshot,
+  }
+  let Staged { snapshot } = request(host, methods::MODS_STAGE, json!({}))?;
+  Ok(snapshot)
+}
+
 #[derive(Deserialize)]
 struct InstalledHash {
   #[serde(default)]
@@ -526,6 +556,23 @@ mod tests {
       self.requests.push((method.to_owned(), params));
       Ok(self.replies.remove(0))
     }
+  }
+
+  #[test]
+  fn uploads_send_base64_chunks_and_decode_the_staged_snapshot() {
+    let mut host = Replies::new(vec![
+      json!({ "size": 3 }),
+      json!({ "snapshot": { "hash": "ab", "size": 3, "resources": 1, "stagedAt": "2026-10-30T00:00:00Z" } }),
+    ]);
+    assert_eq!(mods_upload(&mut host, 0, b"vpk").unwrap(), 3);
+    assert_eq!(mods_stage(&mut host).unwrap().hash, "ab");
+    assert_eq!(
+      host.requests[0],
+      (
+        "mods.upload".to_owned(),
+        json!({ "offset": 0, "data": "dnBr" })
+      )
+    );
   }
 
   #[test]

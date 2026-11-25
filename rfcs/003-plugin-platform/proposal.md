@@ -291,7 +291,7 @@ optional. Unknown IDs, unknown fields, and malformed scopes fail validation.
 | ID              | Scope fields                                                                                                         | Host calls                                                                                                              |
 | --------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `files`         | `kind`: `file` or `folder`; `extensions`: up to 10 lowercase, no dot, empty for any; `access`: `read` or `readWrite` | `files.info`, `files.list` (folders), `files.read`, `files.snapshot`, `files.snapshots`; `files.write` with `readWrite` |
-| `mods`          | `access`: non-empty set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`             | `mods.list` with `read`; `mods.install`, `mods.installed` with `install`                                                |
+| `mods`          | `access`: non-empty set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`             | `mods.list` with `read`; `mods.upload`, `mods.stage`, `mods.install`, `mods.installed` with `install`                   |
 | `network`       | `hosts`: 1-10 lowercase DNS names, no scheme, port, wildcard, IP literal, or `localhost`                             | `http.fetch`                                                                                                            |
 | `game`          | none                                                                                                                 | `game.state`                                                                                                            |
 | `storage`       | none                                                                                                                 | `storage.get`, `storage.set`                                                                                            |
@@ -334,6 +334,8 @@ is not picked.
 - **Mods.** `mods.list` returns the mods of the picked profile, or of every
   profile with `all`. `mods.install` installs a snapshot as the plugin's own mod
   through the regular install path, so the running-game guard and rollback apply.
+  A plugin that builds its own VPK sends it with `mods.upload`, at most 4 MiB
+  per call, and `mods.stage` validates and stages it like a snapshot.
 - **Network.** The host performs the request. Only HTTPS to a listed host, no
   redirects, no `Cookie` or `Host` headers, addresses resolving to private or
   loopback ranges are refused, 15 second timeout, 4 MiB response.
