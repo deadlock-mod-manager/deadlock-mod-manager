@@ -17,6 +17,8 @@ pub mod methods {
   pub const FILES_WRITE: &str = "files.write";
   pub const FILES_SNAPSHOT: &str = "files.snapshot";
   pub const FILES_SNAPSHOTS: &str = "files.snapshots";
+  pub const GAME_FILES_LIST: &str = "gameFiles.list";
+  pub const GAME_FILES_READ: &str = "gameFiles.read";
   pub const MODS_LIST: &str = "mods.list";
   pub const MODS_INSTALL: &str = "mods.install";
   pub const MODS_INSTALLED: &str = "mods.installed";
@@ -86,6 +88,9 @@ pub enum Permission {
     #[serde(default)]
     extensions: Vec<String>,
     access: FileAccess,
+  },
+  GameFiles {
+    extensions: Vec<String>,
   },
   Mods {
     access: Vec<ModAccess>,
@@ -405,6 +410,61 @@ pub fn files_snapshots(host: &mut impl Host) -> Result<Vec<Snapshot>, PluginErro
   }
   let Snapshots { snapshots } = request(host, methods::FILES_SNAPSHOTS, json!({}))?;
   Ok(snapshots)
+}
+
+/// One entry of a folder in the game's own archives.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameEntry {
+  pub name: String,
+  pub kind: FileKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameEntries {
+  #[serde(default)]
+  pub entries: Vec<GameEntry>,
+  /// More than 1000 entries matched.
+  #[serde(default)]
+  pub truncated: bool,
+}
+
+/// A piece of a game resource. `data` is base64.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameChunk {
+  pub data: String,
+  /// The whole resource's size.
+  pub size: u64,
+  pub eof: bool,
+}
+
+impl GameChunk {
+  pub fn bytes(&self) -> Result<Vec<u8>, PluginError> {
+    decode_base64(&self.data)
+  }
+}
+
+/// Folders and granted resources directly inside `path` of the game's own
+/// archives (`/`-separated, such as `models/heroes`), or at their root.
+pub fn game_files_list(
+  host: &mut impl Host,
+  path: Option<&str>,
+) -> Result<GameEntries, PluginError> {
+  request(host, methods::GAME_FILES_LIST, json!({ "path": path }))
+}
+
+/// Reads at most `length` bytes (default and maximum 1 MiB) of a game
+/// resource from `offset`. The resource's extension must be granted.
+pub fn game_files_read(
+  host: &mut impl Host,
+  path: &str,
+  offset: u64,
+  length: Option<u64>,
+) -> Result<GameChunk, PluginError> {
+  request(
+    host,
+    methods::GAME_FILES_READ,
+    json!({ "path": path, "offset": offset, "length": length }),
+  )
 }
 
 /// Mods of the picked profile, or of every profile with `profiles: "all"`.

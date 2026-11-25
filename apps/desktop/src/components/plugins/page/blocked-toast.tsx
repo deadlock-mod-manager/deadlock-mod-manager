@@ -101,6 +101,8 @@ const describeBlocked = (
           })
         : t("plugins.page.blocked.network", { name, host: activity.host });
     }
+    case "gameFiles":
+      return t("plugins.page.blocked.gameFiles", { name });
     case "game":
       return t("plugins.page.blocked.game", { name });
     case "events":

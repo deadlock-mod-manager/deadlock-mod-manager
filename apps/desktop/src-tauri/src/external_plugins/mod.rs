@@ -3,6 +3,7 @@ pub mod download;
 pub mod events;
 #[cfg(not(feature = "cef"))]
 pub mod frames;
+pub mod game_files;
 pub mod network;
 pub mod profiles;
 

@@ -21,6 +21,14 @@ export type ExternalPluginPermission =
       access: ExternalPluginFileAccess;
     }
   | {
+      id: "gameFiles";
+      /**
+       * Resource extensions as the game's archives name them, lowercase and
+       * without the dot, such as `vmdl_c`.
+       */
+      extensions: Array<string>;
+    }
+  | {
       id: "mods";
       access: Array<ExternalPluginModAccess>;
       profiles: ExternalPluginProfileScope;

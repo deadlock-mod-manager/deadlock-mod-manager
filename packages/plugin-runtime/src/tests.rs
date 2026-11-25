@@ -511,6 +511,57 @@ fn snapshots_and_installs_through_hostcalls() {
 }
 
 #[test]
+fn game_files_are_read_within_the_granted_extensions() {
+  let fixture = fixture();
+  fixture.install_with(
+    "0.1.0",
+    json!([{ "id": "gameFiles", "extensions": ["vmdl_c"] }]),
+  );
+  fixture
+    .adapter
+    .add_game_file("models/heroes/shiv/shiv.vmdl_c", b"model bytes");
+  fixture
+    .adapter
+    .add_game_file("models/heroes/shiv/shiv.vnmskel_c", b"skeleton");
+  let generation = fixture.enable();
+
+  let listed = fixture.hostcall(
+    generation,
+    "gameFiles.list",
+    json!({ "path": "models/heroes/shiv" }),
+  );
+  assert_eq!(
+    listed["value"]["entries"],
+    json!([{ "name": "shiv.vmdl_c", "kind": "file" }]),
+    "{listed}"
+  );
+  let read = fixture.hostcall(
+    generation,
+    "gameFiles.read",
+    json!({ "path": "models/heroes/shiv/shiv.vmdl_c" }),
+  );
+  assert_eq!(read["value"]["size"], 11, "{read}");
+  assert_eq!(read["value"]["eof"], true);
+  let other = fixture.hostcall(
+    generation,
+    "gameFiles.read",
+    json!({ "path": "models/heroes/shiv/shiv.vnmskel_c" }),
+  );
+  assert_eq!(other["error"]["code"], "permission_denied", "{other}");
+  let files = fixture.hostcall(generation, "files.info", Value::Null);
+  assert_eq!(
+    files["error"]["code"], "permission_denied",
+    "game files do not grant a file on disk"
+  );
+  let activity = fixture.host.activity(ID, 10).unwrap();
+  assert_eq!(
+    activity[1].permission,
+    Some(ExternalPluginPermissionId::GameFiles),
+    "the refused extension is logged against gameFiles"
+  );
+}
+
+#[test]
 fn folder_grants_resolve_paths_and_refuse_escapes() {
   let fixture = fixture();
   fixture.install_with(

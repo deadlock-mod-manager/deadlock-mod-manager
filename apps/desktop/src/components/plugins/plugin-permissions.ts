@@ -3,6 +3,7 @@ import {
   BellIcon,
   DatabaseIcon,
   EyeIcon,
+  FolderOpenIcon,
   GameControllerIcon,
   GlobeIcon,
   PencilSimpleIcon,
@@ -35,6 +36,7 @@ export type PermissionCopy = {
 
 const CATALOG_ORDER: ExternalPluginPermissionId[] = [
   "files",
+  "gameFiles",
   "mods",
   "network",
   "game",
@@ -66,6 +68,7 @@ export const permissionNeeds = (
       return permission.kind;
     case "mods":
       return permission.profiles === "picked" ? "profile" : null;
+    case "gameFiles":
     case "network":
     case "game":
     case "events":
@@ -95,6 +98,8 @@ const samePermission = (
         a.access === b.access &&
         sameSet(a.extensions, b.extensions)
       );
+    case "gameFiles":
+      return b.id === "gameFiles" && sameSet(a.extensions, b.extensions);
     case "mods":
       return (
         b.id === "mods" &&
@@ -152,6 +157,14 @@ const extensionList = (language: string, extensions: string[]) =>
     "disjunction",
   );
 
+/** "vmdl_c", "vtex_c" → ".vmdl_c and .vtex_c". */
+const gameExtensionList = (language: string, extensions: string[]) =>
+  formatList(
+    language,
+    extensions.map((extension) => `.${extension}`),
+    "conjunction",
+  );
+
 /** The host's wording for one request, scope included. */
 const describePermission = (
   t: TFunction,
@@ -175,6 +188,16 @@ const describePermission = (
         needs,
       };
     }
+    case "gameFiles":
+      return {
+        icon: FolderOpenIcon,
+        title: t("plugins.permissions.gameFiles.title"),
+        detail: t("plugins.permissions.gameFiles.detail"),
+        note: t("plugins.permissions.gameFiles.note", {
+          extensions: gameExtensionList(language, permission.extensions),
+        }),
+        needs,
+      };
     case "mods": {
       const variant = modsVariant(permission);
       return {
@@ -253,6 +276,10 @@ const permissionPhrase = (
           })
         : t(`plugins.permissions.files.short.${variant}`);
     }
+    case "gameFiles":
+      return t("plugins.permissions.gameFiles.short", {
+        extensions: gameExtensionList(language, permission.extensions),
+      });
     case "mods":
       return t(`plugins.permissions.mods.short.${modsVariant(permission)}`);
     case "network":
@@ -294,6 +321,11 @@ export const permissionTokens = (permission: ExternalPluginPermission) => {
         permission.id,
         permission.access,
         permission.kind,
+        ...permission.extensions.map((extension) => `.${extension}`),
+      ];
+    case "gameFiles":
+      return [
+        permission.id,
         ...permission.extensions.map((extension) => `.${extension}`),
       ];
     case "mods":

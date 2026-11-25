@@ -291,6 +291,7 @@ optional. Unknown IDs, unknown fields, and malformed scopes fail validation.
 | ID              | Scope fields                                                                                                         | Host calls                                                                                                              |
 | --------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `files`         | `kind`: `file` or `folder`; `extensions`: up to 10 lowercase, no dot, empty for any; `access`: `read` or `readWrite` | `files.info`, `files.list` (folders), `files.read`, `files.snapshot`, `files.snapshots`; `files.write` with `readWrite` |
+| `gameFiles`     | `extensions`: 1-16 lowercase resource extensions, no dot, such as `vmdl_c`                                           | `gameFiles.list`, `gameFiles.read`                                                                                      |
 | `mods`          | `access`: non-empty set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`             | `mods.list` with `read`; `mods.install`, `mods.installed` with `install`                                                |
 | `network`       | `hosts`: 1-10 lowercase DNS names, no scheme, port, wildcard, IP literal, or `localhost`                             | `http.fetch`                                                                                                            |
 | `game`          | none                                                                                                                 | `game.state`                                                                                                            |
@@ -331,6 +332,10 @@ is not picked.
   `files.snapshot` waits until the file has settled, validates VPKs, and stages
   a content-addressed copy under the plugin's quota. That copy is what
   `mods.install` installs.
+- **Game files.** `gameFiles` reads resources of the listed extensions from the
+  game's own archives, 1 MiB per call, without a picked file. It never reaches
+  mods or paths on disk, so a plugin that edits a hero's model reads the
+  original without being granted the game folder.
 - **Mods.** `mods.list` returns the mods of the picked profile, or of every
   profile with `all`. `mods.install` installs a snapshot as the plugin's own mod
   through the regular install path, so the running-game guard and rollback apply.
