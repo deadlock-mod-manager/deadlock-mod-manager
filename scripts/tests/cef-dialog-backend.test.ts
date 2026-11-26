@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const fixtures: string[] = [];
-const desktop = new URL("../../apps/desktop/", import.meta.url);
+const repo = new URL("../../", import.meta.url);
 
 afterEach(() => {
   for (const fixture of fixtures.splice(0)) {
@@ -24,26 +24,30 @@ afterEach(() => {
 function createFixture(env: NodeJS.ProcessEnv = {}) {
   const fixture = mkdtempSync(join(tmpdir(), "dmm-cef-dialog-"));
   fixtures.push(fixture);
+  const desktopDir = join(fixture, "apps/desktop");
   for (const directory of ["scripts", "src-tauri"]) {
-    mkdirSync(join(fixture, directory));
+    mkdirSync(join(desktopDir, directory), { recursive: true });
   }
   for (const path of [
     "Cargo.toml",
-    "src-tauri/Cargo.toml",
-    "scripts/cef-patch.ts",
+    "apps/desktop/src-tauri/Cargo.toml",
+    "apps/desktop/scripts/cef-patch.ts",
   ]) {
-    copyFileSync(new URL(path, desktop), join(fixture, path));
+    copyFileSync(new URL(path, repo), join(fixture, path));
   }
   writeFileSync(join(fixture, "Cargo.lock"), "# Local Wry lockfile edits\r\n");
-  writeFileSync(join(fixture, "Cargo.cef.lock"), "# Vendored CEF lockfile\n");
-  const manifestPath = join(fixture, "src-tauri/Cargo.toml");
+  writeFileSync(
+    join(desktopDir, "Cargo.cef.lock"),
+    "# Vendored CEF lockfile\n",
+  );
+  const manifestPath = join(desktopDir, "src-tauri/Cargo.toml");
   const original = readFileSync(manifestPath, "utf8");
   const run = (...args: string[]) =>
     spawnSync(
       process.execPath,
-      [join(fixture, "scripts/cef-patch.ts"), ...args],
+      [join(desktopDir, "scripts/cef-patch.ts"), ...args],
       {
-        cwd: fixture,
+        cwd: desktopDir,
         encoding: "utf8",
         env: {
           ...process.env,
@@ -56,7 +60,7 @@ function createFixture(env: NodeJS.ProcessEnv = {}) {
     const result = run(...args);
     expect(result.status, result.stderr).toBe(0);
   };
-  return { fixture, manifestPath, original, run, succeed };
+  return { fixture, desktopDir, manifestPath, original, run, succeed };
 }
 
 test("CEF uses portal dialogs and cleanup restores Wry's GTK backend", () => {
@@ -97,9 +101,9 @@ test("CEF uses portal dialogs and cleanup restores Wry's GTK backend", () => {
 });
 
 test("CEF selects the vendored lock and cleanup preserves local Wry edits", () => {
-  const { fixture, succeed } = createFixture();
+  const { fixture, desktopDir, succeed } = createFixture();
   const lockPath = join(fixture, "Cargo.lock");
-  const cefPath = join(fixture, "Cargo.cef.lock");
+  const cefPath = join(desktopDir, "Cargo.cef.lock");
   const original = readFileSync(lockPath);
   const cef = readFileSync(cefPath);
 
@@ -111,13 +115,15 @@ test("CEF selects the vendored lock and cleanup preserves local Wry edits", () =
   succeed("cleanup");
   expect(readFileSync(lockPath)).toEqual(original);
   expect(readFileSync(cefPath)).toEqual(cef);
-  expect(existsSync(join(fixture, "target/cef-patch/Cargo.lock"))).toBe(false);
+  expect(existsSync(join(desktopDir, "target/cef-patch/Cargo.lock"))).toBe(
+    false,
+  );
   succeed("cleanup");
   expect(readFileSync(lockPath)).toEqual(original);
 });
 
 test("refreshing a stale CEF manifest keeps the original Wry lock backup", () => {
-  const { fixture, manifestPath, succeed } = createFixture();
+  const { fixture, desktopDir, manifestPath, succeed } = createFixture();
   const lockPath = join(fixture, "Cargo.lock");
   const original = readFileSync(lockPath);
   succeed("prepare");
@@ -130,17 +136,17 @@ test("refreshing a stale CEF manifest keeps the original Wry lock backup", () =>
   );
   succeed("prepare");
   expect(readFileSync(lockPath)).toEqual(
-    readFileSync(join(fixture, "Cargo.cef.lock")),
+    readFileSync(join(desktopDir, "Cargo.cef.lock")),
   );
   succeed("cleanup");
   expect(readFileSync(lockPath)).toEqual(original);
 });
 
 test("a missing CEF lock fails before modifying Wry files", () => {
-  const { fixture, manifestPath, original, run } = createFixture();
+  const { fixture, desktopDir, manifestPath, original, run } = createFixture();
   const workspace = readFileSync(join(fixture, "Cargo.toml"));
   const lock = readFileSync(join(fixture, "Cargo.lock"));
-  rmSync(join(fixture, "Cargo.cef.lock"));
+  rmSync(join(desktopDir, "Cargo.cef.lock"));
 
   expect(run("prepare").status).not.toBe(0);
   expect(readFileSync(join(fixture, "Cargo.toml"))).toEqual(workspace);
@@ -149,26 +155,28 @@ test("a missing CEF lock fails before modifying Wry files", () => {
 });
 
 test("a failed lockfile refresh restores Wry without changing the vendored lock", () => {
-  const { fixture, manifestPath, original, run } = createFixture({ PATH: "" });
+  const { fixture, desktopDir, manifestPath, original, run } = createFixture({
+    PATH: "",
+  });
   const workspace = readFileSync(join(fixture, "Cargo.toml"));
   const lock = readFileSync(join(fixture, "Cargo.lock"));
-  const cef = readFileSync(join(fixture, "Cargo.cef.lock"));
+  const cef = readFileSync(join(desktopDir, "Cargo.cef.lock"));
 
   expect(run("update-lockfile").status).not.toBe(0);
   expect(readFileSync(join(fixture, "Cargo.toml"))).toEqual(workspace);
   expect(readFileSync(manifestPath, "utf8")).toBe(original);
   expect(readFileSync(join(fixture, "Cargo.lock"))).toEqual(lock);
-  expect(readFileSync(join(fixture, "Cargo.cef.lock"))).toEqual(cef);
+  expect(readFileSync(join(desktopDir, "Cargo.cef.lock"))).toEqual(cef);
 });
 
 test.each([0, 7])(
   "wrapped commands return exit code %i with the CEF lock active",
   (code) => {
-    const { fixture, run, succeed } = createFixture();
+    const { fixture, desktopDir, run, succeed } = createFixture();
     writeFileSync(
-      join(fixture, "command.ts"),
+      join(desktopDir, "command.ts"),
       `import { readFileSync } from "node:fs";
-if (readFileSync("Cargo.lock", "utf8") !== "# Vendored CEF lockfile\\n") process.exit(99);
+if (readFileSync("../../Cargo.lock", "utf8") !== "# Vendored CEF lockfile\\n") process.exit(99);
 process.exit(${code});`,
     );
     expect(run("bun", "command.ts").status).toBe(code);

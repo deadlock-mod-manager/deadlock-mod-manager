@@ -31,11 +31,12 @@ pre-commit:
     - run: node scripts/check-changesets.mjs {staged_files}
       glob:
         - ".changeset/*.md"
-    - run: cargo clippy --all-targets
+    # No `root`: the workspace manifest at the repo root must trigger this too.
+    - run: cd apps/desktop && cargo clippy --all-targets
       glob:
-        - "**/*.rs"
-        - "**/Cargo.toml"
-      root: apps/desktop
+        - "apps/desktop/**/*.rs"
+        - "apps/desktop/**/Cargo.toml"
+        - "Cargo.toml"
     - run: cargo clippy --all-targets --all-features
       glob:
         - "**/*.rs"

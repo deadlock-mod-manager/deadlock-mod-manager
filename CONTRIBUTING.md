@@ -457,6 +457,37 @@ cp -r .tauri ../deadlock-modmanager.fix-mod-conflict/
 cd ../deadlock-modmanager.fix-mod-conflict && pnpm install
 ```
 
+### Reusing Rust build output across worktrees (optional)
+
+Each worktree has its own `apps/desktop/target`, so a new worktree recompiles everything. [Kache](https://github.com/kunobi-ninja/kache) is a local compiler cache that restores compiled crates from earlier builds instead. It needs no repo configuration, and CI keeps using sccache.
+
+```bash
+cargo binstall kache       # or: cargo install kache --locked
+kache init --no-service    # no login service; the daemon starts on demand
+kache doctor --probe
+```
+
+`kache init` sets `rustc-wrapper` in `~/.cargo/config.toml`, so it applies to every Cargo project on the machine.
+
+`cargo build` in `apps/desktop`, dev profile, 16 cores, Windows on NTFS:
+
+| Build                             | Without Kache | With Kache |
+| --------------------------------- | ------------- | ---------- |
+| New worktree, empty `target`      | 176 s         | 65 to 85 s |
+| Same checkout, empty `target`     | 176 s         | 60 s       |
+| Rebuild after editing `src-tauri` | 15 s          | 15 s       |
+
+- A new worktree restores the app library (about 50 s to compile) instead of rebuilding it.
+- Run `pnpm install` before the first build in a new worktree. Without `node_modules`, Kache hashes every file in the checkout first, which adds 40 to 90 s.
+- `pnpm desktop:dev:light` leaves out plugins and match sync, which drops 192 of 907 compile units, including `aws-lc-sys`, Wasmtime and the Steam protobufs.
+- The first edit to a crate in a checkout compiles it in full before incremental rebuilds resume.
+- To bypass Kache for one command, set `RUSTC_WRAPPER` to an empty value. `KACHE_DISABLED=1` also turns off incremental compilation.
+- On NTFS, restored files are copies; cap the store with `kache config set cache.local_max_size 30GiB`.
+- The daemon removes build units unused for 30 days from `target` directories it has built into.
+- On Windows, executables and build-script runs stay uncached by default.
+
+`kache stats --last-build` reports hits and time saved, and `kache explain` lists why crates missed. Linux and macOS also cache executables and build-script runs and can share disk blocks on copy-on-write filesystems.
+
 ## Code Style Guidelines
 
 ### General Principles

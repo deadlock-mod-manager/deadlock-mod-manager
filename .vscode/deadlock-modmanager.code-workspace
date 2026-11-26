@@ -58,7 +58,7 @@
       "**/routeTree.gen.ts": true,
     },
     "rust-analyzer.linkedProjects": [
-      "apps/desktop/Cargo.toml",
+      "Cargo.toml",
       "packages/dmp-parser/Cargo.toml",
       "packages/dmodpkg/Cargo.toml",
       "packages/hero-parser/Cargo.toml",

@@ -88,7 +88,7 @@ These read the assets API and need no edit - confirm the hero shows up instead:
 pnpm --filter @deadlock-mods/shared test -- --run
 cargo test --manifest-path packages/hero-parser/Cargo.toml
 cargo test --manifest-path packages/deadlock-discord-presence/Cargo.toml
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib -- foundry gamebanana
+(cd apps/desktop && cargo test --lib -- foundry gamebanana)
 pnpm check-types && pnpm lint:fix && pnpm format:fix
 ```
 

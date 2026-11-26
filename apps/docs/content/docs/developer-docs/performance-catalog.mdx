@@ -115,5 +115,5 @@ The desktop app downloads the file from GameBanana itself and runs it through th
 ```bash
 pnpm --filter @deadlock-mods/perf-catalog test     # catalog invariants
 pnpm --filter @deadlock-mods/perf-catalog check-types
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml catalog::tests   # the Rust reader parses the bundled file
+(cd apps/desktop && cargo test catalog::tests)     # the Rust reader parses the bundled file
 ```

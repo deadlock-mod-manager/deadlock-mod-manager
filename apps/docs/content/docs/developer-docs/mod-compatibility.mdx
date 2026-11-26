@@ -751,10 +751,11 @@ Prepare pinned older GameBanana fixtures with:
 
 ```sh
 bun apps/desktop/scripts/compatibility-corpus.ts /tmp/dmm-compatibility-corpus
+cd apps/desktop
 DMM_REAL_CITADEL=/path/to/Deadlock/game/citadel \
   DMM_COMPAT_CORPUS=/tmp/dmm-compatibility-corpus/cases.json \
   DMM_COMPAT_REPORT=/tmp/dmm-compatibility-corpus/report.json \
-  cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib \
+  cargo test --lib \
   run_obsolete_mod_corpus -- --ignored --nocapture --test-threads=1
 ```
 

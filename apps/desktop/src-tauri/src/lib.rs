@@ -54,8 +54,9 @@ use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+// main.rs builds the context: generate_context!() embeds the checkout path, and
+// keeping it out of this library lets a compiler cache share it across git worktrees.
+pub fn run(mut context: tauri::Context<app_runtime::AppRuntime>) {
   runtime_environment::initialize().expect("failed to initialize runtime environment");
   runtime_environment::configure_process();
 
@@ -101,7 +102,6 @@ pub fn run() {
       ));
     }
   }
-  let mut context: tauri::Context<app_runtime::AppRuntime> = tauri::generate_context!();
   runtime_environment::apply_to_context(&mut context);
   updater_channel::apply_to_context(&mut context);
 

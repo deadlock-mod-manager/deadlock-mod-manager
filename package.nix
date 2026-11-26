@@ -32,8 +32,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
   version = "nightly";
   inherit src;
 
-  cargoRoot = "apps/desktop";
-  buildAndTestSubdir = finalAttrs.cargoRoot;
+  # No cargoRoot: Cargo.lock is at the repo root.
+  buildAndTestSubdir = "apps/desktop";
 
   cargoHash = "sha256-1Jk6umWwS921QYOhaq4W8YzHQFmDuYLPoB44smTIaEY=";
 
