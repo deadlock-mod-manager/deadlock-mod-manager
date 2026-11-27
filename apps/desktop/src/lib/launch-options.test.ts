@@ -74,6 +74,8 @@ describe("getAdditionalArgs", () => {
   beforeEach(() => {
     usePersistedStore.setState({
       gamePresenceEnabled: false,
+      condebugLinkedToPresence: true,
+      condebugEnabled: true,
       localMods: [],
       settings: {
         custom_setting_old: launchOption("custom_setting_old", "+old_option"),
@@ -139,6 +141,33 @@ describe("getAdditionalArgs", () => {
     serverSettings = Promise.resolve([]);
     usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
 
+    expect(await getAdditionalArgs()).toBe("-condebug");
+  });
+
+  it("drops -condebug when Console Debug Log is unlinked", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
+    usePersistedStore.getState().setCondebugLinkedToPresence(false);
+
+    expect(await getAdditionalArgs()).toBe("");
+  });
+
+  it("follows Console Debug Log alone once it is unlinked", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      gamePresenceEnabled: true,
+      condebugLinkedToPresence: false,
+      condebugEnabled: false,
+      localMods: [liveBridge()],
+      settings: {},
+    });
+    expect(await getAdditionalArgs()).toBe("");
+
+    usePersistedStore.setState({
+      gamePresenceEnabled: false,
+      condebugEnabled: true,
+      localMods: [],
+    });
     expect(await getAdditionalArgs()).toBe("-condebug");
   });
 

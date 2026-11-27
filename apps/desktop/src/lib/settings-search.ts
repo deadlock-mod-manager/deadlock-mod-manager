@@ -376,6 +376,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "gamePresence.hidePartySizeDescription",
       },
       {
+        titleKey: "gamePresence.condebugLinked",
+        descriptionKey: "gamePresence.condebugLinkedDescription",
+      },
+      {
         titleKey: "gamePresence.templatesTitle",
         descriptionKey: "gamePresence.templatesDescription",
       },

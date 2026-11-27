@@ -74,6 +74,11 @@ export type SettingsState = {
   gamePresenceEnabled: boolean;
   /** Whether Rich Presence leaves out how many players are in the party. */
   gamePresenceHidePartySize: boolean;
+  /** Whether Rich Presence and the live bridge turn -condebug on by
+   *  themselves. Off hands the launch option to `condebugEnabled`. */
+  condebugLinkedToPresence: boolean;
+  /** The Console Debug Log launch option, read only while it is unlinked. */
+  condebugEnabled: boolean;
   forgeInstallEnabled: boolean;
   /** Whether gameinfo.gi goes back to vanilla once Deadlock closes. */
   autoResetGameinfoOnExit: boolean;
@@ -135,6 +140,8 @@ export type SettingsState = {
 
   setGamePresenceEnabled: (enabled: boolean) => void;
   setGamePresenceHidePartySize: (hidden: boolean) => void;
+  setCondebugLinkedToPresence: (linked: boolean) => void;
+  setCondebugEnabled: (enabled: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
   setAutoResetGameinfoOnExit: (enabled: boolean) => void;
   setBlockActionsWhileGameRunning: (enabled: boolean) => void;
@@ -192,6 +199,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   enabledPlugins: {},
   gamePresenceEnabled: true,
   gamePresenceHidePartySize: false,
+  condebugLinkedToPresence: true,
+  condebugEnabled: true,
   forgeInstallEnabled: false,
   autoResetGameinfoOnExit: false,
   blockActionsWhileGameRunning: true,
@@ -360,6 +369,18 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setGamePresenceHidePartySize: (hidden: boolean) =>
     set(() => ({
       gamePresenceHidePartySize: hidden,
+    })),
+
+  setCondebugLinkedToPresence: (linked: boolean) =>
+    set(() =>
+      linked
+        ? { condebugLinkedToPresence: true }
+        : { condebugLinkedToPresence: false, condebugEnabled: false },
+    ),
+
+  setCondebugEnabled: (enabled: boolean) =>
+    set(() => ({
+      condebugEnabled: enabled,
     })),
 
   setForgeInstallEnabled: (enabled: boolean) =>

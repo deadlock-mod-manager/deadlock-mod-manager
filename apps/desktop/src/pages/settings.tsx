@@ -245,14 +245,21 @@ const CustomSettingsData = ({
     toggleSetting,
     gamePresenceEnabled,
     setGamePresenceEnabled,
+    condebugLinkedToPresence,
+    condebugEnabled,
+    setCondebugEnabled,
   } = usePersistedStore();
   const [showCondebugWarning, setShowCondebugWarning] = useState(false);
+  const condebugLocked = condebugLinkedToPresence && gamePresenceEnabled;
+  const condebugShown = condebugLinkedToPresence
+    ? gamePresenceEnabled
+    : condebugEnabled;
 
   useEffect(() => {
-    if (!gamePresenceEnabled) {
+    if (!condebugLocked) {
       setShowCondebugWarning(false);
     }
-  }, [gamePresenceEnabled]);
+  }, [condebugLocked]);
 
   useEffect(() => {
     if (error) {
@@ -298,11 +305,11 @@ const CustomSettingsData = ({
       value: "",
       type: CustomSettingType.LAUNCH_OPTION,
       description: t("gamePresence.condebugOption"),
-      enabled: gamePresenceEnabled,
+      enabled: condebugShown,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-  }, [gamePresenceEnabled, t]);
+  }, [condebugShown, t]);
 
   return (
     <>
@@ -366,7 +373,9 @@ const CustomSettingsData = ({
                     key={setting.id}
                     onChange={() => {
                       if (isCondebugOption) {
-                        if (gamePresenceEnabled) {
+                        if (!condebugLinkedToPresence) {
+                          setCondebugEnabled(!condebugEnabled);
+                        } else if (condebugLocked) {
                           setShowCondebugWarning(true);
                         } else {
                           setGamePresenceEnabled(true);
@@ -378,7 +387,7 @@ const CustomSettingsData = ({
                     setting={{
                       ...setting,
                       enabled: isCondebugOption
-                        ? gamePresenceEnabled
+                        ? condebugShown
                         : (settingStatusById?.[setting.id] ??
                           (setting as LocalSetting).enabled ??
                           false),
