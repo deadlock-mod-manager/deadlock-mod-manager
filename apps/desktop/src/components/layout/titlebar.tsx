@@ -1,5 +1,4 @@
 import { Dialog } from "@deadlock-mods/ui/components/dialog";
-import { Kbd } from "@deadlock-mods/ui/components/kbd";
 import {
   Menubar,
   MenubarContent,
@@ -9,62 +8,47 @@ import {
   MenubarTrigger,
 } from "@deadlock-mods/ui/components/menubar";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { exit } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
+import { KeybindsDialog } from "@/components/settings/keybinds/keybinds-dialog";
+import { KeyCombo } from "@/components/shared/key-combo";
+import { useAppCommands } from "@/hooks/use-app-commands";
+import { useKeybinds, useResolvedKeybinds } from "@/hooks/use-keybinds";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { showAppUpdateError } from "@/lib/app-update-notifications";
 import { GITHUB_REPO } from "@/lib/constants";
-import { createLogger } from "@/lib/logger";
-import { usePersistedStore } from "@/lib/store";
-import { flushPendingWrites } from "@/lib/store/storage";
+import type { KeybindAction } from "@/lib/keybinds";
 import { AboutDialog } from "./about-dialog";
 import { Toolbar } from "./toolbar";
 import { WindowTitlebar } from "./window-controls/window-titlebar";
 
-const logger = createLogger("titlebar");
+type MenuItem =
+  | { separator: true; id: string }
+  | {
+      separator?: false;
+      label: string;
+      action: () => void | Promise<void>;
+      keybind?: KeybindAction;
+    };
 
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
-const ZOOM_STEP = 0.1;
-
-// Tauri can set the webview zoom but not read it, so track it for the webview's lifetime.
-let zoomLevel = 1;
-
-interface MenuItem {
-  label: string;
-  action?: () => void | Promise<void>;
-  shortcut?: string;
-  separator?: boolean;
-  disabled?: boolean;
-}
-
-interface MenuGroup {
+type MenuGroup = {
   label: string;
   items: MenuItem[];
-}
+};
 
 export const Titlebar = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
-  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
-  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
+  const [showKeybinds, setShowKeybinds] = useState(false);
+  const commands = useAppCommands({
+    onOpenKeybinds: () => setShowKeybinds(true),
+  });
+  const keybinds = useResolvedKeybinds();
   const [showMenubar, setShowMenubar] = useState(false);
-  const [currentWindow, setCurrentWindow] = useState<ReturnType<
-    typeof getCurrentWindow
-  > | null>(null);
 
-  useEffect(() => {
-    setCurrentWindow(getCurrentWindow());
-  }, []);
+  useKeybinds(commands);
 
   // Tapping Alt on its own toggles the menu bar, as in other Windows apps.
   // Alt held for a shortcut such as Alt+F4 leaves it alone.
@@ -116,30 +100,6 @@ export const Titlebar = () => {
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, [showMenubar]);
 
-  const handleOpenModsFolder = async () => {
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-      await invoke("open_mods_folder", { profileFolder });
-    } catch (error) {
-      logger.withError(error).error("Failed to open mods folder");
-      toast.error(t("common.failedToOpenFolder"));
-    }
-  };
-
-  const handleOpenGameFolder = async () => {
-    try {
-      await invoke("open_game_folder");
-    } catch (error) {
-      logger.withError(error).error("Failed to open game folder");
-      toast.error(t("common.failedToOpenFolder"));
-    }
-  };
-
-  const handleSettings = () => {
-    navigate("/settings");
-  };
-
   const handleCheckForUpdates = async () => {
     try {
       const update = await checkForUpdates();
@@ -162,219 +122,62 @@ export const Titlebar = () => {
     }
   };
 
-  const handleExit = async () => {
-    try {
-      await flushPendingWrites();
-      await exit(0);
-    } catch (error) {
-      logger.withError(error).error("Failed to exit");
-    }
-  };
-
-  const handleReload = async () => {
-    try {
-      if (currentWindow) {
-        await currentWindow.emit("tauri://reload");
-      }
-      globalThis.location.reload();
-    } catch (error) {
-      logger.withError(error).error("Failed to reload");
-    }
-  };
-
-  const handleToggleFullscreen = async () => {
-    try {
-      if (currentWindow) {
-        const isFullscreen = await currentWindow.isFullscreen();
-        await currentWindow.setFullscreen(!isFullscreen);
-      }
-    } catch (error) {
-      logger.withError(error).error("Failed to toggle fullscreen");
-    }
-  };
-
-  const applyZoom = async (zoom: number) => {
-    const previous = zoomLevel;
-    const next =
-      Math.round(Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM) * 10) / 10;
-    if (next === previous) return;
-    zoomLevel = next;
-    try {
-      await getCurrentWebview().setZoom(next);
-    } catch (error) {
-      zoomLevel = previous;
-      logger.withError(error).error("Failed to set zoom");
-    }
-  };
-
-  const handleZoomIn = () => applyZoom(zoomLevel + ZOOM_STEP);
-
-  const handleZoomOut = () => applyZoom(zoomLevel - ZOOM_STEP);
-
-  const handleResetZoom = () => applyZoom(1);
-
-  const handleDocumentation = () => {
-    openUrl("https://docs.deadlockmods.app/");
-  };
-
-  const handleAskForHelp = () => {
-    openUrl("https://deadlockmods.app/discord");
-  };
-
-  const handleReportIssue = () => {
-    openUrl(`${GITHUB_REPO}/issues/new/choose`);
-  };
-
-  const handleAbout = () => {
-    setShowAboutDialog(true);
-  };
-
-  // Register global shortcuts
-  useGlobalShortcuts([
-    {
-      key: "Ctrl+M",
-      handler: () => {
-        markFeatureUsed("mods-folder-shortcut");
-        return handleOpenModsFolder();
-      },
-      description: "Open Mods Folder",
-    },
-    {
-      key: "Ctrl+Shift+G",
-      handler: handleOpenGameFolder,
-      description: "Open Game Folder",
-    },
-    {
-      key: "Ctrl+Shift+M",
-      handler: async () => {
-        try {
-          await invoke("open_mods_store");
-        } catch (error) {
-          logger.withError(error).error("Failed to open mods store");
-          toast.error(t("common.failedToOpenFolder"));
-        }
-      },
-      description: "Open Mods Store",
-    },
-    {
-      key: "Ctrl+,",
-      handler: handleSettings,
-      description: "Open Settings",
-    },
-    {
-      key: "Ctrl+R",
-      handler: handleReload,
-      description: "Reload Application",
-    },
-    {
-      key: "F11",
-      handler: handleToggleFullscreen,
-      description: "Toggle Fullscreen",
-    },
-    {
-      key: "Ctrl+=",
-      handler: handleZoomIn,
-      description: "Zoom In",
-    },
-    {
-      key: "Ctrl+-",
-      handler: handleZoomOut,
-      description: "Zoom Out",
-    },
-    {
-      key: "Ctrl+0",
-      handler: handleResetZoom,
-      description: "Reset Zoom",
-    },
-    {
-      key: "Alt+F4",
-      handler: handleExit,
-      description: "Exit Application",
-    },
-  ]);
+  const commandItem = (keybind: KeybindAction): MenuItem => ({
+    label: t(`keybinds.actions.${keybind}`),
+    action: commands[keybind],
+    keybind,
+  });
 
   const menuItems: MenuGroup[] = [
     {
-      label: "File",
+      label: t("menuBar.file"),
       items: [
+        commandItem("openModsFolder"),
+        commandItem("openGameFolder"),
+        commandItem("openModsDataFolder"),
+        { separator: true, id: "file-settings" },
+        commandItem("openSettings"),
+        commandItem("openKeybinds"),
+        { separator: true, id: "file-exit" },
         {
-          label: "Open Mods Folder",
-          action: handleOpenModsFolder,
-          shortcut: "Ctrl+M",
-        },
-        {
-          label: "Open Game Folder",
-          action: handleOpenGameFolder,
-          shortcut: "Ctrl+Shift+G",
-        },
-        { separator: true, label: "" },
-        {
-          label: "Settings",
-          action: handleSettings,
-          shortcut: "Ctrl+,",
-        },
-        { separator: true, label: "" },
-        {
-          label: "Check for Updates",
+          label: t("menuBar.checkForUpdates"),
           action: handleCheckForUpdates,
         },
-        {
-          label: "Exit",
-          action: handleExit,
-          shortcut: "Alt+F4",
-        },
+        commandItem("closeWindow"),
+        commandItem("quit"),
       ],
     },
     {
-      label: "View",
+      label: t("menuBar.view"),
       items: [
-        {
-          label: "Reload",
-          action: handleReload,
-          shortcut: "Ctrl+R",
-        },
-        {
-          label: "Toggle Fullscreen",
-          action: handleToggleFullscreen,
-          shortcut: "F11",
-        },
-        { separator: true, label: "" },
-        {
-          label: "Zoom In",
-          action: handleZoomIn,
-          shortcut: "Ctrl+=",
-        },
-        {
-          label: "Zoom Out",
-          action: handleZoomOut,
-          shortcut: "Ctrl+-",
-        },
-        {
-          label: "Reset Zoom",
-          action: handleResetZoom,
-          shortcut: "Ctrl+0",
-        },
+        commandItem("reload"),
+        commandItem("toggleMaximize"),
+        commandItem("toggleFullscreen"),
+        { separator: true, id: "view-zoom" },
+        commandItem("zoomIn"),
+        commandItem("zoomOut"),
+        commandItem("resetZoom"),
       ],
     },
     {
-      label: "Help",
+      label: t("menuBar.help"),
       items: [
         {
-          label: "Open Documentation",
-          action: handleDocumentation,
+          label: t("menuBar.documentation"),
+          action: () => openUrl("https://docs.deadlockmods.app/"),
         },
         {
-          label: "Ask for help",
-          action: handleAskForHelp,
+          label: t("menuBar.askForHelp"),
+          action: () => openUrl("https://deadlockmods.app/discord"),
         },
         {
-          label: "Report issue or bug",
-          action: handleReportIssue,
+          label: t("menuBar.reportIssue"),
+          action: () => openUrl(`${GITHUB_REPO}/issues/new/choose`),
         },
-        { separator: true, label: "" },
+        { separator: true, id: "help-about" },
         {
-          label: "About",
-          action: handleAbout,
+          label: t("menuBar.about"),
+          action: () => setShowAboutDialog(true),
         },
       ],
     },
@@ -401,40 +204,22 @@ export const Titlebar = () => {
                   {menu.label}
                 </MenubarTrigger>
                 <MenubarContent>
-                  {menu.items.map((item, index) => {
+                  {menu.items.map((item) => {
                     if (item.separator) {
-                      return (
-                        <MenubarSeparator
-                          key={`${menu.label}-separator-${index}`}
-                        />
-                      );
+                      return <MenubarSeparator key={item.id} />;
                     }
+                    const combo = item.keybind && keybinds.get(item.keybind);
 
                     return (
                       <MenubarItem
-                        disabled={item.disabled}
                         key={item.label}
                         onClick={() => {
                           setShowMenubar(false);
-                          void item.action?.();
+                          void item.action();
                         }}>
                         {item.label}
-                        {item.shortcut && (
-                          <div className='ml-auto flex items-center gap-1'>
-                            {item.shortcut
-                              .split("+")
-                              .filter(Boolean)
-                              .map((shortcutKey, idx, keys) => (
-                                <span
-                                  className='flex items-center gap-1'
-                                  key={shortcutKey}>
-                                  <Kbd>{shortcutKey}</Kbd>
-                                  {idx < keys.length - 1 && (
-                                    <span className='text-muted-foreground' />
-                                  )}
-                                </span>
-                              ))}
-                          </div>
+                        {combo && (
+                          <KeyCombo className='ml-auto pl-4' combo={combo} />
                         )}
                       </MenubarItem>
                     );
@@ -449,6 +234,8 @@ export const Titlebar = () => {
       <Dialog onOpenChange={setShowAboutDialog} open={showAboutDialog}>
         <AboutDialog />
       </Dialog>
+
+      <KeybindsDialog onOpenChange={setShowKeybinds} open={showKeybinds} />
     </>
   );
 };

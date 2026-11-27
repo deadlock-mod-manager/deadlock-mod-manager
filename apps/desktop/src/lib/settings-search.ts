@@ -244,6 +244,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.linuxGpuCompatDescription",
         platforms: ["linux"],
       },
+      {
+        titleKey: "keybinds.title",
+        descriptionKey: "keybinds.rowDescription",
+      },
     ],
   },
   {
