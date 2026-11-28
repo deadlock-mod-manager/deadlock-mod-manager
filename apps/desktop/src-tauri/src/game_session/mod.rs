@@ -252,6 +252,7 @@ pub fn note_dmm_stop() -> DmmStop {
 /// Called once the app's Stop confirmed the game is gone, with what
 /// `note_dmm_stop` returned. A session that started while the Stop was running
 /// isn't the one it ended.
+#[cfg(target_os = "linux")]
 pub fn note_dmm_stop_completed(stop: DmmStop) {
   if let Some(session_id) = stop.session_id {
     tracker().dmm_stopped_session = Some(session_id);

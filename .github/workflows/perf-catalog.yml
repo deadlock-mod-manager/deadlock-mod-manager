@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: "24.22.1"
+  NODE_VERSION: "26.13.1"
   BRANCH: chore/perf-catalog-refresh
 
 jobs:

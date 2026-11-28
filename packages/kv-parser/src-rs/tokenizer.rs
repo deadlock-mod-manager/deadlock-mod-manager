@@ -11,6 +11,7 @@ pub struct Tokenizer {
     allow_escape_sequences: bool,
     allow_conditionals: bool,
     allow_includes: bool,
+    max_token_length: Option<usize>,
 }
 
 impl Tokenizer {
@@ -23,6 +24,7 @@ impl Tokenizer {
             allow_escape_sequences: true,
             allow_conditionals: true,
             allow_includes: true,
+            max_token_length: Some(MAX_TOKEN_LENGTH),
         }
     }
 
@@ -40,7 +42,27 @@ impl Tokenizer {
             allow_escape_sequences,
             allow_conditionals,
             allow_includes,
+            max_token_length: Some(MAX_TOKEN_LENGTH),
         }
+    }
+
+    /// Set the decoded UTF-8 byte limit, or disable it with `None`.
+    pub fn with_max_token_length(mut self, max_token_length: Option<usize>) -> Self {
+        self.max_token_length = max_token_length;
+        self
+    }
+
+    fn check_token_length(&self, value: &str, line: usize, column: usize) -> Result<()> {
+        if let Some(max_length) = self.max_token_length
+            && value.len() > max_length
+        {
+            return Err(KvError::TokenTooLong {
+                line,
+                column,
+                max_length,
+            });
+        }
+        Ok(())
     }
 
     fn current_char(&self) -> Option<char> {
@@ -189,7 +211,7 @@ impl Tokenizer {
         })
     }
 
-    fn read_escape_sequence(&mut self) -> Result<char> {
+    fn read_escape_sequence(&mut self, value: &mut String) -> Result<()> {
         self.advance(); // Skip backslash
         let ch = self.current_char().ok_or(KvError::UnexpectedEof {
             line: self.line,
@@ -202,13 +224,14 @@ impl Tokenizer {
             '\\' => '\\',
             '"' => '"',
             _ => {
-                // For unrecognized escape sequences, keep the backslash
-                return Ok(ch);
+                value.push('\\');
+                ch
             }
         };
 
+        value.push(result);
         self.advance();
-        Ok(result)
+        Ok(())
     }
 
     fn read_quoted_string(&mut self) -> Result<Token> {
@@ -222,14 +245,6 @@ impl Tokenizer {
         let mut value = String::new();
 
         while let Some(ch) = self.current_char() {
-            if value.len() >= MAX_TOKEN_LENGTH {
-                return Err(KvError::TokenTooLong {
-                    line: start_line,
-                    column: start_column,
-                    max_length: MAX_TOKEN_LENGTH,
-                });
-            }
-
             if ch == '"' {
                 raw.push('"');
                 self.advance(); // Skip closing quote
@@ -238,8 +253,7 @@ impl Tokenizer {
 
             if ch == '\\' && self.allow_escape_sequences {
                 let escape_start = self.pos;
-                let escaped = self.read_escape_sequence()?;
-                value.push(escaped);
+                self.read_escape_sequence(&mut value)?;
                 // Add the raw escape sequence
                 for i in escape_start..self.pos {
                     raw.push(self.input[i]);
@@ -249,6 +263,7 @@ impl Tokenizer {
                 raw.push(ch);
                 self.advance();
             }
+            self.check_token_length(&value, start_line, start_column)?;
         }
 
         if self.current_char().is_none() && !raw.ends_with('"') {
@@ -280,14 +295,6 @@ impl Tokenizer {
         let mut value = String::new();
 
         while let Some(ch) = self.current_char() {
-            if value.len() >= MAX_TOKEN_LENGTH {
-                return Err(KvError::TokenTooLong {
-                    line: start_line,
-                    column: start_column,
-                    max_length: MAX_TOKEN_LENGTH,
-                });
-            }
-
             // Check for comment start
             if ch == '/' && (self.peek(1) == Some('/') || self.peek(1) == Some('*')) {
                 break;
@@ -300,6 +307,7 @@ impl Tokenizer {
 
             value.push(ch);
             self.advance();
+            self.check_token_length(&value, start_line, start_column)?;
         }
 
         Ok(Token {
@@ -583,6 +591,26 @@ mod tests {
         let tokens = tokenizer.tokenize().unwrap();
 
         assert_eq!(tokens[0].value, "Value with\nnewline\ttab\"quote\\");
+    }
+
+    #[test]
+    fn unknown_escapes_preserve_both_characters_once() {
+        for value in [r"a\qb", r"it\'s", r"a\rb"] {
+            let input = format!("\"{value}\"");
+            let tokens = Tokenizer::new(&input).tokenize().unwrap();
+            assert_eq!(tokens[0].value, value);
+            assert_eq!(tokens[0].raw, input);
+        }
+    }
+
+    #[test]
+    fn exact_byte_limit_accepts_quoted_and_unquoted_tokens() {
+        for value in ["a".repeat(1024), "é".repeat(512)] {
+            for input in [value.clone(), format!("\"{value}\""), format!("{value} ")] {
+                let tokens = Tokenizer::new(&input).tokenize().unwrap();
+                assert_eq!(tokens[0].value, value);
+            }
+        }
     }
 
     #[test]

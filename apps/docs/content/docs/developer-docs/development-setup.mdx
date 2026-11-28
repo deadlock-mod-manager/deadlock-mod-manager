@@ -20,31 +20,26 @@ Before you begin, ensure you have the following tools installed:
 
 ### Required Tools
 
-#### Node.js (>= 24.22.1)
+#### Node.js (>= 26.13.1)
 
 Download from [nodejs.org](https://nodejs.org/) or use a version manager:
 
 ```bash
 # Using nvm (recommended)
-nvm install 24
-nvm use 24
+nvm install 26.13.1
+nvm use 26.13.1
 
 # Using fnm
-fnm install 24
-fnm use 24
+fnm install 26.13.1
+fnm use 26.13.1
 ```
 
-#### pnpm (>= 11.18.0)
+#### pnpm (12.9.0)
 
-The repository pins its pnpm version in `package.json`. Enable Corepack so the pinned version is used automatically:
+Install the pnpm version pinned in `package.json`.
 
 ```bash
-corepack enable
-
-# Or install pnpm globally
-npm install -g pnpm
-
-# Verify installation
+npm install -g pnpm@12.9.0
 pnpm --version
 ```
 

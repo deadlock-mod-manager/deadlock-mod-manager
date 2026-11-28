@@ -84,6 +84,7 @@ export function parseKv(content: string, options?: ParseOptions): ParseResult {
     allowEscapeSequences: options?.allowEscapeSequences ?? true,
     allowConditionals: options?.allowConditionals ?? true,
     allowIncludes: options?.allowIncludes ?? true,
+    maxTokenLength: options?.maxTokenLength,
   });
   const optionsBuffer = Buffer.from(`${optionsJson}\0`, "utf8");
 

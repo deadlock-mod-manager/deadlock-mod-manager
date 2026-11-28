@@ -190,8 +190,8 @@
               cargo-edit
 
               # Node.js ecosystem
-              nodejs_24
-              pnpm_11
+              nodejs_26
+              pnpm_12
               bun
 
               # Development tools
@@ -229,19 +229,13 @@
 
               # Set up pnpm
               export PNPM_HOME="$HOME/.local/share/pnpm"
-              export PATH="$PNPM_HOME:$PATH"
+              export PATH="$PATH:$PNPM_HOME"
 
               # Development environment defaults
               export DATABASE_URL="postgresql://turborepo:123456789@localhost:5435/turborepo"
               export REDIS_URL="redis://localhost:6379"
               export NODE_ENV="development"
-
-              # Verify pnpm installation
-              if ! command -v pnpm &> /dev/null; then
-                echo "Installing pnpm..."
-                npm install -g pnpm
-              fi
-             '';
+            '';
 
             # Rust environment
             RUST_BACKTRACE = "1";
