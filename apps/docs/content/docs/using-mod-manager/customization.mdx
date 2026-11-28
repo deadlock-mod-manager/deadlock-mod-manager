@@ -157,7 +157,7 @@ To keep one config's video settings while using another config, open **Video set
 
 Open **Settings → Discord** to enable Discord Game Presence and customize how your live Deadlock status appears on Discord. It can display hero, match mode, party size, and other game information.
 
-Enable **Console Debug Log** in Launch Options so the manager can read game status. Keep Discord and the manager running. Edit the top-line and bottom-line templates using placeholders, set per-hero overrides if needed, and check the preview before saving. Empty template fields fall back to defaults.
+The manager adds `-condebug` when Game Presence is enabled so it can read your game status. If Steam already supplies the flag, turn off **Automatically add -condebug when needed** in Launch Options. Keep Discord and the manager running. Edit the top-line and bottom-line templates using placeholders, set per-hero overrides if needed, and check the preview before saving. Empty template fields fall back to defaults.
 
 ## Plugins and themes
 

@@ -47,21 +47,13 @@ const pruneOrphanedLaunchOptions = async () => {
 
 export const getAdditionalArgs = async () => {
   await pruneOrphanedLaunchOptions();
-  const {
-    settings,
-    gamePresenceEnabled,
-    condebugLinkedToPresence,
-    condebugEnabled,
-    localMods,
-  } = usePersistedStore.getState();
+  const { settings, gamePresenceEnabled, autoCondebugEnabled, localMods } =
+    usePersistedStore.getState();
   const additionalArgs: string[] = [];
   // The live bridge reports through the console log, which only -condebug writes.
   const liveBridgeInstalled = localMods.some(isLiveBridge);
-  const condebug = condebugLinkedToPresence
-    ? gamePresenceEnabled || liveBridgeInstalled
-    : condebugEnabled;
 
-  if (condebug) {
+  if (autoCondebugEnabled && (gamePresenceEnabled || liveBridgeInstalled)) {
     additionalArgs.push("-condebug");
   }
 

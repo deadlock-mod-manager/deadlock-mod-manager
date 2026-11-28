@@ -75,7 +75,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",
-    settings: [{ titleKey: "gamePresence.condebugOption" }],
+    settings: [
+      {
+        titleKey: "settings.autoCondebug",
+        descriptionKey: "settings.autoCondebugDescription",
+      },
+    ],
   },
   {
     tab: "autoexec",
@@ -374,10 +379,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "gamePresence.hidePartySize",
         descriptionKey: "gamePresence.hidePartySizeDescription",
-      },
-      {
-        titleKey: "gamePresence.condebugLinked",
-        descriptionKey: "gamePresence.condebugLinkedDescription",
       },
       {
         titleKey: "gamePresence.templatesTitle",

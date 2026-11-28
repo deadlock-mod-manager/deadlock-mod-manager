@@ -74,8 +74,8 @@ describe("getAdditionalArgs", () => {
   beforeEach(() => {
     usePersistedStore.setState({
       gamePresenceEnabled: false,
-      condebugLinkedToPresence: true,
-      condebugEnabled: true,
+      autoCondebugEnabled:
+        usePersistedStore.getInitialState().autoCondebugEnabled,
       localMods: [],
       settings: {
         custom_setting_old: launchOption("custom_setting_old", "+old_option"),
@@ -144,30 +144,31 @@ describe("getAdditionalArgs", () => {
     expect(await getAdditionalArgs()).toBe("-condebug");
   });
 
-  it("drops -condebug when Console Debug Log is unlinked", async () => {
-    serverSettings = Promise.resolve([]);
-    usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
-    usePersistedStore.getState().setCondebugLinkedToPresence(false);
-
-    expect(await getAdditionalArgs()).toBe("");
-  });
-
-  it("follows Console Debug Log alone once it is unlinked", async () => {
+  it("skips automatic logging for presence and the live bridge after opting out", async () => {
     serverSettings = Promise.resolve([]);
     usePersistedStore.setState({
       gamePresenceEnabled: true,
-      condebugLinkedToPresence: false,
-      condebugEnabled: false,
       localMods: [liveBridge()],
       settings: {},
     });
-    expect(await getAdditionalArgs()).toBe("");
+    usePersistedStore.getState().setAutoCondebugEnabled(false);
 
+    expect(await getAdditionalArgs()).toBe("");
+    expect(usePersistedStore.getState().gamePresenceEnabled).toBe(true);
+  });
+
+  it("keeps a user-supplied -condebug when automatic logging is off", async () => {
+    serverSettings = Promise.resolve([]);
     usePersistedStore.setState({
-      gamePresenceEnabled: false,
-      condebugEnabled: true,
-      localMods: [],
+      autoCondebugEnabled: false,
+      settings: {
+        local_setting_logging: {
+          ...launchOption("local_setting_logging", "-condebug"),
+          value: "",
+        },
+      },
     });
+
     expect(await getAdditionalArgs()).toBe("-condebug");
   });
 
