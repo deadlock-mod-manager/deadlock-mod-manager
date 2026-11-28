@@ -214,6 +214,7 @@ describe("scenario selection", () => {
       "stats-arrange-widgets",
       "stats-custom-tabs",
       "stats-custom-queries",
+      "stats-season-filter",
       "stats-broken-endpoints",
       "stats-items-error",
     ]);

@@ -46,13 +46,17 @@ import {
   useHeroCatalog,
   usePlayerStats,
   useRankAssets,
+  useRankedSeasons,
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
 import { DEFAULT_TAB_IDS } from "@/lib/stats/dashboard/layout";
 import {
-  statsSinceTimestamp,
+  ALL_TIME_RANGE,
+  seasonWindows,
+  statsRangeWindow,
   type StatsMatchMode,
+  type StatsRange,
   type StatsScope,
 } from "@/lib/stats/scope";
 import { usePersistedStore } from "@/lib/store";
@@ -89,10 +93,15 @@ const Stats = () => {
   } = useSelectedSteamAccount();
   const hasAccount = accountId !== null;
   const [mode, setMode] = useState<StatsMatchMode>("all");
-  const [sinceDate, setSinceDate] = useState("");
+  const [range, setRange] = useState<StatsRange>(ALL_TIME_RANGE);
+  const rankedSeasons = useRankedSeasons();
+  const seasons = useMemo(
+    () => seasonWindows(rankedSeasons.data?.data ?? [], Date.now() / 1000),
+    [rankedSeasons.data],
+  );
   const scope = useMemo<StatsScope>(
-    () => ({ mode, since: statsSinceTimestamp(sinceDate) }),
-    [mode, sinceDate],
+    () => ({ mode, ...statsRangeWindow(range, seasons) }),
+    [mode, range, seasons],
   );
   const stats = usePlayerStats(accountId, scope);
   const { heroesById } = useHeroCatalog();
@@ -304,8 +313,9 @@ const Stats = () => {
                 <StatsFilters
                   mode={mode}
                   onModeChange={setMode}
-                  onSinceDateChange={setSinceDate}
-                  sinceDate={sinceDate}
+                  onRangeChange={setRange}
+                  range={range}
+                  seasons={seasons}
                 />
                 {customize}
               </div>

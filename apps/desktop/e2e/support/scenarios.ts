@@ -1407,6 +1407,11 @@ export const scenarios = {
     spec: "stats-custom-queries",
     phases: ["queries"],
   },
+  "stats-season-filter": {
+    ...stats,
+    spec: "stats-season-filter",
+    phases: ["season-filter"],
+  },
   "stats-broken-endpoints": {
     ...stats,
     spec: "stats-broken-endpoints",

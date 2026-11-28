@@ -1217,10 +1217,15 @@
       "unranked": "Unranked",
       "since": "Matches since",
       "sinceDate": "Since {{date}}",
+      "until": "Matches until",
+      "untilDate": "Until {{date}}",
+      "season": "Ranked season",
+      "seasonPlaceholder": "Choose a season",
+      "seasonRunning": "{{date}} – present",
       "allTime": "All time",
       "about": "About stats filters",
       "reset": "Reset",
-      "hint": "Standard ranked and unranked matches only. History widgets, hero and item performance, and their global comparisons use these filters. Squad and widgets with their own API queries keep their own scope.",
+      "hint": "Standard ranked and unranked matches only. History widgets, hero and item performance, and their global comparisons use these filters. With an end date but no start, item stats and global comparisons cover the 30 days before the end. Squad and widgets with their own API queries keep their own scope.",
       "squad": "Squad uses its own available match history. Match mode and date filters do not apply here."
     },
     "tabs": {
