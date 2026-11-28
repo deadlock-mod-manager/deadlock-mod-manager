@@ -325,6 +325,31 @@ Root
   });
 
   describe("edge cases", () => {
+    it.each([null, 2048])(
+      "should accept long values with maxTokenLength %s",
+      (maxTokenLength) => {
+        const value = "a".repeat(1925);
+        const result = parseKv(`"Key" "${value}"`, {
+          allowEscapeSequences: true,
+          allowConditionals: true,
+          allowIncludes: true,
+          maxTokenLength,
+        });
+        expect(result.data).toEqual({ Key: value });
+      },
+    );
+
+    it.each([0, 1])("should enforce maxTokenLength %s", (maxTokenLength) => {
+      expect(() =>
+        parseKv('"a" "aaaaa"', {
+          allowEscapeSequences: true,
+          allowConditionals: true,
+          allowIncludes: true,
+          maxTokenLength,
+        }),
+      ).toThrow(`Token exceeds maximum length of ${maxTokenLength}`);
+    });
+
     it("should handle empty objects", () => {
       const input = `
 "Root"
