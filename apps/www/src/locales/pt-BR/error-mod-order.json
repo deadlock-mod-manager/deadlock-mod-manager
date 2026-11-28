@@ -14,10 +14,10 @@
     "message": "Falha ao salvar ordem dos mods",
     "causes": {
       "gameRunning": "Jogo em execução",
-      "fileInUse": "",
+      "fileInUse": "Não foi possível acessar o arquivo porque ele já está sendo utilizado por outro processo. (os error 32)",
       "vpkInUse": "Arquivos VPK estão em uso e não podem ser excluídos",
-      "accessDenied": "",
-      "shardsFull": ""
+      "accessDenied": "Acesso negado. (os error 5)",
+      "shardsFull": "Todas as pastas addon shard estão cheias"
     }
   },
   "causes": {

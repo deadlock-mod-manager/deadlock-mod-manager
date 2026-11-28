@@ -211,7 +211,7 @@
     "stats": "统计",
     "foundry": "模组工坊",
     "customization": "自定义",
-    "performance": "",
+    "performance": "性能",
     "new": "",
     "maps": "地图",
     "servers": "浏览服务器",
@@ -220,27 +220,27 @@
     "mods": "模组"
   },
   "performance": {
-    "title": "",
-    "subtitle": "",
+    "title": "性能",
+    "subtitle": "社区为不同环境配置了相应的画面设置以换取更高的帧率。你可以随时在这里关闭。",
     "tabs": {
-      "configs": "",
+      "configs": "配置",
       "editor": "",
       "video": "",
-      "history": "",
-      "howItWorks": ""
+      "history": "历史",
+      "howItWorks": "工作原理"
     },
     "video": {
-      "emptyTitle": "",
-      "noConfig": "",
-      "noVideo": "",
+      "emptyTitle": "无 video.txt 的配置",
+      "noConfig": "应用一个自带 video.txt 的配置，其设置会显示在这里。",
+      "noVideo": "{{name}} 不带 video.txt，当前视频设置将保持不变。",
       "changes": {
-        "title": "",
-        "description": "",
-        "values": "",
-        "kept": "",
-        "removed": "",
-        "keep": "",
-        "use": "",
+        "title": "已在游戏内更改",
+        "description": "配置应用后，你又在 Deadlock 的视频设置修改了配置。保留你的修改，或恢复为配置中的设置。",
+        "values": "{{config}} → {{yours}} (当前)",
+        "kept": "保持当前: {{yours}}",
+        "removed": "已移除",
+        "keep": "保持当前",
+        "use": "使用 {{value}}",
         "useAll": "",
         "settled": "",
         "useConfig_one": "",
@@ -269,35 +269,35 @@
         }
       },
       "writes": {
-        "title": "",
+        "title": "模组管理器会更改什么",
         "summary": "",
-        "inPlace": "",
-        "turnOff": "",
-        "reapply": "",
-        "untouched": "",
+        "inPlace": "配置是一组控制台变量（convar），有时还包含引擎设置，会被写入 gameinfo.gi。模组管理器会就地编辑该文件（与你的模组放在一起），而不是替换它。",
+        "turnOff": "它会标记所有新增或修改的行；关闭时会移除这些行，并恢复它们所替换的原有值。你的配置和调整仍会保留。",
+        "reapply": "游戏更新或“恢复原版”会替换 gameinfo.gi。模组管理器会在启动时、切换回其窗口时，以及每次通过它启动前（包括原版启动）将你的配置写回。Deadlock 运行期间，它会等待。若在模组管理器关闭时从 Steam 启动 Deadlock，配置会缺失，直到你再次打开模组管理器。",
+        "untouched": "SearchPaths （用于保持模组加载 ）和 video.txt 将永远不会被更改。",
         "video": ""
       },
       "sources": {
         "title": "",
         "summary": "",
         "convars": {
-          "term": "",
-          "body": ""
+          "term": "Valve 的 convar 列表",
+          "body": "当前游戏中每个 convar 和控制台命令的名称、类型、默认值、范围和标志，来自 <schemaExplorer>ValveResourceFormat's SchemaExplorer</schemaExplorer> 导出的 Deadlock 数据。"
         },
         "history": {
-          "term": "",
-          "body": ""
+          "term": "Convar 历史",
+          "body": "<gameTracking>SteamTracking's GameTracking-Deadlock</gameTracking> 自 2026 年 3 月以来为每次游戏更新记录的 convar 导出数据。已移除的 convar 正是通过这种方式获取其消失时的构建版本。"
         },
         "stock": {
-          "term": "",
-          "body": ""
+          "term": "Valve 的 gameinfo.gi",
+          "body": "来自 <gameTracking>同一追踪器</gameTracking> 的过往游戏版本中的原始文件。配置会与其制作时所对应的版本进行比较，因此只会计算其作者的更改。"
         },
         "presets": {
           "term": "",
           "body": ""
         },
         "gamebanana": {
-          "term": "",
+          "term": "GameBanana 配置",
           "body": ""
         },
         "updates": ""
@@ -336,13 +336,13 @@
     },
     "tiers": {
       "pretty": {
-        "label": ""
+        "label": "精美"
       },
       "balanced": {
-        "label": ""
+        "label": "均衡"
       },
       "lean": {
-        "label": ""
+        "label": "精简"
       },
       "sweaty": {
         "label": ""
@@ -3725,12 +3725,12 @@
     "originalFilesToast": "",
     "originalFilesFailed": "",
     "banner": {
-      "gameUpdated_one": "",
-      "gameUpdated_other": "",
+      "gameUpdated_one": "Deadlock 已更新。{{count}} 个模组基于旧版本制作，可自动修复。",
+      "gameUpdated_other": "Deadlock 已更新。{{count}} 个模组基于旧版本制作，可自动修复。",
       "olderVersion_one": "",
       "olderVersion_other": "",
-      "gameUpdatedPartly_one": "",
-      "gameUpdatedPartly_other": "",
+      "gameUpdatedPartly_one": "Deadlock 已更新。{{count}} 个模组基于旧版本制作，至少部分可自动修复。",
+      "gameUpdatedPartly_other": "Deadlock 已更新。{{count}} 个模组基于旧版本制作，至少部分可自动修复。",
       "olderVersionPartly_one": "",
       "olderVersionPartly_other": "",
       "fix_one": "",
@@ -4083,7 +4083,7 @@
     "pause": "暂停",
     "gridView": "网格视图",
     "listView": "列表视图",
-    "subtitle": "",
+    "subtitle": "浏览已保存的模组目录，刷新以获取更新的模组目录。",
     "catalogRefresh": "",
     "catalogRefreshing": "",
     "mapsSubtitle": "浏览 Deadlock 的自定义地图",
@@ -4377,6 +4377,8 @@
     "audioVolumeDescription": "调整音频预览和播放的音量",
     "launchOptions": "启动选项",
     "launchOptionsDescription": "自定义游戏的启动选项。这些设置将应用于所选的任何游戏模式（纯净版或模组版）。",
+    "autoCondebug": "",
+    "autoCondebugDescription": "",
     "game": "游戏",
     "application": "应用程序",
     "network": "网络",
@@ -5500,7 +5502,7 @@
       "sound": "音效",
       "map": "地图",
       "wip": "半成品",
-      "collection": ""
+      "collection": "合集"
     },
     "updated": "更新时间",
     "match": "匹配方式",
@@ -8131,10 +8133,6 @@
     "settingsDescription": "自定义 Deadlock 在你的 Discord 个人资料上的显示方式。",
     "hidePartySize": "",
     "hidePartySizeDescription": "",
-    "condebugOption": "控制台调试日志",
-    "condebugOptionDescription": "让模组管理器读取游戏信息，以便你的 Discord 状态保持最新。",
-    "condebugDisableWarning": "你需要先禁用 Discord 游戏状态，再关闭控制台调试日志。",
-    "goToDiscordSettings": "前往 Discord 设置",
     "indicatorDisabled": "Discord 游戏状态显示已禁用",
     "indicatorWaiting": "Discord 游戏状态已启用",
     "indicatorConnecting": "正在连接到 Discord 游戏状态",
@@ -8626,14 +8624,14 @@
       "closedWithoutShutdown": "",
       "maybeChangesUnlessYou": "",
       "maybeChanges": "",
-      "buildChanged": "",
+      "buildChanged": "Deadlock 已更新，部分模组可能受影响。",
       "changesHeading": "",
       "modsNotLoaded": "",
       "tip": "",
       "optOut": "",
       "closedIt": "",
-      "turnOffAndRelaunch": "",
-      "launchAgain": "",
+      "turnOffAndRelaunch": "保存配置文件并启动",
+      "launchAgain": "重启",
       "findBrokenMod": "",
       "findBrokenModHint": "",
       "possibleCause": "",

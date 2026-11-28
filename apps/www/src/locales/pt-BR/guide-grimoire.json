@@ -1,6 +1,6 @@
 {
   "meta": {
-    "name": "",
+    "name": "Dealock Mod Manager vs Grimoire",
     "title": "Deadlock Mod Manager vs Grimoire: qual gerenciador de mods usar?",
     "description": "Desde a V2, Deadlock Mod Manager e Grimoire têm os mesmos recursos; escolha pela interface. Teste o nosso ao vivo e importe seu setup do Grimoire em 1 minuto."
   },
@@ -28,7 +28,7 @@
   },
   "hero": {
     "eyebrow": "Comparação",
-    "title": "",
+    "title": "Deadlock Mod Manager vs Grimoire",
     "intro": "Os dois apps fazem bem o trabalho, então escolha aquele que você prefere abrir antes de cada partida. Você pode testar o nosso nesta página e trazer seu setup do Grimoire em cerca de um minuto."
   },
   "shared": {
@@ -39,9 +39,9 @@
       "sounds": "Sons junto com os mods",
       "conflicts": "Detecção de conflitos e ordem de carregamento",
       "repair": "Correções para mods que uma atualização do jogo quebrou",
-      "crashes": "",
+      "crashes": "Ajuda encontrando o mod que travou o jogo",
       "performance": "Configurações de desempenho para mais quadros",
-      "foundry": "",
+      "foundry": "Plataforma para criar seus próprios mods",
       "profiles": "Perfis de mods compartilháveis",
       "import": "Importação do outro app",
       "skins": "Skins de heróis com prévia em 3D",
@@ -67,11 +67,11 @@
       },
       "contributors": {
         "label": "Pessoas que já contribuíram com o Deadlock Mod Manager",
-        "value": ""
+        "value": "30+"
       },
       "shared": {
         "label": "Colaboradores principais do Deadlock Mod Manager que trabalharam no Grimoire",
-        "value": ""
+        "value": "2"
       }
     }
   },
@@ -97,7 +97,7 @@
   },
   "tryIt": {
     "title": "Teste o nosso antes de baixar",
-    "intro": "",
+    "intro": "Tente uma versão demo do aplicativo. Faça uma simulação da instalação ou da execução, ou selecione um tema em Configurações → Temas.",
     "mobileNote": "No PC, você pode explorar a prévia ao vivo aqui mesmo."
   },
   "switch": {

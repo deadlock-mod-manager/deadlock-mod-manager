@@ -31,7 +31,7 @@
     "otherPlatforms": "Другие платформы",
     "highlights": {
       "openSource": "Бесплатно и с открытым кодом",
-      "autoUpdate": "",
+      "autoUpdate": "Проверка обновлений при запуске",
       "platforms": "Windows и Linux"
     }
   },
@@ -51,7 +51,7 @@
     "releaseNotes": "Список изменений"
   },
   "releaseDate": {
-    "dateTime": ""
+    "dateTime": "{{date}}, {{time}} UTC"
   },
   "platforms": {
     "windows": {
@@ -60,12 +60,12 @@
     "linux": {
       "requirements": "64-бит, большинство дистрибутивов",
       "runtimeNote": "",
-      "alternative": "",
+      "alternative": "Системные сборки веб-просмотра",
       "alternativeDescription": ""
     },
     "detected": "Твоя система",
     "noBuilds": "Для этой версии нет сборок под {{platform}}.",
-    "experimental": "",
+    "experimental": "Экспериментальные сборки Chromium",
     "experimentalDescription": "Включают движок Chromium (CEF) вместо системного webview. Весят больше и протестированы хуже; пробуй их, только если у обычной сборки проблемы с отрисовкой."
   },
   "installer": {
@@ -75,8 +75,8 @@
     "download": "Скачать",
     "downloadLabel": "Скачать {{filename}}",
     "runtime": {
-      "cef": "",
-      "wry": ""
+      "cef": "Chromium",
+      "wry": "Системный веб-просмотр"
     },
     "types": {
       "exe": {
@@ -88,30 +88,30 @@
         "description": "Для управляемой или тихой установки (.msi)"
       },
       "portable": {
-        "label": "",
-        "description": ""
+        "label": "Портативный",
+        "description": "Выполнять напрямую без установки (.exe)"
       },
       "dmg": {
         "label": "Образ диска",
         "description": "Приложение для macOS (.dmg)"
       },
       "flatpak": {
-        "label": "",
-        "description": ""
+        "label": "Flatpak",
+        "description": "Работает на большинстве дистрибутивов. Обновления проходят через Flatpak, а не через приложение."
       },
       "deb": {
         "label": "Пакет Debian",
-        "description": ""
+        "description": "Ubuntu, Debian, Mint (.deb)"
       },
       "rpm": {
         "label": "Пакет RPM",
-        "description": ""
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
       }
     }
   },
   "unofficialSites": {
-    "title": "",
-    "description": ""
+    "title": "Остерегайтесь сайтов с похожим названием",
+    "description": "Скачайте Deadlock Mod Manager с этой страницы или из раздела релизов на <github>GitHub</github>. Мы не запускаем <code>deadlockmodmanager.com</code>, <code>deadlockmodmanager. rg</code> или <code>deadlockmodmanager.net</code>. Они используют наше название, а некоторые из них размещают установщики на собственных серверах, где файлы могут быть подменены в любой момент."
   },
   "history": {
     "title": "Другие версии",
