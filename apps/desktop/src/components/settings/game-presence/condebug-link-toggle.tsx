@@ -4,9 +4,6 @@ import { usePersistedStore } from "@/lib/store";
 
 export const CondebugLinkToggle = () => {
   const { t } = useTranslation();
-  const gamePresenceEnabled = usePersistedStore(
-    (state) => state.gamePresenceEnabled,
-  );
   const condebugLinkedToPresence = usePersistedStore(
     (state) => state.condebugLinkedToPresence,
   );
@@ -18,7 +15,6 @@ export const CondebugLinkToggle = () => {
     <SettingToggleRow
       checked={condebugLinkedToPresence}
       description={t("gamePresence.condebugLinkedDescription")}
-      disabled={!gamePresenceEnabled}
       id='toggle-game-presence-condebug-linked'
       onCheckedChange={setCondebugLinkedToPresence}
       title={t("gamePresence.condebugLinked")}
