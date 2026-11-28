@@ -63,9 +63,8 @@ describe("modded and vanilla launch", () => {
     const editing = process.env.DMM_E2E_PHASE === "launch-modes";
     const checkpoint = path.join(world, "artifacts", "launch-state.json");
     if (editing) {
-      await openSettings("discord");
-      await setSwitch("#toggle-game-presence", false);
       await openSettings("launch-options");
+      await setSwitch("#toggle-setting-condebug-launch-option", false);
       const add = await $("button=Create");
       await reveal(add);
       await add.click();
@@ -114,7 +113,9 @@ describe("modded and vanilla launch", () => {
       })
       .parse(JSON.parse(await readFile(checkpoint, "utf8")));
     if (!editing) assert.notEqual(runtime.processId, saved.processId);
-    const settings = customSettings.parse((await readSettings(world)).settings);
+    const state = await readSettings(world);
+    assert.equal(state.gamePresenceEnabled, true);
+    const settings = customSettings.parse(state.settings);
     assert.equal(settings[saved.customId].value, "120");
     assert.equal(settings[saved.customId].enabled, true);
     const launch = async (vanilla: boolean, args: string) => {

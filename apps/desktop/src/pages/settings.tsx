@@ -230,11 +230,7 @@ const CreditCard = ({
   </div>
 );
 
-const CustomSettingsData = ({
-  onNavigateToDiscord,
-}: {
-  onNavigateToDiscord: () => void;
-}) => {
+const CustomSettingsData = () => {
   const { t } = useTranslation();
   const { data, error } = useSuspenseQuery({
     queryKey: ["custom-settings"],
@@ -243,16 +239,9 @@ const CustomSettingsData = ({
   const {
     settings,
     toggleSetting,
-    gamePresenceEnabled,
-    setGamePresenceEnabled,
+    autoCondebugEnabled,
+    setAutoCondebugEnabled,
   } = usePersistedStore();
-  const [showCondebugWarning, setShowCondebugWarning] = useState(false);
-
-  useEffect(() => {
-    if (!gamePresenceEnabled) {
-      setShowCondebugWarning(false);
-    }
-  }, [gamePresenceEnabled]);
 
   useEffect(() => {
     if (error) {
@@ -285,31 +274,24 @@ const CustomSettingsData = ({
     {} as Record<CustomSettingType, LocalSetting[]>,
   );
 
-  const settingStatusById = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(settings).map(([id, setting]) => [id, setting.enabled]),
-    );
-  }, [settings]);
-
   const condebugLaunchOption: LocalSetting = useMemo(() => {
     return {
       id: CONDEBUG_LAUNCH_OPTION_ID,
       key: "-condebug",
       value: "",
       type: CustomSettingType.LAUNCH_OPTION,
-      description: t("gamePresence.condebugOption"),
-      enabled: gamePresenceEnabled,
+      description: t("settings.autoCondebug"),
+      enabled: autoCondebugEnabled,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-  }, [gamePresenceEnabled, t]);
+  }, [autoCondebugEnabled, t]);
 
   return (
     <>
       {Object.values(CustomSettingType).map((type: CustomSettingType) => {
         const isLaunchOption = type === CustomSettingType.LAUNCH_OPTION;
         const settingsForType = [
-          ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
         ];
@@ -339,58 +321,23 @@ const CustomSettingsData = ({
                   ]?.title || ""
             }>
             <div className='grid grid-cols-1 gap-4'>
-              {isLaunchOption && showCondebugWarning && (
-                <div className='flex items-center gap-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-4 py-3'>
-                  <WarningCircle className='size-5 shrink-0 text-yellow-400' />
-                  <p className='text-sm'>
-                    {t("gamePresence.condebugDisableWarning")}
-                  </p>
-                  <Button
-                    className='ml-auto shrink-0'
-                    onClick={() => {
-                      setShowCondebugWarning(false);
-                      onNavigateToDiscord();
-                    }}
-                    size='sm'
-                    variant='outline'>
-                    {t("gamePresence.goToDiscordSettings")}
-                  </Button>
-                </div>
+              {isLaunchOption && (
+                <SettingCard
+                  onChange={setAutoCondebugEnabled}
+                  setting={condebugLaunchOption}
+                  subtitle={t("settings.autoCondebugDescription")}
+                />
               )}
-              {settingsForType.map((setting) => {
-                const isCondebugOption =
-                  setting.id === CONDEBUG_LAUNCH_OPTION_ID;
-
-                return (
-                  <SettingCard
-                    key={setting.id}
-                    onChange={() => {
-                      if (isCondebugOption) {
-                        if (gamePresenceEnabled) {
-                          setShowCondebugWarning(true);
-                        } else {
-                          setGamePresenceEnabled(true);
-                        }
-                        return;
-                      }
-                      toggleSetting(setting.id, setting);
-                    }}
-                    setting={{
-                      ...setting,
-                      enabled: isCondebugOption
-                        ? gamePresenceEnabled
-                        : (settingStatusById?.[setting.id] ??
-                          (setting as LocalSetting).enabled ??
-                          false),
-                    }}
-                    subtitle={
-                      isCondebugOption
-                        ? t("gamePresence.condebugOptionDescription")
-                        : undefined
-                    }
-                  />
-                );
-              })}
+              {settingsForType.map((setting) => (
+                <SettingCard
+                  key={setting.id}
+                  onChange={() => toggleSetting(setting.id, setting)}
+                  setting={{
+                    ...setting,
+                    enabled: settings[setting.id]?.enabled ?? false,
+                  }}
+                />
+              ))}
             </div>
           </Section>
         );
@@ -664,9 +611,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
               }>
               <ErrorBoundary>
-                <CustomSettingsData
-                  onNavigateToDiscord={() => setActiveTab("discord")}
-                />
+                <CustomSettingsData />
               </ErrorBoundary>
             </Suspense>
           </TabsContent>

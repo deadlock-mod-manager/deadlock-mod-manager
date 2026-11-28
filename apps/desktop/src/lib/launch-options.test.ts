@@ -74,6 +74,8 @@ describe("getAdditionalArgs", () => {
   beforeEach(() => {
     usePersistedStore.setState({
       gamePresenceEnabled: false,
+      autoCondebugEnabled:
+        usePersistedStore.getInitialState().autoCondebugEnabled,
       localMods: [],
       settings: {
         custom_setting_old: launchOption("custom_setting_old", "+old_option"),
@@ -138,6 +140,34 @@ describe("getAdditionalArgs", () => {
   it("includes logging when game presence is enabled", async () => {
     serverSettings = Promise.resolve([]);
     usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
+
+    expect(await getAdditionalArgs()).toBe("-condebug");
+  });
+
+  it("skips automatic logging for presence and the live bridge after opting out", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      gamePresenceEnabled: true,
+      localMods: [liveBridge()],
+      settings: {},
+    });
+    usePersistedStore.getState().setAutoCondebugEnabled(false);
+
+    expect(await getAdditionalArgs()).toBe("");
+    expect(usePersistedStore.getState().gamePresenceEnabled).toBe(true);
+  });
+
+  it("keeps a user-supplied -condebug when automatic logging is off", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      autoCondebugEnabled: false,
+      settings: {
+        local_setting_logging: {
+          ...launchOption("local_setting_logging", "-condebug"),
+          value: "",
+        },
+      },
+    });
 
     expect(await getAdditionalArgs()).toBe("-condebug");
   });

@@ -74,6 +74,7 @@ export type SettingsState = {
   gamePresenceEnabled: boolean;
   /** Whether Rich Presence leaves out how many players are in the party. */
   gamePresenceHidePartySize: boolean;
+  autoCondebugEnabled: boolean;
   forgeInstallEnabled: boolean;
   /** Whether gameinfo.gi goes back to vanilla once Deadlock closes. */
   autoResetGameinfoOnExit: boolean;
@@ -135,6 +136,7 @@ export type SettingsState = {
 
   setGamePresenceEnabled: (enabled: boolean) => void;
   setGamePresenceHidePartySize: (hidden: boolean) => void;
+  setAutoCondebugEnabled: (enabled: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
   setAutoResetGameinfoOnExit: (enabled: boolean) => void;
   setBlockActionsWhileGameRunning: (enabled: boolean) => void;
@@ -192,6 +194,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   enabledPlugins: {},
   gamePresenceEnabled: true,
   gamePresenceHidePartySize: false,
+  autoCondebugEnabled: true,
   forgeInstallEnabled: false,
   autoResetGameinfoOnExit: false,
   blockActionsWhileGameRunning: true,
@@ -361,6 +364,9 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     set(() => ({
       gamePresenceHidePartySize: hidden,
     })),
+
+  setAutoCondebugEnabled: (enabled: boolean) =>
+    set({ autoCondebugEnabled: enabled }),
 
   setForgeInstallEnabled: (enabled: boolean) =>
     set(() => ({
