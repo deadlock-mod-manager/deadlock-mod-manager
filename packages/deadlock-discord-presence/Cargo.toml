@@ -5,7 +5,6 @@ edition = "2024"
 description = "Deadlock Discord rich presence state tracking and IPC helpers"
 license = "GPL-3.0"
 repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
-homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
 
 [lib]
 name = "deadlock_discord_presence"
