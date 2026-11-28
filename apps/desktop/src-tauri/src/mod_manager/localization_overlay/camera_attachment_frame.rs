@@ -97,12 +97,13 @@ pub(super) fn repair(source: &[u8], base: &[u8]) -> Result<Option<Vec<u8>>, &'st
       .filter(|frame| matches!(frame, Frame::Old))
       .count();
     if old > 0 && old == frames.len() {
-      migrations.push((index, None));
+      let stale = stale_attachments(&mesh, &current_mesh, &BTreeSet::new(), true);
+      migrations.push((index, Some(stale)));
     } else if old > 0 {
       return Err("Camera pivots use mixed or authored frames; migration skipped");
     } else if !frames.is_empty() && frames.iter().all(|frame| matches!(frame, Frame::Current)) {
       let names = camera_names.get_or_insert_with(|| authored_camera_names(source));
-      let stale = stale_attachments(&mesh, &current_mesh, names);
+      let stale = stale_attachments(&mesh, &current_mesh, names, false);
       if !stale.is_empty() {
         migrations.push((index, Some(stale)));
       }
@@ -189,14 +190,14 @@ fn authored_camera_names(source: &[u8]) -> BTreeSet<String> {
     .unwrap_or_default()
 }
 
-/// Root attachments still in the old frame after the pivots were updated, as
-/// a partial migration leaves them. A same-name game attachment must match
-/// only after conversion. Extra camera poses without one pitch around the
-/// pivot's right axis, so that axis must line up only after conversion.
+/// With old pivots, keep same-name current-frame attachments and migrate the
+/// rest. With current pivots, require evidence that conversion restores the
+/// game frame or an authored extra camera pose's right axis.
 fn stale_attachments(
   mesh: &Kv3Value,
   current: &Kv3Value,
   camera_names: &BTreeSet<String>,
+  old_pivots: bool,
 ) -> BTreeSet<String> {
   let Some(pivot) = attachment(current, "standing_pivot").and_then(rotation) else {
     return BTreeSet::new();
@@ -218,26 +219,36 @@ fn stale_attachments(
     .into_iter()
     .flatten()
     .filter_map(|item| item.get("key").and_then(Kv3Value::as_str))
-    .filter(|name| !PIVOTS.contains(name))
+    .filter(|name| old_pivots || !PIVOTS.contains(name))
     .filter(|name| {
+      if old_pivots && PIVOTS.contains(name) {
+        return true;
+      }
       let Some(q) = attachment(mesh, name).and_then(rotation) else {
-        return false;
+        return old_pivots;
       };
       let converted = convert(q);
       if has_point(current, name) {
         return attachment(current, name)
           .and_then(rotation)
-          .is_some_and(|game| {
-            angle(converted, game).is_some_and(|angle| angle <= FRAME_TOLERANCE)
-              && angle(q, game).is_some_and(|angle| angle > 2.0 * FRAME_TOLERANCE)
-          });
+          .map(|game| {
+            let distance = angle(q, game);
+            if old_pivots {
+              distance.is_none_or(|angle| angle > FRAME_TOLERANCE)
+            } else {
+              angle(converted, game).is_some_and(|angle| angle <= FRAME_TOLERANCE)
+                && distance.is_some_and(|angle| angle > 2.0 * FRAME_TOLERANCE)
+            }
+          })
+          .unwrap_or(old_pivots);
       }
-      camera_pose(name)
-        && camera_names.contains(*name)
-        && dot(right(q), right(pivot)) < 0.5
-        && dot(right(converted), right(pivot)) >= FRAME_TOLERANCE.cos()
-        && angle(converted, pivot)
-          .is_some_and(|angle| angle <= std::f64::consts::FRAC_PI_2 + FRAME_TOLERANCE)
+      old_pivots
+        || camera_pose(name)
+          && camera_names.contains(*name)
+          && dot(right(q), right(pivot)) < 0.5
+          && dot(right(converted), right(pivot)) >= FRAME_TOLERANCE.cos()
+          && angle(converted, pivot)
+            .is_some_and(|angle| angle <= std::f64::consts::FRAC_PI_2 + FRAME_TOLERANCE)
     })
     .map(str::to_owned)
     .collect()
