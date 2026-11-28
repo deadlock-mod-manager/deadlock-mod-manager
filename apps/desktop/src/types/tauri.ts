@@ -9,6 +9,7 @@ export type ErrorKind = {
     | "gamePathNotSet"
     | "appHandleNotInitialized"
     | "gameConfigParse"
+    | "gameLocalizationInvalid"
     | "modAlreadyInstalled"
     | "modFileNotFound"
     | "registry"
