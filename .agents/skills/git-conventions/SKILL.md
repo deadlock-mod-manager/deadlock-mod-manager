@@ -46,7 +46,6 @@ The scope should be the name of the package or area affected. For this monorepo:
 - `desktop` - Desktop application
 - `lockdex` - Lockdex service
 - `www` - Web application
-- `mirror-service` - Mirror service
 
 **Packages:**
 

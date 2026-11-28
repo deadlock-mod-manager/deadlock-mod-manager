@@ -17,7 +17,6 @@ import { ORPCError } from "@orpc/server";
 import { CACHE_TTL } from "@/lib/constants";
 import { cache } from "@/lib/redis";
 import { MOD_LISTING_CACHE_KEY } from "@/services/mod-cache/keys";
-import { featureFlagsService } from "@/services/feature-flags";
 import { formatModDownloads } from "@/lib/utils";
 import { createRateLimitMiddleware, publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../services/mod-sync";
@@ -62,14 +61,7 @@ export const modsRouter = {
     .route({ method: "GET", path: "/v2/mods/{id}/downloads" })
     .input(ModIdParamSchema)
     .output(ModDownloadsV2ResponseSchema)
-    .handler(async ({ input, context }) => {
-      const userId = context.session?.user?.id;
-      const isModDownloadMirroringEnabled =
-        await featureFlagsService.isFeatureEnabled(
-          "mod-download-mirroring",
-          userId,
-        );
-
+    .handler(async ({ input }) => {
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
         throw new ORPCError("NOT_FOUND");
@@ -81,12 +73,7 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      const formattedDownloads = formatModDownloads(
-        downloads,
-        mod.id,
-        isModDownloadMirroringEnabled.unwrapOr(false),
-        mod.overrides,
-      );
+      const formattedDownloads = formatModDownloads(downloads, mod.overrides);
 
       return {
         downloads: formattedDownloads,
@@ -98,14 +85,7 @@ export const modsRouter = {
     .route({ method: "GET", path: "/v2/mods/{id}/download" })
     .input(ModIdParamSchema)
     .output(ModDownloadsResponseSchema)
-    .handler(async ({ input, context }) => {
-      const userId = context.session?.user?.id;
-      const isModDownloadMirroringEnabled =
-        await featureFlagsService.isFeatureEnabled(
-          "mod-download-mirroring",
-          userId,
-        );
-
+    .handler(async ({ input }) => {
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
         throw new ORPCError("NOT_FOUND");
@@ -117,26 +97,14 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      return formatModDownloads(
-        downloads,
-        mod.id,
-        isModDownloadMirroringEnabled.unwrapOr(false),
-        mod.overrides,
-      );
+      return formatModDownloads(downloads, mod.overrides);
     }),
 
   checkModUpdates: publicProcedure
     .route({ method: "POST", path: "/v2/mods/check-updates" })
     .input(CheckUpdatesInputSchema)
     .output(CheckUpdatesResponseSchema)
-    .handler(async ({ input, context }) => {
-      const userId = context.session?.user?.id;
-      const isModDownloadMirroringEnabled =
-        await featureFlagsService.isFeatureEnabled(
-          "mod-download-mirroring",
-          userId,
-        );
-
+    .handler(async ({ input }) => {
       const remoteIds = input.mods.map((m) => m.remoteId);
       const installedModsMap = new Map(
         input.mods.map((m) => [m.remoteId, m.installedAt]),
@@ -163,8 +131,6 @@ export const modsRouter = {
         mod: toModDto(mod),
         downloads: formatModDownloads(
           downloadsByModId.get(mod.id) ?? [],
-          mod.id,
-          isModDownloadMirroringEnabled.unwrapOr(false),
           mod.overrides,
         ),
       }));
