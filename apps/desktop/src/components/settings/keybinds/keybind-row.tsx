@@ -46,9 +46,16 @@ export const KeybindRow = ({
   const errorId = useId();
   const [error, setError] = useState<RecordingError | null>(null);
   const label = t(`keybinds.actions.${action}`);
+  // A cancelled recording leaves no error behind.
+  const shownError = recording ? error : null;
 
   const handleRecordKey = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === "Tab" && !hasModifier(event)) {
+    if (
+      event.key === "Tab" &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey
+    ) {
       onRecordingChange(false);
       return;
     }
@@ -82,14 +89,14 @@ export const KeybindRow = ({
           {label}
         </span>
         <Button
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={shownError ? errorId : undefined}
           aria-label={t("keybinds.edit", { action: label })}
           aria-pressed={recording}
           className={cn(
             "h-7 w-full justify-center px-2 font-normal",
             recording && "border-primary bg-primary/10 ring-1 ring-primary/40",
           )}
-          onBlur={() => onRecordingChange(false)}
+          onBlur={recording ? () => onRecordingChange(false) : undefined}
           onClick={() => {
             setError(null);
             onRecordingChange(!recording);
@@ -140,12 +147,12 @@ export const KeybindRow = ({
           </Tooltip>
         </div>
       </div>
-      {error && (
+      {shownError && (
         <p
           className='mt-1 pr-1.5 text-destructive text-xs'
           id={errorId}
           role='alert'>
-          {t(`keybinds.errors.${error}`)}
+          {t(`keybinds.errors.${shownError}`)}
         </p>
       )}
     </div>

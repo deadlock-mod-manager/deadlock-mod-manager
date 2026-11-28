@@ -16,8 +16,8 @@ import { KeybindRow } from "@/components/settings/keybinds/keybind-row";
 import { KeyCombo } from "@/components/shared/key-combo";
 import { useResolvedKeybinds } from "@/hooks/use-keybinds";
 import {
+  assignKeybind,
   defaultComboFor,
-  findActionForCombo,
   KEYBIND_ACTIONS,
   KEYBIND_CATEGORIES,
   KEYBIND_DEFINITIONS,
@@ -35,26 +35,19 @@ export const KeybindsDialog = ({ open, onOpenChange }: KeybindsDialogProps) => {
   const { t } = useTranslation();
   const keybinds = useResolvedKeybinds();
   const overrides = usePersistedStore((s) => s.keybindOverrides);
-  const setKeybind = usePersistedStore((s) => s.setKeybind);
-  const resetKeybind = usePersistedStore((s) => s.resetKeybind);
-  const resetAllKeybinds = usePersistedStore((s) => s.resetAllKeybinds);
+  const setKeybindOverrides = usePersistedStore((s) => s.setKeybindOverrides);
   const [recording, setRecording] = useState<KeybindAction | null>(null);
   const hasOverrides = Object.keys(overrides).length > 0;
 
   const assign = (action: KeybindAction, combo: Combo | null) => {
-    const previousOwner = combo && findActionForCombo(keybinds, combo);
-    if (previousOwner && previousOwner !== action) {
-      setKeybind(previousOwner, null);
+    const result = assignKeybind(overrides, action, combo, platform());
+    setKeybindOverrides(result.overrides);
+    if (result.displaced) {
       toast.info(
         t("keybinds.reassigned", {
-          action: t(`keybinds.actions.${previousOwner}`),
+          action: t(`keybinds.actions.${result.displaced}`),
         }),
       );
-    }
-    if (combo === defaultComboFor(action, platform())) {
-      resetKeybind(action);
-    } else {
-      setKeybind(action, combo);
     }
   };
 
@@ -114,7 +107,7 @@ export const KeybindsDialog = ({ open, onOpenChange }: KeybindsDialogProps) => {
           <div className='flex gap-2'>
             <Button
               disabled={!hasOverrides}
-              onClick={resetAllKeybinds}
+              onClick={() => setKeybindOverrides({})}
               size='sm'
               variant='outline'>
               <RotateCcw className='size-3.5' />

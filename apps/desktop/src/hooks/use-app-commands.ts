@@ -4,6 +4,7 @@ import { type InvokeArgs, invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { exit } from "@tauri-apps/plugin-process";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { KeybindHandlers } from "@/hooks/use-keybinds";
@@ -19,21 +20,34 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
 
-// Tauri can set the webview zoom but not read it, so track it for the webview's lifetime.
+// Tauri can set the webview zoom but not read it, so track the last level the
+// webview accepted. Requests run one at a time, each from that level.
 let zoomLevel = 1;
+let zoomQueue = Promise.resolve();
 
-const applyZoom = async (zoom: number) => {
-  const previous = zoomLevel;
-  const next =
-    Math.round(Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM) * 10) / 10;
-  if (next === previous) return;
-  zoomLevel = next;
-  try {
-    await getCurrentWebview().setZoom(next);
-  } catch (error) {
-    zoomLevel = previous;
-    logger.withError(error).error("Failed to set zoom");
-  }
+const changeZoom = (target: (current: number) => number) => {
+  zoomQueue = zoomQueue.then(async () => {
+    const next =
+      Math.round(
+        Math.min(Math.max(target(zoomLevel), MIN_ZOOM), MAX_ZOOM) * 10,
+      ) / 10;
+    if (next === zoomLevel) return;
+    try {
+      await getCurrentWebview().setZoom(next);
+      zoomLevel = next;
+    } catch (error) {
+      logger.withError(error).error("Failed to set zoom");
+    }
+  });
+  return zoomQueue;
+};
+
+// Each toggle reads the window state, so overlapping toggles would read the
+// same state and cancel out instead of alternating.
+let windowQueue = Promise.resolve();
+const queueWindowChange = (change: () => Promise<void>) => {
+  windowQueue = windowQueue.then(change);
+  return windowQueue;
 };
 
 const toggleFullscreen = async () => {
@@ -100,6 +114,7 @@ export const useAppCommands = ({
   const gamePath = usePersistedStore((s) => s.gamePath);
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const markFeatureUsed = usePersistedStore((s) => s.markFeatureUsed);
+  const launchPending = useRef(false);
 
   const openFolder = async (command: string, args?: InvokeArgs) => {
     try {
@@ -114,11 +129,18 @@ export const useAppCommands = ({
   };
 
   const launchGame = async (vanilla: boolean) => {
-    const isLaunching = useLaunchProgress.getState().progress !== null;
+    const isLaunching =
+      launchPending.current || useLaunchProgress.getState().progress !== null;
     const isRunning =
       queryClient.getQueryData<boolean>(["is-game-running"]) === true;
     if (!gamePath || isLaunching || isRunning) return;
-    await launch(vanilla);
+    // Launch progress appears only after the first await in `launch`.
+    launchPending.current = true;
+    try {
+      await launch(vanilla);
+    } finally {
+      launchPending.current = false;
+    }
   };
 
   return {
@@ -140,12 +162,12 @@ export const useAppCommands = ({
     },
     openGameFolder: () => openFolder("open_game_folder"),
     openModsDataFolder: () => openFolder("open_mods_data_folder"),
-    toggleMaximize,
-    toggleFullscreen,
+    toggleMaximize: () => queueWindowChange(toggleMaximize),
+    toggleFullscreen: () => queueWindowChange(toggleFullscreen),
     reload,
-    zoomIn: () => applyZoom(zoomLevel + ZOOM_STEP),
-    zoomOut: () => applyZoom(zoomLevel - ZOOM_STEP),
-    resetZoom: () => applyZoom(1),
+    zoomIn: () => changeZoom((zoom) => zoom + ZOOM_STEP),
+    zoomOut: () => changeZoom((zoom) => zoom - ZOOM_STEP),
+    resetZoom: () => changeZoom(() => 1),
     closeWindow,
     quit,
   };

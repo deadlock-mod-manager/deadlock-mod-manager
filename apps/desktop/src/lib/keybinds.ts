@@ -133,15 +133,16 @@ export const resolveKeybinds = (
   overrides: KeybindOverrides,
   platform: Platform,
 ): ResolvedKeybinds => {
-  const resolved = new Map<KeybindAction, KeyCombo | null>();
-  for (const action of KEYBIND_ACTIONS) {
+  // A combo the user picked beats a default that claims it, such as a
+  // Windows binding of Mod+Q meeting the macOS quit default.
+  const picked = new Set(Object.values(overrides));
+  const comboFor = (action: KeybindAction): KeyCombo | null => {
     const override = overrides[action];
-    resolved.set(
-      action,
-      override === undefined ? defaultComboFor(action, platform) : override,
-    );
-  }
-  return resolved;
+    if (override !== undefined) return override;
+    const fallback = defaultComboFor(action, platform);
+    return fallback && picked.has(fallback) ? null : fallback;
+  };
+  return new Map(KEYBIND_ACTIONS.map((action) => [action, comboFor(action)]));
 };
 
 export const findActionForCombo = (
@@ -150,9 +151,42 @@ export const findActionForCombo = (
 ): KeybindAction | undefined =>
   KEYBIND_ACTIONS.find((action) => keybinds.get(action) === combo);
 
+type KeybindAssignment = {
+  overrides: KeybindOverrides;
+  /** The action that held the combo and is now unbound. */
+  displaced: KeybindAction | null;
+};
+
+/**
+ * Binds `combo` to `action`, unbinding the action that held it. A combo equal
+ * to the action's default drops the override, so later default changes apply.
+ */
+export const assignKeybind = (
+  overrides: KeybindOverrides,
+  action: KeybindAction,
+  combo: KeyCombo | null,
+  platform: Platform,
+): KeybindAssignment => {
+  const owner =
+    combo && findActionForCombo(resolveKeybinds(overrides, platform), combo);
+  const displaced = owner && owner !== action ? owner : null;
+  const { [action]: _previous, ...rest } = overrides;
+  const next: KeybindOverrides = displaced
+    ? { ...rest, [displaced]: null }
+    : rest;
+  if (combo !== defaultComboFor(action, platform)) next[action] = combo;
+  return { overrides: next, displaced };
+};
+
 type KeyEventLike = Pick<
   KeyboardEvent,
-  "key" | "code" | "ctrlKey" | "altKey" | "shiftKey" | "metaKey"
+  | "key"
+  | "code"
+  | "ctrlKey"
+  | "altKey"
+  | "shiftKey"
+  | "metaKey"
+  | "getModifierState"
 >;
 
 // Non-Latin layouts (Cyrillic, Greek) and macOS Option report a non-ASCII
@@ -163,6 +197,10 @@ const baseKeyFromEvent = (event: KeyEventLike): string => {
   if (physical && isNonAsciiCharacter) {
     return physical[1] ?? physical[2] ?? event.key;
   }
+  // AZERTY types symbols on the number row without Shift (& for 1). Its
+  // minus stays a minus so Ctrl+- still zooms out.
+  const digit = physical?.[2];
+  if (digit && !event.shiftKey && !/^[0-9-]$/.test(event.key)) return digit;
   if (event.key === " ") return "Space";
   // Ctrl+Plus zooms in on layouts where "+" has its own key, as in browsers.
   if (event.key === "+") return "=";
@@ -175,6 +213,8 @@ export const comboFromEvent = (
   platform: Platform,
 ): KeyCombo | null => {
   if (MODIFIER_KEYS.has(event.key)) return null;
+  // AltGr reports Ctrl+Alt on Windows; it types a character, not a shortcut.
+  if (event.getModifierState("AltGraph")) return null;
   const key = baseKeyFromEvent(event);
   const isMac = isMacPlatform(platform);
   // Shift is already part of a symbol such as "=" typed with Shift+0.

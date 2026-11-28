@@ -13,7 +13,10 @@ export const KeybindSettings = () => {
     <SettingRow
       description={t("keybinds.rowDescription")}
       title={t("keybinds.title")}>
-      <Button onClick={() => setOpen(true)} variant='outline'>
+      <Button
+        id='settings-keybinds'
+        onClick={() => setOpen(true)}
+        variant='outline'>
         <Keyboard className='size-4' />
         {t("keybinds.customize")}
       </Button>

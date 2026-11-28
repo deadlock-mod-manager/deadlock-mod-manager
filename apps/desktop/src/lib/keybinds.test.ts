@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { Platform } from "@tauri-apps/plugin-os";
 import {
+  assignKeybind,
   comboFromEvent,
   type KeybindValidation,
   resolveKeybinds,
@@ -14,6 +15,7 @@ type Press = {
   alt?: boolean;
   shift?: boolean;
   meta?: boolean;
+  altGraph?: boolean;
 };
 
 const combo = (press: Press, platform: Platform = "windows") =>
@@ -25,6 +27,8 @@ const combo = (press: Press, platform: Platform = "windows") =>
       altKey: press.alt ?? false,
       shiftKey: press.shift ?? false,
       metaKey: press.meta ?? false,
+      getModifierState: (modifier) =>
+        modifier === "AltGraph" && press.altGraph === true,
     },
     platform,
   );
@@ -56,6 +60,18 @@ describe("comboFromEvent", () => {
       "Mod+/",
     ],
     [
+      "uses the digit for AZERTY number-row symbols",
+      { key: "&", code: "Digit1", ctrl: true },
+      "windows",
+      "Mod+1",
+    ],
+    [
+      "keeps the AZERTY minus on its digit key",
+      { key: "-", code: "Digit6", ctrl: true },
+      "windows",
+      "Mod+-",
+    ],
+    [
       "treats Ctrl+Plus as zoom in",
       { key: "+", code: "BracketRight", ctrl: true },
       "linux",
@@ -80,6 +96,12 @@ describe("comboFromEvent", () => {
       "Mod+Ctrl+F",
     ],
     [
+      "ignores characters typed with AltGr",
+      { key: "€", code: "KeyE", ctrl: true, alt: true, altGraph: true },
+      "windows",
+      null,
+    ],
+    [
       "maps the Windows key to Meta",
       { key: "e", code: "KeyE", meta: true },
       "windows",
@@ -97,6 +119,35 @@ describe("resolveKeybinds", () => {
     expect(mac.get("quit")).toBe("Mod+Q");
     expect(mac.get("reload")).toBeNull();
     expect(resolveKeybinds({}, "windows").get("quit")).toBeNull();
+  });
+
+  it("gives a picked combo priority over a default that claims it", () => {
+    const mac = resolveKeybinds({ openMyMods: "Mod+Q" }, "macos");
+
+    expect(mac.get("openMyMods")).toBe("Mod+Q");
+    expect(mac.get("quit")).toBeNull();
+  });
+});
+
+describe("assignKeybind", () => {
+  it("unbinds the action that held the combo", () => {
+    expect(assignKeybind({}, "openMyMods", "Mod+1", "windows")).toEqual({
+      overrides: { openMyMods: "Mod+1", openDashboard: null },
+      displaced: "openDashboard",
+    });
+  });
+
+  it("drops the override when the combo is the default again", () => {
+    expect(
+      assignKeybind({ reload: "Mod+Shift+R" }, "reload", "Mod+R", "windows"),
+    ).toEqual({ overrides: {}, displaced: null });
+  });
+
+  it("keeps an unbind of an action without a default as no override", () => {
+    expect(assignKeybind({}, "quit", null, "windows")).toEqual({
+      overrides: {},
+      displaced: null,
+    });
   });
 });
 

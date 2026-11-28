@@ -850,6 +850,11 @@ export const scenarios = {
   "settings-privacy": settings,
   "settings-backups-presence": settings,
   "settings-language": settings,
+  "settings-keybinds": {
+    ...settings,
+    spec: "keybinds",
+    phases: ["configure", "restart-keybinds"],
+  },
   "about-smoke": smoke,
   "app-update-download": {
     ...defaults,
