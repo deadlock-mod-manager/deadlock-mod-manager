@@ -97,6 +97,7 @@ pub struct ParseOptions {
     pub allow_includes: bool,
     /// Maximum decoded token length in UTF-8 bytes; `None` disables the limit.
     #[serde(default = "default_max_token_length")]
+    #[ts(optional = nullable)]
     pub max_token_length: Option<usize>,
 }
 

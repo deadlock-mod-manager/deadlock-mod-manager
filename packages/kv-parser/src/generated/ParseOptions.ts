@@ -10,5 +10,5 @@ export type ParseOptions = {
   /**
    * Maximum decoded token length in UTF-8 bytes; `None` disables the limit.
    */
-  maxTokenLength: number | null;
+  maxTokenLength?: number | null;
 };

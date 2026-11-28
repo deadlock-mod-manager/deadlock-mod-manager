@@ -325,6 +325,19 @@ Root
   });
 
   describe("edge cases", () => {
+    it("should keep the default token limit when the new option is omitted", () => {
+      const options = {
+        allowEscapeSequences: true,
+        allowConditionals: true,
+        allowIncludes: true,
+      };
+      const value = "a".repeat(1024);
+      expect(parseKv(`"Key" "${value}"`, options).data).toEqual({ Key: value });
+      expect(() => parseKv(`"Key" "${value}a"`, options)).toThrow(
+        "Token exceeds maximum length of 1024",
+      );
+    });
+
     it.each([null, 2048])(
       "should accept long values with maxTokenLength %s",
       (maxTokenLength) => {
