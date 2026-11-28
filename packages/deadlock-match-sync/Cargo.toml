@@ -5,7 +5,6 @@ edition = "2024"
 description = "Recovers Deadlock match salts through the user's own Steam account and posts them to deadlock-api"
 license = "GPL-3.0"
 repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
-homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
 
 [lib]
 name = "deadlock_match_sync"

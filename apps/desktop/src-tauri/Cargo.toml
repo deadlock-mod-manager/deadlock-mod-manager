@@ -5,7 +5,7 @@ description = "A mod manager for the Valve game Deadlock, built with Tauri, Reac
 authors = ["stormix <hello@stormix.co>"]
 license = "GPL-3.0"
 repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
-homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+homepage = "https://deadlockmods.app"
 edition = "2024"
 
 
