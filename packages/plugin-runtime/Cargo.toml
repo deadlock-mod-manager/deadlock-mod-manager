@@ -17,7 +17,7 @@ serde_json = "1"
 sha2 = "0.10"
 thiserror = "2"
 ts-rs = { version = "11.1.0", features = ["serde-compat"] }
-zip = "6.0.0"
+zip = "9.0.5"
 vpk-parser = { path = "../vpk-parser" }
 wasmtime = { version = "50.0.1", default-features = false, features = [
   "cranelift",
