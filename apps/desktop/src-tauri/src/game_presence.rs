@@ -7,7 +7,8 @@ use tauri::{Emitter, Manager};
 
 pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
 use deadlock_discord_presence::{
-  GameExitCallback, HeroDataStore, PresenceBuildConfig, PresencePhase, PresenceStatusCallback,
+  GameExitCallback, HeroDataStore, MatchEndCallback, PresenceBuildConfig, PresencePhase,
+  PresenceStatusCallback,
 };
 
 use crate::commands::state::MANAGER;
@@ -155,6 +156,16 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
       crate::match_sync::on_game_exit(exit_app.clone());
     }
   });
+  let match_end_running = Arc::clone(&running);
+  let match_end_callback: MatchEndCallback = Arc::new(move |match_id| {
+    if match_end_running.load(Ordering::Relaxed) {
+      tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::ingest_tool::report_ended_match(match_id).await {
+          log::warn!("Reporting ended match {match_id} failed: {e}");
+        }
+      });
+    }
+  });
   let done_app = app_handle.clone();
   let done_flag = Arc::clone(&running);
   #[cfg(feature = "plugins")]
@@ -169,7 +180,8 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
       presence_config,
     )
     .with_presence_enabled(presence_enabled)
-    .with_game_exit_callback(exit_callback);
+    .with_game_exit_callback(exit_callback)
+    .with_match_end_callback(match_end_callback);
     #[cfg(feature = "plugins")]
     let watcher = watcher.with_game_state_callback(Arc::new(move |state, initial| {
       if observation_running.load(Ordering::Relaxed) {

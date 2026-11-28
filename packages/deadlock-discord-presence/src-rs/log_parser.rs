@@ -61,6 +61,10 @@ pub struct LogParser {
     // who was already in a party before the local player joined it.
     party_unnamed_members: u32,
     match_peak_players: u32,
+    // The match whose lobby closed last, until the watcher takes it.
+    ended_match_id: Option<u64>,
+    // The last match handed out, so a repeated lobby-closed line isn't reported again.
+    reported_match_id: Option<u64>,
 }
 
 impl LogParser {
@@ -74,6 +78,8 @@ impl LogParser {
             party_members: HashSet::new(),
             party_unnamed_members: 0,
             match_peak_players: 0,
+            ended_match_id: None,
+            reported_match_id: None,
         }
     }
 
@@ -137,7 +143,12 @@ impl LogParser {
             ) {
                 self.begin_match(state);
             }
-        } else if p.lobby_destroyed.is_match(line) {
+        } else if let Some(caps) = p.lobby_destroyed.captures(line) {
+            if let Ok(match_id) = caps[1].parse::<u64>()
+                && self.reported_match_id != Some(match_id)
+            {
+                self.ended_match_id = Some(match_id);
+            }
             state.end_match();
         } else if p.spectate_broadcast.is_match(line) {
             state.enter_spectating();
@@ -502,6 +513,14 @@ impl LogParser {
         self.party_members.clear();
         self.party_unnamed_members = 0;
         self.match_peak_players = 0;
+        self.ended_match_id = None;
+    }
+
+    /// The id of the match whose lobby closed since the last call, if any.
+    pub fn take_ended_match(&mut self) -> Option<u64> {
+        let match_id = self.ended_match_id.take()?;
+        self.reported_match_id = Some(match_id);
+        Some(match_id)
     }
 }
 
@@ -781,6 +800,38 @@ mod tests {
         start_online_match(&mut parser, &mut state, 12);
 
         assert_eq!(state.match_mode, MatchMode::Unranked);
+    }
+
+    #[test]
+    fn reports_the_ended_match_once() {
+        let mut parser = LogParser::new();
+        let mut state = GameState::new();
+        start_online_match(&mut parser, &mut state, 12);
+        assert_eq!(parser.take_ended_match(), None);
+
+        feed(
+            &mut parser,
+            &mut state,
+            &["Lobby 101893467646487792 for Match 81374442 destroyed"],
+        );
+
+        assert_eq!(parser.take_ended_match(), Some(81_374_442));
+        assert_eq!(parser.take_ended_match(), None);
+
+        feed(
+            &mut parser,
+            &mut state,
+            &["Lobby 101893467646487792 for Match 81374442 destroyed"],
+        );
+        assert_eq!(parser.take_ended_match(), None);
+
+        start_online_match(&mut parser, &mut state, 12);
+        feed(
+            &mut parser,
+            &mut state,
+            &["Lobby 174141136703762847 for Match 106401183 destroyed"],
+        );
+        assert_eq!(parser.take_ended_match(), Some(106_401_183));
     }
 
     #[test]

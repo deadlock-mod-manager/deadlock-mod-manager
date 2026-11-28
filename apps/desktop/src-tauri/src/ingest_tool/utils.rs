@@ -4,6 +4,8 @@ use tokio::time::{Duration, sleep};
 
 pub const CACHE_SCAN_USERNAME: &str = "Mod Manager (Cache)";
 pub const LIVE_WATCHER_USERNAME: &str = "Mod Manager (Live)";
+const DEADLOCK_API_URL: &str = "https://api.deadlock-api.com";
+const REPORT_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Salts {
@@ -121,9 +123,61 @@ impl Salts {
   }
 }
 
+/// Asks deadlock-api for the match's metadata: a request for a match it doesn't know
+/// queues the match for salts. The usual answer for a match that just ended is a 404.
+pub async fn report_ended_match(match_id: u64) -> Result<(), IngestError> {
+  let client = crate::proxy::build_default_http_client()
+    .map_err(|e| IngestError::FailedToIngest(e.to_string()))?;
+  report_ended_match_to(&client, DEADLOCK_API_URL, match_id).await
+}
+
+async fn report_ended_match_to(
+  client: &reqwest::Client,
+  base_url: &str,
+  match_id: u64,
+) -> Result<(), IngestError> {
+  let response = client
+    .get(format!("{base_url}/v1/matches/metadata"))
+    .query(&[("match_ids", match_id)])
+    .timeout(REPORT_TIMEOUT)
+    .send()
+    .await
+    .map_err(IngestError::RequestError)?;
+  if response.status() == reqwest::StatusCode::NOT_FOUND {
+    return Ok(());
+  }
+  response
+    .error_for_status()
+    .map(|_| ())
+    .map_err(IngestError::RequestError)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  // Answers the first request on a local port with `status`, and returns the base URL.
+  fn serve_once(status: &'static str) -> String {
+    use std::io::{Read as _, Write as _};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    std::thread::spawn(move || {
+      let (mut stream, _) = listener.accept().unwrap();
+      let _ = stream.read(&mut [0; 4096]);
+      let response = format!("HTTP/1.1 {status}\r\ncontent-length: 0\r\nconnection: close\r\n\r\n");
+      stream.write_all(response.as_bytes()).unwrap();
+    });
+    format!("http://{addr}")
+  }
+
+  #[tokio::test]
+  async fn ended_match_reports_take_a_404_as_queued() {
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let not_found = serve_once("404 Not Found");
+    assert!(report_ended_match_to(&client, &not_found, 1).await.is_ok());
+    let failing = serve_once("500 Internal Server Error");
+    assert!(report_ended_match_to(&client, &failing, 1).await.is_err());
+  }
 
   #[test]
   fn test_extract_salts() {
