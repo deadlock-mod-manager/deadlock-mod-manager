@@ -18,7 +18,6 @@ Key directories:
 - `apps/desktop` — Tauri desktop app (React frontend + Rust backend)
 - `apps/api` — Backend API service and workers (Bun + Hono)
 - `apps/auth` — Authentication service (Better Auth + OIDC)
-- `apps/mirror-service` — S3-backed download mirror for mod files
 - `apps/bot` — Discord bot application
 - `apps/lockdex` — Lockdex service application
 - `apps/dmodpkg` — CLI for `.dmodpkg` mod packages

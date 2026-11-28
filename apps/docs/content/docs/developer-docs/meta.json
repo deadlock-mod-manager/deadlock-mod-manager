@@ -14,7 +14,6 @@
     "performance-catalog",
     "mod-compatibility",
     "auth-service",
-    "mirror-service",
     "apt-repository",
     "plugins",
     "contributing",

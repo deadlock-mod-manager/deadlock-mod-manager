@@ -21,7 +21,6 @@ graph TD
     B --> E[PostgreSQL]
     B --> F[Redis Cache]
     B --> G[GameBanana API]
-    O[Older mirror links] --> M[Download Redirect Service]
 
     H[Discord Bot] --> B
     I[Web App] --> B
@@ -31,9 +30,6 @@ graph TD
 
     K[External Services]
     B --> K
-
-    M --> E
-    M --> G
 
     subgraph "Client Layer"
         A
@@ -70,12 +66,7 @@ graph TD
 - **Database**: PostgreSQL for persistent storage
 - **Background Jobs**: Queue-based processing for heavy operations
 
-#### 3. Download Redirect Service (Bun + Hono)
-
-Previously issued mirror links resolve through PostgreSQL and redirect to the
-upstream archive. See the [Download Redirect Service](/developer-docs/mirror-service).
-
-#### 4. Shared Packages
+#### 3. Shared Packages
 
 - **Database Schema**: Centralized data models using Drizzle ORM
 - **Logging**: Structured logging across all services
