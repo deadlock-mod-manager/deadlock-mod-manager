@@ -1,24 +1,15 @@
-import { RuntimeError, toErrorMessage } from "@deadlock-mods/common";
+import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
-import { redis } from "@/lib/redis";
-import { S3Service } from "@/services/s3";
-import type {
-  DbHealth,
-  HealthResponse,
-  RedisHealth,
-  S3Health,
-} from "@/types/health";
+import type { DbHealth, HealthResponse } from "@/types/health";
 import { version } from "@/version";
 
-const HEALTH_CHECK_SENTINEL_KEY = "__health_check__";
+const CACHE_TTL_MS = 2000;
 
 export class HealthService {
   private static singleton: HealthService;
   private cachedHealth: HealthResponse | null = null;
   private cacheTimestamp = 0;
-  private readonly CACHE_TTL_MS = 2000;
-  private isStarting = true;
 
   static getInstance(): HealthService {
     if (!HealthService.singleton) {
@@ -27,12 +18,7 @@ export class HealthService {
     return HealthService.singleton;
   }
 
-  markAsReady(): void {
-    this.isStarting = false;
-    logger.info("Health service marked as ready");
-  }
-
-  async checkDb(): Promise<DbHealth> {
+  private async checkDb(): Promise<DbHealth> {
     try {
       await db.execute(sql`select 1`);
       return { alive: true };
@@ -42,102 +28,25 @@ export class HealthService {
     }
   }
 
-  async checkRedis(): Promise<RedisHealth> {
-    try {
-      const pong = await redis.ping();
-      if (pong !== "PONG") {
-        throw new RuntimeError("Redis ping failed");
-      }
-      return { alive: true, configured: true };
-    } catch (error) {
-      logger.withError(error).error("Redis health check failed");
-      return {
-        alive: false,
-        configured: true,
-        error: toErrorMessage(error),
-      };
+  async check(): Promise<HealthResponse> {
+    const now = Date.now();
+    if (this.cachedHealth && now - this.cacheTimestamp < CACHE_TTL_MS) {
+      return this.cachedHealth;
     }
-  }
 
-  async checkS3(): Promise<S3Health> {
-    try {
-      const result = await S3Service.instance.fileExists(
-        HEALTH_CHECK_SENTINEL_KEY,
-      );
-      if (result.isErr()) {
-        throw result.error;
-      }
-      return { alive: true };
-    } catch (error) {
-      logger.withError(error).error("S3 health check failed");
-      return {
-        alive: false,
-        error: toErrorMessage(error),
-      };
-    }
-  }
-
-  private async performHealthChecks(): Promise<HealthResponse> {
-    const [dbHealth, redisHealth, s3Health] = await Promise.all([
-      this.checkDb(),
-      this.checkRedis(),
-      this.checkS3(),
-    ]);
-
-    const healthy = dbHealth.alive && redisHealth.alive && s3Health.alive;
-
-    return {
-      status: healthy ? "ok" : "degraded",
+    const dbHealth = await this.checkDb();
+    const health: HealthResponse = {
+      status: dbHealth.alive ? "ok" : "degraded",
       db: dbHealth,
-      redis: redisHealth,
-      s3: s3Health,
+      redis: { alive: false, configured: false },
+      s3: { alive: false, configured: false },
       version,
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     };
-  }
 
-  async check(): Promise<HealthResponse> {
-    if (this.isStarting) {
-      return {
-        status: "degraded",
-        db: { alive: false, error: "Starting up" },
-        redis: { alive: false, configured: true, error: "Starting up" },
-        s3: { alive: false, error: "Starting up" },
-        version,
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-      };
-    }
-
-    const now = Date.now();
-    const cacheAge = now - this.cacheTimestamp;
-
-    if (this.cachedHealth && cacheAge < this.CACHE_TTL_MS) {
-      return this.cachedHealth;
-    }
-
-    try {
-      const health = await this.performHealthChecks();
-      this.cachedHealth = health;
-      this.cacheTimestamp = now;
-      return health;
-    } catch (error) {
-      logger.withError(error).error("Health check failed");
-
-      if (this.cachedHealth) {
-        return this.cachedHealth;
-      }
-
-      return {
-        status: "degraded",
-        db: { alive: false, error: "Health check error" },
-        redis: { alive: false, configured: true, error: "Health check error" },
-        s3: { alive: false, error: "Health check error" },
-        version,
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-      };
-    }
+    this.cachedHealth = health;
+    this.cacheTimestamp = now;
+    return health;
   }
 }

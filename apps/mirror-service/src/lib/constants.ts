@@ -8,9 +8,3 @@ export const SENTRY_OPTIONS = {
   release: `mirror-service@${version}`,
   skipOpenTelemetrySetup: true, // Skip OpenTelemetry setup, we'll use our own.
 };
-
-export enum MonitorSlug {
-  MIRROR_SYNC = "mirror-sync",
-}
-
-export const SERVER_TIMEZONE = env.TZ;

@@ -1,7 +1,7 @@
 // oxlint-disable import/no-unassigned-import
 import "./instrument";
 
-import { CronPatterns } from "@deadlock-mods/queue/cron";
+import { db, ModDownloadRepository } from "@deadlock-mods/database";
 import { sentry } from "@hono/sentry";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -12,14 +12,9 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { SENTRY_OPTIONS } from "./lib/constants";
 import { env } from "./lib/env";
 import { logger } from "./lib/logger";
-import { redis } from "./lib/redis";
-import { cleanupProcessor } from "./processors/cleanup.processor";
-import { validationProcessor } from "./processors/validation.processor";
-import downloadRouter from "./routers/download";
+import { createDownloadRouter } from "./routers/download";
 import healthRouter from "./routers/health";
 import metricsRouter from "./routers/metrics";
-import { cronService } from "./services/cron";
-import { HealthService } from "./services/health";
 
 const app = new Hono();
 
@@ -28,7 +23,7 @@ app.use(
   requestId(),
   cors({
     origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
@@ -40,82 +35,21 @@ app.use(
   trimTrailingSlash(),
 );
 
+const downloads = new ModDownloadRepository(db);
 app.route("/", healthRouter);
-app.route("/download", downloadRouter);
+app.route(
+  "/download",
+  createDownloadRouter(
+    (modId, fileId) => downloads.findByModIdAndFileId(modId, fileId),
+    logger,
+  ),
+);
 app.route("/metrics", metricsRouter);
 
-const main = async () => {
-  logger.info(`Mirror service started on port ${env.PORT}`);
-
-  // Define validation job with configurable interval
-  const validationIntervalHours = env.VALIDATION_WORKER_INTERVAL_HOURS;
-  const validationPattern =
-    validationIntervalHours === 1
-      ? CronPatterns.EVERY_HOUR
-      : `0 0 */${validationIntervalHours} * * *`;
-
-  await cronService.defineJob({
-    name: "validation-worker",
-    pattern: validationPattern,
-    processor: validationProcessor,
-    enabled: true,
-  });
-
-  // Define cleanup job to run daily at 2 AM
-  await cronService.defineJob({
-    name: "cleanup-worker",
-    pattern: CronPatterns.MAINTENANCE_DAILY,
-    processor: cleanupProcessor,
-    enabled: true,
-  });
-
-  cronService.start();
-
-  logger
-    .withMetadata({
-      validationIntervalHours,
-      cleanupRetentionDays: env.CLEANUP_RETENTION_DAYS,
-    })
-    .info("Background workers initialized");
-
-  HealthService.getInstance().markAsReady();
-
+if (import.meta.main) {
   Bun.serve({
     port: env.PORT,
     fetch: app.fetch,
   });
-};
-
-if (import.meta.main) {
-  main().catch((error) => {
-    logger.withError(error).error("Error starting the mirror service");
-    process.exit(1);
-  });
-
-  // Graceful shutdown handling
-  process.on("SIGTERM", async () => {
-    logger.info("SIGTERM received, initiating graceful shutdown");
-
-    try {
-      await Promise.all([cronService.shutdown(), redis.disconnect()]);
-      logger.info("Graceful shutdown completed");
-      process.exit(0);
-    } catch (error) {
-      logger.withError(error).error("Error during graceful shutdown");
-      process.exit(1);
-    }
-  });
-
-  process.on("SIGINT", async () => {
-    logger.info("SIGINT received, initiating graceful shutdown");
-
-    try {
-      await Promise.all([cronService.shutdown(), redis.disconnect()]);
-      logger.info("Graceful shutdown completed");
-      process.exit(0);
-    } catch (error) {
-      logger.withError(error).error("Error during graceful shutdown");
-      process.exit(1);
-    }
-  });
+  logger.info(`Download redirect service started on port ${env.PORT}`);
 }

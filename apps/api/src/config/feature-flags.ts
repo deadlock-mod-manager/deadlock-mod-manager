@@ -104,12 +104,6 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     exposed: true,
   },
   {
-    name: "mod-download-mirroring",
-    description: "Enable mod download mirroring functionality",
-    type: "boolean",
-    defaultValue: false,
-  },
-  {
     name: "gamebanana-direct-client",
     description: "Read the desktop mod catalog directly from GameBanana",
     type: "boolean",

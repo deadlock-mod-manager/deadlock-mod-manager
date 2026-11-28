@@ -3,23 +3,17 @@ export interface DbHealth {
   error?: string;
 }
 
-export interface RedisHealth {
-  alive: boolean;
-  error?: string;
-  configured: boolean;
-}
-
-export interface S3Health {
-  alive: boolean;
-  error?: string;
+interface RetiredDependencyHealth {
+  alive: false;
+  configured: false;
 }
 
 export interface HealthResponse {
   status: "ok" | "degraded";
   db: DbHealth;
-  redis: RedisHealth;
-  s3: S3Health;
+  redis: RetiredDependencyHealth;
+  s3: RetiredDependencyHealth;
   version: string;
-  uptime?: number;
-  timestamp?: string;
+  uptime: number;
+  timestamp: string;
 }

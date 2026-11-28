@@ -1,58 +1,42 @@
-import { DatabaseErrorCode } from "@deadlock-mods/common";
-import { zValidator } from "@hono/zod-validator";
+import { type BaseError, DatabaseErrorCode } from "@deadlock-mods/common";
 import { Hono } from "hono";
-import { stream } from "hono/streaming";
-import { z } from "zod";
-import { env } from "@/lib/env";
-import { logger } from "@/lib/logger";
-import { MirrorService } from "@/services/mirror";
+import type { Result } from "neverthrow";
+import type { Logger } from "@deadlock-mods/logging";
 
-const downloadRouter = new Hono();
+type FindDownload = (
+  modId: string,
+  fileId: string,
+) => Promise<Result<{ url: string }, BaseError>>;
 
-downloadRouter.get(
-  "/:modId/:fileId",
-  zValidator(
-    "param",
-    z.object({
-      modId: z.string(),
-      fileId: z.string(),
-    }),
-  ),
-  async (c) => {
+export const createDownloadRouter = (
+  findDownload: FindDownload,
+  logger: Logger,
+) =>
+  new Hono().get("/:modId/:fileId", async (c) => {
     const { modId, fileId } = c.req.param();
+    const result = await findDownload(modId, fileId);
 
-    const result = await MirrorService.instance.mirrorFile(modId, fileId);
+    c.header("Cache-Control", "no-store");
 
     if (result.isErr()) {
-      const statusCode =
-        result.error.code === DatabaseErrorCode.ENTITY_NOT_FOUND ? 404 : 500;
+      if (result.error.code === DatabaseErrorCode.ENTITY_NOT_FOUND) {
+        return c.json({ error: "Not found" }, 404);
+      }
 
       logger
-        .withMetadata({ modId, fileId, statusCode })
+        .withMetadata({ modId, fileId })
         .withError(result.error)
-        .error("File download failed");
-
-      const errorMessage =
-        statusCode === 404 ? "Not found" : "Internal server error";
-      return c.json({ error: errorMessage }, statusCode);
+        .error("Failed to look up legacy download");
+      return c.json({ error: "Internal server error" }, 500);
     }
 
-    const { outputStream, size, file } = result.value;
+    const url = URL.parse(result.value.url);
+    if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) {
+      logger
+        .withMetadata({ modId, fileId })
+        .error("Invalid upstream download URL");
+      return c.json({ error: "Internal server error" }, 500);
+    }
 
-    return stream(c, async (stream) => {
-      c.header("Content-Type", "application/octet-stream");
-      c.header("Content-Disposition", `attachment; filename="${file}"`);
-      c.header("Content-Length", size.toString());
-      c.header(
-        "Cache-Control",
-        `public, max-age=${env.CACHE_TTL_SECONDS}, s-maxage=${env.CACHE_TTL_SECONDS}, immutable`,
-      );
-      c.header("CDN-Cache-Control", `max-age=${env.CACHE_TTL_SECONDS}`);
-      c.header("Vary", "Accept-Encoding");
-
-      await stream.pipe(outputStream);
-    });
-  },
-);
-
-export default downloadRouter;
+    return c.redirect(url.href, 307);
+  });

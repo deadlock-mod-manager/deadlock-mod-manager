@@ -1,7 +1,7 @@
 deployments:
   mirror-service:
     image: stormix/deadlock-mods-mirror-service:latest
-    replicas: 0
+    replicas: 1
     memory:
       request: 512Mi
       limit: 1Gi
@@ -40,7 +40,7 @@ deployments:
 
     strategy:
       type: RollingUpdate
-      maxUnavailable: 1
+      maxUnavailable: 0
       maxSurge: 1
 
     restartPolicy: Always

@@ -2,6 +2,7 @@
   "extends": "../../tools/typescript/base.json",
   "compilerOptions": {
     "strict": true,
+    "types": ["bun"],
     "noEmit": false,
     "emitDeclarationOnly": true,
     "declaration": true,

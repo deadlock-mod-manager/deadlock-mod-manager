@@ -953,39 +953,21 @@ importers:
 
   apps/mirror-service:
     dependencies:
-      '@better-fetch/fetch':
-        specifier: ^1.1.21
-        version: 1.1.21
       '@deadlock-mods/common':
         specifier: workspace:*
         version: link:../../packages/common
       '@deadlock-mods/database':
         specifier: workspace:*
         version: link:../../packages/database
-      '@deadlock-mods/distributed-lock':
-        specifier: workspace:*
-        version: link:../../packages/distributed-lock
-      '@deadlock-mods/feature-flags':
-        specifier: workspace:*
-        version: link:../../packages/feature-flags
       '@deadlock-mods/instrumentation':
         specifier: workspace:*
         version: link:../../packages/instrumentation
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
-      '@deadlock-mods/queue':
-        specifier: workspace:*
-        version: link:../../packages/queue
-      '@deadlock-mods/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@hono/sentry':
         specifier: ^1.2.2
         version: 1.2.2(hono@4.13.13)
-      '@hono/zod-validator':
-        specifier: ^0.7.6
-        version: 0.7.6(hono@4.13.13)(zod@4.6.7)
       '@sentry/node':
         specifier: 'catalog:'
         version: 10.46.0(supports-color@10.2.2)
@@ -998,9 +980,6 @@ importers:
       hono:
         specifier: ^4.13.7
         version: 4.13.13
-      ioredis:
-        specifier: ^5.10.1
-        version: 5.10.1(supports-color@10.2.2)
       neverthrow:
         specifier: ^8.2.0
         version: 8.2.0
@@ -2990,12 +2969,6 @@ packages:
     resolution: {integrity: sha512-027grZBrRGDPor8mRd+QOBcSpUlF07YrTp/WFDXZhbvWZ+1LrZdERUqcdg1gBGDUTanHhd9ucblpNNN6+V1bxg==}
     peerDependencies:
       hono: '>=4.12.7'
-
-  '@hono/zod-validator@0.7.6':
-    resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
-    peerDependencies:
-      hono: '>=4.12.7'
-      zod: ^3.25.0 || ^4.0.0
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -16365,11 +16338,6 @@ snapshots:
     dependencies:
       hono: 4.13.13
       toucan-js: 4.1.1
-
-  '@hono/zod-validator@0.7.6(hono@4.13.13)(zod@4.6.7)':
-    dependencies:
-      hono: 4.13.13
-      zod: 4.6.7
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.72.0(react@19.2.0))':
     dependencies:
