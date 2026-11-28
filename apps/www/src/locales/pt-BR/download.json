@@ -31,7 +31,7 @@
     "otherPlatforms": "Outras plataformas",
     "highlights": {
       "openSource": "Gratuito e open source",
-      "autoUpdate": "",
+      "autoUpdate": "Checa por atualizações ao iniciar",
       "platforms": "Windows e Linux"
     }
   },
@@ -51,7 +51,7 @@
     "releaseNotes": "Notas de atualização"
   },
   "releaseDate": {
-    "dateTime": ""
+    "dateTime": "{{date}}, {{time}} UTC"
   },
   "platforms": {
     "windows": {
@@ -59,13 +59,13 @@
     },
     "linux": {
       "requirements": "64 bits, a maioria das distribuições",
-      "runtimeNote": "",
-      "alternative": "",
-      "alternativeDescription": ""
+      "runtimeNote": "As compilações para Linux agora utilizam por padrão o Chromium integrado, que apresenta uma renderização mais confiável do que o 'webview' do sistema.",
+      "alternative": "Compilações de 'webview' do sistema",
+      "alternativeDescription": "Utiliza o componente de 'webview' WebKitGTK do sistema, em vez do Chromium que vem integrado. O download é menor, mas, em algumas configurações, o desempenho pode ser mais lento ou a tela pode ficar em branco. Ambos os pacotes Flatpak são instalados como o mesmo aplicativo, então ao instalar um, o outro é substituído."
     },
     "detected": "Sistema detectado",
     "noBuilds": "Nenhuma versão para {{platform}} nesta release.",
-    "experimental": "",
+    "experimental": "Compilações experimentais do Chromium",
     "experimentalDescription": "Inclui o motor Chromium (CEF) em vez do webview do sistema. Maiores e menos testadas; só use se a versão padrão tiver problemas de renderização."
   },
   "installer": {
@@ -75,8 +75,8 @@
     "download": "Baixar",
     "downloadLabel": "Baixar {{filename}}",
     "runtime": {
-      "cef": "",
-      "wry": ""
+      "cef": "Chromium",
+      "wry": "Webview do sistema"
     },
     "types": {
       "exe": {
@@ -88,30 +88,30 @@
         "description": "Para instalações gerenciadas ou silenciosas (.msi)"
       },
       "portable": {
-        "label": "",
-        "description": ""
+        "label": "Portátil",
+        "description": "Executar diretamente sem instalar (.exe)"
       },
       "dmg": {
         "label": "Imagem de disco",
         "description": "Aplicativo para macOS (.dmg)"
       },
       "flatpak": {
-        "label": "",
-        "description": ""
+        "label": "Flatpak",
+        "description": "Funciona na maioria das distribuições. As atualizações vêm pelo Flatpak, não pelo aplicativo."
       },
       "deb": {
         "label": "Pacote Debian",
-        "description": ""
+        "description": "Ubuntu, Debian, Mint (.deb)"
       },
       "rpm": {
         "label": "Pacote RPM",
-        "description": ""
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
       }
     }
   },
   "unofficialSites": {
-    "title": "",
-    "description": ""
+    "title": "Cuidado com sites que imitam o original",
+    "description": "Baixe o Deadlock Mod Manager a partir desta página ou da nossa seção de <github>lançamentos no GitHub</github>. Nós não administramos os domínios <code>deadlockmodmanager.com</code>, <code>deadlockmodmanager.org</code> ou <code>deadlockmodmanager.net</code>. Eles utilizam o nosso nome e, em alguns casos, hospedam instaladores em seus próprios servidores — arquivos que poderiam ser substituídos a qualquer momento."
   },
   "history": {
     "title": "Outras versões",

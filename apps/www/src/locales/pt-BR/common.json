@@ -3,7 +3,7 @@
     "updated": "Última atualização: 21 de outubro de 2026",
     "scope": "Esta política cobre o aplicativo Deadlock Mod Manager, deadlockmods.app e nosso bot da comunidade do Discord. As configurações e coleções específicas do computador são descritas abaixo; a seção do Bot explica como processamos os dados do Discord.",
     "desktopCollection": "O aplicativo roda localmente no seu computador e se comunica com serviços “on-line” para recursos como a descoberta de mods e downloads. Também recolhe dados técnicos e de utilização, como descrito nesta política.",
-    "serverStorage": "",
+    "serverStorage": "A API se comunica utilizando HTTPS. Os serviços do servidor também armazenam dados necessários para fornecer seus recursos, incluindo identificadores do Discord e os registros de gerenciamento da comunidade como descrito na seção bot do Discord.",
     "sections": {
       "discord": "6. Bot do Discord",
       "updates": "7. Atualizações",
@@ -12,17 +12,17 @@
     },
     "discord": {
       "dataTitle": "Dados e finalidades",
-      "data": "",
-      "languageTitle": "",
-      "language": "",
-      "languageData": "",
+      "data": "Nosso bot do Discord processa mensagens de texto, informações/cargos do usuário, servidor, canais, tópicos, identificadores de mensagens e comandos conforme necessário para o gerenciamento de fóruns da comunidade, prover suporte através de respostas predefinidas e reforçar as regras do canal. Os registros de gerenciamento da comunidade podem incluir comandos e seu autor. As respostas e avisos do bot serão visíveis de acordo com as permissões do canal. Este processamento ocorre separadamente das configurações de análise do aplicativo desktop.",
+      "languageTitle": "Moderação da língua inglesa",
+      "language": "Quando ativado, a moderação de idiomas irá verificar mensagens comuns nos canais selecionados e seus tópicos. A moderação irá pular mensagens privadas, bots, webhooks e mensagens do sistema. É ignorado textos curtos ou incertos, alerta de problemas para mensagens detectadas com segurança que não estejam em inglês e irá deletar violações após o limite de advertência configurado. Por padrão, três avisos dentro de um janela de 30 minutos precedem a exclusão das violações subsequentes. A moderação de idiomas pode cometer erros; entre em contato com a moderação do servidor para questionar sobre a ação da moderação.",
+      "languageData": "A detecção de idiomas é executada localmente no servidor do nosso bot. Esse recurso processa as mensagens em sua memória, ela não salva as mensagens nem envia para IAs externas ou serviços de tradução. Contagens temporárias de avisos e identificadores de servidor, usuário e de mensagens processadas são armazenadas no Redis e expiram após normalmente 30 minutos. O operador pode alterar este período de 1 minuto a 24 horas.",
       "sharingTitle": "Provedores de serviço e IA",
-      "sharing": "",
+      "sharing": "O Discord entrega mensagens e interações para o bot, recebendo suas respostas e ações de moderação. Nossos provedores de hospedagem, banco de dados e diagnóstico processam os dados necessários para executar e corrigir problemas desses recursos. Os diagnósticos do bot podem ser enviados para o Sentry sob a política vinculada na seção de Relatórios de Falhas logo acima. Registros de ações contêm identificadores, idiomas detectados, ações e erros em vez do conteúdo das mensagens. Não utilizamos mais os antigos recursos de IA do bot para suporte ou triagem de mensagens. Também não utilizamos o conteúdo de mensagens do Discord para o treino de IAs ou modelos de machine learning.",
       "retentionTitle": "Retenção e exclusão",
-      "retention": "",
-      "controlsTitle": "",
-      "controls": "",
-      "contact": ""
+      "retention": "Conforme descrito acima, os registros temporários de moderação de idiomas expiram. Essa expiração não se aplica para aos registros de diagnósticos ou aos registros salvos de gerenciamentos da comunidade, os quais permanecem até serem removidos nas configurações de retenção do operador ou do provedor de serviços. Excluir uma mensagem no Discord não remove automáticamente registros já armazenados fora do Discord. Entre em contato conosco para solicitar acesso ou exclusão dos dados do bot associados à sua conta do Discord, incluindo quaisquer registros retidos de recursos de suporte desativados. Validaremos se a solicitação diz respeito à sua conta e explicaremos quaisquer dados que precisarmos reter por motivos de segurança ou legais.",
+      "controlsTitle": "Escolhas e contato",
+      "controls": "Não existe um comando individual para desativar a moderação automática de idiomas. Os administradores podem desativar o recurso, bem como selecionar ou excluir canais específicos. Evitar mencionar o bot não impede a moderação em canais onde o recurso está ativado. Consulte a equipe do servidor sobre a possibilidade de usar um canal alternativo ou solicitar a exclusão de dados. Desativar as análises (analytics) na versão para desktop não interrompe o processamento realizado pelo bot do Discord.",
+      "contact": "Para questões sobre privacidade relacionadas ao bot, ou para solicitações de acesso ou exclusão de dados, entre em contato com a equipe do servidor de forma privada por meio da nossa <discord>comunidade no Discord</discord>. Inclua seu ID de usuário do Discord e referências ao canal ou tópico pertinente para que possamos localizar seus registros. Não publique conteúdos de mensagens, credenciais ou outras informações privadas em uma 'issue' pública no GitHub."
     }
   },
   "language": {
@@ -37,7 +37,7 @@
     "links": {
       "mods": "Modificações",
       "skins": "Aparências",
-      "commissions": "",
+      "commissions": "Comissões",
       "features": "Recursos",
       "themes": "Temas",
       "tools": "Ferramentas",
@@ -64,8 +64,8 @@
       "download": "Baixar",
       "sourceCode": "Código-fonte",
       "changelog": "Registro de alterações",
-      "v2": "",
-      "commissions": "",
+      "v2": "Novidades na V2",
+      "commissions": "Comissões",
       "documentation": "Documentação",
       "faq": "Perguntas frequentes",
       "reportBug": "Reportar bug"
