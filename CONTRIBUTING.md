@@ -34,9 +34,9 @@ Before you begin, ensure you have the following installed:
 
 **Option 1: Traditional Setup**
 
-- **Node.js** (>= 24.22.1) - [Download here](https://nodejs.org/) or use nvm
+- **Node.js** (>= 26.13.1) - [Download here](https://nodejs.org/) or use nvm
 - **Bun** (>= 1.4.4) - [Install here](https://bun.sh/)
-- **pnpm** (>= 11.2) - Use [Corepack](https://nodejs.org/api/corepack.html): `corepack enable` (version is pinned in `package.json`)
+- **pnpm** (12.9.0) - Install the version pinned in `package.json` with `npm install -g pnpm@12.9.0`
 - **Docker** - For local database development
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
 - **Git** - For version control
@@ -277,7 +277,7 @@ For Linux users, we provide a complete Nix flake that sets up your entire develo
 The Nix flake automatically provides:
 
 - **Rust toolchain** with rust-analyzer and clippy
-- **Node.js 22** with pnpm and bun
+- **Node.js 26** with pnpm 12 and bun
 - **System libraries** for Tauri (GTK, WebKit, etc.)
 - **Development tools** (turbo, lefthook, oxlint, oxfmt)
 - **Database tools** (PostgreSQL, Redis)

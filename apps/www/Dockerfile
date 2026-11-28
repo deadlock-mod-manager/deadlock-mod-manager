@@ -8,13 +8,11 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and pnpm
-ARG NODE_VERSION=24.22.1
+ARG NODE_VERSION=26.13.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \
-    npm install -g n && \
-    corepack enable && \
-    corepack prepare pnpm@11.18.0 --activate
+    npm install -g n pnpm@12.9.0
 
 # Copy package configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
@@ -65,13 +63,11 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and pnpm (needed for runtime)
-ARG NODE_VERSION=24.22.1
+ARG NODE_VERSION=26.13.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \
-    npm install -g n && \
-    corepack enable && \
-    corepack prepare pnpm@11.18.0 --activate
+    npm install -g n pnpm@12.9.0
 
 # Switch to non-root user before copying files
 USER appuser

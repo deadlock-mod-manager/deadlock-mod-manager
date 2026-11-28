@@ -2,7 +2,7 @@
   lib,
   rustPlatform,
   src,
-  pnpm_11,
+  pnpm_12,
   fetchPnpmDeps,
   pnpmConfigHook,
   pkg-config,
@@ -23,7 +23,7 @@
   makeDesktopItem,
   fontconfig,
   cargo-tauri,
-  nodejs,
+  nodejs_26,
   protobuf,
 }:
 
@@ -38,10 +38,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoHash = "sha256-1Jk6umWwS921QYOhaq4W8YzHQFmDuYLPoB44smTIaEY=";
 
   nativeBuildInputs = [
-    rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
+    rustPlatform.cargoSetupHook cargo-tauri.hook nodejs_26
 
     pnpmConfigHook
-    pnpm_11
+    pnpm_12
     pkg-config
     wrapGAppsHook3
     protobuf
@@ -76,10 +76,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
       version
       src
       ;
-    pnpm = pnpm_11;
+    pnpm = pnpm_12;
     fetcherVersion = 4;
     sourceRoot = "source";
-    hash = "sha256-Ls19YmyIWrcu+Eu02geD8s+lD2ihKMV3uYtz+IFJhEI=";
+    hash = "sha256-9lpYr8uZ1Cwc/VEqOGYUBDXoDLAerXRM0Id7xEv2j5o=";
   };
 
   postPatch = ''
