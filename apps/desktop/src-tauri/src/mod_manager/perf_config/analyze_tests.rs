@@ -6,7 +6,11 @@ use crate::mod_manager::perf_config::formats::import_test_support::{
   SQOOKY, STOCK_6462, STOCK_6652, STOCK_6711, catalog_without_stock, context, fixture,
   fixture_bytes,
 };
-use crate::mod_manager::perf_config::types::{OverrideAction, PerfApplyRequest, PerfConfigSource};
+use crate::mod_manager::perf_config::types::{
+  CatalogOrigin, OverrideAction, PerfApplyRequest, PerfConfigSource,
+};
+
+const SQOOKY_BUILD: u32 = 6801;
 
 fn draft(text: &str, file_name: &str) -> Draft {
   draft_from_text(&Catalog::bundled(), text, Some(file_name)).unwrap()
@@ -65,9 +69,11 @@ fn game_folder(gameinfo: &str) -> tempfile::TempDir {
   game
 }
 
-/// The newest stock build in the bundled catalog, which moves on every refresh.
-fn current_build() -> u32 {
-  Catalog::bundled().latest_stock().expect("stock").build
+fn catalog_through_sqooky_build() -> Arc<Catalog> {
+  let mut file = Catalog::bundled().file.clone();
+  file.stock.retain(|stock| stock.build <= SQOOKY_BUILD);
+  file.latest_build = Some(SQOOKY_BUILD);
+  Arc::new(Catalog::from_file(file, CatalogOrigin::Bundled).unwrap())
 }
 
 #[test]
@@ -158,11 +164,12 @@ fn optilock_is_diffed_against_the_build_its_pgiversion_names() {
 
 #[test]
 fn sqooky_matches_the_current_build_exactly() {
-  let draft = draft(&fixture(SQOOKY), "gameinfo.gi");
+  let catalog = catalog_through_sqooky_build();
+  let draft = draft_from_text(&catalog, &fixture(SQOOKY), Some("gameinfo.gi")).unwrap();
   let base = draft.base.expect("base");
   assert_eq!(
     (base.build, base.exact, base.distance),
-    (current_build(), true, 0)
+    (SQOOKY_BUILD, true, 0)
   );
   assert!(
     !draft
@@ -628,7 +635,7 @@ async fn archives_are_recognised_by_content() {
 async fn current_gameinfo_imports_the_live_file() {
   let app_data = tempfile::tempdir().unwrap();
   let game = game_folder(&fixture(SQOOKY));
-  let mut ctx = context(app_data.path(), Catalog::bundled());
+  let mut ctx = context(app_data.path(), catalog_through_sqooky_build());
   assert!(matches!(
     analyze(&ctx, ImportSource::CurrentGameinfo).await,
     Err(Error::GamePathNotSet)
@@ -638,7 +645,7 @@ async fn current_gameinfo_imports_the_live_file() {
   assert_eq!(report.format, ImportFormat::FullGameinfo);
   assert_eq!(
     report.base.map(|base| (base.build, base.exact)),
-    Some((current_build(), true))
+    Some((SQOOKY_BUILD, true))
   );
   assert!(has_entry(&report.entries, "ConVars/r_ssao"));
   assert_eq!(
