@@ -18,6 +18,8 @@ on:
     paths:
       - apps/desktop/**
       - packages/**
+      - Cargo.toml
+      - Cargo.lock
       - pnpm-lock.yaml
       - package.json
       - .github/actions/setup-desktop-e2e/**
@@ -58,15 +60,16 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-desktop-e2e
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      # Before pnpm install: rust-cache globs the workspace root, which is now the repo.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
-          workspaces: apps/desktop -> target
+          workspaces: . -> apps/desktop/target
           shared-key: desktop-e2e-debug
+      - uses: ./.github/actions/setup-desktop-e2e
       - name: Harness checks
         run: |
           pnpm --filter @deadlock-mods/desktop e2e:check-types
@@ -157,12 +160,13 @@ jobs:
           pacman -Syu --noconfirm --needed base-devel curl git file pkgconf unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg openssl protobuf
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-desktop-e2e
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      # Before pnpm install: rust-cache globs the workspace root, which is now the repo.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
-          workspaces: apps/desktop -> target
+          workspaces: . -> apps/desktop/target
           shared-key: desktop-e2e-debug-${{ matrix.distro }}
+      - uses: ./.github/actions/setup-desktop-e2e
       - name: Build application
         run: pnpm --filter @deadlock-mods/desktop e2e:build
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

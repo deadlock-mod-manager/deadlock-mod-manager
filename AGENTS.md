@@ -98,7 +98,7 @@ For changes to cancellation, retries, locks, authorization, or filesystem mutati
 Run from the repo root. Script names are in the root and per-package `package.json`.
 
 - Single test: `bun test <path>` or `pnpm --filter @deadlock-mods/<package> test`. `packages/shared` uses Vitest; the rest use `bun:test`. Run the smallest relevant suite.
-- Rust tests: `cargo test` from `apps/desktop` (the Cargo workspace root; the crate is `src-tauri`). Match sync's engine tests run from `packages/deadlock-match-sync`. Pre-commit (lefthook) runs `cargo clippy --all-targets` on Rust changes in `apps/desktop`, `packages/deadlock-match-sync`, `packages/dmodpkg`, and `packages/vpk-parser`.
+- Rust tests: run `cargo test` and other desktop cargo commands from `apps/desktop` (the crate is `src-tauri`), where `.cargo/config.toml` sets the linker and keeps output in `apps/desktop/target`. The workspace manifest and `Cargo.lock` are at the repo root. Match sync's engine tests run from `packages/deadlock-match-sync`. Pre-commit (lefthook) runs `cargo clippy --all-targets` on Rust changes in `apps/desktop`, `packages/deadlock-match-sync`, `packages/dmodpkg`, and `packages/vpk-parser`.
 - Production tsconfigs can exclude tests, so a passing production type check doesn't cover them. Desktop `check-types` also runs `tsconfig.tests.json`; other packages may need a dedicated test tsconfig.
 - After CEF builds (`dev:cef`, `build:cef*`), run `pnpm --filter desktop cef:cleanup` to restore the default Wry build.
 - API and database scripts read the root `.env` (template: `env.example`).

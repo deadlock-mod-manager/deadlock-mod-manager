@@ -256,7 +256,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            apps/desktop -> target
+            . -> apps/desktop/target
             packages/vpkmanager -> target
             packages/source2-model -> target
             packages/deadlock-match-sync -> target
@@ -276,14 +276,13 @@ jobs:
           RUSTFLAGS: -C link-arg=-lstdc++
         run: cargo test --manifest-path packages/plugin-runtime/Cargo.toml --locked
 
-      # tauri::generate_context! embeds frontendDist, so dist must exist before cargo test.
-      - name: Build frontend
-        run: pnpm --filter @deadlock-mods/desktop ui:build
-
+      # Desktop cargo commands run from apps/desktop so its .cargo/config.toml
+      # keeps the build in apps/desktop/target, the directory cached above.
       # Skip list mirrors checkFlags in package.nix so CI and the Nix build agree.
       - name: Run Rust tests
+        working-directory: apps/desktop
         run: |
-          cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
+          cargo test --locked \
             -- --skip download_manager::downloader::tests::test_download_file
 
       - name: Run match sync tests
@@ -295,12 +294,14 @@ jobs:
           cargo clippy --manifest-path packages/deadlock-server-picker/Cargo.toml --locked --all-targets -- -D warnings
 
       - name: Check build with plugins
-        run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets --features plugins
+        working-directory: apps/desktop
+        run: cargo check --locked --all-targets --features plugins
 
       # Builds without match sync must keep compiling.
       - name: Check build without match sync
+        working-directory: apps/desktop
         run: |
-          cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets \
+          cargo check --locked --all-targets \
             --no-default-features --features tauri-wry
 
       - name: Run Source 2 codec tests

@@ -13,6 +13,8 @@
     "tauri": "tauri",
     "predev": "pnpm cef:cleanup",
     "dev": "pnpm tauri dev --features plugins --config src-tauri/tauri.dev.conf.json",
+    "predev:light": "pnpm cef:cleanup",
+    "dev:light": "pnpm tauri dev --config src-tauri/tauri.dev.conf.json -- --no-default-features --features tauri-wry",
     "dev:cef": "bun scripts/cef-patch.ts cargo tauri dev",
     "build": "pnpm tauri build",
     "build:dev": "pnpm tauri build --no-bundle",

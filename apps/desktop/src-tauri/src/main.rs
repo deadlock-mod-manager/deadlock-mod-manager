@@ -239,5 +239,5 @@ fn main() {
     }
   }
 
-  desktop_lib::run()
+  desktop_lib::run(tauri::generate_context!())
 }

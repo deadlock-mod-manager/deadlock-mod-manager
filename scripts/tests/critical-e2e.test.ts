@@ -31,6 +31,8 @@ test("selects desktop, dependency, build, and gate changes without a label", () 
     "scripts/select-critical-e2e.mjs",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
+    "Cargo.toml",
+    "Cargo.lock",
     "package.json",
     "turbo.json",
   ]) {

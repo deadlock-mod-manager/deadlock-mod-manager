@@ -66,7 +66,8 @@ const CEF_FEATURE_LINES =
 const CEF_DEPENDENCY_LINE = `tauri-runtime-cef = { git = "${TAURI_GIT}", tag = "${TAURI_CEF_TAG}", optional = true, features = ["devtools"] }`;
 
 const desktopDir = resolve(import.meta.dirname, "..");
-const workspaceCargoToml = resolve(desktopDir, "Cargo.toml");
+const workspaceDir = resolve(desktopDir, "..", "..");
+const workspaceCargoToml = resolve(workspaceDir, "Cargo.toml");
 const packageCargoToml = resolve(desktopDir, "src-tauri", "Cargo.toml");
 const packageCargoTomlBackup = resolve(
   desktopDir,
@@ -74,7 +75,7 @@ const packageCargoTomlBackup = resolve(
   "cef-patch",
   "Cargo.toml",
 );
-const workspaceCargoLock = resolve(desktopDir, "Cargo.lock");
+const workspaceCargoLock = resolve(workspaceDir, "Cargo.lock");
 const cefCargoLock = resolve(desktopDir, "Cargo.cef.lock");
 const workspaceCargoLockBackup = resolve(
   desktopDir,

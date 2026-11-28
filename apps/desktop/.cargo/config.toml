@@ -1,7 +1,12 @@
+# The workspace manifest is at the repo root. Cargo only reads this file when it
+# runs from apps/desktop or below, so run desktop cargo commands from here.
+[build]
+# Relative to apps/desktop. Without it the build would land in <repo>/target.
+target-dir = "target"
+
 # Statically link the MSVC runtime. unrar_sys compiles C++, so a dynamic CRT
 # makes the exe import MSVCP140.dll and fail to start on machines without the
-# Visual C++ Redistributable. Lives at the workspace root so it applies whether
-# cargo runs from here or from src-tauri.
+# Visual C++ Redistributable.
 [target.'cfg(all(windows, target_env = "msvc"))']
 rustflags = ["-C", "target-feature=+crt-static"]
 

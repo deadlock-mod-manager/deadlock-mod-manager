@@ -18,6 +18,8 @@ export function requiresDesktopE2E(files) {
         "package.json",
         "pnpm-lock.yaml",
         "pnpm-workspace.yaml",
+        "Cargo.toml",
+        "Cargo.lock",
         "turbo.json",
         "turbo.jsonc",
         ".npmrc",
