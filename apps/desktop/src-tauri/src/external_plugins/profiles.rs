@@ -1,8 +1,9 @@
 //! DMM host adapter for the external plugin runtime: profiles, installs,
-//! game detection and the network.
+//! game detection, the game's own files and the network.
+use super::game_files::GameArchive;
 use crate::{errors::Error, mod_manager::ModManager};
 use dmm_plugin_runtime::{
-  Deployment, Error as RuntimeError, HostAdapter, HttpRequest, HttpResponse, ProfileMod,
+  Deployment, Error as RuntimeError, GameEntry, HostAdapter, HttpRequest, HttpResponse, ProfileMod,
 };
 use sha2::{Digest, Sha256};
 use std::{
@@ -106,9 +107,23 @@ fn retain_source(mods_store: &Path, mod_id: &str, source: &Path) -> Result<(), E
 pub struct DesktopAdapter {
   access: ManagerAccess,
   cache: Mutex<Option<(PathBuf, Stamp, String)>>,
+  game: GameArchive,
 }
 
 impl DesktopAdapter {
+  fn game_path(&self) -> Result<PathBuf, RuntimeError> {
+    self
+      .access
+      .with(|manager, _| {
+        manager
+          .get_steam_manager()
+          .get_game_path()
+          .cloned()
+          .ok_or(Error::GamePathNotSet)
+      })
+      .map_err(runtime_error)
+  }
+
   /// Hash of the artifact that is actually enabled in the profile, read from
   /// the profile's VPK manifest rather than trusted from our own records.
   fn read_installed_hash(
@@ -253,6 +268,12 @@ impl HostAdapter for DesktopAdapter {
       .with(|manager, _| manager.is_game_running())
       .map_err(runtime_error)
   }
+  fn game_entries(&self, folder: &str) -> Result<Vec<GameEntry>, RuntimeError> {
+    self.game.entries(&self.game_path()?, folder)
+  }
+  fn read_game_file(&self, path: &str) -> Result<Option<Vec<u8>>, RuntimeError> {
+    self.game.read(&self.game_path()?, path)
+  }
   fn installed_hash(&self, id: &str, folder: &str) -> Result<Option<String>, RuntimeError> {
     self
       .access
@@ -351,7 +372,32 @@ mod tests {
         mods_store: root.join("mods-store"),
       },
       cache: Mutex::new(None),
+      game: GameArchive::default(),
     }
+  }
+  #[test]
+  fn reads_the_base_game_archive_and_follows_its_updates() {
+    let dir = tempfile::tempdir().unwrap();
+    let profiles = adapter(dir.path());
+    let pak = dir.path().join("game/citadel/pak01_dir.vpk");
+    fs::write(&pak, vpk("skin")).unwrap();
+    assert_eq!(
+      profiles.game_entries("").unwrap(),
+      [GameEntry {
+        name: "skin.txt".into(),
+        folder: false
+      }]
+    );
+    assert_eq!(
+      profiles.read_game_file("skin.txt").unwrap().as_deref(),
+      Some(&b"123456789"[..])
+    );
+    assert_eq!(profiles.read_game_file("gone.txt").unwrap(), None);
+    fs::write(&pak, vpk("renamed-by-an-update")).unwrap();
+    assert_eq!(
+      profiles.game_entries("").unwrap()[0].name,
+      "renamed-by-an-update.txt"
+    );
   }
   #[test]
   fn deploys_and_redeploys_without_touching_other_profiles() {

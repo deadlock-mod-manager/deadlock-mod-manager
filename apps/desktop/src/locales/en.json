@@ -7039,6 +7039,7 @@
         "network": "{{name}} tried to connect to {{host}}.",
         "networkOnly": "{{name}} tried to connect to {{host}}. It can only connect to {{hosts}}.",
         "networkAny": "{{name}} tried to connect to a site it wasn't given.",
+        "gameFiles": "{{name}} tried to read a kind of game file it wasn't given.",
         "game": "{{name}} tried to check whether Deadlock is running without access.",
         "events": "{{name}} tried to observe app activity outside its approved event types.",
         "storage": "{{name}} tried to keep data without access to its own storage.",
@@ -7205,6 +7206,12 @@
           "filter": "{{extensions}} files"
         }
       },
+      "gameFiles": {
+        "title": "Read Deadlock's own game files",
+        "detail": "Only the kinds listed, from the game itself. It can't change them and never sees your mods.",
+        "note": "Only {{extensions}} files",
+        "short": "read Deadlock's own {{extensions}} files"
+      },
       "mods": {
         "title": {
           "read": "See the mods in one profile you choose",
@@ -7294,6 +7301,7 @@
       "blockedModsAny": "Tried to use mods without access. Blocked.",
       "blockedNetwork": "Tried to connect to {{host}}. Blocked.",
       "blockedNetworkAny": "Tried to connect to a site it was not given. Blocked.",
+      "blockedGameFiles": "Tried to read a kind of game file it was not given. Blocked.",
       "blockedGame": "Tried to check the game without access. Blocked.",
       "blockedEvents": "Tried to observe app activity without access. Blocked.",
       "blockedStorage": "Tried to use storage without access. Blocked.",

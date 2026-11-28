@@ -22,6 +22,13 @@ pub struct ProfileMod {
   pub files: Vec<String>,
 }
 
+/// One entry of a folder inside the game's archives.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GameEntry {
+  pub name: String,
+  pub folder: bool,
+}
+
 /// A request the runtime has checked against the plugin's `network` grant.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRequest {
@@ -59,12 +66,20 @@ pub trait HostAdapter: Send + Sync {
   /// timeout and a 4 MiB response cap. Runs on a plain thread.
   fn fetch(&self, request: &HttpRequest) -> Result<HttpResponse, Error>;
   fn game_running(&self) -> Result<bool, Error>;
+  /// Entries directly inside `folder` of the game's own archives; `""` names
+  /// their root. Paths are lowercase and `/`-separated. Mods are not part of
+  /// these archives.
+  fn game_entries(&self, folder: &str) -> Result<Vec<GameEntry>, Error>;
+  /// One resource of the game's own archives in full, `None` when there is
+  /// no such path.
+  fn read_game_file(&self, path: &str) -> Result<Option<Vec<u8>>, Error>;
 }
 
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
   use crate::snapshots;
+  use std::collections::BTreeMap;
   use std::sync::Mutex;
   use std::sync::atomic::{AtomicBool, Ordering};
   use std::{fs, path::PathBuf};
@@ -73,6 +88,7 @@ pub(crate) mod tests {
     root: PathBuf,
     pub fetches: Mutex<Vec<HttpRequest>>,
     pub game_running: AtomicBool,
+    game_files: Mutex<BTreeMap<String, Vec<u8>>>,
   }
 
   impl TestProfiles {
@@ -81,7 +97,15 @@ pub(crate) mod tests {
         root,
         fetches: Mutex::new(Vec::new()),
         game_running: AtomicBool::new(false),
+        game_files: Mutex::new(BTreeMap::new()),
       }
+    }
+    pub fn add_game_file(&self, path: &str, bytes: &[u8]) {
+      self
+        .game_files
+        .lock()
+        .unwrap()
+        .insert(path.to_owned(), bytes.to_vec());
     }
     fn folder(&self, folder: &str) -> PathBuf {
       if folder == crate::deploy::DEFAULT_PROFILE {
@@ -173,6 +197,33 @@ pub(crate) mod tests {
     }
     fn game_running(&self) -> Result<bool, Error> {
       Ok(self.game_running.load(Ordering::SeqCst))
+    }
+    fn game_entries(&self, folder: &str) -> Result<Vec<GameEntry>, Error> {
+      let prefix = if folder.is_empty() {
+        String::new()
+      } else {
+        format!("{folder}/")
+      };
+      let mut entries: Vec<GameEntry> = Vec::new();
+      for path in self.game_files.lock().unwrap().keys() {
+        let Some(rest) = path.strip_prefix(&prefix) else {
+          continue;
+        };
+        let (name, folder) = match rest.split_once('/') {
+          Some((name, _)) => (name, true),
+          None => (rest, false),
+        };
+        if !entries.iter().any(|entry| entry.name == name) {
+          entries.push(GameEntry {
+            name: name.to_owned(),
+            folder,
+          });
+        }
+      }
+      Ok(entries)
+    }
+    fn read_game_file(&self, path: &str) -> Result<Option<Vec<u8>>, Error> {
+      Ok(self.game_files.lock().unwrap().get(path).cloned())
     }
   }
 }

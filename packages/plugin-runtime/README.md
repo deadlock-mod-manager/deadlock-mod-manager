@@ -28,7 +28,7 @@ per-plugin enabled states. Calls and view assets remain denied until resumed.
 
 The application supplies a `HostAdapter` for profile validation and listing,
 profile mods, installed snapshot lookup, deployment and source retention, game
-detection and performing network requests. DMM's adapter lives in
+detection, reading the game's own archives and performing network requests. DMM's adapter lives in
 `apps/desktop/src-tauri/src/external_plugins/profiles.rs` (network transport in
 `network.rs`); tests supply a filesystem adapter. Game guards, profile
 manifests, the mod manager and the HTTP client stay in the desktop adapter.
@@ -94,6 +94,7 @@ sorted on parse, so a request is unchanged exactly when it is equal.
 | ID              | Scope                                                                                                                          | Hostcalls                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | `files`         | `kind`: `file` or `folder`; `extensions`: 0-10 names of 1-10 lowercase letters or digits, no dot, empty for any; `access`: `read` or `readWrite` | `files.info`, `files.list` (folders), `files.read`, `files.snapshot`, `files.snapshots`; `files.write` with `readWrite` |
+| `gameFiles`     | `extensions`: 1-16 distinct names of 1-16 lowercase letters, digits or underscores, no dot, such as `vmdl_c`                    | `gameFiles.list`, `gameFiles.read`                                                 |
 | `mods`          | `access`: non-empty, duplicate-free set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`        | `mods.list` with `read`; `mods.install`, `mods.installed` with `install`           |
 | `network`       | `hosts`: 1-10 distinct lowercase DNS names with at least two labels; no scheme, port, wildcard, IP literal or `localhost`       | `http.fetch`                                                                       |
 | `game`          | none                                                                                                                           | `game.state`                                                                       |
@@ -375,6 +376,8 @@ inside a granted folder; file grants take none.
 | `files.write`        | `files` with `readWrite`     | `{path?, data, encoding}`                                    | `{size}`                                                         |
 | `files.snapshot`     | `files`                      | `{path?, requireReadyMarker?}`                               | `{state, fileName, snapshot?, message?}`                         |
 | `files.snapshots`    | `files`                      | none                                                         | `{snapshots: Snapshot[]}`                                        |
+| `gameFiles.list`     | `gameFiles`                  | `{path?}`                                                    | `{entries: [{name, kind}], truncated}`                          |
+| `gameFiles.read`     | `gameFiles`                  | `{path, offset?, length?}`                                   | `{data, size, eof}`                                              |
 | `mods.list`          | `mods` with `read`           | none                                                         | `{profiles: [{folder, mods: [{id, name?, enabled, files}]}]}`    |
 | `mods.install`       | `mods` with `install`        | `{hash}`                                                     | `{hash}`                                                         |
 | `mods.installed`     | `mods` with `install`        | none                                                         | `{hash}` (`null` when none)                                      |
@@ -400,6 +403,17 @@ inside a granted folder; file grants take none.
 - **Writes** take at most 4 MiB once decoded, need an existing parent folder
   and replace the file through a temporary file in the same folder and a
   rename.
+- **Game files.** `gameFiles` reads resources from the game's own archives
+  (the desktop adapter serves `game/citadel/pak01_dir.vpk`), never from mods
+  and never from disk paths. `path` is a `/`-separated resource path such as
+  `models/heroes/shiv/shiv.vmdl_c`, matched without case; traversal, empty
+  components, `\` and `:` are `invalid_params`. `gameFiles.list` returns the
+  folders and the resources with a granted extension directly inside `path`
+  (the root when absent), sorted by name and stopping at 1000 entries.
+  `gameFiles.read` needs a granted extension (`permission_denied` otherwise),
+  returns at most 1 MiB of base64 from `offset` and `not_found` for a path the
+  game does not have. The desktop adapter refuses resources over 64 MiB. The
+  grant needs no picked resource.
 - **Snapshots.** `files.snapshot` states: `missing`, `changing` (size or mtime
   changed, or stable for less than 3 s), `waitingForMarker` (`<file>.ready`
   missing or older than the file), `invalid` (with `message`; the same file

@@ -229,6 +229,12 @@ mod tests {
     fn game_running(&self) -> Result<bool, Error> {
       self.profiles.game_running()
     }
+    fn game_entries(&self, folder: &str) -> Result<Vec<crate::GameEntry>, Error> {
+      self.profiles.game_entries(folder)
+    }
+    fn read_game_file(&self, path: &str) -> Result<Option<Vec<u8>>, Error> {
+      self.profiles.read_game_file(path)
+    }
   }
 
   #[test]

@@ -9,6 +9,7 @@ mod deploy;
 mod error;
 mod events;
 mod files;
+mod game_files;
 mod host_api;
 mod manifest;
 mod network;
@@ -35,7 +36,7 @@ use storage::PluginStorage;
 use supervisor::{CallOutcome, Supervisor};
 
 pub use activity::{ExternalPluginActivity, ExternalPluginActivityKind};
-pub use adapter::{Deployment, HostAdapter, HttpRequest, HttpResponse, ProfileMod};
+pub use adapter::{Deployment, GameEntry, HostAdapter, HttpRequest, HttpResponse, ProfileMod};
 pub use dmm_plugin_sdk::events as event_contract;
 pub use error::Error;
 pub use manifest::{

@@ -6,6 +6,7 @@
  */
 export type ExternalPluginPermissionId =
   | "files"
+  | "gameFiles"
   | "mods"
   | "network"
   | "game"

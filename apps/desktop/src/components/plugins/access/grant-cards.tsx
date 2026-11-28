@@ -2,6 +2,7 @@ import {
   BellIcon,
   EraserIcon,
   EyeIcon,
+  FolderOpenIcon,
   GameControllerIcon,
   GlobeIcon,
   HardDriveIcon,
@@ -58,6 +59,20 @@ export const PermissionGrantCards = ({
             request={permission}
             copy={copy}
             onNavigate={onNavigate}
+          />
+        );
+      case "gameFiles":
+        return (
+          <GrantCard
+            action={null}
+            copy={copy}
+            key={permission.id}
+            scope={permission.extensions
+              .map((extension) => `.${extension}`)
+              .join(", ")}
+            scopeIcon={FolderOpenIcon}
+            scopeMono
+            tokens={permissionTokens(permission)}
           />
         );
       case "network":

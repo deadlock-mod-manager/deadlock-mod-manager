@@ -7,6 +7,7 @@ use super::abi;
 use super::activity::{ExternalPluginActivity, ExternalPluginActivityKind as Kind};
 use super::deploy::DeployError;
 use super::files::{self, Encoding, FileError, Scope};
+use super::game_files::{self, GameFileError};
 use super::manifest::{
   ExternalPluginFileAccess as FileAccess, ExternalPluginModAccess as ModAccess,
   ExternalPluginPermission as Permission, ExternalPluginPermissionId as Id,
@@ -91,6 +92,17 @@ impl From<FileError> for HostError {
   }
 }
 
+impl From<GameFileError> for HostError {
+  fn from(error: GameFileError) -> Self {
+    match error {
+      GameFileError::Denied(message) => Self::denied(Id::GameFiles, message),
+      GameFileError::Invalid(message) => Self::invalid(message),
+      GameFileError::Missing(message) => Self::new("not_found", message),
+      GameFileError::Host(error) => error.into(),
+    }
+  }
+}
+
 fn deploy_error(error: DeployError) -> HostError {
   match error {
     DeployError::Invalid(message) => HostError::new("invalid_snapshot", message),
@@ -151,6 +163,16 @@ struct ReadParams {
   #[serde(default)]
   length: Option<u64>,
   encoding: Encoding,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GameReadParams {
+  path: String,
+  #[serde(default)]
+  offset: u64,
+  #[serde(default)]
+  length: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -266,6 +288,17 @@ fn file_scope(plugin: &ActivePlugin) -> Result<(Scope<'_>, FileAccess), HostErro
     },
     *access,
   ))
+}
+
+/// The resource extensions of the `gameFiles` request.
+fn game_extensions(plugin: &ActivePlugin) -> Result<&[String], HostError> {
+  let Permission::GameFiles { extensions } = require(plugin, Id::GameFiles)? else {
+    return Err(HostError::denied(
+      Id::GameFiles,
+      "This plugin was not granted gameFiles",
+    ));
+  };
+  Ok(extensions)
 }
 
 fn dispatch(
@@ -405,6 +438,30 @@ fn dispatch(
       file_scope(plugin)?;
       params::<NoParams>(raw)?;
       Ok(json!({ "snapshots": host.services(&plugin.id).snapshots.list()? }))
+    }
+    "gameFiles.list" => {
+      let extensions = game_extensions(plugin)?;
+      let PathParams { path } = params(raw)?;
+      to_value(game_files::list(
+        host.adapter(),
+        extensions,
+        path.as_deref(),
+      )?)
+    }
+    "gameFiles.read" => {
+      let extensions = game_extensions(plugin)?;
+      let GameReadParams {
+        path,
+        offset,
+        length,
+      } = params(raw)?;
+      to_value(game_files::read(
+        host.adapter(),
+        extensions,
+        &path,
+        offset,
+        length,
+      )?)
     }
     "mods.list" => {
       let Permission::Mods { profiles, .. } = require_mods(plugin, ModAccess::Read)? else {

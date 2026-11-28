@@ -8,6 +8,7 @@ pub const SDK_VERSION: u32 = 1;
 
 pub const MAX_FILE_EXTENSIONS: usize = 10;
 pub const MAX_NETWORK_HOSTS: usize = 10;
+pub const MAX_GAME_FILE_EXTENSIONS: usize = 16;
 
 /// The host permission catalog. Each ID names a DMM resource; the request in
 /// [`ExternalPluginPermission`] carries its scope.
@@ -16,6 +17,7 @@ pub const MAX_NETWORK_HOSTS: usize = 10;
 #[ts(export)]
 pub enum ExternalPluginPermissionId {
   Files,
+  GameFiles,
   Mods,
   Network,
   Game,
@@ -69,6 +71,11 @@ pub enum ExternalPluginPermission {
     extensions: Vec<String>,
     access: ExternalPluginFileAccess,
   },
+  GameFiles {
+    /// Resource extensions as the game's archives name them, lowercase and
+    /// without the dot, such as `vmdl_c`.
+    extensions: Vec<String>,
+  },
   Mods {
     access: Vec<ExternalPluginModAccess>,
     profiles: ExternalPluginProfileScope,
@@ -94,6 +101,9 @@ enum StrictPermission {
     #[serde(default)]
     extensions: Vec<String>,
     access: ExternalPluginFileAccess,
+  },
+  GameFiles {
+    extensions: Vec<String>,
   },
   Mods {
     access: Vec<ExternalPluginModAccess>,
@@ -122,6 +132,7 @@ impl<'de> Deserialize<'de> for ExternalPluginPermission {
         extensions,
         access,
       },
+      StrictPermission::GameFiles { extensions } => Self::GameFiles { extensions },
       StrictPermission::Mods { access, profiles } => Self::Mods { access, profiles },
       StrictPermission::Network { hosts } => Self::Network { hosts },
       StrictPermission::Game {} => Self::Game {},
@@ -136,6 +147,7 @@ impl ExternalPluginPermission {
   pub fn id(&self) -> ExternalPluginPermissionId {
     match self {
       Self::Files { .. } => ExternalPluginPermissionId::Files,
+      Self::GameFiles { .. } => ExternalPluginPermissionId::GameFiles,
       Self::Mods { .. } => ExternalPluginPermissionId::Mods,
       Self::Network { .. } => ExternalPluginPermissionId::Network,
       Self::Game {} => ExternalPluginPermissionId::Game,
@@ -173,6 +185,18 @@ impl ExternalPluginPermission {
           ));
         }
         sort_unique(extensions, "files extensions")
+      }
+      Self::GameFiles { extensions } => {
+        if !(1..=MAX_GAME_FILE_EXTENSIONS).contains(&extensions.len())
+          || !extensions
+            .iter()
+            .all(|extension| is_game_extension(extension))
+        {
+          return Err(format!(
+            "gameFiles extensions must list 1-{MAX_GAME_FILE_EXTENSIONS} lowercase names of 1-16 letters, digits or underscores, without the dot"
+          ));
+        }
+        sort_unique(extensions, "gameFiles extensions")
       }
       Self::Mods { access, profiles } => {
         if access.is_empty() {
@@ -220,6 +244,15 @@ fn is_extension(value: &str) -> bool {
     && value
       .bytes()
       .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+}
+
+/// Compiled resources carry a `_c` suffix (`vmdl_c`), which [`is_extension`]
+/// does not allow.
+fn is_game_extension(value: &str) -> bool {
+  (1..=16).contains(&value.len())
+    && value
+      .bytes()
+      .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
 }
 
 /// A lowercase DNS name with at least two labels that is neither an IP
@@ -564,6 +597,37 @@ mod tests {
     }
     assert!(files(json!({ "kind": "symlink" })).is_err());
     assert!(files(json!({ "access": "write" })).is_err());
+  }
+
+  #[test]
+  fn validates_game_file_scopes() {
+    let game_files = |extensions: serde_json::Value| {
+      required(json!([{ "id": "gameFiles", "extensions": extensions }]))
+    };
+    let parsed = game_files(json!(["vtex_c", "vmdl_c"])).unwrap();
+    assert_eq!(
+      parsed.permissions.required[0],
+      ExternalPluginPermission::GameFiles {
+        extensions: vec!["vmdl_c".into(), "vtex_c".into()],
+      }
+    );
+    let seventeen: Vec<_> = (0..17).map(|index| format!("e{index}")).collect();
+    for extensions in [
+      json!([]),
+      json!(seventeen),
+      json!(["VMDL_C"]),
+      json!([".vmdl_c"]),
+      json!(["vmdl_c", "vmdl_c"]),
+      json!(["a".repeat(17)]),
+      json!(["*"]),
+    ] {
+      assert!(game_files(extensions.clone()).is_err(), "{extensions}");
+    }
+    assert!(required(json!([{ "id": "gameFiles" }])).is_err());
+    assert!(
+      required(json!([{ "id": "gameFiles", "extensions": ["vmdl_c"], "paths": ["models"] }]))
+        .is_err()
+    );
   }
 
   #[test]

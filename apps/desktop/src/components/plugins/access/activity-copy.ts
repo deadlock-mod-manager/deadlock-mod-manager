@@ -64,6 +64,8 @@ const blockedTitle = (
               findProfileName(activity.profileFolder) ?? activity.profileFolder,
           })
         : t("plugins.activity.blockedModsAny");
+    case "gameFiles":
+      return t("plugins.activity.blockedGameFiles");
     case "network":
       return activity.host
         ? t("plugins.activity.blockedNetwork", { host: activity.host })
