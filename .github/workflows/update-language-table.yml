@@ -1,6 +1,6 @@
 name: Update Language Table
 env:
-  NODE_VERSION: "24.22.1"
+  NODE_VERSION: "26.13.1"
 
 on:
   push:

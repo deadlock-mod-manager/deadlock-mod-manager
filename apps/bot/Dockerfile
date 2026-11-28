@@ -7,13 +7,11 @@ RUN apt-get -y update && \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-ARG NODE_VERSION=24.22.1
+ARG NODE_VERSION=26.13.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \
-    npm install -g n && \
-    corepack enable && \
-    corepack prepare pnpm@11.18.0 --activate
+    npm install -g n pnpm@12.9.0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
