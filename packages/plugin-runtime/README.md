@@ -94,7 +94,7 @@ sorted on parse, so a request is unchanged exactly when it is equal.
 | ID              | Scope                                                                                                                          | Hostcalls                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | `files`         | `kind`: `file` or `folder`; `extensions`: 0-10 names of 1-10 lowercase letters or digits, no dot, empty for any; `access`: `read` or `readWrite` | `files.info`, `files.list` (folders), `files.read`, `files.snapshot`, `files.snapshots`; `files.write` with `readWrite` |
-| `mods`          | `access`: non-empty, duplicate-free set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`        | `mods.list` with `read`; `mods.install`, `mods.installed` with `install`           |
+| `mods`          | `access`: non-empty, duplicate-free set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`        | `mods.list` with `read`; `mods.upload`, `mods.stage`, `mods.install`, `mods.installed` with `install` |
 | `network`       | `hosts`: 1-10 distinct lowercase DNS names with at least two labels; no scheme, port, wildcard, IP literal or `localhost`       | `http.fetch`                                                                       |
 | `game`          | none                                                                                                                           | `game.state`                                                                       |
 | `events`        | `types`: 1-64 distinct supported event names, without wildcards                                                                 | `events.snapshot`, `events.read`                                                   |
@@ -290,7 +290,7 @@ method, hash, size, resources, fileName, profileFolder, host, reason }`;
 
 | `kind`        | Recorded when                                                  | Fields                                                                     |
 | ------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `staged`      | `files.snapshot` staged a file the store did not hold          | `permission` `files`, `hash`, `size`, `resources` (VPKs), `fileName`       |
+| `staged`      | `files.snapshot` or `mods.stage` staged a file the store did not hold | `permission` `files` or `mods`, `hash`, `size`, `resources` (VPKs), `fileName` (snapshots) |
 | `deployed`    | `mods.install` succeeded                                       | `permission` `mods`, `hash`, `profileFolder`                               |
 | `wrote`       | `files.write` replaced a file                                  | `permission` `files`, `fileName`, `size`                                   |
 | `fetched`     | `http.fetch` got a response                                    | `permission` `network`, `host`                                             |
@@ -376,6 +376,8 @@ inside a granted folder; file grants take none.
 | `files.snapshot`     | `files`                      | `{path?, requireReadyMarker?}`                               | `{state, fileName, snapshot?, message?}`                         |
 | `files.snapshots`    | `files`                      | none                                                         | `{snapshots: Snapshot[]}`                                        |
 | `mods.list`          | `mods` with `read`           | none                                                         | `{profiles: [{folder, mods: [{id, name?, enabled, files}]}]}`    |
+| `mods.upload`        | `mods` with `install`        | `{offset?, data}`                                            | `{size}`                                                         |
+| `mods.stage`         | `mods` with `install`        | none                                                         | `{snapshot: Snapshot}`                                           |
 | `mods.install`       | `mods` with `install`        | `{hash}`                                                     | `{hash}`                                                         |
 | `mods.installed`     | `mods` with `install`        | none                                                         | `{hash}` (`null` when none)                                      |
 | `http.fetch`         | `network`                    | `{url, method, headers?, body?, bodyEncoding?}`              | `{status, headers, body, bodyEncoding}`                          |
@@ -411,6 +413,15 @@ inside a granted folder; file grants take none.
   the VPK resource count. Files are limited to 512 MiB; the host keeps at most
   12 snapshots and 3 GiB per plugin, evicting the oldest that is neither
   installed nor mid-install.
+- **Uploads.** A plugin that builds its own VPK stages it without a granted
+  file. `mods.upload` appends base64 `data`, 1 byte to 4 MiB once decoded, to
+  the plugin's single pending upload and returns its new `size`. `offset`
+  defaults to 0, which starts a new upload; any other value must be the
+  current size, so a repeated or skipped chunk fails with `invalid_snapshot`
+  instead of corrupting the file. Uploads are limited to 512 MiB.
+  `mods.stage` validates the upload like a `.vpk` snapshot (header, tree and
+  every resource CRC), hashes it and keeps it under the same store and quota
+  as `files.snapshot`. The upload is consumed whether or not it is valid.
 - **Installs.** `mods.install` re-validates and re-hashes the staged VPK,
   applies the running-game guard, records a pending marker, then installs
   through `ModManager::update_mod_from_prepared` as local mod

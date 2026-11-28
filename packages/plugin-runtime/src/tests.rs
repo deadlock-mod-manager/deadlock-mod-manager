@@ -511,6 +511,57 @@ fn snapshots_and_installs_through_hostcalls() {
 }
 
 #[test]
+fn uploads_stage_and_install_without_a_file_grant() {
+  let fixture = fixture();
+  fixture.install_with("0.1.0", json!([mods_install()]));
+  let generation = fixture.enable();
+  let bytes = vpk("built-by-the-plugin");
+  let (head, tail) = bytes.split_at(16);
+  let first = fixture.hostcall(
+    generation,
+    "mods.upload",
+    json!({ "data": files::encode_base64(head) }),
+  );
+  assert_eq!(first["value"]["size"], 16, "{first}");
+  let gap = fixture.hostcall(
+    generation,
+    "mods.upload",
+    json!({ "offset": 4, "data": files::encode_base64(tail) }),
+  );
+  assert_eq!(gap["error"]["code"], "invalid_snapshot", "{gap}");
+  let empty = fixture.hostcall(
+    generation,
+    "mods.upload",
+    json!({ "offset": 16, "data": "" }),
+  );
+  assert_eq!(empty["error"]["code"], "invalid_params", "{empty}");
+  let rest = fixture.hostcall(
+    generation,
+    "mods.upload",
+    json!({ "offset": 16, "data": files::encode_base64(tail) }),
+  );
+  assert_eq!(rest["value"]["size"], bytes.len(), "{rest}");
+
+  let staged = fixture.hostcall(generation, "mods.stage", Value::Null);
+  assert_eq!(staged["value"]["snapshot"]["resources"], 1, "{staged}");
+  let hash = staged["value"]["snapshot"]["hash"].clone();
+  let install = fixture.hostcall(generation, "mods.install", json!({ "hash": hash }));
+  assert_eq!(install["value"]["hash"], hash, "{install}");
+  let installed = fixture.hostcall(generation, "mods.installed", Value::Null);
+  assert_eq!(installed["value"]["hash"], hash);
+
+  let nothing = fixture.hostcall(generation, "mods.stage", Value::Null);
+  assert_eq!(nothing["error"]["code"], "invalid_snapshot", "{nothing}");
+  let activity = fixture.host.activity(ID, 10).unwrap();
+  let kinds: Vec<_> = activity.iter().map(|entry| entry.kind).collect();
+  assert!(
+    kinds.contains(&ExternalPluginActivityKind::Staged)
+      && kinds.contains(&ExternalPluginActivityKind::Deployed),
+    "{kinds:?}"
+  );
+}
+
+#[test]
 fn folder_grants_resolve_paths_and_refuse_escapes() {
   let fixture = fixture();
   fixture.install_with(
@@ -606,6 +657,13 @@ fn read_only_scopes_refuse_writes_and_installs() {
       method,
       json!({ "hash": "a".repeat(64), "key": "k" }),
     );
+    assert_eq!(refused["error"]["code"], "permission_denied", "{method}");
+  }
+  for (method, params) in [
+    ("mods.upload", json!({ "data": "eA==" })),
+    ("mods.stage", Value::Null),
+  ] {
+    let refused = fixture.hostcall(generation, method, params);
     assert_eq!(refused["error"]["code"], "permission_denied", "{method}");
   }
   let all = fixture.hostcall(generation, "mods.list", Value::Null);

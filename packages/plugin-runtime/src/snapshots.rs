@@ -2,11 +2,15 @@
 //! verified, content-addressed copy under a host quota. VPKs are validated
 //! down to every resource CRC; other files only need to hold still. Which
 //! snapshots a plugin keeps in its history is its own business.
+//!
+//! `mods.upload` and `mods.stage` reach the same store without a granted
+//! file: the plugin sends a VPK it built in chunks, and the host validates
+//! and stages it like a snapshot.
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
 
@@ -15,6 +19,7 @@ pub const MAX_SNAPSHOTS: usize = 12;
 pub const MAX_STAGED_BYTES: u64 = 3 * 1024 * 1024 * 1024;
 pub const STABLE_FOR: Duration = Duration::from_secs(3);
 pub const SNAPSHOT_FILE: &str = "snapshot_dir.vpk";
+const UPLOAD_FILE: &str = "upload.part";
 
 pub type Stamp = (u64, SystemTime);
 
@@ -285,40 +290,101 @@ impl SnapshotStore {
       if stamp(source)? != observed || hash(source)? != digest || stamp(source)? != observed {
         return Err(SnapshotError::Changed);
       }
-      let mut index = self.list()?;
-      if let Some(position) = index.iter().position(|snapshot| snapshot.hash == digest) {
-        let snapshot = index.remove(position);
-        index.insert(0, snapshot.clone());
-        self.save(&index)?;
-        return Ok((snapshot, false));
-      }
-      while index.len() >= MAX_SNAPSHOTS
-        || index.iter().map(|snapshot| snapshot.size).sum::<u64>() + copied > MAX_STAGED_BYTES
-      {
-        let evict = index
-          .iter()
-          .rposition(|snapshot| !pinned.contains(&snapshot.hash))
-          .ok_or_else(|| {
-            SnapshotError::Quota("Snapshot quota is full of installed builds".into())
-          })?;
-        let removed = index.remove(evict);
-        self.save(&index)?;
-        fs::remove_dir_all(self.dir.join(&removed.hash))?;
-      }
-      let destination = self.dir.join(&digest);
-      fs::create_dir_all(&destination)?;
-      fs::rename(&temporary, destination.join(SNAPSHOT_FILE))?;
-      let snapshot = Snapshot {
-        hash: digest,
-        size: copied,
-        resources,
-        staged_at: chrono::Utc::now().to_rfc3339(),
-      };
-      index.insert(0, snapshot.clone());
-      self.save(&index)?;
-      Ok((snapshot, true))
+      self.keep(&temporary, digest, copied, resources, pinned)
     });
     let _ = fs::remove_file(&temporary);
+    result
+  }
+
+  /// Moves a validated file into the store under its hash, evicting the
+  /// oldest unpinned snapshots to stay within the quota. The flag is false
+  /// when the store already held that build; the file is then left in place.
+  fn keep(
+    &self,
+    file: &Path,
+    digest: String,
+    size: u64,
+    resources: Option<usize>,
+    pinned: &[String],
+  ) -> Result<(Snapshot, bool), SnapshotError> {
+    let mut index = self.list()?;
+    if let Some(position) = index.iter().position(|snapshot| snapshot.hash == digest) {
+      let snapshot = index.remove(position);
+      index.insert(0, snapshot.clone());
+      self.save(&index)?;
+      return Ok((snapshot, false));
+    }
+    while index.len() >= MAX_SNAPSHOTS
+      || index.iter().map(|snapshot| snapshot.size).sum::<u64>() + size > MAX_STAGED_BYTES
+    {
+      let evict = index
+        .iter()
+        .rposition(|snapshot| !pinned.contains(&snapshot.hash))
+        .ok_or_else(|| SnapshotError::Quota("Snapshot quota is full of installed builds".into()))?;
+      let removed = index.remove(evict);
+      self.save(&index)?;
+      fs::remove_dir_all(self.dir.join(&removed.hash))?;
+    }
+    let destination = self.dir.join(&digest);
+    fs::create_dir_all(&destination)?;
+    fs::rename(file, destination.join(SNAPSHOT_FILE))?;
+    let snapshot = Snapshot {
+      hash: digest,
+      size,
+      resources,
+      staged_at: chrono::Utc::now().to_rfc3339(),
+    };
+    index.insert(0, snapshot.clone());
+    self.save(&index)?;
+    Ok((snapshot, true))
+  }
+
+  /// Appends a chunk to the plugin's pending upload and returns its new size.
+  /// Offset 0 starts over; any other offset must be the current size, so a
+  /// repeated or skipped chunk is refused instead of corrupting the file.
+  pub fn upload(&self, offset: u64, bytes: &[u8]) -> Result<u64, SnapshotError> {
+    fs::create_dir_all(&self.dir)?;
+    let path = self.dir.join(UPLOAD_FILE);
+    let current = match fs::metadata(&path) {
+      Ok(meta) => meta.len(),
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => 0,
+      Err(error) => return Err(error.into()),
+    };
+    if offset != 0 && offset != current {
+      return Err(invalid(format!(
+        "offset must be 0 or the upload's current size, {current}"
+      )));
+    }
+    let size = offset + bytes.len() as u64;
+    if size > MAX_SNAPSHOT_BYTES {
+      return Err(invalid("Uploads are limited to 512 MiB"));
+    }
+    let mut file = fs::OpenOptions::new()
+      .create(true)
+      .write(true)
+      .truncate(offset == 0)
+      .append(offset != 0)
+      .open(&path)?;
+    file.write_all(bytes)?;
+    Ok(size)
+  }
+
+  /// Validates the pending upload as a VPK and keeps it under its hash. The
+  /// upload is consumed either way, so a rejected one starts over at offset 0.
+  pub fn stage_upload(&self, pinned: &[String]) -> Result<(Snapshot, bool), SnapshotError> {
+    let path = self.dir.join(UPLOAD_FILE);
+    let size = match fs::metadata(&path) {
+      Ok(meta) => meta.len(),
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+        return Err(invalid("Nothing was uploaded"));
+      }
+      Err(error) => return Err(error.into()),
+    };
+    let result = validate_vpk(&path).and_then(|resources| {
+      let digest = hash(&path)?;
+      self.keep(&path, digest, size, Some(resources), pinned)
+    });
+    let _ = fs::remove_file(&path);
     result
   }
 
@@ -579,6 +645,50 @@ pub(crate) mod tests {
     assert!(staged.iter().any(|snapshot| snapshot.hash == pinned[0]));
     assert_eq!(validate_vpk(&store.path(&pinned[0]).unwrap()).unwrap(), 1);
     assert!(store.path("../../etc").is_none());
+  }
+
+  #[test]
+  fn uploads_append_in_order_and_stage_only_valid_vpks() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = SnapshotStore::new(&dir.path().join("data"));
+    assert!(matches!(
+      store.stage_upload(&[]),
+      Err(SnapshotError::Invalid(_))
+    ));
+    let bytes = vpk("uploaded");
+    let (head, tail) = bytes.split_at(20);
+    assert_eq!(store.upload(0, head).unwrap(), 20);
+    assert!(
+      matches!(store.upload(5, tail), Err(SnapshotError::Invalid(_))),
+      "a chunk must continue where the upload ends"
+    );
+    assert_eq!(store.upload(20, tail).unwrap(), bytes.len() as u64);
+    let (snapshot, staged) = store.stage_upload(&[]).unwrap();
+    assert!(staged);
+    assert_eq!(snapshot.resources, Some(1));
+    assert_eq!(
+      fs::read(store.path(&snapshot.hash).unwrap()).unwrap(),
+      bytes
+    );
+    assert!(
+      matches!(store.stage_upload(&[]), Err(SnapshotError::Invalid(_))),
+      "staging consumes the upload"
+    );
+
+    store
+      .upload(0, b"left over from an abandoned upload")
+      .unwrap();
+    store.upload(0, &bytes).unwrap();
+    let (again, staged) = store.stage_upload(&[]).unwrap();
+    assert_eq!(again.hash, snapshot.hash);
+    assert!(!staged, "the store already held that build");
+
+    store.upload(0, &bytes[..bytes.len() - 2]).unwrap();
+    assert!(matches!(
+      store.stage_upload(&[]),
+      Err(SnapshotError::Invalid(_))
+    ));
+    assert_eq!(store.list().unwrap().len(), 1);
   }
 
   #[test]
