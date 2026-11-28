@@ -4,12 +4,11 @@ import { type InvokeArgs, invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { exit } from "@tauri-apps/plugin-process";
-import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { KeybindHandlers } from "@/hooks/use-keybinds";
 import { useLaunch } from "@/hooks/use-launch";
-import { useLaunchProgress } from "@/lib/launch-progress";
+import { useKeybindsDialog } from "@/lib/keybinds-dialog";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { flushPendingWrites } from "@/lib/store/storage";
@@ -102,11 +101,7 @@ const quit = async () => {
 };
 
 /** Every app command that a keybind or the menu bar can trigger. */
-export const useAppCommands = ({
-  onOpenKeybinds,
-}: {
-  onOpenKeybinds: () => void;
-}): KeybindHandlers => {
+export const useAppCommands = (): KeybindHandlers => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -114,7 +109,7 @@ export const useAppCommands = ({
   const gamePath = usePersistedStore((s) => s.gamePath);
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const markFeatureUsed = usePersistedStore((s) => s.markFeatureUsed);
-  const launchPending = useRef(false);
+  const showKeybinds = useKeybindsDialog((s) => s.show);
 
   const openFolder = async (command: string, args?: InvokeArgs) => {
     try {
@@ -129,18 +124,10 @@ export const useAppCommands = ({
   };
 
   const launchGame = async (vanilla: boolean) => {
-    const isLaunching =
-      launchPending.current || useLaunchProgress.getState().progress !== null;
     const isRunning =
       queryClient.getQueryData<boolean>(["is-game-running"]) === true;
-    if (!gamePath || isLaunching || isRunning) return;
-    // Launch progress appears only after the first await in `launch`.
-    launchPending.current = true;
-    try {
-      await launch(vanilla);
-    } finally {
-      launchPending.current = false;
-    }
+    if (!gamePath || isRunning) return;
+    await launch(vanilla);
   };
 
   return {
@@ -151,7 +138,7 @@ export const useAppCommands = ({
     openBrowseMods: () => navigate("/mods"),
     openDownloads: () => navigate("/downloads"),
     openSettings: () => navigate("/settings"),
-    openKeybinds: onOpenKeybinds,
+    openKeybinds: () => showKeybinds(),
     launchModded: () => launchGame(false),
     launchVanilla: () => launchGame(true),
     openModsFolder: () => {

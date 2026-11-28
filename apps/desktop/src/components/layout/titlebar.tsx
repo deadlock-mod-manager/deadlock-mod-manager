@@ -41,10 +41,7 @@ export const Titlebar = () => {
   const { t } = useTranslation();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
-  const [showKeybinds, setShowKeybinds] = useState(false);
-  const commands = useAppCommands({
-    onOpenKeybinds: () => setShowKeybinds(true),
-  });
+  const commands = useAppCommands();
   const keybinds = useResolvedKeybinds();
   const [showMenubar, setShowMenubar] = useState(false);
 
@@ -235,7 +232,7 @@ export const Titlebar = () => {
         <AboutDialog />
       </Dialog>
 
-      <KeybindsDialog onOpenChange={setShowKeybinds} open={showKeybinds} />
+      <KeybindsDialog />
     </>
   );
 };

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { $, browser, expect } from "@wdio/globals";
+import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -74,11 +74,8 @@ const useEnglish = () =>
     const settingsLink = $('a[href="/settings"]');
     await settingsLink.waitForClickable();
     if ((await settingsLink.getText()).includes("Settings")) return;
-    await browser.execute(() => {
-      localStorage.setItem("i18nextLng", "en");
-      // Reload after the script returns, or the driver waits on the old page.
-      setTimeout(() => window.location.reload(), 0);
-    });
+    await browser.execute(() => localStorage.setItem("i18nextLng", "en"));
+    await browser.refresh();
     await expect($('a[href="/settings"]')).toHaveText(
       expect.stringContaining("Settings"),
     );
@@ -191,6 +188,9 @@ describe("keyboard shortcuts", () => {
       if (process.platform === "win32") await verifyWindowShortcuts();
 
       await openDialogFromSettings();
+      // The shortcut for the editor must not stack a second editor on top.
+      await press(keys("Control", "/"));
+      await expect($$(DIALOG)).toBeElementsArrayOfSize(1);
       await record("Open downloads", keys("d"));
       await expect($(`${DIALOG} [role="alert"]`)).toHaveText(
         expect.stringContaining("function key"),
@@ -226,6 +226,7 @@ describe("keyboard shortcuts", () => {
         $(`${DIALOG} button[aria-label="Reset shortcut for Open settings"]`),
       ).toBeEnabled();
       await closeDialog();
+      await expect($("#settings-keybinds")).toBeFocused();
 
       await observeUntil(
         "Keyboard shortcut overrides persisted",

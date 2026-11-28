@@ -24,15 +24,14 @@ import {
   type KeybindAction,
   type KeyCombo as Combo,
 } from "@/lib/keybinds";
+import { useKeybindsDialog } from "@/lib/keybinds-dialog";
 import { usePersistedStore } from "@/lib/store";
 
-type KeybindsDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
-
-export const KeybindsDialog = ({ open, onOpenChange }: KeybindsDialogProps) => {
+export const KeybindsDialog = () => {
   const { t } = useTranslation();
+  const open = useKeybindsDialog((s) => s.open);
+  const opener = useKeybindsDialog((s) => s.opener);
+  const hide = useKeybindsDialog((s) => s.hide);
   const keybinds = useResolvedKeybinds();
   const overrides = usePersistedStore((s) => s.keybindOverrides);
   const setKeybindOverrides = usePersistedStore((s) => s.setKeybindOverrides);
@@ -53,13 +52,19 @@ export const KeybindsDialog = ({ open, onOpenChange }: KeybindsDialogProps) => {
 
   const handleOpenChange = (next: boolean) => {
     setRecording(null);
-    onOpenChange(next);
+    if (!next) hide();
   };
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent
         className='flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-4xl'
+        onCloseAutoFocus={(event) => {
+          // Without a DialogTrigger, Radix would leave focus on the body.
+          if (!opener) return;
+          event.preventDefault();
+          opener.focus();
+        }}
         onEscapeKeyDown={(event) => {
           // Esc cancels the recording instead of closing the dialog.
           if (recording) event.preventDefault();
