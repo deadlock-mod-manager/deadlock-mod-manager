@@ -28,6 +28,8 @@ pub enum PresencePhase {
 
 pub type PresenceStatusCallback = Arc<dyn Fn(PresencePhase) + Send + Sync>;
 pub type GameExitCallback = Arc<dyn Fn() + Send + Sync>;
+/// Called with the match id when a match's lobby closes while the watcher is following the log.
+pub type MatchEndCallback = Arc<dyn Fn(u64) + Send + Sync>;
 /// `initial` distinguishes current state recovered at watcher startup from a
 /// newly observed transition. Observers run independently of Discord updates.
 pub type GameStateCallback = Arc<dyn Fn(&GameState, bool) + Send + Sync>;
@@ -44,6 +46,7 @@ pub struct GamePresenceWatcher {
     presence_enabled: bool,
     on_game_exit: Option<GameExitCallback>,
     on_game_state: Option<GameStateCallback>,
+    on_match_end: Option<MatchEndCallback>,
 }
 
 impl GamePresenceWatcher {
@@ -65,6 +68,7 @@ impl GamePresenceWatcher {
             presence_enabled: true,
             on_game_exit: None,
             on_game_state: None,
+            on_match_end: None,
         }
     }
 
@@ -81,6 +85,19 @@ impl GamePresenceWatcher {
     pub fn with_game_state_callback(mut self, callback: GameStateCallback) -> Self {
         self.on_game_state = Some(callback);
         self
+    }
+
+    pub fn with_match_end_callback(mut self, callback: MatchEndCallback) -> Self {
+        self.on_match_end = Some(callback);
+        self
+    }
+
+    fn report_ended_match(&self, parser: &mut LogParser) {
+        if let Some(match_id) = parser.take_ended_match()
+            && let Some(callback) = &self.on_match_end
+        {
+            callback(match_id);
+        }
     }
 
     fn observe_state(&self, state: &GameState, initial: &mut bool) {
@@ -144,6 +161,17 @@ impl GamePresenceWatcher {
                 if game_was_running {
                     log::info!("[GamePresence] Deadlock closed");
                     game_was_running = false;
+                    // The game can log a match's end and exit within one poll. A log that
+                    // shrank was rewritten, so its lines aren't the tail of this session.
+                    if file_size(&self.console_log_path) >= last_offset
+                        && let Some(rest) =
+                            read_new_content(&self.console_log_path, &mut last_offset)
+                    {
+                        for line in rest.lines().map(str::trim).filter(|l| !l.is_empty()) {
+                            parser.process_line(line, &mut state, &hero_store);
+                            self.report_ended_match(&mut parser);
+                        }
+                    }
                     parser.reset_tracking();
                     state.reset();
                     if self.presence_enabled
@@ -188,6 +216,7 @@ impl GamePresenceWatcher {
                         if line_changed {
                             self.observe_state(&state, &mut initial_observation);
                         }
+                        self.report_ended_match(&mut parser);
                     }
                 }
             }
@@ -385,6 +414,8 @@ fn resync(
                 parser.process_line(trimmed, state, hero_store);
             }
         }
+        // Matches that ended before the watcher caught up are not reported.
+        parser.take_ended_match();
         *last_offset = file_len;
         log::info!(
             "[GamePresence] Resynced tail ({} lines)",

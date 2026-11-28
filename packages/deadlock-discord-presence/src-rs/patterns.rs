@@ -60,7 +60,7 @@ pub static PATTERNS: LazyLock<Patterns> = LazyLock::new(|| Patterns {
     precaching_heroes: re(r"Precaching (\d+) heroes in CCitadelGameRules"),
     loop_mode_menu: re(r"LoopMode:\s*menu"),
     lobby_created: re(r"Lobby\s+\d+\s+for\s+Match\s+\d+\s+created"),
-    lobby_destroyed: re(r"Lobby\s+\d+\s+for\s+Match\s+\d+\s+destroyed"),
+    lobby_destroyed: re(r"Lobby\s+\d+\s+for\s+Match\s+(\d+)\s+destroyed"),
     spectate_broadcast: re(r"Playing Broadcast"),
 });
 
