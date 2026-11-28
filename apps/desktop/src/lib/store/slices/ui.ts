@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import { EXPERIMENTAL_FEATURES, SortType } from "@/lib/constants";
 import type { OptionalFeature } from "@/lib/features";
+import type { KeybindOverrides } from "@/lib/keybinds";
 import type { State } from "..";
 import {
   applyPluginSettings,
@@ -120,6 +121,7 @@ export type UIState = {
   /** Turns every optional feature off without changing `features`. */
   minimalMode: boolean;
   appBackground: AppBackground;
+  keybindOverrides: KeybindOverrides;
 
   // Plugins
   enabledPlugins: Record<string, boolean>;
@@ -145,6 +147,7 @@ export type UIState = {
   setFeatureEnabled: (feature: OptionalFeature, enabled: boolean) => void;
   setMinimalMode: (enabled: boolean) => void;
   updateAppBackground: (background: Partial<AppBackground>) => void;
+  setKeybindOverrides: (overrides: KeybindOverrides) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
 };
@@ -198,6 +201,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   features: DEFAULT_FEATURES,
   minimalMode: false,
   appBackground: DEFAULT_APP_BACKGROUND,
+  keybindOverrides: {},
   enabledPlugins: {},
   pluginSettings: {},
 
@@ -288,6 +292,9 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
     set((state) => ({
       appBackground: { ...state.appBackground, ...background },
     })),
+
+  setKeybindOverrides: (keybindOverrides: KeybindOverrides) =>
+    set({ keybindOverrides }),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>
     set((state) =>

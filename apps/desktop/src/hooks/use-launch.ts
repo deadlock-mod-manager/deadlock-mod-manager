@@ -37,6 +37,10 @@ const BACKEND_TAIL: LaunchStep[] = [
   "waitingForGame",
 ];
 
+// Shared by every launch entry point: progress only appears after the first
+// await, so a second toolbar click or shortcut could start another launch.
+let launchInFlight = false;
+
 export const useLaunch = () => {
   const { t } = useTranslation();
   const settings = usePersistedStore((s) => s.settings);
@@ -146,11 +150,16 @@ export const useLaunch = () => {
   };
 
   const launch = async (vanilla = false) => {
+    if (launchInFlight) {
+      logger.info("Ignored a launch request while another launch runs");
+      return;
+    }
     const attempt = analytics.start("game_launch", {
       launch_mode: vanilla ? "vanilla" : "modded",
     });
     beginLaunch();
     const resumeAutoReset = pauseGameinfoAutoReset();
+    launchInFlight = true;
     try {
       await checkMapCommandInAutoexec();
       if (mapModsLaunchWarning) {
@@ -285,6 +294,7 @@ export const useLaunch = () => {
         ),
       );
     } finally {
+      launchInFlight = false;
       resumeAutoReset();
     }
   };

@@ -111,6 +111,7 @@ import { usePersistedStore } from "@/lib/store";
 import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { KeybindSettings } from "@/components/settings/keybinds/keybind-settings";
 import { useRemoteInstallStatus } from "@/hooks/use-remote-install";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
@@ -837,6 +838,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <DeveloperModeToggle />
                 <ForgeInstallToggle />
                 <LinuxGpuToggle />
+                <KeybindSettings />
               </div>
             </Section>
 

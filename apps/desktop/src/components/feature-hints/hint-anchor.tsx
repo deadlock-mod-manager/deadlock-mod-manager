@@ -1,5 +1,4 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Kbd } from "@deadlock-mods/ui/components/kbd";
 import {
   Popover,
   PopoverAnchor,
@@ -16,6 +15,8 @@ import {
   useRef,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { KeyCombo } from "@/components/shared/key-combo";
+import { useResolvedKeybinds } from "@/hooks/use-keybinds";
 import { analytics } from "@/lib/analytics";
 import type { AnalyticsEvents } from "@/lib/analytics/schema";
 import {
@@ -61,9 +62,19 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
     const titleId = useId();
     const anchorRef = useRef<HTMLDivElement | null>(null);
     const hint = getFeatureHint(hintId);
+    const keybinds = useResolvedKeybinds();
+    const hintCombo =
+      "keybind" in hint
+        ? keybinds.get(hint.keybind)
+        : "shortcut" in hint
+          ? hint.shortcut
+          : null;
+    const keybindUnset = "keybind" in hint && !hintCombo;
     const available = usePersistedStore(
       (state) =>
-        eligible && canShowHint(hintId, state.featureHints, Date.now()),
+        eligible &&
+        !keybindUnset &&
+        canShowHint(hintId, state.featureHints, Date.now()),
     );
     const used = usePersistedStore(
       (state) => state.featureHints.used[hintId] === true,
@@ -214,13 +225,7 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
             <p className='mt-1.5 text-muted-foreground text-sm leading-relaxed'>
               {t(`featureHints.${hint.i18nKey}.body`)}
             </p>
-            {"shortcut" in hint && (
-              <div className='mt-2 flex items-center gap-1'>
-                {hint.shortcut.map((key) => (
-                  <Kbd key={key}>{key}</Kbd>
-                ))}
-              </div>
-            )}
+            {hintCombo && <KeyCombo className='mt-2' combo={hintCombo} />}
             <div className='mt-3 flex items-center gap-1'>
               {onShowMe && (
                 <Button onClick={handleShowMe} size='sm'>

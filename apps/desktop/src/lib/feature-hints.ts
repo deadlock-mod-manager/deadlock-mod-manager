@@ -1,3 +1,5 @@
+import type { KeybindAction, KeyCombo } from "@/lib/keybinds";
+
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
@@ -21,7 +23,7 @@ const FEATURE_HINTS = [
     id: "mods-folder-shortcut",
     i18nKey: "modsFolderShortcut",
     minAgeDays: 0,
-    shortcut: ["Ctrl", "M"],
+    keybind: "openModsFolder",
   },
   { id: "profiles", i18nKey: "profiles", minAgeDays: 1 },
   {
@@ -34,7 +36,7 @@ const FEATURE_HINTS = [
     id: "settings-search",
     i18nKey: "settingsSearch",
     minAgeDays: 0,
-    shortcut: ["Ctrl", "F"],
+    shortcut: "Mod+F",
   },
   { id: "minimal-mode", i18nKey: "minimalMode", minAgeDays: 1 },
   { id: "custom-mod-sources", i18nKey: "customModSources", minAgeDays: 0 },
@@ -59,7 +61,10 @@ const FEATURE_HINTS = [
   id: string;
   i18nKey: string;
   minAgeDays: number;
-  shortcut?: readonly string[];
+  /** A fixed combo such as `Mod+F`. */
+  shortcut?: KeyCombo;
+  /** A user-configurable keybind whose current combo the hint shows. */
+  keybind?: KeybindAction;
   /** Decorative image shown next to the title. */
   emote?: string;
 }[];

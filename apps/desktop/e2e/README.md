@@ -199,7 +199,7 @@ The first smoke flow uses WebDriver clicks to open Settings and the About dialog
 
 ## Settings, content, and launch scenarios
 
-Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` to exercise eight scenarios through real settings controls and fresh application processes:
+Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` to exercise nine scenarios through real settings controls and fresh application processes:
 
 | Case | Behavior checked |
 | --- | --- |
@@ -207,6 +207,7 @@ Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` t
 | `settings-privacy` | Global hiding, likely-content preference, blur controls, per-item memory, and analytics preference persist |
 | `settings-backups-presence` | Automatic backups, retained backup count, and game presence preference persist |
 | `settings-language` | Language selection changes the interface and survives restart |
+| `settings-keybinds` | Default shortcuts navigate without leaving the Alt menu bar open; on Windows F11 maximizes and restores like the title bar and only leaves Alt+Enter fullscreen. The dialog rejects plain and reserved keys, keeps the old shortcut on Esc, moves a taken shortcut, and unbinds one. Recorded shortcuts replace the defaults, survive restart, and Reset all restores them |
 | `content-visibility` | Safe and synthetic adult fixtures across dashboard, catalog, library, skins, and direct mod links; global hiding survives restart without deleting installed mods |
 | `content-author-visibility` | Global hiding removes the synthetic adult mod from its author's page and result count, and still does after restart |
 | `content-blur` | Actual preview blur, remembered reveal after restart, ignoring per-item overrides, and disabling/re-enabling blur |

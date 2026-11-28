@@ -8991,5 +8991,65 @@
     "compareHint": "Compare the original game assets and this source mod with the same camera and playback. This does not change enabled mods.",
     "noStock": "No matching stock model exists in the local game archives.",
     "comparisonFailed": "Stock comparison is unavailable. The mod preview is still shown."
+  },
+  "keybinds": {
+    "title": "Keyboard shortcuts",
+    "description": "Click a shortcut and press the new keys. Press Esc to cancel.",
+    "resetAll": "Reset all",
+    "notSet": "Not set",
+    "pressKeys": "Press keys…",
+    "edit": "Change shortcut for {{action}}",
+    "reset": "Reset shortcut for {{action}}",
+    "resetTooltip": "Reset to default",
+    "unbind": "Remove shortcut for {{action}}",
+    "unbindTooltip": "Remove shortcut",
+    "reassigned": "Removed this shortcut from \"{{action}}\".",
+    "menuBarHint": "Tap Alt on its own to show the menu bar.",
+    "errors": {
+      "needsModifier": "Use Ctrl, Alt or Cmd together with a key, or a function key (F1–F24).",
+      "reserved": "This shortcut is reserved for copy, paste, undo and search."
+    },
+    "categories": {
+      "navigation": "Navigation",
+      "game": "Game",
+      "folders": "Folders",
+      "window": "Window"
+    },
+    "actions": {
+      "goBack": "Go back",
+      "goForward": "Go forward",
+      "openDashboard": "Open dashboard",
+      "openMyMods": "Open My Mods",
+      "openBrowseMods": "Open Get Mods",
+      "openDownloads": "Open downloads",
+      "openSettings": "Open settings",
+      "openKeybinds": "Open keyboard shortcuts",
+      "launchModded": "Launch modded",
+      "launchVanilla": "Launch vanilla",
+      "openModsFolder": "Open mods folder",
+      "openGameFolder": "Open game folder",
+      "openModsDataFolder": "Open app data folder",
+      "toggleMaximize": "Maximize or restore window",
+      "toggleFullscreen": "Toggle fullscreen",
+      "reload": "Reload app",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "resetZoom": "Reset zoom",
+      "closeWindow": "Close window",
+      "quit": "Exit app"
+    },
+    "rowDescription": "Change the keys for navigation, launching the game and window actions.",
+    "customize": "Customize",
+    "done": "Done"
+  },
+  "menuBar": {
+    "file": "File",
+    "view": "View",
+    "help": "Help",
+    "checkForUpdates": "Check for updates",
+    "documentation": "Open documentation",
+    "askForHelp": "Ask for help",
+    "reportIssue": "Report issue or bug",
+    "about": "About"
   }
 }

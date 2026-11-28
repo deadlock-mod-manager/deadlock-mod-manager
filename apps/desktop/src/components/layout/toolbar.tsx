@@ -35,7 +35,12 @@ export const Toolbar = () => {
   const cancelLaunch = useLaunchProgress((state) => state.cancel);
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
-  const [launching, setLaunching] = useState(false);
+  const [launchClicked, setLaunchClicked] = useState(false);
+  // A keybind can start a launch too, so the button follows the launch steps.
+  const launchRunning = useLaunchProgress(
+    (state) => state.progress !== null && state.progress.current !== null,
+  );
+  const launching = launchClicked || launchRunning;
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
 
   // useHeroDetection already polls this key every 5s; a second interval here
@@ -134,8 +139,8 @@ export const Toolbar = () => {
                       .finally(() => refetch());
                   } else {
                     setModdedAnimating(true);
-                    setLaunching(true);
-                    launch().finally(() => setLaunching(false));
+                    setLaunchClicked(true);
+                    launch().finally(() => setLaunchClicked(false));
                     setTimeout(() => setModdedAnimating(false), 500);
                   }
                 }}>
